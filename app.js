@@ -28,11 +28,6 @@ const withBuffer = document.getElementById("withBuffer");
 
 const calcLock = document.getElementById("calcLock");
 const lockText = document.getElementById("lockText");
-const resetBtn = document.getElementById("resetPlan");
-
-const confirmReset = document.getElementById("confirmReset");
-const confirmYes = document.getElementById("confirmYes");
-const confirmNo = document.getElementById("confirmNo");
 
 /* ===== NAV ===== */
 const screens = document.querySelectorAll(".screen");
@@ -45,7 +40,7 @@ let chosenPlan = null;
 let plannedMonthly = 0;
 let isInitialized = false;
 
-/* ===== INPUT FORMAT ===== */
+/* ===== INPUT FORMAT (TOP) ===== */
 [incomeInput, expensesInput, goalInput].forEach(input => {
 input.addEventListener("input", e => {
 const p = e.target.selectionStart;
@@ -63,10 +58,10 @@ percentLabel.innerText = paceInput.value + "%";
 paceInput.addEventListener("input", updatePercent);
 updatePercent();
 
-/* ===== NAV LOCK ===== */
+/* ===== TAB LOCK ===== */
 function lockTabs(lock) {
 buttons.forEach((btn, i) => {
-if (i === 0) return; // calc всегда доступен
+if (i === 0) return;
 btn.style.opacity = lock ? "0.35" : "1";
 btn.style.pointerEvents = lock ? "none" : "auto";
 });
@@ -88,13 +83,8 @@ const r = btn.getBoundingClientRect();
 const p = btn.parentElement.getBoundingClientRect();
 indicator.style.transform = `translateX(${r.left - p.left}px)`;
 }
-
-tg?.HapticFeedback?.impactOccurred("light");
 }
-
-buttons.forEach(btn => {
-btn.onclick = () => openScreen(btn.dataset.screen, btn);
-});
+buttons.forEach(btn => btn.onclick = () => openScreen(btn.dataset.screen, btn));
 
 /* ===== BOTTOM SHEET ===== */
 function openSheet() {
@@ -115,10 +105,7 @@ const expenses = parseNumber(expensesInput.value);
 const goal = parseNumber(goalInput.value);
 const pace = Number(paceInput.value) / 100;
 
-if (!income || !goal || income - expenses <= 0) {
-tg?.HapticFeedback?.notificationOccurred("error");
-return;
-}
+if (!income || !goal || income - expenses <= 0) return;
 
 lastCalc = { income, expenses, goal, pace };
 openSheet();
@@ -135,7 +122,6 @@ ctx.lineTo(pad, canvas.height - pad);
 ctx.lineTo(canvas.width - pad, canvas.height - pad);
 ctx.stroke();
 }
-
 function drawPlan() {
 ctx.strokeStyle = "#fff";
 ctx.lineWidth = 2;
@@ -144,20 +130,15 @@ ctx.moveTo(pad, canvas.height - pad);
 ctx.lineTo(canvas.width - pad, pad);
 ctx.stroke();
 }
-
 function drawFact(progress) {
 ctx.setLineDash([6,6]);
 ctx.strokeStyle = "#777";
 ctx.beginPath();
 ctx.moveTo(pad, canvas.height - pad);
-ctx.lineTo(
-pad + w * progress,
-canvas.height - pad - h * progress
-);
+ctx.lineTo(pad + w * progress, canvas.height - pad - h * progress);
 ctx.stroke();
 ctx.setLineDash([]);
 }
-
 function animateFact(target) {
 let current = 1;
 function step() {
@@ -208,7 +189,24 @@ loader.classList.add("hidden");
 
 adviceCard.innerHTML = `
 <div>План: ${plannedMonthly} ₽ в месяц</div>
+
 <canvas id="chart" width="360" height="260" style="margin:16px 0"></canvas>
+
+<div style="display:flex;gap:8px;align-items:center">
+<input
+id="factInput"
+inputmode="numeric"
+placeholder="Фактически отложено"
+style="flex:1"
+/>
+<button id="applyFact" style="width:52px;height:52px;border-radius:50%">➜</button>
+<button id="hideKb" style="width:52px;height:52px;border-radius:50%">⌄</button>
+</div>
+
+<div style="font-size:14px;opacity:.6;margin-top:8px">
+Введите сумму, которую вы реально отложили.
+Protocol сравнит её с планом и обновит график.
+</div>
 `;
 
 canvas = document.getElementById("chart");
@@ -221,36 +219,30 @@ h = canvas.height - pad * 2;
 drawAxes();
 drawPlan();
 drawFact(1);
+
+const factInput = document.getElementById("factInput");
+const applyBtn = document.getElementById("applyFact");
+const hideKb = document.getElementById("hideKb");
+
+factInput.addEventListener("input", e => {
+e.target.value = formatNumber(e.target.value);
+});
+
+applyBtn.onclick = () => {
+const fact = parseNumber(factInput.value);
+if (!fact) return;
+factInput.blur();
+animateFact(Math.min(fact / plannedMonthly, 1.3));
+};
+
+hideKb.onclick = () => {
+factInput.blur();
+document.activeElement?.blur();
+};
+
 }, 6000);
 }
 
 /* ===== CHOICES ===== */
 noBuffer.onclick = () => { closeSheet(); protocolFlow("direct"); };
 withBuffer.onclick = () => { closeSheet(); protocolFlow("buffer"); };
-
-/* ===== RESET FIX ===== */
-resetBtn.onclick = () => {
-confirmReset.style.display = "block";
-};
-
-confirmNo.onclick = () => {
-confirmReset.style.display = "none";
-};
-
-confirmYes.onclick = () => {
-// сброс состояния
-chosenPlan = null;
-isInitialized = false;
-lastCalc = {};
-plannedMonthly = 0;
-
-calcLock.style.display = "none";
-confirmReset.style.display = "none";
-lockTabs(true);
-
-incomeInput.value = "";
-expensesInput.value = "";
-goalInput.value = "";
-
-openScreen("calc", buttons[0]);
-};
