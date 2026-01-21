@@ -2,45 +2,33 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-
-  <!-- 🔥 КЛЮЧЕВОЙ МОМЕНТ: принудительный масштаб -->
   <meta name="viewport"
         content="width=device-width,
                  initial-scale=1.0,
                  maximum-scale=1.0,
                  user-scalable=no,
                  viewport-fit=cover" />
-
   <title>Protocol</title>
 
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-
-  <!-- cache-bust -->
-  <link rel="stylesheet" href="style.css?v=999">
+  <link rel="stylesheet" href="style.css?v=1001">
 </head>
 <body>
 
 <!-- ===== ONBOARDING ===== -->
 <div id="onboarding" class="onboarding hidden">
-  <div class="stories">
-    <div class="story active">
-      <h2>Protocol</h2>
-      <p>Система управления
-деньгами и целями</p>
-    </div>
-    <div class="story">
-      <h2>План</h2>
-      <p>Ты всегда знаешь
-где ты и куда идёшь</p>
-    </div>
-    <div class="story">
-      <h2>Контроль</h2>
-      <p>Цели, подушка
-и реальный прогресс</p>
-    </div>
-    <div class="story">
-      <button id="startApp">Начать</button>
-    </div>
+  <div class="story active">
+    <h2>Protocol</h2>
+    <p>Минималистичная система
+управления деньгами</p>
+  </div>
+  <div class="story">
+    <h2>Фокус</h2>
+    <p>Цели. Подушка.
+Реальный прогресс.</p>
+  </div>
+  <div class="story">
+    <button id="startApp">Начать</button>
   </div>
 </div>
 
@@ -49,13 +37,10 @@
 
   <div class="screen active" id="screen-calc">
     <h2>Расчёт</h2>
-
     <label>Доход</label>
     <input id="income" placeholder="100.000">
-
     <label>Расходы</label>
     <input id="expenses" placeholder="50.000">
-
     <button id="calculate">Рассчитать</button>
     <div id="planResult"></div>
   </div>
@@ -74,23 +59,27 @@
   <div class="screen" id="screen-goals">
     <h2>Цели</h2>
     <div id="goals"></div>
-
-    <input id="newGoalName" placeholder="Новая цель">
-    <input id="newGoalTarget" placeholder="Сумма">
-    <button id="addGoal">Добавить цель</button>
   </div>
 
-  <!-- ===== PREMIUM BOTTOM NAV ===== -->
+  <!-- ===== MONO NAV ===== -->
   <div class="bottom-nav">
-    <button data-screen="calc" class="nav-btn active">📐</button>
-    <button data-screen="progress" class="nav-btn">📈</button>
-    <button data-screen="accounts" class="nav-btn">💼</button>
-    <button data-screen="goals" class="nav-btn">🎯</button>
+    <button class="nav-btn active" data-screen="calc">
+      <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16"/></svg>
+    </button>
+    <button class="nav-btn" data-screen="progress">
+      <svg viewBox="0 0 24 24"><polyline points="4,16 10,10 14,14 20,6"/></svg>
+    </button>
+    <button class="nav-btn" data-screen="accounts">
+      <svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="10"/></svg>
+    </button>
+    <button class="nav-btn" data-screen="goals">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></svg>
+    </button>
   </div>
 
 </div>
 
-<script src="app.js?v=999"></script>
+<script src="app.js?v=1001"></script>
 
 <script>
 const seen = localStorage.getItem("onboarding_seen");
@@ -98,17 +87,15 @@ if (!seen) {
   onboarding.classList.remove("hidden");
   let i = 0;
   const stories = document.querySelectorAll(".story");
-
   onboarding.onclick = () => {
     if (i < stories.length - 1) {
       stories[i].classList.remove("active");
       stories[++i].classList.add("active");
     }
   };
-
   startApp.onclick = e => {
     e.stopPropagation();
-    localStorage.setItem("onboarding_seen", "1");
+    localStorage.setItem("onboarding_seen","1");
     onboarding.classList.add("hidden");
     app.classList.remove("hidden");
   };
