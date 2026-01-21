@@ -1,139 +1,139 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Protocol</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Protocol Finance</title>
 
-  <!-- Telegram WebApp API -->
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <!-- Telegram WebApp -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-  <style>
-    body {
-      margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: #0f0f12;
-      color: #fff;
-    }
-
-    .screen { display: none; padding: 16px; }
-    .screen.active { display: block; }
-
-    /* Bottom tabs */
-    .tg-tabs {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      height: 64px;
-      background: #14141a;
-      display: flex;
-      border-top: 1px solid #222;
-    }
-
-    .tg-tabs button {
-      flex: 1;
-      background: none;
-      border: none;
-      color: #888;
-      font-size: 12px;
-    }
-
-    .tg-tabs button.active {
-      color: #4f7cff;
-      font-weight: 600;
-    }
-
-    input, button {
-      width: 100%;
-      padding: 12px;
-      margin-top: 10px;
-      border-radius: 10px;
-      border: none;
-      font-size: 16px;
-    }
-
-    button {
-      background: #4f7cff;
-      color: white;
-      font-weight: 600;
-    }
-
-    canvas {
-      width: 100%;
-      height: 220px;
-      margin-top: 20px;
-    }
-
-    /* Onboarding */
-    #onboarding {
-      position: fixed;
-      inset: 0;
-      background: #0f0f12;
-      z-index: 999;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      padding: 24px;
-      text-align: center;
-    }
-
-    #onboarding button {
-      margin-top: 24px;
-    }
-
-    /* Safe area */
-    .spacer {
-      height: 80px;
-    }
-  </style>
+    <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-<!-- ONBOARDING / STORIES -->
-<div id="onboarding">
-  <div>
-    <h2>Protocol</h2>
-    <p>
-      Это не калькулятор.
+<!-- ================= ONBOARDING ================= -->
+<div id="onboarding" class="onboarding hidden">
+    <div class="stories">
 
-      Это система принятия решений.
+        <div class="story active">
+            <h2>Protocol</h2>
+            <p>Это не калькулятор.
+Это система управления деньгами.</p>
+        </div>
 
-      Protocol берёт ответственность за план.
-    </p>
-    <button onclick="hideOnboarding()">Продолжить</button>
-  </div>
+        <div class="story">
+            <h2>План</h2>
+            <p>Protocol строит реалистичный путь
+к твоей цели.</p>
+        </div>
+
+        <div class="story">
+            <h2>Адаптация</h2>
+            <p>Если ты идёшь быстрее или медленнее —
+Protocol подстраивается.</p>
+        </div>
+
+        <div class="story">
+            <h2>Контроль</h2>
+            <p>Ты всегда знаешь:
+где ты и куда идёшь.</p>
+        </div>
+
+        <div class="story">
+            <h2>Готов?</h2>
+            <button id="startApp">Начать</button>
+        </div>
+
+    </div>
 </div>
 
-<!-- SCREENS -->
-<div id="screen-calc" class="screen">
-  <h3>Расчёт</h3>
-  <input id="income" placeholder="Доход в месяц">
-  <input id="expenses" placeholder="Обязательные расходы">
-  <button id="calculate">Рассчитать</button>
+<!-- ================= APP ================= -->
+<div id="app" class="app hidden">
+
+    <!-- ===== CALC SCREEN ===== -->
+    <div class="screen active" id="screen-calc">
+        <h2>Расчёт</h2>
+
+        <label>Доход</label>
+        <input id="income" placeholder="100.000" />
+
+        <label>Расходы</label>
+        <input id="expenses" placeholder="50.000" />
+
+        <button id="calculate">Рассчитать</button>
+
+        <div id="planResult" class="result"></div>
+    </div>
+
+    <!-- ===== PROGRESS SCREEN ===== -->
+    <div class="screen" id="screen-progress">
+        <h2>Прогресс</h2>
+
+        <canvas id="progressChart"></canvas>
+
+        <div id="progressInfo" class="info"></div>
+    </div>
+
+    <!-- ===== GOALS SCREEN ===== -->
+    <div class="screen" id="screen-goals">
+        <!-- наполняется из app.js -->
+    </div>
+
+    <!-- ===== BOTTOM TABS ===== -->
+    <div class="tg-tabs">
+        <button data-screen="calc" class="active">Расчёт</button>
+        <button data-screen="progress">Прогресс</button>
+        <button data-screen="goals">Цели</button>
+    </div>
+
 </div>
 
-<div id="screen-progress" class="screen">
-  <h3>Прогресс</h3>
-  <canvas id="progressChart"></canvas>
-  <div id="progressInfo"></div>
-</div>
+<!-- ================= ONBOARDING LOGIC ================= -->
+<script>
+(function () {
+    const tg = window.Telegram.WebApp;
+    tg.expand();
 
-<div id="screen-goals" class="screen">
-  <h3>Цели</h3>
-</div>
+    const onboarding = document.getElementById("onboarding");
+    const app = document.getElementById("app");
 
-<div class="spacer"></div>
+    const stories = document.querySelectorAll(".story");
+    let current = 0;
 
-<!-- BOTTOM TABS -->
-<div class="tg-tabs">
-  <button data-screen="calc" class="active">Расчёт</button>
-  <button data-screen="progress">Прогресс</button>
-  <button data-screen="goals">Цели</button>
-</div>
+    const seen = localStorage.getItem("onboarding_seen");
 
-<!-- APP LOGIC -->
+    function showStory(index) {
+        stories.forEach((s, i) =>
+            s.classList.toggle("active", i === index)
+        );
+    }
+
+    if (!seen) {
+        onboarding.classList.remove("hidden");
+        showStory(0);
+
+        onboarding.addEventListener("click", () => {
+            if (current < stories.length - 1) {
+                current++;
+                showStory(current);
+            }
+        });
+
+        document.getElementById("startApp").onclick = (e) => {
+            e.stopPropagation();
+            localStorage.setItem("onboarding_seen", "1");
+            onboarding.classList.add("hidden");
+            app.classList.remove("hidden");
+        };
+    } else {
+        app.classList.remove("hidden");
+    }
+})();
+</script>
+
+<!-- ================= MAIN APP ================= -->
 <script src="app.js"></script>
+
 </body>
 </html>
-
