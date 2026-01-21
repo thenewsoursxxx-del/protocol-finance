@@ -14,7 +14,7 @@ if (localStorage.getItem("onboarding_done")) {
 }
 
 function updateStory() {
-    track.style.transform = `translateX(-${index * 100}%)`;
+    track.style.transform = `translateX(-${index * window.innerWidth}px)`;
     dots.forEach((d, i) => d.classList.toggle("active", i === index));
 }
 
@@ -34,7 +34,7 @@ document.getElementById("startApp").onclick = () => {
     onboarding.style.display = "none";
 };
 
-// ===== APP LOGIC =====
+// ===== APP =====
 const $ = id => document.getElementById(id);
 const format = v => v.replace(/\D/g,"").replace(/\B(?=(\d{3})+(?!\d))/g,".");
 const parse = v => Number(v.replace(/\./g,""));
@@ -89,5 +89,5 @@ $("calculate").onclick = () => {
 Срок <b>${months} мес</b>`;
 };
 
-// default
 openScreen("calc");
+updateStory();
