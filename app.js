@@ -4,7 +4,7 @@ tg.expand();
 tg.MainButton.hide();
 }
 
-// ---------- helpers ----------
+// helpers
 const $ = id => document.getElementById(id);
 const format = v => v.replace(/\D/g,"").replace(/\B(?=(\d{3})+(?!\d))/g,".");
 const parse = v => Number(v.replace(/\./g,""));
@@ -14,9 +14,9 @@ function haptic(type="light"){
 tg?.HapticFeedback.impactOccurred(type);
 }
 
-// ---------- screens ----------
+// tabs
 const screens = document.querySelectorAll(".screen");
-const tabs = document.querySelectorAll(".bottom-tabs button");
+const tabs = document.querySelectorAll(".tg-tabs button");
 
 function openScreen(name){
 screens.forEach(s =>
@@ -25,136 +25,78 @@ s.classList.toggle("active", s.id === "screen-" + name)
 tabs.forEach(b =>
 b.classList.toggle("active", b.dataset.screen === name)
 );
-
 tg?.MainButton.hide();
 }
 
-// ---------- tab click ----------
 tabs.forEach(btn => {
 btn.onclick = () => {
 haptic("light");
 openScreen(btn.dataset.screen);
-
 if (btn.dataset.screen === "plan") renderPlan();
 if (btn.dataset.screen === "progress") renderProgress();
 if (btn.dataset.screen === "risk") renderRisk();
 };
 });
 
-// ---------- inputs ----------
-const incomeI=$("income"), expensesI=$("expenses"), targetI=$("targetAmount");
-[incomeI,expensesI,targetI].forEach(i=>{
-i.oninput=()=>i.value=format(i.value);
+// inputs
+["income","expenses","targetAmount"].forEach(id=>{
+$(id).oninput = e => e.target.value = format(e.target.value);
 });
 
-// ---------- slider ----------
-const aggression=$("aggression"), aggrLabel=$("aggressionLabel");
-function updateAgg(){
-const v=+aggression.value;
+// slider
+const aggression = $("aggression");
+const aggrLabel = $("aggressionLabel");
+aggression.oninput = () => {
+const v = +aggression.value;
 aggrLabel.textContent =
-v<=40?"Комфортно":
-v<=60?"Умеренно":
+v <= 40 ? "Комфортно" :
+v <= 60 ? "Умеренно" :
 "Агрессивно";
-}
-aggression.oninput=updateAgg;
-updateAgg();
+};
+aggression.oninput();
 
-// ---------- calculate ----------
+// calc
 function calculate(){
-const income=parse(incomeI.value);
-const expenses=parse(expensesI.value);
-const target=parse(targetI.value);
+const income=parse($("income").value);
+const expenses=parse($("expenses").value);
+const target=parse($("targetAmount").value);
 const percent=+aggression.value/100;
-
 if(!income||!expenses||!target||income<=expenses)return null;
-
 const free=income-expenses;
 const total=Math.round(free*percent);
-
 return{
-income,expenses,target,percent,total,
-no:{monthly:total,months:Math.ceil(target/total)},
-safe:{
-monthly:Math.round(total*0.95),
-safety:Math.round(total*0.05),
-months:Math.ceil(target/(total*0.95))
-}
+income,expenses,target,total,
+no:{m:total,mo:Math.ceil(target/total)},
+safe:{m:Math.round(total*0.95),s:Math.round(total*0.05),mo:Math.ceil(target/(total*0.95))}
 };
 }
 
-// ---------- save ----------
-function savePlan(mode,data){
-localStorage.setItem("protocol",JSON.stringify({mode,...data}));
-haptic("medium");
-openScreen("plan");
-renderPlan();
-
-tg?.MainButton.setText("Готово");
-tg?.MainButton.show();
-tg?.MainButton.onClick(()=>tg.close());
-}
-
-// ---------- render ----------
-$("calculate").onclick=()=>{
-const d=calculate();
-if(!d)return alert("Проверь данные");
+$("calculate").onclick = () => {
+const d = calculate();
+if (!d) return;
 
 haptic("light");
 openScreen("plan");
 
-$("planResult").innerHTML=`
-<div>
-<h3>Без подушки</h3>
-${money(d.no.monthly)} / мес<br>
-${d.no.months} мес<br>
-<button onclick='savePlan("no",${JSON.stringify(d)})'>Выбрать</button>
-</div>
-<hr>
-<div>
-<h3>С подушкой</h3>
-${money(d.safe.monthly)} + ${money(d.safe.safety)}<br>
-${d.safe.months} мес<br>
-<button onclick='savePlan("safe",${JSON.stringify(d)})'>Выбрать</button>
-</div>
+$("planResult").innerHTML = `
+<b>Без подушки</b><br>
+${money(d.no.m)} / мес · ${d.no.mo} мес
+<br><br>
+<b>С подушкой</b><br>
+${money(d.safe.m)} + ${money(d.safe.s)} · ${d.safe.mo} мес
 `;
 };
 
+// renders
 function renderPlan(){
-const p=JSON.parse(localStorage.getItem("protocol")||"null");
-if(!p){
-$("planResult").innerHTML="План ещё не выбран";
-return;
-}
-
-$("planResult").innerHTML=`
-Режим: ${p.mode==="safe"?"С подушкой":"Без подушки"}<br>
-Доход: ${money(p.income)}<br>
-Траты: ${money(p.expenses)}<br>
-Цель: ${money(p.target)}
-`;
+const p = calculate();
+if (!p) $("planResult").innerHTML = "План не выбран";
 }
 
 function renderProgress(){
-const p=JSON.parse(localStorage.getItem("protocol")||"null");
-if(!p)return;
-
-let sum=0, rows="";
-const m=p.mode==="safe"?Math.round(p.total*0.95):p.total;
-for(let i=1;i<=6;i++){
-sum+=m;
-rows+=`Месяц ${i}: ${money(sum)}<br>`;
-}
-$("progressResult").innerHTML=rows;
+$("progressResult").innerHTML = "Прогресс будет здесь";
 }
 
 function renderRisk(){
-const d=calculate();
-if(!d)return;
-
-$("riskResult").innerHTML=`
-Доход −10%: ${money(d.income*0.9)}<br>
-Траты +20%: ${money(d.expenses*1.2)}<br>
-<br>
-Protocol автоматически подстроит план
-`;
+$("riskResult").innerHTML = "Protocol адаптируется к рискам";
 }
