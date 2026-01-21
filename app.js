@@ -1,6 +1,19 @@
 const tg = window.Telegram?.WebApp;
 tg?.expand();
 
+/* ===== HARD FIX: NO LAYOUT JUMP ===== */
+document.documentElement.style.height = "100%";
+document.body.style.height = "100%";
+document.body.style.overflow = "hidden";
+
+/* ===== TAP ANYWHERE TO CLOSE KEYBOARD ===== */
+document.addEventListener("touchstart", e => {
+const tag = e.target.tagName.toLowerCase();
+if (tag !== "input" && tag !== "textarea") {
+document.activeElement?.blur();
+}
+});
+
 /* ===== FORMAT ===== */
 function formatNumber(v) {
 const d = v.replace(/\D/g, "");
@@ -34,11 +47,17 @@ const confirmReset = document.getElementById("confirmReset");
 const confirmYes = document.getElementById("confirmYes");
 const confirmNo = document.getElementById("confirmNo");
 
+/* ===== NAV ===== */
+const screens = document.querySelectorAll(".screen");
+const buttons = document.querySelectorAll(".nav-btn");
+const indicator = document.querySelector(".nav-indicator");
 const bottomNav = document.querySelector(".bottom-nav");
 
-/* ===== NAV FIX: NEVER MOVE ===== */
+/* ===== NAV NEVER MOVES ===== */
 bottomNav.style.position = "fixed";
 bottomNav.style.bottom = "26px";
+bottomNav.style.left = "20px";
+bottomNav.style.right = "20px";
 bottomNav.style.transform = "translateZ(0)";
 
 /* ===== STATE ===== */
@@ -65,11 +84,7 @@ percentLabel.innerText = paceInput.value + "%";
 paceInput.addEventListener("input", updatePercent);
 updatePercent();
 
-/* ===== NAV LOGIC ===== */
-const screens = document.querySelectorAll(".screen");
-const buttons = document.querySelectorAll(".nav-btn");
-const indicator = document.querySelector(".nav-indicator");
-
+/* ===== TAB LOCK ===== */
 function lockTabs(lock) {
 buttons.forEach((btn, i) => {
 if (i === 0) return;
@@ -79,6 +94,7 @@ btn.style.pointerEvents = lock ? "none" : "auto";
 }
 lockTabs(true);
 
+/* ===== OPEN SCREEN ===== */
 function openScreen(name, btn) {
 if (!isInitialized && name !== "calc") return;
 
@@ -160,44 +176,6 @@ current += (target - current) * 0.06;
 if (Math.abs(target - current) > 0.002) requestAnimationFrame(step);
 }
 step();
-}
-
-/* ===== KEYBOARD CLOSE BUTTON ===== */
-const kbBtn = document.createElement("button");
-kbBtn.textContent = "⌄";
-kbBtn.style.cssText = `
-position: fixed;
-right: 16px;
-z-index: 9999;
-width: 48px;
-height: 48px;
-border-radius: 50%;
-background: #fff;
-color: #000;
-font-size: 22px;
-display: none;
-`;
-document.body.appendChild(kbBtn);
-
-kbBtn.onclick = () => {
-document.activeElement?.blur();
-kbBtn.style.display = "none";
-};
-
-if (window.visualViewport) {
-const baseHeight = window.visualViewport.height;
-
-window.visualViewport.addEventListener("resize", () => {
-const diff = baseHeight - window.visualViewport.height;
-if (diff > 120) {
-kbBtn.style.bottom = diff + 32 + "px"; // 🔥 ЧУТЬ ВЫШЕ КЛАВИАТУРЫ
-kbBtn.style.display = "flex";
-kbBtn.style.alignItems = "center";
-kbBtn.style.justifyContent = "center";
-} else {
-kbBtn.style.display = "none";
-}
-});
 }
 
 /* ===== STAGED FLOW ===== */
