@@ -28,15 +28,12 @@ const withBuffer = document.getElementById("withBuffer");
 
 const calcLock = document.getElementById("calcLock");
 const lockText = document.getElementById("lockText");
-const resetPlanBtn = document.getElementById("resetPlan");
-
-const confirmReset = document.getElementById("confirmReset");
-const confirmYes = document.getElementById("confirmYes");
-const confirmNo = document.getElementById("confirmNo");
 
 /* ===== STATE ===== */
 let lastCalc = {};
 let chosenPlan = null;
+let plannedMonthly = 0;
+let factMonthly = 0;
 
 /* ===== INPUT FORMAT ===== */
 [incomeInput, expensesInput, goalInput].forEach(input => {
@@ -73,8 +70,6 @@ const r = btn.getBoundingClientRect();
 const p = btn.parentElement.getBoundingClientRect();
 indicator.style.transform = `translateX(${r.left - p.left}px)`;
 }
-
-tg?.HapticFeedback?.impactOccurred("light");
 }
 buttons.forEach(btn => btn.onclick = () => openScreen(btn.dataset.screen, btn));
 
@@ -97,49 +92,63 @@ const expenses = parseNumber(expensesInput.value);
 const goal = parseNumber(goalInput.value);
 const pace = Number(paceInput.value) / 100;
 
-if (!income || !goal || income - expenses <= 0) {
-tg?.HapticFeedback?.notificationOccurred("error");
-return;
-}
+if (!income || !goal || income - expenses <= 0) return;
 
 lastCalc = { income, expenses, goal, pace };
 openSheet();
 };
 
-/* ===== GRAPH IN PROTOCOL ===== */
-function drawGraph(monthly, goal) {
-const months = Math.ceil(goal / monthly);
+/* ===== GRAPH ===== */
+let ctx, canvas, months, pad, w, h;
 
-adviceCard.innerHTML += `
-<canvas id="chart" width="360" height="260" style="margin-top:20px"></canvas>
-`;
-
-const canvas = document.getElementById("chart");
-const ctx = canvas.getContext("2d");
-
-const pad = 40;
-const w = canvas.width - pad * 2;
-const h = canvas.height - pad * 2;
-
-const x = m => pad + (m / months) * w;
-const y = v => canvas.height - pad - (v / goal) * h;
-
+function drawAxes() {
 ctx.strokeStyle = "#333";
+ctx.lineWidth = 1;
 ctx.beginPath();
 ctx.moveTo(pad, pad);
 ctx.lineTo(pad, canvas.height - pad);
 ctx.lineTo(canvas.width - pad, canvas.height - pad);
 ctx.stroke();
+}
 
+function drawPlanLine() {
 ctx.strokeStyle = "#fff";
 ctx.lineWidth = 2;
 ctx.beginPath();
-ctx.moveTo(x(0), y(0));
-ctx.lineTo(x(months), y(goal));
+ctx.moveTo(pad, canvas.height - pad);
+ctx.lineTo(canvas.width - pad, pad);
 ctx.stroke();
 }
 
-/* ===== STAGED PROTOCOL FLOW ===== */
+function drawFactLine(progress) {
+ctx.setLineDash([6,6]);
+ctx.strokeStyle = "#777";
+ctx.beginPath();
+ctx.moveTo(pad, canvas.height - pad);
+ctx.lineTo(
+pad + (w * progress),
+canvas.height - pad - (h * progress)
+);
+ctx.stroke();
+ctx.setLineDash([]);
+}
+
+function animateFact(targetProgress) {
+let current = 0;
+function step() {
+ctx.clearRect(0,0,canvas.width,canvas.height);
+drawAxes();
+drawPlanLine();
+drawFactLine(current);
+current += (targetProgress - current) * 0.05;
+if (Math.abs(targetProgress - current) > 0.002) {
+requestAnimationFrame(step);
+}
+}
+step();
+}
+
+/* ===== STAGED FLOW ===== */
 function protocolFlow(mode) {
 chosenPlan = mode;
 lockText.innerText =
@@ -150,13 +159,11 @@ openScreen("advice", buttons[1]);
 loader.classList.remove("hidden");
 
 const free = lastCalc.income - lastCalc.expenses;
-let monthly = Math.round(free * lastCalc.pace);
-if (mode === "buffer") monthly = Math.round(monthly * 0.9);
+plannedMonthly = Math.round(free * lastCalc.pace);
+if (mode === "buffer") plannedMonthly = Math.round(plannedMonthly * 0.9);
+factMonthly = plannedMonthly;
 
-adviceCard.innerText =
-mode === "buffer"
-? "Выбран режим с подушкой."
-: "Выбран режим без подушки.";
+adviceCard.innerText = "Protocol анализирует данные…";
 
 setTimeout(() => {
 adviceCard.innerText =
@@ -171,24 +178,45 @@ adviceCard.innerText = "Готово.";
 
 setTimeout(() => {
 loader.classList.add("hidden");
-adviceCard.innerHTML =
-`Темп: ${Math.round(lastCalc.pace * 100)}%<br>` +
-`Ежемесячно: ${monthly} ₽<br>`;
-drawGraph(monthly, lastCalc.goal);
+
+months = Math.ceil(lastCalc.goal / plannedMonthly);
+
+adviceCard.innerHTML = `
+<div>План: ${plannedMonthly} ₽ в месяц</div>
+<canvas id="chart" width="360" height="260" style="margin:16px 0"></canvas>
+
+<input id="factInput" placeholder="Сколько вы отложили">
+<div style="font-size:14px;opacity:.6;margin-top:8px">
+Введите фактическую сумму, которую вы отложили за период.
+Protocol сравнит её с планом и обновит прогресс.
+</div>
+`;
+
+canvas = document.getElementById("chart");
+ctx = canvas.getContext("2d");
+
+pad = 40;
+w = canvas.width - pad * 2;
+h = canvas.height - pad * 2;
+
+drawAxes();
+drawPlanLine();
+drawFactLine(1);
+
+const factInput = document.getElementById("factInput");
+factInput.addEventListener("input", e => {
+e.target.value = formatNumber(e.target.value);
+});
+
+factInput.addEventListener("change", () => {
+factMonthly = parseNumber(factInput.value);
+const progress = Math.min(factMonthly / plannedMonthly, 1.2);
+animateFact(progress);
+});
+
 }, 6000);
 }
 
 /* ===== CHOICES ===== */
 noBuffer.onclick = () => { closeSheet(); protocolFlow("direct"); };
 withBuffer.onclick = () => { closeSheet(); protocolFlow("buffer"); };
-
-/* ===== RESET (FIXED) ===== */
-resetPlanBtn.onclick = () => {
-confirmReset.style.display = "block";
-};
-confirmNo.onclick = () => {
-confirmReset.style.display = "none";
-};
-confirmYes.onclick = () => {
-location.reload();
-};
