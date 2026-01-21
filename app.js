@@ -28,6 +28,11 @@ const withBuffer = document.getElementById("withBuffer");
 
 const calcLock = document.getElementById("calcLock");
 const lockText = document.getElementById("lockText");
+const resetBtn = document.getElementById("resetPlan");
+
+const confirmReset = document.getElementById("confirmReset");
+const confirmYes = document.getElementById("confirmYes");
+const confirmNo = document.getElementById("confirmNo");
 
 /* ===== NAV ===== */
 const screens = document.querySelectorAll(".screen");
@@ -40,7 +45,7 @@ let chosenPlan = null;
 let plannedMonthly = 0;
 let isInitialized = false;
 
-/* ===== INPUT FORMAT (TOP) ===== */
+/* ===== INPUT FORMAT ===== */
 [incomeInput, expensesInput, goalInput].forEach(input => {
 input.addEventListener("input", e => {
 const p = e.target.selectionStart;
@@ -105,7 +110,10 @@ const expenses = parseNumber(expensesInput.value);
 const goal = parseNumber(goalInput.value);
 const pace = Number(paceInput.value) / 100;
 
-if (!income || !goal || income - expenses <= 0) return;
+if (!income || !goal || income - expenses <= 0) {
+tg?.HapticFeedback?.notificationOccurred("error");
+return;
+}
 
 lastCalc = { income, expenses, goal, pace };
 openSheet();
@@ -200,7 +208,7 @@ placeholder="Фактически отложено"
 style="flex:1"
 />
 <button id="applyFact" style="width:52px;height:52px;border-radius:50%">➜</button>
-<button id="hideKb" style="width:52px;height:52px;border-radius:50%">⌄</button>
+<button id="hideKb" style="width:52px;height:52px;border-radius:50%;display:none">⌄</button>
 </div>
 
 <div style="font-size:14px;opacity:.6;margin-top:8px">
@@ -240,9 +248,46 @@ factInput.blur();
 document.activeElement?.blur();
 };
 
+// 👇 управление клавиатурой
+if (window.visualViewport) {
+const baseHeight = window.visualViewport.height;
+window.visualViewport.addEventListener("resize", () => {
+const keyboardOpen = window.visualViewport.height < baseHeight - 100;
+hideKb.style.display = keyboardOpen ? "block" : "none";
+});
+}
+
 }, 6000);
 }
 
 /* ===== CHOICES ===== */
 noBuffer.onclick = () => { closeSheet(); protocolFlow("direct"); };
 withBuffer.onclick = () => { closeSheet(); protocolFlow("buffer"); };
+
+/* ===== RESET (FIXED) ===== */
+resetBtn.style.pointerEvents = "auto";
+calcLock.style.pointerEvents = "none";
+calcLock.querySelector(".lockCard").style.pointerEvents = "auto";
+
+resetBtn.onclick = () => {
+confirmReset.style.display = "block";
+};
+confirmNo.onclick = () => {
+confirmReset.style.display = "none";
+};
+confirmYes.onclick = () => {
+chosenPlan = null;
+isInitialized = false;
+lastCalc = {};
+plannedMonthly = 0;
+
+calcLock.style.display = "none";
+confirmReset.style.display = "none";
+lockTabs(true);
+
+incomeInput.value = "";
+expensesInput.value = "";
+goalInput.value = "";
+
+openScreen("calc", buttons[0]);
+};
