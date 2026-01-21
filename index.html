@@ -1,139 +1,108 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>Protocol Finance</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Protocol</title>
 
-    <!-- Telegram WebApp -->
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-
-    <link rel="stylesheet" href="style.css" />
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <link rel="stylesheet" href="style.css?v=10">
 </head>
 <body>
 
-<!-- ================= ONBOARDING ================= -->
+<!-- ===== ONBOARDING ===== -->
 <div id="onboarding" class="onboarding hidden">
-    <div class="stories">
-
-        <div class="story active">
-            <h2>Protocol</h2>
-            <p>Это не калькулятор.
-Это система управления деньгами.</p>
-        </div>
-
-        <div class="story">
-            <h2>План</h2>
-            <p>Protocol строит реалистичный путь
-к твоей цели.</p>
-        </div>
-
-        <div class="story">
-            <h2>Адаптация</h2>
-            <p>Если ты идёшь быстрее или медленнее —
-Protocol подстраивается.</p>
-        </div>
-
-        <div class="story">
-            <h2>Контроль</h2>
-            <p>Ты всегда знаешь:
-где ты и куда идёшь.</p>
-        </div>
-
-        <div class="story">
-            <h2>Готов?</h2>
-            <button id="startApp">Начать</button>
-        </div>
-
+  <div class="stories">
+    <div class="story active">
+      <h2>Protocol</h2>
+      <p>Система управления
+деньгами и целями</p>
     </div>
+    <div class="story">
+      <h2>План</h2>
+      <p>Ты видишь путь
+и отклонения от него</p>
+    </div>
+    <div class="story">
+      <h2>Контроль</h2>
+      <p>Цели, подушка,
+реальный прогресс</p>
+    </div>
+    <div class="story">
+      <button id="startApp">Начать</button>
+    </div>
+  </div>
 </div>
 
-<!-- ================= APP ================= -->
+<!-- ===== APP ===== -->
 <div id="app" class="app hidden">
 
-    <!-- ===== CALC SCREEN ===== -->
-    <div class="screen active" id="screen-calc">
-        <h2>Расчёт</h2>
+  <div class="screen active" id="screen-calc">
+    <h2>Расчёт</h2>
+    <label>Доход</label>
+    <input id="income" placeholder="100.000">
 
-        <label>Доход</label>
-        <input id="income" placeholder="100.000" />
+    <label>Расходы</label>
+    <input id="expenses" placeholder="50.000">
 
-        <label>Расходы</label>
-        <input id="expenses" placeholder="50.000" />
+    <button id="calculate">Рассчитать</button>
+    <div id="planResult"></div>
+  </div>
 
-        <button id="calculate">Рассчитать</button>
+  <div class="screen" id="screen-progress">
+    <h2>Прогресс</h2>
+    <canvas id="progressChart"></canvas>
+    <div id="progressInfo"></div>
+  </div>
 
-        <div id="planResult" class="result"></div>
-    </div>
+  <div class="screen" id="screen-accounts">
+    <h2>Счета</h2>
+    <div id="accounts"></div>
+  </div>
 
-    <!-- ===== PROGRESS SCREEN ===== -->
-    <div class="screen" id="screen-progress">
-        <h2>Прогресс</h2>
+  <div class="screen" id="screen-goals">
+    <h2>Цели</h2>
+    <div id="goals"></div>
 
-        <canvas id="progressChart"></canvas>
+    <input id="newGoalName" placeholder="Новая цель">
+    <input id="newGoalTarget" placeholder="Сумма">
+    <button id="addGoal">Добавить цель</button>
+  </div>
 
-        <div id="progressInfo" class="info"></div>
-    </div>
-
-    <!-- ===== GOALS SCREEN ===== -->
-    <div class="screen" id="screen-goals">
-        <!-- наполняется из app.js -->
-    </div>
-
-    <!-- ===== BOTTOM TABS ===== -->
-    <div class="tg-tabs">
-        <button data-screen="calc" class="active">Расчёт</button>
-        <button data-screen="progress">Прогресс</button>
-        <button data-screen="goals">Цели</button>
-    </div>
+  <!-- ===== BOTTOM NAV ===== -->
+  <div class="bottom-nav">
+    <button data-screen="calc">📐</button>
+    <button data-screen="progress">📈</button>
+    <button data-screen="accounts">💼</button>
+    <button data-screen="goals">🎯</button>
+  </div>
 
 </div>
 
-<!-- ================= ONBOARDING LOGIC ================= -->
+<script src="app.js?v=10"></script>
+
 <script>
-(function () {
-    const tg = window.Telegram.WebApp;
-    tg.expand();
-
-    const onboarding = document.getElementById("onboarding");
-    const app = document.getElementById("app");
-
-    const stories = document.querySelectorAll(".story");
-    let current = 0;
-
-    const seen = localStorage.getItem("onboarding_seen");
-
-    function showStory(index) {
-        stories.forEach((s, i) =>
-            s.classList.toggle("active", i === index)
-        );
+const seen = localStorage.getItem("onboarding_seen");
+if (!seen) {
+  document.getElementById("onboarding").classList.remove("hidden");
+  let i = 0;
+  const stories = document.querySelectorAll(".story");
+  document.getElementById("onboarding").onclick = () => {
+    if (i < stories.length - 1) {
+      stories[i].classList.remove("active");
+      stories[++i].classList.add("active");
     }
-
-    if (!seen) {
-        onboarding.classList.remove("hidden");
-        showStory(0);
-
-        onboarding.addEventListener("click", () => {
-            if (current < stories.length - 1) {
-                current++;
-                showStory(current);
-            }
-        });
-
-        document.getElementById("startApp").onclick = (e) => {
-            e.stopPropagation();
-            localStorage.setItem("onboarding_seen", "1");
-            onboarding.classList.add("hidden");
-            app.classList.remove("hidden");
-        };
-    } else {
-        app.classList.remove("hidden");
-    }
-})();
+  };
+  document.getElementById("startApp").onclick = e => {
+    e.stopPropagation();
+    localStorage.setItem("onboarding_seen", "1");
+    document.getElementById("onboarding").classList.add("hidden");
+    document.getElementById("app").classList.remove("hidden");
+  };
+} else {
+  document.getElementById("app").classList.remove("hidden");
+}
 </script>
-
-<!-- ================= MAIN APP ================= -->
-<script src="app.js"></script>
 
 </body>
 </html>
