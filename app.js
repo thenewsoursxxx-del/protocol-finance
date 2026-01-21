@@ -101,7 +101,7 @@ lastCalc = { income, expenses, goal, pace };
 openSheet();
 };
 
-/* ===== GRAPH (ПЛАН / ФАКТ) ===== */
+/* ===== GRAPH ===== */
 function drawGraph(monthly, goal) {
 const months = Math.ceil(goal / monthly);
 
@@ -117,76 +117,42 @@ const pad = 40;
 const w = canvas.width - pad * 2;
 const h = canvas.height - pad * 2;
 
-const maxY = goal;
-const stepX = Math.ceil(months / 6);
-
 const x = m => pad + (m / months) * w;
-const y = v => canvas.height - pad - (v / maxY) * h;
+const y = v => canvas.height - pad - (v / goal) * h;
 
-/* axes */
 ctx.strokeStyle = "#333";
-ctx.lineWidth = 1;
 ctx.beginPath();
 ctx.moveTo(pad, pad);
 ctx.lineTo(pad, canvas.height - pad);
 ctx.lineTo(canvas.width - pad, canvas.height - pad);
 ctx.stroke();
 
-/* Y labels */
-ctx.fillStyle = "#777";
-ctx.font = "12px system-ui";
-for (let i = 0; i <= 4; i++) {
-const val = Math.round((maxY / 4) * i);
-ctx.fillText(formatNumber(String(val)), 4, y(val) + 4);
-}
-
-/* X labels */
-for (let m = 0; m <= months; m += stepX) {
-ctx.fillText(`${m}м`, x(m) - 6, canvas.height - 10);
-}
-
-/* PLAN LINE */
 ctx.strokeStyle = "#fff";
 ctx.lineWidth = 2;
 ctx.beginPath();
 ctx.moveTo(x(0), y(0));
 ctx.lineTo(x(months), y(goal));
 ctx.stroke();
-
-/* FACT LINE (пунктир) */
-ctx.setLineDash([6, 6]);
-ctx.strokeStyle = "#777";
-ctx.beginPath();
-ctx.moveTo(x(0), y(0));
-ctx.lineTo(x(months), y(goal));
-ctx.stroke();
-ctx.setLineDash([]);
 }
 
-/* ===== STAGED PROTOCOL FLOW ===== */
+/* ===== STAGED FLOW ===== */
 function protocolFlow(mode) {
 chosenPlan = mode;
-lockText.innerText = `У вас уже выбран план: ${mode === "buffer" ? "с подушкой" : "без подушки"}`;
+lockText.innerText =
+`У вас уже выбран план: ${mode === "buffer" ? "с подушкой" : "без подушки"}`;
 calcLock.style.display = "block";
 
 openScreen("advice", buttons[1]);
 loader.classList.remove("hidden");
 
-const pacePercent = Math.round(lastCalc.pace * 100);
 const free = lastCalc.income - lastCalc.expenses;
-
 let monthly = Math.round(free * lastCalc.pace);
 if (mode === "buffer") monthly = Math.round(monthly * 0.9);
 
-const months = Math.ceil(lastCalc.goal / monthly);
-
-adviceCard.innerText = `Выбран режим ${mode === "buffer" ? "с подушкой" : "без подушки"}.`;
+adviceCard.innerText = "Выбран режим.";
 
 setTimeout(() => {
-adviceCard.innerText =
-mode === "buffer"
-? "Часть средств будет направляться в резерв для устойчивости плана."
-: "Все средства будут направляться напрямую в цель.";
+adviceCard.innerText = "Часть средств будет направляться в резерв.";
 }, 2000);
 
 setTimeout(() => {
@@ -195,12 +161,10 @@ adviceCard.innerText = "Готово.";
 
 setTimeout(() => {
 loader.classList.add("hidden");
-adviceCard.innerText =
-`Темп: ${pacePercent}%\n` +
-`Ежемесячно: ${monthly} ₽\n` +
-`Срок: ~${months} мес.`;
-
 drawGraph(monthly, lastCalc.goal);
+
+// 🔥 ВАЖНОЕ ИСПРАВЛЕНИЕ
+openScreen("progress", buttons[2]);
 }, 6000);
 }
 
