@@ -6,14 +6,6 @@ const $ = id => document.getElementById(id);
 const format = v => v.replace(/\D/g,"").replace(/\B(?=(\d{3})+(?!\d))/g,".");
 const parse = v => Number(v.replace(/\./g,""));
 
-// onboarding
-const onboarding = $("onboarding");
-if (localStorage.getItem("onboarding_done")) onboarding.style.display = "none";
-$("startApp").onclick = () => {
-    localStorage.setItem("onboarding_done","true");
-    onboarding.style.display = "none";
-};
-
 // inputs
 ["income","expenses","targetAmount"].forEach(id=>{
     $(id).oninput = e => e.target.value = format(e.target.value);
@@ -42,35 +34,46 @@ function openScreen(name){
     tabs.forEach(b=>b.classList.toggle("active",b.dataset.screen===name));
 }
 tabs.forEach(btn=>{
-    btn.addEventListener("touchstart",e=>{
-        e.preventDefault();
-        openScreen(btn.dataset.screen);
-    },{passive:false});
+    btn.onclick = ()=>openScreen(btn.dataset.screen);
 });
 
-// graph
-function drawChart(monthly,target){
-    const c = $("progressChart");
-    const ctx = c.getContext("2d");
-    ctx.clearRect(0,0,c.width,c.height);
+// Hi-DPI canvas
+function prepareCanvas(canvas){
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    const ctx = canvas.getContext("2d");
+    ctx.scale(dpr, dpr);
+    return ctx;
+}
 
+function drawChart(monthly,target){
+    const canvas = $("progressChart");
+    const ctx = prepareCanvas(canvas);
+
+    const w = canvas.getBoundingClientRect().width;
+    const h = canvas.getBoundingClientRect().height;
+
+    ctx.clearRect(0,0,w,h);
+
+    const pad = 24;
     const months = Math.ceil(target/monthly);
-    const padding = 30;
-    const w = c.width - padding*2;
-    const h = c.height - padding*2;
 
     // axes
     ctx.strokeStyle="#333";
+    ctx.lineWidth=1;
     ctx.beginPath();
-    ctx.moveTo(padding,padding);
-    ctx.lineTo(padding,padding+h);
-    ctx.lineTo(padding+w,padding+h);
+    ctx.moveTo(pad,pad);
+    ctx.lineTo(pad,h-pad);
+    ctx.lineTo(w-pad,h-pad);
     ctx.stroke();
 
     // labels
-    ctx.fillStyle="#777";
-    ctx.fillText("0%",5,padding+h);
-    ctx.fillText("100%",5,padding+10);
+    ctx.fillStyle="#888";
+    ctx.font="14px system-ui";
+    ctx.fillText("0%",4,h-pad);
+    ctx.fillText("100%",4,pad+12);
 
     // line
     ctx.strokeStyle="#4f7cff";
@@ -79,29 +82,13 @@ function drawChart(monthly,target){
 
     let sum=0;
     for(let i=0;i<=months;i++){
-        const x = padding + (i/months)*w;
-        const y = padding + h - (sum/target)*h;
+        const x = pad + (i/months)*(w-pad*2);
+        const y = h-pad - (sum/target)*(h-pad*2);
         if(i===0) ctx.moveTo(x,y);
         else ctx.lineTo(x,y);
-        sum += monthly;
+        sum+=monthly;
     }
     ctx.stroke();
-
-    // current point
-    const currentMonth = 1;
-    const curSum = monthly;
-    const cx = padding + (currentMonth/months)*w;
-    const cy = padding + h - (curSum/target)*h;
-
-    ctx.fillStyle="#fff";
-    ctx.beginPath();
-    ctx.arc(cx,cy,4,0,Math.PI*2);
-    ctx.fill();
-
-    $("progressInfo").innerHTML =
-        `Через ${months} мес цель будет достигнута
-
-         Текущий прогресс: ${(curSum/target*100).toFixed(1)}%`;
 }
 
 // calc
@@ -114,7 +101,7 @@ $("calculate").onclick = ()=>{
     const monthly=Math.round((income-expenses)*(+aggression.value/100));
     const months=Math.ceil(target/monthly);
 
-    $("planResult").innerHTML=
+    $("planResult").innerHTML =
         `Откладывать <b>${monthly}</b> ₽ / мес
 Срок <b>${months} мес</b>`;
 

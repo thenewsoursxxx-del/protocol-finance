@@ -3,83 +3,102 @@
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
-html, body {
+body {
     margin: 0;
     background: #0f0f0f;
     color: #fff;
 }
 
 .app {
-    padding: 16px;
-    padding-bottom: 90px;
+    padding: 20px;
+    padding-bottom: 110px;
 }
 
-.screen { display: none; }
-.screen.active { display: block; }
+h2 {
+    font-size: 22px;
+    margin-bottom: 12px;
+}
 
 label {
-    display: block;
-    margin-top: 14px;
-    font-size: 14px;
+    font-size: 15px;
     color: #aaa;
+    margin-top: 16px;
+    display: block;
+}
+
+input {
+    width: 100%;
+    padding: 14px;
+    margin-top: 8px;
+    border-radius: 12px;
+    border: none;
+    background: #1f1f1f;
+    color: #fff;
+    font-size: 18px;
+}
+
+button {
+    width: 100%;
+    margin-top: 24px;
+    padding: 16px;
+    background: #4f7cff;
+    border: none;
+    border-radius: 14px;
+    color: #fff;
+    font-size: 17px;
 }
 
 .range-label {
     display: flex;
     justify-content: space-between;
+    align-items: center;
 }
 
-input {
-    width: 100%;
-    padding: 10px;
-    margin-top: 6px;
-    border-radius: 8px;
-    border: none;
-    background: #1f1f1f;
-    color: #fff;
+.screen {
+    display: none;
+}
+.screen.active {
+    display: block;
 }
 
-button {
-    width: 100%;
-    margin-top: 16px;
-    padding: 12px;
-    background: #4f7cff;
-    border: none;
-    border-radius: 10px;
-    color: #fff;
-}
-
+/* ===== GRAPH ===== */
 canvas {
     width: 100%;
-    margin-top: 16px;
+    height: 260px;
+    margin-top: 20px;
     background: #151515;
-    border-radius: 12px;
+    border-radius: 16px;
 }
 
-#progressInfo {
-    margin-top: 12px;
-    font-size: 14px;
-    color: #ccc;
-}
-
-/* bottom bar */
+/* ===== BOTTOM BAR ===== */
 .tg-tabs {
     position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
+    bottom: 16px;
+    left: 16px;
+    right: 16px;
+
     height: 64px;
     background: #151515;
+    border-radius: 32px;
+
     display: flex;
+    justify-content: space-between;
+    padding: 6px;
 }
 
 .tg-tabs button {
     flex: 1;
+    margin: 0 4px;
+
     background: none;
     border: none;
     color: #888;
+
+    font-size: 20px;
+    border-radius: 24px;
 }
 
 .tg-tabs button.active {
+    background: rgba(79,124,255,0.2);
     color: #4f7cff;
 }
