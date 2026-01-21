@@ -33,9 +33,8 @@ const lockText = document.getElementById("lockText");
 let lastCalc = {};
 let chosenPlan = null;
 let plannedMonthly = 0;
-let factMonthly = 0;
 
-/* ===== INPUT FORMAT ===== */
+/* ===== INPUT FORMAT (TOP) ===== */
 [incomeInput, expensesInput, goalInput].forEach(input => {
 input.addEventListener("input", e => {
 const p = e.target.selectionStart;
@@ -98,12 +97,11 @@ lastCalc = { income, expenses, goal, pace };
 openSheet();
 };
 
-/* ===== GRAPH ===== */
-let ctx, canvas, months, pad, w, h;
+/* ===== GRAPH HELPERS ===== */
+let canvas, ctx, pad, w, h;
 
 function drawAxes() {
 ctx.strokeStyle = "#333";
-ctx.lineWidth = 1;
 ctx.beginPath();
 ctx.moveTo(pad, pad);
 ctx.lineTo(pad, canvas.height - pad);
@@ -111,7 +109,7 @@ ctx.lineTo(canvas.width - pad, canvas.height - pad);
 ctx.stroke();
 }
 
-function drawPlanLine() {
+function drawPlan() {
 ctx.strokeStyle = "#fff";
 ctx.lineWidth = 2;
 ctx.beginPath();
@@ -120,28 +118,28 @@ ctx.lineTo(canvas.width - pad, pad);
 ctx.stroke();
 }
 
-function drawFactLine(progress) {
+function drawFact(progress) {
 ctx.setLineDash([6,6]);
 ctx.strokeStyle = "#777";
 ctx.beginPath();
 ctx.moveTo(pad, canvas.height - pad);
 ctx.lineTo(
-pad + (w * progress),
-canvas.height - pad - (h * progress)
+pad + w * progress,
+canvas.height - pad - h * progress
 );
 ctx.stroke();
 ctx.setLineDash([]);
 }
 
-function animateFact(targetProgress) {
-let current = 0;
+function animateFact(target) {
+let current = 1;
 function step() {
 ctx.clearRect(0,0,canvas.width,canvas.height);
 drawAxes();
-drawPlanLine();
-drawFactLine(current);
-current += (targetProgress - current) * 0.05;
-if (Math.abs(targetProgress - current) > 0.002) {
+drawPlan();
+drawFact(current);
+current += (target - current) * 0.06;
+if (Math.abs(target - current) > 0.002) {
 requestAnimationFrame(step);
 }
 }
@@ -161,7 +159,6 @@ loader.classList.remove("hidden");
 const free = lastCalc.income - lastCalc.expenses;
 plannedMonthly = Math.round(free * lastCalc.pace);
 if (mode === "buffer") plannedMonthly = Math.round(plannedMonthly * 0.9);
-factMonthly = plannedMonthly;
 
 adviceCard.innerText = "Protocol анализирует данные…";
 
@@ -179,16 +176,24 @@ adviceCard.innerText = "Готово.";
 setTimeout(() => {
 loader.classList.add("hidden");
 
-months = Math.ceil(lastCalc.goal / plannedMonthly);
-
 adviceCard.innerHTML = `
 <div>План: ${plannedMonthly} ₽ в месяц</div>
+
 <canvas id="chart" width="360" height="260" style="margin:16px 0"></canvas>
 
-<input id="factInput" placeholder="Сколько вы отложили">
+<div style="display:flex;gap:12px">
+<input
+id="factInput"
+inputmode="numeric"
+pattern="[0-9]*"
+placeholder="Сколько вы отложили"
+/>
+<button id="applyFact" style="width:56px;border-radius:50%">➜</button>
+</div>
+
 <div style="font-size:14px;opacity:.6;margin-top:8px">
-Введите фактическую сумму, которую вы отложили за период.
-Protocol сравнит её с планом и обновит прогресс.
+Укажите фактическую сумму, которую вы отложили за период.
+Protocol сравнит её с планом и обновит график.
 </div>
 `;
 
@@ -200,19 +205,22 @@ w = canvas.width - pad * 2;
 h = canvas.height - pad * 2;
 
 drawAxes();
-drawPlanLine();
-drawFactLine(1);
+drawPlan();
+drawFact(1);
 
 const factInput = document.getElementById("factInput");
+const applyBtn = document.getElementById("applyFact");
+
 factInput.addEventListener("input", e => {
 e.target.value = formatNumber(e.target.value);
 });
 
-factInput.addEventListener("change", () => {
-factMonthly = parseNumber(factInput.value);
-const progress = Math.min(factMonthly / plannedMonthly, 1.2);
+applyBtn.onclick = () => {
+const fact = parseNumber(factInput.value);
+if (!fact) return;
+const progress = Math.min(fact / plannedMonthly, 1.3);
 animateFact(progress);
-});
+};
 
 }, 6000);
 }
