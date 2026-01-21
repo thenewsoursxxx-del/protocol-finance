@@ -14,32 +14,26 @@ return Number(v.replace(/\./g, ""));
 const incomeInput = document.getElementById("income");
 const expensesInput = document.getElementById("expenses");
 const goalInput = document.getElementById("goal");
-const paceInput = document.getElementById("pace");
-const percentLabel = document.getElementById("percentLabel");
 const calculateBtn = document.getElementById("calculate");
 const adviceCard = document.getElementById("adviceCard");
 
-const progressScreen = document.getElementById("screen-progress");
+const sheet = document.getElementById("sheet");
+const sheetOverlay = document.getElementById("sheetOverlay");
+const noBuffer = document.getElementById("noBuffer");
+const withBuffer = document.getElementById("withBuffer");
 
 /* ===== INPUT FORMAT ===== */
 [incomeInput, expensesInput, goalInput].forEach(input => {
 input.addEventListener("input", e => {
-const pos = e.target.selectionStart;
-const before = e.target.value.length;
+const p = e.target.selectionStart;
+const b = e.target.value.length;
 e.target.value = formatNumber(e.target.value);
-const after = e.target.value.length;
-e.target.selectionEnd = pos + (after - before);
+const a = e.target.value.length;
+e.target.selectionEnd = p + (a - b);
 });
 });
 
-/* ===== SLIDER ===== */
-function updatePercent() {
-percentLabel.innerText = paceInput.value + "%";
-}
-paceInput.addEventListener("input", updatePercent);
-updatePercent();
-
-/* ===== NAV (БЕЗ ИЗМЕНЕНИЙ) ===== */
+/* ===== NAV (без изменений) ===== */
 const screens = document.querySelectorAll(".screen");
 const buttons = document.querySelectorAll(".nav-btn");
 const indicator = document.querySelector(".nav-indicator");
@@ -61,88 +55,45 @@ tg?.HapticFeedback?.impactOccurred("light");
 }
 
 buttons.forEach(btn => {
-btn.addEventListener("click", () => openScreen(btn.dataset.screen, btn));
+btn.onclick = () => openScreen(btn.dataset.screen, btn);
 });
 
-/* ===== GRAPH ===== */
-function drawGraph(monthly, goal) {
-progressScreen.innerHTML = `
-<h2>Прогресс</h2>
-<canvas id="chart" width="360" height="240"></canvas>
-`;
-
-const canvas = document.getElementById("chart");
-const ctx = canvas.getContext("2d");
-
-const months = Math.ceil(goal / monthly);
-const padding = 32;
-const w = canvas.width - padding * 2;
-const h = canvas.height - padding * 2;
-
-function x(i) {
-return padding + (i / months) * w;
-}
-function y(v) {
-return canvas.height - padding - (v / goal) * h;
+/* ===== BOTTOM SHEET ===== */
+function openSheet() {
+sheetOverlay.style.display = "block";
+sheet.style.bottom = "0";
 }
 
-// оси
-ctx.strokeStyle = "#333";
-ctx.lineWidth = 1;
-ctx.beginPath();
-ctx.moveTo(padding, padding);
-ctx.lineTo(padding, canvas.height - padding);
-ctx.lineTo(canvas.width - padding, canvas.height - padding);
-ctx.stroke();
-
-// PLAN
-ctx.strokeStyle = "#fff";
-ctx.lineWidth = 2;
-ctx.beginPath();
-ctx.moveTo(x(0), y(0));
-ctx.lineTo(x(months), y(goal));
-ctx.stroke();
-
-// FACT (пока = план, пунктир)
-ctx.setLineDash([6, 6]);
-ctx.strokeStyle = "#777";
-ctx.beginPath();
-ctx.moveTo(x(0), y(0));
-ctx.lineTo(x(months), y(goal));
-ctx.stroke();
-ctx.setLineDash([]);
+function closeSheet() {
+sheet.style.bottom = "-100%";
+sheetOverlay.style.display = "none";
 }
 
 /* ===== CALCULATE ===== */
-calculateBtn.addEventListener("click", () => {
+calculateBtn.onclick = () => {
 const income = parseNumber(incomeInput.value);
 const expenses = parseNumber(expensesInput.value);
 const goal = parseNumber(goalInput.value);
-const pace = Number(paceInput.value) / 100;
 
-if (!income || !goal) {
+if (!income || !goal || income - expenses <= 0) {
 tg?.HapticFeedback?.notificationOccurred("error");
 return;
 }
 
-const free = income - expenses;
-if (free <= 0) {
+openSheet();
+};
+
+/* ===== CHOICE ===== */
+noBuffer.onclick = () => {
 adviceCard.innerText =
-"Protocol: сейчас нет свободных средств. Сначала стабилизируй баланс.";
+"Выбран режим без подушки.\nМаксимальная скорость, без резерва.";
+closeSheet();
 openScreen("advice", buttons[1]);
-return;
-}
+};
 
-const monthly = Math.round(free * pace);
-const months = Math.ceil(goal / monthly);
-
+withBuffer.onclick = () => {
 adviceCard.innerText =
-`Protocol построил план.\n\n` +
-`Ежемесячно: ${monthly} ₽\n` +
-`Срок: ~${months} мес.`;
-
-drawGraph(monthly, goal);
-
-tg?.HapticFeedback?.impactOccurred("medium");
+"Выбран режим с подушкой.\nЧасть средств будет направляться в резерв для устойчивости плана.";
+closeSheet();
 openScreen("advice", buttons[1]);
-});
+};
