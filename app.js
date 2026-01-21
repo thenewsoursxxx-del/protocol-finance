@@ -14,6 +14,8 @@ return Number(v.replace(/\./g, ""));
 const incomeInput = document.getElementById("income");
 const expensesInput = document.getElementById("expenses");
 const goalInput = document.getElementById("goal");
+const paceInput = document.getElementById("pace");
+const percentLabel = document.getElementById("percentLabel");
 const calculateBtn = document.getElementById("calculate");
 const adviceCard = document.getElementById("adviceCard");
 
@@ -21,6 +23,11 @@ const sheet = document.getElementById("sheet");
 const sheetOverlay = document.getElementById("sheetOverlay");
 const noBuffer = document.getElementById("noBuffer");
 const withBuffer = document.getElementById("withBuffer");
+
+const progressScreen = document.getElementById("screen-progress");
+
+/* ===== STATE ===== */
+let lastCalc = {};
 
 /* ===== INPUT FORMAT ===== */
 [incomeInput, expensesInput, goalInput].forEach(input => {
@@ -33,7 +40,14 @@ e.target.selectionEnd = p + (a - b);
 });
 });
 
-/* ===== NAV (без изменений) ===== */
+/* ===== SLIDER ===== */
+function updatePercent() {
+percentLabel.innerText = paceInput.value + "%";
+}
+paceInput.addEventListener("input", updatePercent);
+updatePercent();
+
+/* ===== NAV ===== */
 const screens = document.querySelectorAll(".screen");
 const buttons = document.querySelectorAll(".nav-btn");
 const indicator = document.querySelector(".nav-indicator");
@@ -63,7 +77,6 @@ function openSheet() {
 sheetOverlay.style.display = "block";
 sheet.style.bottom = "0";
 }
-
 function closeSheet() {
 sheet.style.bottom = "-100%";
 sheetOverlay.style.display = "none";
@@ -74,26 +87,97 @@ calculateBtn.onclick = () => {
 const income = parseNumber(incomeInput.value);
 const expenses = parseNumber(expensesInput.value);
 const goal = parseNumber(goalInput.value);
+const pace = Number(paceInput.value) / 100;
 
 if (!income || !goal || income - expenses <= 0) {
 tg?.HapticFeedback?.notificationOccurred("error");
 return;
 }
 
+lastCalc = { income, expenses, goal, pace };
 openSheet();
 };
 
-/* ===== CHOICE ===== */
-noBuffer.onclick = () => {
-adviceCard.innerText =
-"Выбран режим без подушки.\nМаксимальная скорость, без резерва.";
-closeSheet();
+/* ===== GRAPH ===== */
+function drawGraph(monthly, goal) {
+progressScreen.innerHTML = `
+<h2>Прогресс</h2>
+<canvas id="chart" width="360" height="240"></canvas>
+`;
+
+const canvas = document.getElementById("chart");
+const ctx = canvas.getContext("2d");
+
+const months = Math.ceil(goal / monthly);
+const pad = 32;
+const w = canvas.width - pad * 2;
+const h = canvas.height - pad * 2;
+
+const x = i => pad + (i / months) * w;
+const y = v => canvas.height - pad - (v / goal) * h;
+
+ctx.strokeStyle = "#333";
+ctx.beginPath();
+ctx.moveTo(pad, pad);
+ctx.lineTo(pad, canvas.height - pad);
+ctx.lineTo(canvas.width - pad, canvas.height - pad);
+ctx.stroke();
+
+ctx.strokeStyle = "#fff";
+ctx.lineWidth = 2;
+ctx.beginPath();
+ctx.moveTo(x(0), y(0));
+ctx.lineTo(x(months), y(goal));
+ctx.stroke();
+}
+
+/* ===== STAGED PROTOCOL FLOW ===== */
+function protocolFlow(mode) {
 openScreen("advice", buttons[1]);
+
+const pacePercent = Math.round(lastCalc.pace * 100);
+const free = lastCalc.income - lastCalc.expenses;
+
+let monthly = Math.round(free * lastCalc.pace);
+if (mode === "buffer") {
+monthly = Math.round(monthly * 0.9);
+}
+
+const months = Math.ceil(lastCalc.goal / monthly);
+
+adviceCard.innerText =
+mode === "buffer"
+? "Выбран режим с подушкой."
+: "Выбран режим без подушки.";
+
+setTimeout(() => {
+adviceCard.innerText =
+mode === "buffer"
+? "Часть средств будет направляться в резерв для устойчивости плана."
+: "Все средства будут направляться напрямую в цель.";
+}, 2000);
+
+setTimeout(() => {
+adviceCard.innerText = "Готово.";
+}, 4000);
+
+setTimeout(() => {
+adviceCard.innerText =
+`Темп: ${pacePercent}%\n` +
+`Ежемесячно: ${monthly} ₽\n` +
+`Срок: ~${months} мес.`;
+
+drawGraph(monthly, lastCalc.goal);
+}, 6000);
+}
+
+/* ===== CHOICES ===== */
+noBuffer.onclick = () => {
+closeSheet();
+protocolFlow("direct");
 };
 
 withBuffer.onclick = () => {
-adviceCard.innerText =
-"Выбран режим с подушкой.\nЧасть средств будет направляться в резерв для устойчивости плана.";
 closeSheet();
-openScreen("advice", buttons[1]);
+protocolFlow("buffer");
 };
