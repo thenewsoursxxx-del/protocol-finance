@@ -181,14 +181,26 @@ adviceCard.innerHTML = `
 
 <canvas id="chart" width="360" height="260" style="margin:16px 0"></canvas>
 
-<div style="display:flex;gap:12px">
+<div style="display:flex;align-items:center;gap:12px">
 <input
 id="factInput"
 inputmode="numeric"
 pattern="[0-9]*"
 placeholder="Сколько вы отложили"
+style="flex:1"
 />
-<button id="applyFact" style="width:56px;border-radius:50%">➜</button>
+<button
+id="applyFact"
+style="
+width:52px;
+height:52px;
+padding:0;
+border-radius:50%;
+display:flex;
+align-items:center;
+justify-content:center;
+"
+>➜</button>
 </div>
 
 <div style="font-size:14px;opacity:.6;margin-top:8px">
@@ -218,6 +230,11 @@ e.target.value = formatNumber(e.target.value);
 applyBtn.onclick = () => {
 const fact = parseNumber(factInput.value);
 if (!fact) return;
+
+// ⬇️ закрываем клавиатуру корректно
+factInput.blur();
+document.activeElement?.blur();
+
 const progress = Math.min(fact / plannedMonthly, 1.3);
 animateFact(progress);
 };
