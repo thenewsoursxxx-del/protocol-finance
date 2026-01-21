@@ -9,35 +9,55 @@
 <body>
 
 <div class="app">
-    <h1>Protocol Finance</h1>
-    <p class="subtitle">Адаптивный финансовый план</p>
 
-    <div class="card">
-        <label>Ежемесячный доход</label>
-        <input type="text" id="income" placeholder="100.000">
+    <nav class="tabs">
+        <button data-tab="calc" class="active">Расчёт</button>
+        <button data-tab="plan">План</button>
+        <button data-tab="progress">Прогресс</button>
+        <button data-tab="risk">Риски</button>
+    </nav>
 
-        <label>Обязательные траты</label>
-        <input type="text" id="expenses" placeholder="60.000">
+    <!-- ===== РАСЧЁТ ===== -->
+    <section id="tab-calc" class="tab active">
+        <h2>Расчёт</h2>
 
-        <label>Стоимость цели</label>
-        <input type="text" id="targetAmount" placeholder="300.000">
+        <label>Доход</label>
+        <input id="income" type="text" placeholder="100.000">
 
-        <label>Темп накоплений</label>
+        <label>Траты</label>
+        <input id="expenses" type="text" placeholder="60.000">
+
+        <label>Цель</label>
+        <input id="targetAmount" type="text" placeholder="300.000">
+
+        <label>Темп</label>
         <input type="range" id="aggression" min="30" max="80" value="40">
-        <div class="range-info">
-            <span id="aggressionLabel">Комфортно</span>
-            <span id="aggressionValue">40%</span>
-        </div>
+        <div id="aggressionLabel"></div>
 
         <button id="calculate">Рассчитать</button>
-        <button id="viewPlan" class="secondary">Текущий план</button>
-        <button id="viewProgress" class="secondary">Прогресс</button>
-        <button id="viewRisk" class="secondary">Риски</button>
-    </div>
+    </section>
 
-    <div class="result" id="result"></div>
+    <!-- ===== ПЛАН ===== -->
+    <section id="tab-plan" class="tab">
+        <h2>Текущий план</h2>
+        <div id="planResult"></div>
+    </section>
+
+    <!-- ===== ПРОГРЕСС ===== -->
+    <section id="tab-progress" class="tab">
+        <h2>Прогресс</h2>
+        <div id="progressResult"></div>
+    </section>
+
+    <!-- ===== РИСКИ ===== -->
+    <section id="tab-risk" class="tab">
+        <h2>Риски</h2>
+        <div id="riskResult"></div>
+    </section>
+
 </div>
 
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
