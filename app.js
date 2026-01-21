@@ -1,13 +1,14 @@
 /* =====================================================
 PROTOCOL — Telegram Mini App (mobile-first)
-Auto Mode (strict) + Plan vs Fact + Onboarding + Reset
+Auto Mode (strict) + Plan vs Fact + Onboarding FIX
 ===================================================== */
 
 const tg = window.Telegram?.WebApp;
 tg?.expand();
 
 /* ================= RESET VIA startapp ================= */
-if (tg?.initDataUnsafe?.start_param === "reset") {
+const startParam = tg?.initDataUnsafe?.start_param;
+if (startParam === "reset") {
 localStorage.clear();
 }
 
@@ -17,8 +18,6 @@ const format = v => v.replace(/\D/g,"").replace(/\B(?=(\d{3})+(?!\d))/g,".");
 const parse = v => Number(v.replace(/\./g,""));
 
 /* ================= ONBOARDING ================= */
-let onboardingDone = localStorage.getItem("protocol_onboarding_done");
-
 function showOnboarding(){
 const ob = $("onboarding");
 if (ob) ob.style.display = "flex";
@@ -30,8 +29,11 @@ const ob = $("onboarding");
 if (ob) ob.style.display = "none";
 }
 
-if (!onboardingDone) {
-document.addEventListener("DOMContentLoaded", showOnboarding);
+function checkOnboarding(){
+const done = localStorage.getItem("protocol_onboarding_done");
+if (!done) {
+showOnboarding();
+}
 }
 
 /* ================= STATE ================= */
@@ -43,8 +45,8 @@ let goals = state.goals || [
 
 let bufferBalance = state.bufferBalance || 0;
 let monthly = state.monthly || 0;
-let contributions = state.contributions || []; // [{amount, date}]
-let autoMode = state.autoMode || null; // conservative | balance | aggressive
+let contributions = state.contributions || [];
+let autoMode = state.autoMode || null;
 
 function saveState(){
 localStorage.setItem("protocol_state", JSON.stringify({
@@ -60,7 +62,6 @@ autoMode
 function decideAutoMode(income, expenses){
 const free = income - expenses;
 const ratio = free / income;
-
 if (ratio < 0.25) return "conservative";
 if (ratio < 0.45) return "balance";
 return "aggressive";
@@ -69,15 +70,15 @@ return "aggressive";
 function modeParams(mode){
 if (mode === "conservative") return { goal: 0.6, buffer: 0.4 };
 if (mode === "aggressive") return { goal: 0.9, buffer: 0.1 };
-return { goal: 0.75, buffer: 0.25 }; // balance
+return { goal: 0.75, buffer: 0.25 };
 }
 
 function modeText(mode){
 if (mode === "conservative")
-return "Режим: КОНСЕРВАТИВНЫЙ. Риск высокий, скорость снижена.";
+return "Режим: КОНСЕРВАТИВНЫЙ. Снижаю риск.";
 if (mode === "aggressive")
-return "Режим: АГРЕССИВНЫЙ. Давлю на цель без компромиссов.";
-return "Режим: БАЛАНС. Оптимум между скоростью и устойчивостью.";
+return "Режим: АГРЕССИВНЫЙ. Давлю на цель.";
+return "Режим: БАЛАНС. Оптимальное решение.";
 }
 
 /* ================= TABS ================= */
@@ -118,7 +119,6 @@ if (!goal || !monthly) return;
 
 const canvas = $("progressChart");
 const ctx = prepareCanvas(canvas);
-
 const w = canvas.getBoundingClientRect().width;
 const h = canvas.getBoundingClientRect().height;
 ctx.clearRect(0,0,w,h);
@@ -129,16 +129,14 @@ const months = Math.ceil(target / monthly);
 const gw = w - pad*2;
 const gh = h - pad*2;
 
-/* axes */
 ctx.strokeStyle="#333";
-ctx.lineWidth=1;
 ctx.beginPath();
 ctx.moveTo(pad,pad);
 ctx.lineTo(pad,h-pad);
 ctx.lineTo(w-pad,h-pad);
 ctx.stroke();
 
-/* PLAN LINE */
+// PLAN
 ctx.strokeStyle="#4f7cff";
 ctx.lineWidth=3;
 ctx.beginPath();
@@ -151,9 +149,9 @@ planSum += monthly;
 }
 ctx.stroke();
 
-/* FACT LINE */
+// FACT
 if(contributions.length){
-ctx.strokeStyle="#ffffff";
+ctx.strokeStyle="#fff";
 ctx.lineWidth=2;
 ctx.beginPath();
 let factSum = 0;
@@ -235,6 +233,7 @@ drawChart();
 
 /* ================= INIT ================= */
 document.addEventListener("DOMContentLoaded", ()=>{
+checkOnboarding(); // ← КЛЮЧЕВОЙ ФИКС
 openScreen("calc");
 drawChart();
 });
