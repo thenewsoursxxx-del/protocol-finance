@@ -41,6 +41,13 @@ b.classList.toggle("active", b.dataset.screen === name)
 }
 tabs.forEach(btn => btn.onclick = () => openScreen(btn.dataset.screen));
 
+// ===== STORAGE =====
+let realContributions = JSON.parse(localStorage.getItem("real_contributions") || "[]");
+
+function saveContributions() {
+localStorage.setItem("real_contributions", JSON.stringify(realContributions));
+}
+
 // ===== CANVAS (Hi-DPI) =====
 function prepareCanvas(canvas){
 const dpr = window.devicePixelRatio || 1;
@@ -54,7 +61,7 @@ ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 return ctx;
 }
 
-// ===== GRAPH WITH TIME SCALE =====
+// ===== GRAPH =====
 function drawChart(monthly, target){
 const canvas = $("progressChart");
 const ctx = prepareCanvas(canvas);
@@ -78,27 +85,22 @@ ctx.lineTo(pad, h - pad);
 ctx.lineTo(w - pad, h - pad);
 ctx.stroke();
 
-// Y labels
+// labels Y
 ctx.fillStyle = "#888";
 ctx.font = "14px system-ui";
 ctx.fillText("0%", 6, h - pad);
 ctx.fillText("100%", 6, pad + 12);
 
-// X labels (time)
+// labels X
 ctx.textAlign = "center";
-const marks = [0, Math.floor(months/3), Math.floor(months*2/3), months];
-
+const marks = [0, Math.floor(months/2), months];
 marks.forEach(m => {
 const x = pad + (m / months) * graphW;
-const label =
-m === 0 ? "Старт" :
-m === months ? "Финиш" :
-`+${m} мес`;
-
+const label = m === 0 ? "Старт" : m === months ? "Финиш" : `+${m} мес`;
 ctx.fillText(label, x, h - 8);
 });
 
-// line
+// PLAN line
 ctx.strokeStyle = "#4f7cff";
 ctx.lineWidth = 3;
 ctx.beginPath();
@@ -113,19 +115,54 @@ sum += monthly;
 }
 ctx.stroke();
 
-// current point (1 month)
-const curSum = monthly;
-const cx = pad + (1 / months) * graphW;
-const cy = h - pad - (curSum / target) * graphH;
+// REAL contributions (points)
+ctx.fillStyle = "#ffffff";
+let realSum = 0;
 
-ctx.fillStyle = "#fff";
+realContributions.forEach((value, index) => {
+realSum += value;
+const x = pad + ((index + 1) / months) * graphW;
+const y = h - pad - (realSum / target) * graphH;
+
 ctx.beginPath();
-ctx.arc(cx, cy, 4, 0, Math.PI * 2);
+ctx.arc(x, y, 4, 0, Math.PI * 2);
 ctx.fill();
+});
 
+// info
+const percent = Math.min(realSum / target * 100, 100);
 $("progressInfo").innerHTML =
-`Срок достижения: <b>${months} мес</b><br>
-Прогресс: <b>${(curSum/target*100).toFixed(1)}%</b>`;
+`Фактически накоплено: <b>${realSum}</b><br>
+Прогресс: <b>${percent.toFixed(1)}%</b>`;
+}
+
+// ===== ADD CONTRIBUTION UI =====
+function injectContributionUI() {
+if ($("contributionInput")) return;
+
+const box = document.createElement("div");
+box.innerHTML = `
+<label>Внёс за месяц</label>
+<input id="contributionInput" type="text" placeholder="10.000">
+<button id="addContribution">Добавить взнос</button>
+`;
+$("screen-progress").prepend(box);
+
+$("contributionInput").oninput = e =>
+e.target.value = format(e.target.value);
+
+$("addContribution").onclick = () => {
+const val = parse($("contributionInput").value);
+if (!val) return;
+
+realContributions.push(val);
+saveContributions();
+$("contributionInput").value = "";
+
+const monthly = window._monthly;
+const target = window._target;
+drawChart(monthly, target);
+};
 }
 
 // ===== CALC =====
@@ -139,6 +176,9 @@ if (!income || !expenses || !target || income <= expenses) return;
 const monthly = Math.round((income - expenses) * (+aggression.value / 100));
 const months = Math.ceil(target / monthly);
 
+window._monthly = monthly;
+window._target = target;
+
 $("planResult").innerHTML =
 `Откладывать <b>${monthly}</b> ₽ / мес<br>
 Срок <b>${months} мес</b>`;
@@ -146,6 +186,7 @@ $("planResult").innerHTML =
 openScreen("progress");
 
 requestAnimationFrame(() => {
+injectContributionUI();
 drawChart(monthly, target);
 });
 };
