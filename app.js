@@ -1,33 +1,30 @@
 const tg = window.Telegram?.WebApp;
 tg?.expand();
 
-// ===== HELPERS =====
+/* ================= HELPERS ================= */
 const $ = id => document.getElementById(id);
 const format = v => v.replace(/\D/g,"").replace(/\B(?=(\d{3})+(?!\d))/g,".");
 const parse = v => Number(v.replace(/\./g,""));
 
-// ===== INPUTS =====
-["income","expenses","targetAmount"].forEach(id=>{
-$(id).oninput = e => e.target.value = format(e.target.value);
-});
+/* ================= STORAGE ================= */
+let goals = JSON.parse(localStorage.getItem("goals") || "null");
+let bufferBalance = Number(localStorage.getItem("buffer_balance") || 0);
+let contributions = JSON.parse(localStorage.getItem("contributions") || "[]");
 
-// ===== SLIDER =====
-const aggression = $("aggression");
-const aggrLabel = $("aggressionLabel");
-const aggrPercent = $("aggressionPercent");
-
-function updateAgg(){
-const v = +aggression.value;
-aggrPercent.textContent = v + "%";
-aggrLabel.textContent =
-v <= 40 ? "Комфортно" :
-v <= 60 ? "Умеренно" :
-"Агрессивно";
+if (!goals) {
+goals = [
+{ id: 1, name: "Основная цель", target: 300000, balance: 0, priority: 1, active: true }
+];
+saveAll();
 }
-aggression.oninput = updateAgg;
-updateAgg();
 
-// ===== TABS =====
+function saveAll(){
+localStorage.setItem("goals", JSON.stringify(goals));
+localStorage.setItem("buffer_balance", bufferBalance);
+localStorage.setItem("contributions", JSON.stringify(contributions));
+}
+
+/* ================= TABS ================= */
 const screens = document.querySelectorAll(".screen");
 const tabs = document.querySelectorAll(".tg-tabs button");
 
@@ -41,20 +38,13 @@ b.classList.toggle("active", b.dataset.screen === name)
 }
 tabs.forEach(btn => btn.onclick = () => openScreen(btn.dataset.screen));
 
-// ===== STORAGE =====
-let goalBalance = Number(localStorage.getItem("goal_balance") || 0);
-let bufferBalance = Number(localStorage.getItem("buffer_balance") || 0);
-let contributions = JSON.parse(localStorage.getItem("contributions") || "[]");
-let lastReport = Number(localStorage.getItem("last_report") || Date.now());
+/* ================= INPUT FORMAT ================= */
+["income","expenses","targetAmount"].forEach(id=>{
+const el = $(id);
+if(el) el.oninput = e => e.target.value = format(e.target.value);
+});
 
-function saveAll(){
-localStorage.setItem("goal_balance", goalBalance);
-localStorage.setItem("buffer_balance", bufferBalance);
-localStorage.setItem("contributions", JSON.stringify(contributions));
-localStorage.setItem("last_report", lastReport);
-}
-
-// ===== CANVAS =====
+/* ================= CANVAS ================= */
 function prepareCanvas(canvas){
 const dpr = window.devicePixelRatio || 1;
 const rect = canvas.getBoundingClientRect();
@@ -65,8 +55,12 @@ ctx.setTransform(dpr,0,0,dpr,0,0);
 return ctx;
 }
 
-// ===== GRAPH =====
-function drawChart(monthly, target){
+/* ================= GRAPH ================= */
+function drawChart(monthly){
+const mainGoal = goals.find(g => g.active);
+if(!mainGoal) return;
+
+const target = mainGoal.target;
 const canvas = $("progressChart");
 const ctx = prepareCanvas(canvas);
 
@@ -79,7 +73,6 @@ const months = Math.ceil(target / monthly);
 const gw = w - pad*2;
 const gh = h - pad*2;
 
-// axes
 ctx.strokeStyle="#333";
 ctx.beginPath();
 ctx.moveTo(pad,pad);
@@ -87,124 +80,141 @@ ctx.lineTo(pad,h-pad);
 ctx.lineTo(w-pad,h-pad);
 ctx.stroke();
 
-// PLAN
 ctx.strokeStyle="#4f7cff";
 ctx.lineWidth=3;
 ctx.beginPath();
-let planSum=0;
-for(let i=0;i<=months;i++){
-const x = pad + (i/months)*gw;
-const y = h-pad-(planSum/target)*gh;
-i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
-planSum+=monthly;
-}
-ctx.stroke();
-
-// FACT (goal)
-if(contributions.length){
-ctx.strokeStyle="#ffffff";
-ctx.lineWidth=2;
-ctx.beginPath();
 
 let sum=0;
-contributions.forEach((c,i)=>{
-sum+=c.goal;
-const x = pad + ((i+1)/months)*gw;
+for(let i=0;i<=months;i++){
+const x = pad + (i/months)*gw;
 const y = h-pad-(sum/target)*gh;
 i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
-ctx.beginPath();
-ctx.arc(x,y,4,0,Math.PI*2);
-ctx.fillStyle="#fff";
-ctx.fill();
-});
-ctx.stroke();
+sum+=monthly;
 }
+ctx.stroke();
 
 $("progressInfo").innerHTML =
-`🎯 Цель: <b>${goalBalance}</b> ₽<br>
-🛡 Подушка: <b>${bufferBalance}</b> ₽`;
+goals.map(g =>
+`🎯 ${g.name}: <b>${g.balance}</b> / ${g.target}`
+).join("<br>") +
+`<br>🛡 Подушка: <b>${bufferBalance}</b>`;
 }
 
-// ===== CONTRIBUTIONS =====
+/* ================= CONTRIBUTIONS ================= */
 function injectContributionUI(){
 if($("contributionInput")) return;
 
 const box=document.createElement("div");
 box.innerHTML=`
-<label>Внёс за период</label>
-<input id="contributionInput" placeholder="10.000">
-<button id="addContribution">Добавить</button>
+<label>Внёс</label>
+<input id="contributionInput" placeholder="20.000">
+<button id="addContribution">Распределить</button>
 `;
 $("screen-progress").prepend(box);
 
 $("contributionInput").oninput=e=>e.target.value=format(e.target.value);
 
 $("addContribution").onclick=()=>{
-const v=parse($("contributionInput").value);
-if(!v) return;
+let amount = parse($("contributionInput").value);
+if(!amount) return;
 
-// 70 / 30 по умолчанию
-const toGoal = Math.round(v * 0.7);
-const toBuffer = v - toGoal;
+let bufferPart = Math.round(amount * 0.1);
+bufferBalance += bufferPart;
+amount -= bufferPart;
 
-goalBalance += toGoal;
-bufferBalance += toBuffer;
-
-contributions.push({
-goal: toGoal,
-buffer: toBuffer,
-date: Date.now()
+goals
+.filter(g => g.active)
+.sort((a,b)=>a.priority-b.priority)
+.forEach(goal=>{
+if(amount <= 0) return;
+const need = goal.target - goal.balance;
+const add = Math.min(need, amount);
+goal.balance += add;
+amount -= add;
+if(goal.balance >= goal.target) goal.active = false;
 });
 
+contributions.push({ date: Date.now() });
 saveAll();
 $("contributionInput").value="";
-drawChart(window._monthly, window._target);
-checkWeeklyReport();
+drawChart(window._monthly);
+renderGoals();
 };
 }
 
-// ===== WEEKLY REPORT =====
-function checkWeeklyReport(){
-const week = 7 * 24 * 60 * 60 * 1000;
-if(Date.now() - lastReport < week) return;
+/* ================= GOALS UI ================= */
+function renderGoals(){
+const box = $("screen-goals");
+if(!box) return;
 
-const lastWeek = contributions.filter(
-c => Date.now() - c.date < week
-);
-
-const goalSum = lastWeek.reduce((s,c)=>s+c.goal,0);
-const bufferSum = lastWeek.reduce((s,c)=>s+c.buffer,0);
-
-$("progressInfo").innerHTML += `
+box.innerHTML = `
+<h3>Цели</h3>
+${goals.map(g=>`
+<div class="goal-card">
+<b>${g.name}</b><br>
+${g.balance} / ${g.target}<br>
+<button onclick="moveGoal(${g.id},-1)">↑</button>
+<button onclick="moveGoal(${g.id},1)">↓</button>
+<button onclick="removeGoal(${g.id})">✕</button>
+</div>
+`).join("")}
 <hr>
-📊 <b>Недельный отчёт</b><br>
-В цель: <b>${goalSum}</b> ₽<br>
-В подушку: <b>${bufferSum}</b> ₽
+<input id="newGoalName" placeholder="Новая цель">
+<input id="newGoalTarget" placeholder="Сумма">
+<button onclick="addGoal()">Добавить цель</button>
 `;
 
-lastReport = Date.now();
-saveAll();
+$("newGoalTarget").oninput=e=>e.target.value=format(e.target.value);
 }
 
-// ===== CALC =====
+window.addGoal = () => {
+const name = $("newGoalName").value;
+const target = parse($("newGoalTarget").value);
+if(!name || !target) return;
+
+goals.push({
+id: Date.now(),
+name,
+target,
+balance: 0,
+priority: goals.length + 1,
+active: true
+});
+
+saveAll();
+renderGoals();
+};
+
+window.removeGoal = id => {
+goals = goals.filter(g => g.id !== id);
+saveAll();
+renderGoals();
+};
+
+window.moveGoal = (id,dir) => {
+const i = goals.findIndex(g=>g.id===id);
+const j = i + dir;
+if(j<0 || j>=goals.length) return;
+[goals[i],goals[j]] = [goals[j],goals[i]];
+goals.forEach((g,i)=>g.priority=i+1);
+saveAll();
+renderGoals();
+};
+
+/* ================= CALC ================= */
 $("calculate").onclick=()=>{
 const income=parse($("income").value);
 const expenses=parse($("expenses").value);
-const target=parse($("targetAmount").value);
-if(!income||!expenses||!target||income<=expenses) return;
+if(!income||!expenses||income<=expenses) return;
 
-window._monthly=Math.round((income-expenses)*(+aggression.value/100));
-window._target=target;
-
-$("planResult").innerHTML =
-`Базовый взнос: <b>${window._monthly}</b> ₽ / мес`;
+window._monthly=Math.round((income-expenses)*0.5);
 
 openScreen("progress");
 
 requestAnimationFrame(()=>{
 injectContributionUI();
-drawChart(window._monthly,target);
-checkWeeklyReport();
+drawChart(window._monthly);
+renderGoals();
 });
 };
 
