@@ -45,8 +45,12 @@ tabs.forEach(btn => btn.onclick = () => openScreen(btn.dataset.screen));
 let realContributions =
 JSON.parse(localStorage.getItem("real_contributions") || "[]");
 
-function saveContributions(){
+let safetyBuffer =
+Number(localStorage.getItem("safety_buffer") || 0);
+
+function saveAll(){
 localStorage.setItem("real_contributions", JSON.stringify(realContributions));
+localStorage.setItem("safety_buffer", safetyBuffer);
 }
 
 // ===== CANVAS =====
@@ -96,12 +100,11 @@ planSum+=monthly;
 ctx.stroke();
 
 // REAL
+let realSum=0;
 if(realContributions.length){
 ctx.strokeStyle="#ffffff";
 ctx.lineWidth=2;
 ctx.beginPath();
-
-let realSum=0;
 realContributions.forEach((v,i)=>{
 realSum+=v;
 const x = pad + ((i+1)/months)*graphW;
@@ -114,19 +117,75 @@ ctx.fillStyle="#fff";
 ctx.fill();
 });
 ctx.stroke();
-
-const diff = (realSum - monthly) / monthly * 100;
-$("progressInfo").innerHTML =
-diff >= 0
-? `Ты идёшь быстрее плана на <b>${diff.toFixed(1)}%</b>`
-: `Ты отстаёшь от плана на <b>${Math.abs(diff).toFixed(1)}%</b>`;
-} else {
-$("progressInfo").innerHTML =
-`Это прогноз. Добавь реальный взнос, чтобы Protocol подстроился.`;
-}
 }
 
-// ===== UI FOR CONTRIBUTIONS =====
+showAdaptation(monthly, target, realSum);
+}
+
+// ===== ADAPTATION =====
+function showAdaptation(monthly, target, realSum){
+const box = $("progressInfo");
+box.innerHTML = "";
+
+if(!realContributions.length){
+box.innerHTML = "Это прогноз. Добавь реальный взнос.";
+return;
+}
+
+const expected = monthly * realContributions.length;
+const diff = realSum - expected;
+
+if(Math.abs(diff) < monthly * 0.05){
+box.innerHTML = "Ты идёшь точно по плану 👍";
+return;
+}
+
+// 🔴 ОТСТАЁТ — логика уже есть (оставляем)
+if(diff < 0){
+box.innerHTML = `
+Ты отстаёшь от плана.<br>
+Protocol подстроит стратегию позже.
+`;
+return;
+}
+
+// 🟢 ОПЕРЕЖАЕТ
+box.innerHTML = `
+Ты опережаешь план на <b>${diff}</b> ₽ 🚀<br><br>
+Куда направить излишек?
+<br><br>
+<button id="toGoal">Ускорить цель</button>
+<button id="toBuffer">В подушку</button>
+<button id="toBalance">Баланс</button>
+`;
+
+$("toGoal").onclick = () => {
+window._monthly += Math.round(diff / realContributions.length);
+updatePlan("Излишек направлен в цель. Срок сокращён.");
+};
+
+$("toBuffer").onclick = () => {
+safetyBuffer += diff;
+updatePlan("Излишек направлен в подушку безопасности.");
+};
+
+$("toBalance").onclick = () => {
+safetyBuffer += Math.round(diff * 0.5);
+window._monthly += Math.round((diff * 0.5) / realContributions.length);
+updatePlan("Излишек распределён между целью и подушкой.");
+};
+}
+
+function updatePlan(message){
+saveAll();
+$("planResult").innerHTML =
+`${message}<br><br>
+Подушка: <b>${safetyBuffer}</b> ₽<br>
+Новый взнос: <b>${window._monthly}</b> ₽ / мес`;
+drawChart(window._monthly, window._target);
+}
+
+// ===== CONTRIBUTIONS UI =====
 function injectContributionUI(){
 if($("contributionInput")) return;
 
@@ -144,7 +203,7 @@ $("addContribution").onclick=()=>{
 const v=parse($("contributionInput").value);
 if(!v) return;
 realContributions.push(v);
-saveContributions();
+saveAll();
 $("contributionInput").value="";
 drawChart(window._monthly, window._target);
 };
@@ -157,15 +216,17 @@ const expenses=parse($("expenses").value);
 const target=parse($("targetAmount").value);
 if(!income||!expenses||!target||income<=expenses) return;
 
-const monthly=Math.round((income-expenses)*(+aggression.value/100));
-window._monthly=monthly;
+window._monthly=Math.round((income-expenses)*(+aggression.value/100));
 window._target=target;
+
+$("planResult").innerHTML =
+`Базовый взнос: <b>${window._monthly}</b> ₽ / мес`;
 
 openScreen("progress");
 
 requestAnimationFrame(()=>{
 injectContributionUI();
-drawChart(monthly,target);
+drawChart(window._monthly,target);
 });
 };
 
