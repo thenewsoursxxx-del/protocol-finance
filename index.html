@@ -1,153 +1,139 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Protocol</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Protocol</title>
 
-<style>
-:root{
-  --bg:#0e0e11;
-  --panel:#12121a;
-  --accent:#4f7cff;
-  --text:#ffffff;
-  --muted:#8a8a9a;
-}
+  <!-- Telegram WebApp API -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-*{box-sizing:border-box}
+  <style>
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0f0f12;
+      color: #fff;
+    }
 
-body{
-  margin:0;
-  background:var(--bg);
-  color:var(--text);
-  font-family:-apple-system,system-ui,BlinkMacSystemFont;
-  overflow:hidden;
-}
+    .screen { display: none; padding: 16px; }
+    .screen.active { display: block; }
 
-/* ===== SCREENS ===== */
-.screen{
-  display:none;
-  height:calc(100vh - 64px);
-  padding:16px;
-}
-.screen.active{display:block}
+    /* Bottom tabs */
+    .tg-tabs {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 64px;
+      background: #14141a;
+      display: flex;
+      border-top: 1px solid #222;
+    }
 
-/* ===== INPUTS ===== */
-input,button{
-  width:100%;
-  padding:14px;
-  border-radius:14px;
-  border:none;
-  font-size:16px;
-}
-input{
-  background:#16161c;
-  color:white;
-  margin-bottom:12px;
-}
-button{
-  background:var(--accent);
-  color:white;
-  font-weight:600;
-}
+    .tg-tabs button {
+      flex: 1;
+      background: none;
+      border: none;
+      color: #888;
+      font-size: 12px;
+    }
 
-/* ===== GRAPH ===== */
-canvas{
-  width:100%;
-  height:70vh;
-}
+    .tg-tabs button.active {
+      color: #4f7cff;
+      font-weight: 600;
+    }
 
-/* ===== BOTTOM TABS ===== */
-.tabs{
-  position:fixed;
-  bottom:0;
-  left:0;
-  right:0;
-  height:64px;
-  background:#0f0f15;
-  display:flex;
-  border-top:1px solid #1f1f2a;
-}
-.tabs button{
-  flex:1;
-  background:none;
-  border:none;
-  color:var(--muted);
-  font-size:22px;
-}
-.tabs button.active{color:var(--accent)}
+    input, button {
+      width: 100%;
+      padding: 12px;
+      margin-top: 10px;
+      border-radius: 10px;
+      border: none;
+      font-size: 16px;
+    }
 
-/* ===== STORIES ===== */
-#stories{
-  position:fixed;
-  inset:0;
-  background:#000;
-  z-index:9999;
-  display:none;
-}
-.story-track{
-  display:flex;
-  height:100%;
-  transition:transform .3s ease;
-}
-.story{
-  min-width:100%;
-  padding:24px;
-  display:flex;
-  flex-direction:column;
-  justify-content:space-between;
-}
-.story h1{margin:0;font-size:28px}
-.story p{color:#bbb;font-size:16px}
-.story button{
-  margin-top:24px;
-}
-</style>
+    button {
+      background: #4f7cff;
+      color: white;
+      font-weight: 600;
+    }
+
+    canvas {
+      width: 100%;
+      height: 220px;
+      margin-top: 20px;
+    }
+
+    /* Onboarding */
+    #onboarding {
+      position: fixed;
+      inset: 0;
+      background: #0f0f12;
+      z-index: 999;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      text-align: center;
+    }
+
+    #onboarding button {
+      margin-top: 24px;
+    }
+
+    /* Safe area */
+    .spacer {
+      height: 80px;
+    }
+  </style>
 </head>
-
 <body>
 
-<!-- ===== STORIES ===== -->
-<div id="stories">
-  <div class="story-track" id="storyTrack">
-    <div class="story">
-      <h1>Protocol</h1>
-      <p>Я беру управление твоими деньгами.</p>
-      <p>Без эмоций. Без догадок.</p>
-    </div>
-    <div class="story">
-      <h1>Автоматически</h1>
-      <p>Я выбираю оптимальный режим и корректирую план.</p>
-    </div>
-    <div class="story">
-      <h1>Контроль</h1>
-      <p>Ты всегда видишь план и факт.</p>
-      <button onclick="closeStories()">Начать</button>
-    </div>
+<!-- ONBOARDING / STORIES -->
+<div id="onboarding">
+  <div>
+    <h2>Protocol</h2>
+    <p>
+      Это не калькулятор.
+
+      Это система принятия решений.
+
+      Protocol берёт ответственность за план.
+    </p>
+    <button onclick="hideOnboarding()">Продолжить</button>
   </div>
 </div>
 
-<!-- ===== CALC ===== -->
-<div id="screen-calc" class="screen active">
-  <h2>Расчёт</h2>
-  <input id="income" placeholder="Доход">
-  <input id="expenses" placeholder="Расходы">
+<!-- SCREENS -->
+<div id="screen-calc" class="screen">
+  <h3>Расчёт</h3>
+  <input id="income" placeholder="Доход в месяц">
+  <input id="expenses" placeholder="Обязательные расходы">
   <button id="calculate">Рассчитать</button>
 </div>
 
-<!-- ===== PROGRESS ===== -->
 <div id="screen-progress" class="screen">
-  <h2>Прогресс</h2>
+  <h3>Прогресс</h3>
+  <canvas id="progressChart"></canvas>
   <div id="progressInfo"></div>
-  <canvas id="chart"></canvas>
 </div>
 
-<!-- ===== TABS ===== -->
-<div class="tabs">
-  <button data-screen="calc" class="active">📊</button>
-  <button data-screen="progress">📈</button>
+<div id="screen-goals" class="screen">
+  <h3>Цели</h3>
 </div>
 
+<div class="spacer"></div>
+
+<!-- BOTTOM TABS -->
+<div class="tg-tabs">
+  <button data-screen="calc" class="active">Расчёт</button>
+  <button data-screen="progress">Прогресс</button>
+  <button data-screen="goals">Цели</button>
+</div>
+
+<!-- APP LOGIC -->
 <script src="app.js"></script>
 </body>
 </html>
+
