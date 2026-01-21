@@ -21,7 +21,7 @@ h2 { font-size: 28px; margin-bottom: 24px; }
 
 label { opacity: .7; margin-bottom: 8px; display: block; }
 
-input {
+input[type="text"], input[type="numeric"], input[type="number"], input:not([type]) {
   width: 100%;
   padding: 22px;
   font-size: 22px;
@@ -32,6 +32,45 @@ input {
   margin-bottom: 24px;
 }
 
+/* ===== SLIDER ===== */
+.slider-block {
+  margin-bottom: 32px;
+}
+
+.slider-head {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  opacity: .85;
+}
+
+input[type="range"] {
+  width: 100%;
+  appearance: none;
+  height: 6px;
+  border-radius: 6px;
+  background: #333;
+  outline: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #fff;
+  border: none;
+}
+
+.slider-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  opacity: .6;
+  margin-top: 8px;
+}
+
+/* ===== BUTTON ===== */
 button {
   width: 100%;
   padding: 22px;
@@ -42,6 +81,7 @@ button {
   border: none;
 }
 
+/* ===== CARD ===== */
 .card {
   border: 1px solid #333;
   border-radius: 26px;
