@@ -1,69 +1,54 @@
-const tg=window.Telegram?.WebApp; tg?.expand();
+const tg = window.Telegram?.WebApp;
+tg?.expand();
 
-const $=id=>document.getElementById(id);
-const state={plan:null};
+const $ = id => document.getElementById(id);
 
-["income","expenses","goal"].forEach(id=>{
-  $(id).oninput=e=>{
-    e.target.value=e.target.value.replace(/\D/g,"").replace(/\B(?=(\d{3})+(?!\d))/g,".")
-  }
-});
+let planChosen = false;
+let planName = "";
 
-$("pace").oninput=()=>$("percentLabel").innerText=$("pace").value+"%";
+$("pace").oninput = () => $("percentLabel").innerText = $("pace").value + "%";
 
-$("calculate").onclick=()=>{
-  if(state.plan){ showLock(); return; }
-  openSheet();
+$("calculate").onclick = () => {
+  if (planChosen) return;
+  $("sheet").style.bottom = "0";
+  $("sheetOverlay").style.display = "block";
 };
 
-function openSheet(){
-  $("sheetOverlay").style.display="block";
-  $("sheet").style.bottom="0";
-}
-function closeSheet(){
-  $("sheetOverlay").style.display="none";
-  $("sheet").style.bottom="-100%";
-}
+function startProtocol(name){
+  planChosen = true;
+  planName = name;
 
-$("noBuffer").onclick=()=>startProtocol("Без подушки");
-$("withBuffer").onclick=()=>startProtocol("С подушкой");
+  $("sheet").style.bottom = "-100%";
+  $("sheetOverlay").style.display = "none";
 
-function startProtocol(type){
-  closeSheet();
-  state.plan=type;
+  $("lockText").innerText = `У вас уже выбран план: ${name}`;
+  $("calcLock").style.display = "block";
+
+  $("loader").classList.remove("hidden");
+  $("adviceCard").innerText = "Выбран режим " + name + ".";
+
   openScreen("advice");
-  runStages(type);
-}
 
-function runStages(type){
-  $("loader").style.display="block";
-  stage("Выбран режим "+type+".",0);
-  stage("Часть средств будет направляться в резерв для устойчивости плана.",2000);
-  stage("Готово.",4000);
+  setTimeout(()=>$("adviceCard").innerText="Часть средств будет направляться в резерв для устойчивости плана.",2000);
+  setTimeout(()=>$("adviceCard").innerText="Готово.",4000);
   setTimeout(()=>{
-    $("loader").style.display="none";
-    $("adviceCard").innerText="План готов. Перейдите в «Прогресс».";
+    $("loader").classList.add("hidden");
+    $("adviceCard").innerText="Protocol завершил расчёт.";
   },6000);
 }
 
-function stage(text,delay){
-  setTimeout(()=>{$("adviceCard").innerText=text},delay);
-}
+$("noBuffer").onclick = ()=>startProtocol("без подушки");
+$("withBuffer").onclick = ()=>startProtocol("с подушкой");
 
-function showLock(){
-  $("lockText").innerText="У вас уже выбран план: "+state.plan;
-  $("lockOverlay").style.display="block";
-}
+$("resetPlan").onclick = ()=>$("confirmReset").style.display="block";
+$("confirmNo").onclick = ()=>$("confirmReset").style.display="none";
+$("confirmYes").onclick = ()=>location.reload();
 
-$("resetBtn").onclick=()=>{$("confirmOverlay").style.display="block"};
-$("cancelReset").onclick=()=>{$("confirmOverlay").style.display="none"};
-$("confirmReset").onclick=()=>{
-  state.plan=null;
-  $("lockOverlay").style.display="none";
-  $("confirmOverlay").style.display="none";
-};
-
-function openScreen(name){
+/* NAV */
+document.querySelectorAll(".nav-btn").forEach(btn=>{
+  btn.onclick=()=>openScreen(btn.dataset.screen,btn)
+});
+function openScreen(name,btn){
   document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
   $("screen-"+name).classList.add("active");
 }

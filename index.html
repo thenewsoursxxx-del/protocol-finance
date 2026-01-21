@@ -35,19 +35,30 @@
         <span>Темп накопления</span>
         <span id="percentLabel">50%</span>
       </div>
-      <input type="range" id="pace" min="30" max="70" step="20" value="50">
+      <input type="range" id="pace" min="30" max="70" step="20" value="50" />
       <div class="slider-labels">
-        <span>Спокойно</span><span>Умеренно</span><span>Агрессивно</span>
+        <span>Спокойно</span>
+        <span>Умеренно</span>
+        <span>Агрессивно</span>
       </div>
     </div>
 
     <button id="calculate">Продолжить</button>
+
+    <!-- LOCK OVERLAY -->
+    <div id="calcLock">
+      <div class="lockCard">
+        <div class="lockIcon">🔒</div>
+        <div id="lockText"></div>
+        <button id="resetPlan">Начать сначала</button>
+      </div>
+    </div>
   </div>
 
   <!-- ===== ADVICE ===== -->
   <div class="screen" id="screen-advice">
     <h2>Protocol</h2>
-    <div class="loader" id="loader"></div>
+    <div id="loader" class="loader hidden"></div>
     <div id="adviceCard" class="card"></div>
   </div>
 
@@ -55,42 +66,31 @@
   <div class="screen" id="screen-accounts"><h2>Счета</h2></div>
   <div class="screen" id="screen-goals"><h2>Цели</h2></div>
 
-  <!-- ===== NAV ===== -->
+  <!-- NAV -->
   <div class="bottom-nav">
     <div class="nav-indicator"></div>
-    <button class="nav-btn active" data-screen="calc">▢</button>
-    <button class="nav-btn" data-screen="advice">▴</button>
-    <button class="nav-btn" data-screen="accounts">▣</button>
-    <button class="nav-btn" data-screen="goals">◯</button>
+    <button class="nav-btn active" data-screen="calc">■</button>
+    <button class="nav-btn" data-screen="advice">▲</button>
+    <button class="nav-btn" data-screen="accounts">▭</button>
+    <button class="nav-btn" data-screen="goals">●</button>
   </div>
 </div>
 
-<!-- ===== BOTTOM SHEET ===== -->
+<!-- CONFIRM RESET -->
+<div id="confirmReset">
+  <div class="confirmCard">
+    <p>Если вы нажмёте «Начать сначала», весь прогресс и накопления будут сброшены.</p>
+    <button id="confirmYes">Начать сначала</button>
+    <button id="confirmNo">Отменить</button>
+  </div>
+</div>
+
+<!-- BOTTOM SHEET -->
 <div id="sheetOverlay"></div>
 <div id="sheet">
   <h2>Как копим?</h2>
-  <div class="card" id="noBuffer"><b>Без подушки</b>
-Все деньги идут в цель.</div>
-  <div class="card" id="withBuffer"><b>С подушкой</b>
-Защита от непредвиденных расходов.</div>
-</div>
-
-<!-- ===== LOCK OVERLAY ===== -->
-<div id="lockOverlay">
-  <div class="lockBox">
-    <div class="lockIcon">🔒</div>
-    <p id="lockText"></p>
-    <button id="resetBtn">Начать сначала</button>
-  </div>
-</div>
-
-<!-- ===== CONFIRM RESET ===== -->
-<div id="confirmOverlay">
-  <div class="confirmBox">
-    <p>Если вы нажмёте «Начать сначала», весь прогресс будет сброшен.</p>
-    <button id="confirmReset">Начать сначала</button>
-    <button id="cancelReset">Отмена</button>
-  </div>
+  <div class="card" id="noBuffer">Без подушки</div>
+  <div class="card" id="withBuffer">С подушкой</div>
 </div>
 
 <script src="app.js?v=10000"></script>

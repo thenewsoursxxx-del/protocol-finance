@@ -1,38 +1,67 @@
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:#000;color:#fff;font-family:system-ui}
-.app{padding:24px;padding-bottom:160px}
+.app{padding:28px;padding-bottom:160px}
 .screen{display:none}
 .screen.active{display:block}
-h2{margin-bottom:16px}
+h2{margin-bottom:20px}
 
-input,button{width:100%;padding:16px;border-radius:16px;font-size:18px}
-input{background:#000;border:1px solid #333;color:#fff;margin-bottom:14px}
-button{background:#fff;color:#000;border:none}
-
-.card{border:1px solid #333;border-radius:18px;padding:16px;margin-bottom:12px}
-
-.slider-head{display:flex;justify-content:space-between;font-size:14px;margin-bottom:4px}
-input[type=range]{height:4px;background:#333}
-input[type=range]::-webkit-slider-thumb{width:18px;height:18px;background:#fff;border-radius:50%}
-
-.bottom-nav{position:fixed;bottom:20px;left:20px;right:20px;height:80px;border-radius:999px;background:rgba(0,0,0,.9);display:flex}
-.nav-btn{flex:1;background:none;color:#fff;font-size:24px}
-
-.loader{
-  width:40px;height:40px;border:3px solid #333;border-top:3px solid #fff;
-  border-radius:50%;animation:spin 1s linear infinite;margin:16px auto;display:none
+input,button{
+  width:100%;
+  padding:16px;
+  margin-bottom:16px;
+  border-radius:18px;
+  border:none;
+  font-size:18px
 }
+input{background:#000;border:1px solid #333;color:#fff}
+button{background:#fff;color:#000}
+
+.card{border:1px solid #333;border-radius:20px;padding:18px;margin-bottom:16px}
+
+/* LOADER */
+.loader{
+  width:36px;height:36px;
+  border:3px solid #333;
+  border-top:3px solid #fff;
+  border-radius:50%;
+  animation:spin 1s linear infinite;
+  margin:20px auto
+}
+.hidden{display:none}
 @keyframes spin{to{transform:rotate(360deg)}}
 
-#sheetOverlay,#lockOverlay,#confirmOverlay{
-  position:fixed;inset:0;background:rgba(0,0,0,.45);display:none
+/* LOCK */
+#calcLock{
+  position:absolute;inset:0;
+  background:rgba(0,0,0,.6);
+  backdrop-filter:blur(8px);
+  display:none;
 }
+.lockCard{
+  position:absolute;top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  text-align:center
+}
+.lockIcon{font-size:32px;margin-bottom:12px}
+
+/* CONFIRM */
+#confirmReset{
+  position:fixed;inset:0;
+  background:rgba(0,0,0,.7);
+  display:none
+}
+.confirmCard{
+  background:#000;border:1px solid #333;
+  border-radius:22px;padding:24px;
+  position:absolute;top:50%;left:50%;
+  transform:translate(-50%,-50%);
+}
+.confirmCard button{margin-top:12px}
+
+/* BOTTOM SHEET */
+#sheetOverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4)}
 #sheet{
-  position:fixed;left:0;right:0;bottom:-100%;background:#000;
-  border-radius:24px 24px 0 0;padding:20px;transition:.3s
+  position:fixed;left:0;right:0;bottom:-100%;
+  background:#000;border-radius:26px 26px 0 0;
+  padding:24px;transition:.35s
 }
-.lockBox,.confirmBox{
-  background:#000;border:1px solid #333;border-radius:20px;
-  padding:24px;margin:30% auto;width:80%;text-align:center
-}
-.lockIcon{font-size:36px;margin-bottom:12px}
