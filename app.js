@@ -17,6 +17,7 @@ const goalInput = document.getElementById("goal");
 const paceInput = document.getElementById("pace");
 const percentLabel = document.getElementById("percentLabel");
 const calculateBtn = document.getElementById("calculate");
+
 const adviceCard = document.getElementById("adviceCard");
 const loader = document.getElementById("loader");
 
@@ -25,9 +26,13 @@ const sheetOverlay = document.getElementById("sheetOverlay");
 const noBuffer = document.getElementById("noBuffer");
 const withBuffer = document.getElementById("withBuffer");
 
-const progressScreen = document.getElementById("screen-progress");
 const calcLock = document.getElementById("calcLock");
 const lockText = document.getElementById("lockText");
+const resetPlanBtn = document.getElementById("resetPlan");
+
+const confirmReset = document.getElementById("confirmReset");
+const confirmYes = document.getElementById("confirmYes");
+const confirmNo = document.getElementById("confirmNo");
 
 /* ===== STATE ===== */
 let lastCalc = {};
@@ -101,13 +106,12 @@ lastCalc = { income, expenses, goal, pace };
 openSheet();
 };
 
-/* ===== GRAPH ===== */
+/* ===== GRAPH IN PROTOCOL ===== */
 function drawGraph(monthly, goal) {
 const months = Math.ceil(goal / monthly);
 
-progressScreen.innerHTML = `
-<h2>Прогресс</h2>
-<canvas id="chart" width="360" height="260"></canvas>
+adviceCard.innerHTML += `
+<canvas id="chart" width="360" height="260" style="margin-top:20px"></canvas>
 `;
 
 const canvas = document.getElementById("chart");
@@ -135,7 +139,7 @@ ctx.lineTo(x(months), y(goal));
 ctx.stroke();
 }
 
-/* ===== STAGED FLOW ===== */
+/* ===== STAGED PROTOCOL FLOW ===== */
 function protocolFlow(mode) {
 chosenPlan = mode;
 lockText.innerText =
@@ -149,10 +153,16 @@ const free = lastCalc.income - lastCalc.expenses;
 let monthly = Math.round(free * lastCalc.pace);
 if (mode === "buffer") monthly = Math.round(monthly * 0.9);
 
-adviceCard.innerText = "Выбран режим.";
+adviceCard.innerText =
+mode === "buffer"
+? "Выбран режим с подушкой."
+: "Выбран режим без подушки.";
 
 setTimeout(() => {
-adviceCard.innerText = "Часть средств будет направляться в резерв.";
+adviceCard.innerText =
+mode === "buffer"
+? "Часть средств будет направляться в резерв для устойчивости плана."
+: "Все средства будут направляться напрямую в цель.";
 }, 2000);
 
 setTimeout(() => {
@@ -161,13 +171,24 @@ adviceCard.innerText = "Готово.";
 
 setTimeout(() => {
 loader.classList.add("hidden");
+adviceCard.innerHTML =
+`Темп: ${Math.round(lastCalc.pace * 100)}%<br>` +
+`Ежемесячно: ${monthly} ₽<br>`;
 drawGraph(monthly, lastCalc.goal);
-
-// 🔥 ВАЖНОЕ ИСПРАВЛЕНИЕ
-openScreen("progress", buttons[2]);
 }, 6000);
 }
 
 /* ===== CHOICES ===== */
 noBuffer.onclick = () => { closeSheet(); protocolFlow("direct"); };
 withBuffer.onclick = () => { closeSheet(); protocolFlow("buffer"); };
+
+/* ===== RESET (FIXED) ===== */
+resetPlanBtn.onclick = () => {
+confirmReset.style.display = "block";
+};
+confirmNo.onclick = () => {
+confirmReset.style.display = "none";
+};
+confirmYes.onclick = () => {
+location.reload();
+};
