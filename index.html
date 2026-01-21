@@ -5,11 +5,11 @@
     <title>Protocol</title>
     <meta name="viewport"
           content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <link rel="stylesheet" href="style.css?v=8">
+    <link rel="stylesheet" href="style.css?v=9">
 </head>
 <body>
 
-<!-- ===== STORY ONBOARDING ===== -->
+<!-- ===== ONBOARDING ===== -->
 <div id="onboarding" class="onboarding">
 
     <div class="story-track">
@@ -46,7 +46,6 @@ Protocol считает варианты и риски.</p>
 <!-- ===== APP ===== -->
 <div class="app">
 
-    <!-- РАСЧЁТ -->
     <section id="screen-calc" class="screen active">
         <h2>Расчёт</h2>
 
@@ -68,22 +67,20 @@ Protocol считает варианты и риски.</p>
         <button id="calculate">Рассчитать</button>
     </section>
 
-    <!-- ПЛАН -->
     <section id="screen-plan" class="screen">
         <h2>План</h2>
         <div id="planResult">План ещё не выбран</div>
     </section>
 
-    <!-- ПРОГРЕСС -->
     <section id="screen-progress" class="screen">
         <h2>Прогресс</h2>
-        <canvas id="progressChart" width="320" height="200"></canvas>
+        <canvas id="progressChart" width="320" height="220"></canvas>
+        <div id="progressInfo"></div>
     </section>
 
-    <!-- РИСКИ -->
     <section id="screen-risk" class="screen">
         <h2>Риски</h2>
-        <div id="riskResult">Protocol адаптируется автоматически</div>
+        <div>Protocol автоматически адаптирует план</div>
     </section>
 
 </div>
@@ -96,6 +93,6 @@ Protocol считает варианты и риски.</p>
 </nav>
 
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-<script src="app.js?v=8"></script>
+<script src="app.js?v=9"></script>
 </body>
 </html>
