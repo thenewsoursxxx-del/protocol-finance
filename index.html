@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Protocol Finance</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="app">
+    <h1>Protocol Finance</h1>
+    <p class="subtitle">Адаптивный финансовый план</p>
+
+    <div class="card">
+        <label>Ежемесячный доход</label>
+        <input type="text" id="income" placeholder="100.000">
+
+        <label>Обязательные траты</label>
+        <input type="text" id="expenses" placeholder="60.000">
+
+        <label>Стоимость цели</label>
+        <input type="text" id="targetAmount" placeholder="300.000">
+
+        <label>Темп накоплений</label>
+        <input type="range" id="aggression" min="30" max="80" value="40">
+        <div class="range-info">
+            <span id="aggressionLabel">Комфортно</span>
+            <span id="aggressionValue">40%</span>
+        </div>
+
+        <button id="calculate">Рассчитать</button>
+        <button id="viewPlan" class="secondary">Текущий план</button>
+        <button id="viewProgress" class="secondary">Прогресс</button>
+        <button id="viewRisk" class="secondary">Риски</button>
+    </div>
+
+    <div class="result" id="result"></div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
