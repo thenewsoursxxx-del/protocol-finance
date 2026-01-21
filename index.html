@@ -16,7 +16,7 @@
 
     .screen {
       display: none;
-      height: 100vh;
+      height: calc(100vh - 60px);
       padding: 16px;
       box-sizing: border-box;
     }
@@ -25,6 +25,39 @@
       display: block;
     }
 
+    h2 {
+      margin-top: 0;
+      font-weight: 600;
+    }
+
+    input, button {
+      width: 100%;
+      padding: 14px;
+      margin: 10px 0;
+      border-radius: 14px;
+      border: none;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+
+    input {
+      background: #16161c;
+      color: white;
+    }
+
+    button {
+      background: #4f7cff;
+      color: white;
+      font-weight: 600;
+    }
+
+    canvas {
+      width: 100%;
+      height: 260px;
+      margin-top: 16px;
+    }
+
+    /* ===== BOTTOM TABS ===== */
     .tg-tabs {
       position: fixed;
       bottom: 0;
@@ -48,78 +81,20 @@
       color: #4f7cff;
       font-weight: 600;
     }
-
-    input, button {
-      width: 100%;
-      padding: 14px;
-      margin: 8px 0;
-      border-radius: 12px;
-      border: none;
-      font-size: 16px;
-      box-sizing: border-box;
-    }
-
-    button {
-      background: #4f7cff;
-      color: white;
-    }
-
-    canvas {
-      width: 100%;
-      height: 240px;
-      margin-top: 16px;
-    }
-
-    /* ===== ONBOARDING ===== */
-    #onboarding {
-      position: fixed;
-      inset: 0;
-      background: #0e0e11;
-      z-index: 9999;
-      display: none;
-    }
-
-    .onb-slide {
-      height: 100%;
-      padding: 24px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-    }
-
-    .onb-slide h1 {
-      font-size: 28px;
-    }
-
-    .onb-slide p {
-      font-size: 16px;
-      color: #bbb;
-    }
   </style>
 </head>
 
 <body>
 
-<!-- ===== ONBOARDING / STORIES ===== -->
-<div id="onboarding">
-  <div class="onb-slide">
-    <div>
-      <h1>Protocol</h1>
-      <p>Я беру управление твоими деньгами.</p>
-      <p>Без эмоций. Без догадок.</p>
-    </div>
-    <button onclick="hideOnboarding()">Начать</button>
-  </div>
-</div>
-
-<!-- ===== SCREENS ===== -->
-<div id="screen-calc" class="screen">
+<!-- ===== CALC ===== -->
+<div id="screen-calc" class="screen active">
   <h2>Расчёт</h2>
   <input id="income" placeholder="Доход" />
   <input id="expenses" placeholder="Расходы" />
   <button id="calculate">Рассчитать</button>
 </div>
 
+<!-- ===== PROGRESS ===== -->
 <div id="screen-progress" class="screen">
   <h2>Прогресс</h2>
   <div id="progressInfo"></div>
