@@ -34,11 +34,12 @@ const confirmReset = document.getElementById("confirmReset");
 const confirmYes = document.getElementById("confirmYes");
 const confirmNo = document.getElementById("confirmNo");
 
-/* ===== NAV ===== */
-const screens = document.querySelectorAll(".screen");
-const buttons = document.querySelectorAll(".nav-btn");
-const indicator = document.querySelector(".nav-indicator");
 const bottomNav = document.querySelector(".bottom-nav");
+
+/* ===== NAV FIX: NEVER MOVE ===== */
+bottomNav.style.position = "fixed";
+bottomNav.style.bottom = "26px";
+bottomNav.style.transform = "translateZ(0)";
 
 /* ===== STATE ===== */
 let lastCalc = {};
@@ -64,7 +65,11 @@ percentLabel.innerText = paceInput.value + "%";
 paceInput.addEventListener("input", updatePercent);
 updatePercent();
 
-/* ===== TAB LOCK ===== */
+/* ===== NAV LOGIC ===== */
+const screens = document.querySelectorAll(".screen");
+const buttons = document.querySelectorAll(".nav-btn");
+const indicator = document.querySelector(".nav-indicator");
+
 function lockTabs(lock) {
 buttons.forEach((btn, i) => {
 if (i === 0) return;
@@ -74,7 +79,6 @@ btn.style.pointerEvents = lock ? "none" : "auto";
 }
 lockTabs(true);
 
-/* ===== OPEN SCREEN ===== */
 function openScreen(name, btn) {
 if (!isInitialized && name !== "calc") return;
 
@@ -91,16 +95,6 @@ indicator.style.transform = `translateX(${r.left - p.left}px)`;
 }
 }
 buttons.forEach(btn => btn.onclick = () => openScreen(btn.dataset.screen, btn));
-
-/* ===== FIX BOTTOM NAV (ABSOLUTE NO MOVE) ===== */
-const navBottomPx = 26;
-bottomNav.style.bottom = navBottomPx + "px";
-
-if (window.visualViewport) {
-window.visualViewport.addEventListener("resize", () => {
-bottomNav.style.bottom = navBottomPx + "px";
-});
-}
 
 /* ===== BOTTOM SHEET ===== */
 function openSheet() {
@@ -121,17 +115,14 @@ const expenses = parseNumber(expensesInput.value);
 const goal = parseNumber(goalInput.value);
 const pace = Number(paceInput.value) / 100;
 
-if (!income || !goal || income - expenses <= 0) {
-tg?.HapticFeedback?.notificationOccurred("error");
-return;
-}
+if (!income || !goal || income - expenses <= 0) return;
 
 lastCalc = { income, expenses, goal, pace };
 openSheet();
 };
 
-/* ===== GRAPH HELPERS ===== */
-let canvas, ctx, pad, w, h;
+/* ===== GRAPH ===== */
+let canvas, ctx, pad = 40, w, h;
 
 function drawAxes() {
 ctx.strokeStyle = "#333";
@@ -166,23 +157,20 @@ drawAxes();
 drawPlan();
 drawFact(current);
 current += (target - current) * 0.06;
-if (Math.abs(target - current) > 0.002) {
-requestAnimationFrame(step);
-}
+if (Math.abs(target - current) > 0.002) requestAnimationFrame(step);
 }
 step();
 }
 
-/* ===== KEYBOARD BUTTON (FIXED POSITION) ===== */
+/* ===== KEYBOARD CLOSE BUTTON ===== */
 const kbBtn = document.createElement("button");
-kbBtn.innerText = "⌄";
+kbBtn.textContent = "⌄";
 kbBtn.style.cssText = `
 position: fixed;
-right: 14px;
-bottom: 0;
+right: 16px;
 z-index: 9999;
-width: 46px;
-height: 46px;
+width: 48px;
+height: 48px;
 border-radius: 50%;
 background: #fff;
 color: #000;
@@ -196,16 +184,13 @@ document.activeElement?.blur();
 kbBtn.style.display = "none";
 };
 
-/* ===== KEYBOARD TRACKING ===== */
 if (window.visualViewport) {
 const baseHeight = window.visualViewport.height;
 
 window.visualViewport.addEventListener("resize", () => {
 const diff = baseHeight - window.visualViewport.height;
-const open = diff > 120;
-
-if (open) {
-kbBtn.style.bottom = (diff + 8) + "px"; // 👈 ПРЯМО НА КЛАВИАТУРЕ
+if (diff > 120) {
+kbBtn.style.bottom = diff + 32 + "px"; // 🔥 ЧУТЬ ВЫШЕ КЛАВИАТУРЫ
 kbBtn.style.display = "flex";
 kbBtn.style.alignItems = "center";
 kbBtn.style.justifyContent = "center";
@@ -237,8 +222,8 @@ adviceCard.innerText = "Protocol анализирует данные…";
 setTimeout(() => {
 adviceCard.innerText =
 mode === "buffer"
-? "Часть средств будет направляться в резерв для устойчивости плана."
-: "Все средства будут направляться напрямую в цель.";
+? "Часть средств будет направляться в резерв."
+: "Все средства идут напрямую в цель.";
 }, 2000);
 
 setTimeout(() => {
@@ -249,20 +234,39 @@ setTimeout(() => {
 loader.classList.add("hidden");
 
 adviceCard.innerHTML = `
-<div>План: ${plannedMonthly} ₽ в месяц</div>
+<div>План: ${plannedMonthly} ₽ / месяц</div>
+
 <canvas id="chart" width="360" height="260" style="margin:16px 0"></canvas>
+
+<div style="display:flex;gap:8px;align-items:center">
+<input id="factInput" inputmode="numeric" placeholder="Фактически отложено" style="flex:1"/>
+<button id="applyFact" style="width:52px;height:52px;border-radius:50%">➜</button>
+</div>
 `;
 
 canvas = document.getElementById("chart");
 ctx = canvas.getContext("2d");
-
-pad = 40;
 w = canvas.width - pad * 2;
 h = canvas.height - pad * 2;
 
 drawAxes();
 drawPlan();
 drawFact(1);
+
+const factInput = document.getElementById("factInput");
+const applyBtn = document.getElementById("applyFact");
+
+factInput.addEventListener("input", e => {
+e.target.value = formatNumber(e.target.value);
+});
+
+applyBtn.onclick = () => {
+const fact = parseNumber(factInput.value);
+if (!fact) return;
+factInput.blur();
+animateFact(Math.min(fact / plannedMonthly, 1.3));
+};
+
 }, 6000);
 }
 
@@ -271,12 +275,8 @@ noBuffer.onclick = () => { closeSheet(); protocolFlow("direct"); };
 withBuffer.onclick = () => { closeSheet(); protocolFlow("buffer"); };
 
 /* ===== RESET ===== */
-resetBtn.onclick = () => {
-confirmReset.style.display = "block";
-};
-confirmNo.onclick = () => {
-confirmReset.style.display = "none";
-};
+resetBtn.onclick = () => confirmReset.style.display = "block";
+confirmNo.onclick = () => confirmReset.style.display = "none";
 confirmYes.onclick = () => {
 chosenPlan = null;
 isInitialized = false;
