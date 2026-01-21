@@ -1,176 +1,38 @@
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#000;color:#fff;font-family:system-ui}
+.app{padding:24px;padding-bottom:160px}
+.screen{display:none}
+.screen.active{display:block}
+h2{margin-bottom:16px}
 
-html, body {
-  width: 100%;
-  height: 100%;
-  background: #000;
-  color: #fff;
-  font-family: system-ui, -apple-system;
-  font-size: 18px;
-}
+input,button{width:100%;padding:16px;border-radius:16px;font-size:18px}
+input{background:#000;border:1px solid #333;color:#fff;margin-bottom:14px}
+button{background:#fff;color:#000;border:none}
 
-.app {
-  padding: 28px;
-  padding-bottom: 160px;
-}
+.card{border:1px solid #333;border-radius:18px;padding:16px;margin-bottom:12px}
 
-.screen {
-  display: none;
-}
-.screen.active {
-  display: block;
-}
+.slider-head{display:flex;justify-content:space-between;font-size:14px;margin-bottom:4px}
+input[type=range]{height:4px;background:#333}
+input[type=range]::-webkit-slider-thumb{width:18px;height:18px;background:#fff;border-radius:50%}
 
-h2 {
-  font-size: 26px;
-  margin-bottom: 22px;
+.bottom-nav{position:fixed;bottom:20px;left:20px;right:20px;height:80px;border-radius:999px;background:rgba(0,0,0,.9);display:flex}
+.nav-btn{flex:1;background:none;color:#fff;font-size:24px}
+
+.loader{
+  width:40px;height:40px;border:3px solid #333;border-top:3px solid #fff;
+  border-radius:50%;animation:spin 1s linear infinite;margin:16px auto;display:none
 }
+@keyframes spin{to{transform:rotate(360deg)}}
 
-label {
-  display: block;
-  margin-bottom: 6px;
-  opacity: .7;
+#sheetOverlay,#lockOverlay,#confirmOverlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.45);display:none
 }
-
-input {
-  width: 100%;
-  padding: 18px;
-  font-size: 20px;
-  border-radius: 18px;
-  background: #000;
-  border: 1px solid #333;
-  color: #fff;
-  margin-bottom: 20px;
+#sheet{
+  position:fixed;left:0;right:0;bottom:-100%;background:#000;
+  border-radius:24px 24px 0 0;padding:20px;transition:.3s
 }
-
-/* ===== SLIDER ===== */
-.slider-block {
-  margin-bottom: 26px;
+.lockBox,.confirmBox{
+  background:#000;border:1px solid #333;border-radius:20px;
+  padding:24px;margin:30% auto;width:80%;text-align:center
 }
-
-.slider-head {
-  display: flex;
-  justify-content: space-between;
-  font-size: 15px;
-  margin-bottom: 6px;
-  opacity: .8;
-}
-
-input[type="range"] {
-  width: 100%;
-  appearance: none;
-  height: 4px;
-  border-radius: 4px;
-  background: #333;
-}
-
-input[type="range"]::-webkit-slider-thumb {
-  appearance: none;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: #fff;
-}
-
-.slider-labels {
-  display: flex;
-  justify-content: space-between;
-  font-size: 12px;
-  margin-top: 6px;
-  opacity: .55;
-}
-
-/* ===== BUTTON ===== */
-button {
-  width: 100%;
-  padding: 18px;
-  font-size: 20px;
-  border-radius: 999px;
-  background: #fff;
-  color: #000;
-  border: none;
-}
-
-/* ===== CARD ===== */
-.card {
-  border: 1px solid #333;
-  border-radius: 22px;
-  padding: 20px;
-  margin-bottom: 16px;
-}
-
-/* ===== NAV ===== */
-.bottom-nav {
-  position: fixed;
-  bottom: 26px;
-  left: 20px;
-  right: 20px;
-  height: 82px;
-
-  display: flex;
-  align-items: center;
-  gap: 16px;
-
-  background: rgba(0,0,0,.9);
-  backdrop-filter: blur(18px);
-  border-radius: 999px;
-  border: 1px solid #222;
-}
-
-.nav-indicator {
-  position: absolute;
-  top: 7px;
-  left: 7px;
-  width: 68px;
-  height: 68px;
-  border-radius: 999px;
-  background: #fff;
-  transition: transform .35s cubic-bezier(.4,0,.2,1);
-}
-
-.nav-btn {
-  flex: 1;
-  height: 68px;
-  background: transparent;
-  border: none;
-  z-index: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.nav-btn svg {
-  width: 24px;
-  height: 24px;
-  stroke: #fff;
-  fill: none;
-  stroke-width: 2;
-}
-
-.nav-btn.active svg {
-  stroke: #000;
-}
-
-/* ===== BOTTOM SHEET ===== */
-#sheetOverlay {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,.45);
-}
-
-#sheet {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: -100%;
-  background: #000;
-  border-top-left-radius: 26px;
-  border-top-right-radius: 26px;
-  padding: 24px;
-  transition: bottom .35s ease;
-}
+.lockIcon{font-size:36px;margin-bottom:12px}

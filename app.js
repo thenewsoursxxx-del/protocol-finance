@@ -1,183 +1,69 @@
-const tg = window.Telegram?.WebApp;
-tg?.expand();
+const tg=window.Telegram?.WebApp; tg?.expand();
 
-/* ===== FORMAT ===== */
-function formatNumber(v) {
-const d = v.replace(/\D/g, "");
-return d.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-}
-function parseNumber(v) {
-return Number(v.replace(/\./g, ""));
-}
+const $=id=>document.getElementById(id);
+const state={plan:null};
 
-/* ===== ELEMENTS ===== */
-const incomeInput = document.getElementById("income");
-const expensesInput = document.getElementById("expenses");
-const goalInput = document.getElementById("goal");
-const paceInput = document.getElementById("pace");
-const percentLabel = document.getElementById("percentLabel");
-const calculateBtn = document.getElementById("calculate");
-const adviceCard = document.getElementById("adviceCard");
-
-const sheet = document.getElementById("sheet");
-const sheetOverlay = document.getElementById("sheetOverlay");
-const noBuffer = document.getElementById("noBuffer");
-const withBuffer = document.getElementById("withBuffer");
-
-const progressScreen = document.getElementById("screen-progress");
-
-/* ===== STATE ===== */
-let lastCalc = {};
-
-/* ===== INPUT FORMAT ===== */
-[incomeInput, expensesInput, goalInput].forEach(input => {
-input.addEventListener("input", e => {
-const p = e.target.selectionStart;
-const b = e.target.value.length;
-e.target.value = formatNumber(e.target.value);
-const a = e.target.value.length;
-e.target.selectionEnd = p + (a - b);
-});
+["income","expenses","goal"].forEach(id=>{
+  $(id).oninput=e=>{
+    e.target.value=e.target.value.replace(/\D/g,"").replace(/\B(?=(\d{3})+(?!\d))/g,".")
+  }
 });
 
-/* ===== SLIDER ===== */
-function updatePercent() {
-percentLabel.innerText = paceInput.value + "%";
-}
-paceInput.addEventListener("input", updatePercent);
-updatePercent();
+$("pace").oninput=()=>$("percentLabel").innerText=$("pace").value+"%";
 
-/* ===== NAV ===== */
-const screens = document.querySelectorAll(".screen");
-const buttons = document.querySelectorAll(".nav-btn");
-const indicator = document.querySelector(".nav-indicator");
-
-function openScreen(name, btn) {
-screens.forEach(s => s.classList.remove("active"));
-document.getElementById("screen-" + name).classList.add("active");
-
-buttons.forEach(b => b.classList.remove("active"));
-if (btn) btn.classList.add("active");
-
-if (btn) {
-const r = btn.getBoundingClientRect();
-const p = btn.parentElement.getBoundingClientRect();
-indicator.style.transform = `translateX(${r.left - p.left}px)`;
-}
-
-tg?.HapticFeedback?.impactOccurred("light");
-}
-
-buttons.forEach(btn => {
-btn.onclick = () => openScreen(btn.dataset.screen, btn);
-});
-
-/* ===== BOTTOM SHEET ===== */
-function openSheet() {
-sheetOverlay.style.display = "block";
-sheet.style.bottom = "0";
-}
-function closeSheet() {
-sheet.style.bottom = "-100%";
-sheetOverlay.style.display = "none";
-}
-
-/* ===== CALCULATE ===== */
-calculateBtn.onclick = () => {
-const income = parseNumber(incomeInput.value);
-const expenses = parseNumber(expensesInput.value);
-const goal = parseNumber(goalInput.value);
-const pace = Number(paceInput.value) / 100;
-
-if (!income || !goal || income - expenses <= 0) {
-tg?.HapticFeedback?.notificationOccurred("error");
-return;
-}
-
-lastCalc = { income, expenses, goal, pace };
-openSheet();
+$("calculate").onclick=()=>{
+  if(state.plan){ showLock(); return; }
+  openSheet();
 };
 
-/* ===== GRAPH ===== */
-function drawGraph(monthly, goal) {
-progressScreen.innerHTML = `
-<h2>Прогресс</h2>
-<canvas id="chart" width="360" height="240"></canvas>
-`;
-
-const canvas = document.getElementById("chart");
-const ctx = canvas.getContext("2d");
-
-const months = Math.ceil(goal / monthly);
-const pad = 32;
-const w = canvas.width - pad * 2;
-const h = canvas.height - pad * 2;
-
-const x = i => pad + (i / months) * w;
-const y = v => canvas.height - pad - (v / goal) * h;
-
-ctx.strokeStyle = "#333";
-ctx.beginPath();
-ctx.moveTo(pad, pad);
-ctx.lineTo(pad, canvas.height - pad);
-ctx.lineTo(canvas.width - pad, canvas.height - pad);
-ctx.stroke();
-
-ctx.strokeStyle = "#fff";
-ctx.lineWidth = 2;
-ctx.beginPath();
-ctx.moveTo(x(0), y(0));
-ctx.lineTo(x(months), y(goal));
-ctx.stroke();
+function openSheet(){
+  $("sheetOverlay").style.display="block";
+  $("sheet").style.bottom="0";
+}
+function closeSheet(){
+  $("sheetOverlay").style.display="none";
+  $("sheet").style.bottom="-100%";
 }
 
-/* ===== STAGED PROTOCOL FLOW ===== */
-function protocolFlow(mode) {
-openScreen("advice", buttons[1]);
+$("noBuffer").onclick=()=>startProtocol("Без подушки");
+$("withBuffer").onclick=()=>startProtocol("С подушкой");
 
-const pacePercent = Math.round(lastCalc.pace * 100);
-const free = lastCalc.income - lastCalc.expenses;
-
-let monthly = Math.round(free * lastCalc.pace);
-if (mode === "buffer") {
-monthly = Math.round(monthly * 0.9);
+function startProtocol(type){
+  closeSheet();
+  state.plan=type;
+  openScreen("advice");
+  runStages(type);
 }
 
-const months = Math.ceil(lastCalc.goal / monthly);
-
-adviceCard.innerText =
-mode === "buffer"
-? "Выбран режим с подушкой."
-: "Выбран режим без подушки.";
-
-setTimeout(() => {
-adviceCard.innerText =
-mode === "buffer"
-? "Часть средств будет направляться в резерв для устойчивости плана."
-: "Все средства будут направляться напрямую в цель.";
-}, 2000);
-
-setTimeout(() => {
-adviceCard.innerText = "Готово.";
-}, 4000);
-
-setTimeout(() => {
-adviceCard.innerText =
-`Темп: ${pacePercent}%\n` +
-`Ежемесячно: ${monthly} ₽\n` +
-`Срок: ~${months} мес.`;
-
-drawGraph(monthly, lastCalc.goal);
-}, 6000);
+function runStages(type){
+  $("loader").style.display="block";
+  stage("Выбран режим "+type+".",0);
+  stage("Часть средств будет направляться в резерв для устойчивости плана.",2000);
+  stage("Готово.",4000);
+  setTimeout(()=>{
+    $("loader").style.display="none";
+    $("adviceCard").innerText="План готов. Перейдите в «Прогресс».";
+  },6000);
 }
 
-/* ===== CHOICES ===== */
-noBuffer.onclick = () => {
-closeSheet();
-protocolFlow("direct");
+function stage(text,delay){
+  setTimeout(()=>{$("adviceCard").innerText=text},delay);
+}
+
+function showLock(){
+  $("lockText").innerText="У вас уже выбран план: "+state.plan;
+  $("lockOverlay").style.display="block";
+}
+
+$("resetBtn").onclick=()=>{$("confirmOverlay").style.display="block"};
+$("cancelReset").onclick=()=>{$("confirmOverlay").style.display="none"};
+$("confirmReset").onclick=()=>{
+  state.plan=null;
+  $("lockOverlay").style.display="none";
+  $("confirmOverlay").style.display="none";
 };
 
-withBuffer.onclick = () => {
-closeSheet();
-protocolFlow("buffer");
-};
+function openScreen(name){
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+  $("screen-"+name).classList.add("active");
+}
