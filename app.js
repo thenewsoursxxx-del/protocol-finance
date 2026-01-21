@@ -1,83 +1,52 @@
 const tg = window.Telegram?.WebApp;
 tg?.expand();
 
-const haptic = type => {
-  try {
-    tg?.HapticFeedback?.impactOccurred(type || "light");
-  } catch {}
+const haptic = () => {
+  try { tg.HapticFeedback.impactOccurred("light"); } catch {}
 };
 
-const $ = id => document.getElementById(id);
-const parse = v => Number(v.replace(/\./g,""));
-const format = v => v.replace(/\D/g,"").replace(/\B(?=(\d{3})+(?!\d))/g,".");
+const screens = document.querySelectorAll(".screen");
+const buttons = document.querySelectorAll(".nav-btn");
+const indicator = document.querySelector(".nav-indicator");
 
-let state = JSON.parse(localStorage.getItem("protocol_state") || "{}");
-let goals = state.goals || [{id:1,name:"Главная цель",target:300000,balance:0,priority:1,active:true}];
-let buffer = state.buffer || 0;
-let monthly = state.monthly || 0;
+function openScreen(name, btn) {
+  screens.forEach(s => s.classList.remove("active"));
+  document.getElementById("screen-" + name).classList.add("active");
 
-function save(){
-  localStorage.setItem("protocol_state", JSON.stringify({goals,buffer,monthly}));
+  buttons.forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+
+  const rect = btn.getBoundingClientRect();
+  const parent = btn.parentElement.getBoundingClientRect();
+
+  indicator.style.transform =
+    `translateX(${rect.left - parent.left}px)`;
+
+  haptic();
 }
 
-/* ===== NAV ===== */
-document.querySelectorAll(".bottom-nav button").forEach(b=>{
-  b.onclick = ()=>{
-    haptic("light");
-    document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
-    document.querySelectorAll(".bottom-nav button").forEach(x=>x.classList.remove("active"));
-    $("screen-"+b.dataset.screen).classList.add("active");
-    b.classList.add("active");
+buttons.forEach(btn => {
+  btn.onclick = () => openScreen(btn.dataset.screen, btn);
+});
+
+/* onboarding */
+const seen = localStorage.getItem("onboarding_seen");
+if (!seen) {
+  onboarding.classList.remove("hidden");
+  let i = 0;
+  const stories = document.querySelectorAll(".story");
+  onboarding.onclick = () => {
+    if (i < stories.length - 1) {
+      stories[i].classList.remove("active");
+      stories[++i].classList.add("active");
+    }
   };
-});
-
-/* ===== INPUT FORMAT ===== */
-["income","expenses","newGoalTarget"].forEach(id=>{
-  const el=$(id);
-  if(el) el.oninput=e=>e.target.value=format(e.target.value);
-});
-
-/* ===== CALC ===== */
-$("calculate").onclick = ()=>{
-  haptic("medium");
-  const income=parse($("income").value);
-  const expenses=parse($("expenses").value);
-  if(income<=expenses) return;
-  monthly=Math.round((income-expenses)*0.5);
-  $("planResult").innerText=`Откладывать ${monthly} ₽ / мес`;
-  save();
-};
-
-/* ===== ACCOUNTS ===== */
-function renderAccounts(){
-  $("accounts").innerHTML = `
-    <div class="card">🎯 Цель
-<b>${goals[0].balance} / ${goals[0].target}</b></div>
-    <div class="card">🛡 Подушка
-<b>${buffer}</b></div>
-  `;
+  startApp.onclick = e => {
+    e.stopPropagation();
+    localStorage.setItem("onboarding_seen","1");
+    onboarding.classList.add("hidden");
+    app.classList.remove("hidden");
+  };
+} else {
+  app.classList.remove("hidden");
 }
-
-/* ===== GOALS ===== */
-function renderGoals(){
-  $("goals").innerHTML = goals.map(g=>`
-    <div class="card">
-      <b>${g.name}</b>
-${g.balance} / ${g.target}
-    </div>
-  `).join("");
-}
-
-$("addGoal").onclick = ()=>{
-  haptic("medium");
-  const name=$("newGoalName").value;
-  const target=parse($("newGoalTarget").value);
-  if(!name||!target) return;
-  goals.push({id:Date.now(),name,target,balance:0,priority:goals.length+1,active:true});
-  save();
-  renderGoals();
-};
-
-/* ===== INIT ===== */
-renderAccounts();
-renderGoals();

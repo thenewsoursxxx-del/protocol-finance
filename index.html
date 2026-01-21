@@ -11,11 +11,10 @@
   <title>Protocol</title>
 
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <link rel="stylesheet" href="style.css?v=1001">
+  <link rel="stylesheet" href="style.css?v=2000">
 </head>
 <body>
 
-<!-- ===== ONBOARDING ===== -->
 <div id="onboarding" class="onboarding hidden">
   <div class="story active">
     <h2>Protocol</h2>
@@ -23,46 +22,33 @@
 управления деньгами</p>
   </div>
   <div class="story">
-    <h2>Фокус</h2>
-    <p>Цели. Подушка.
-Реальный прогресс.</p>
+    <h2>Контроль</h2>
+    <p>Цели, подушка,
+реальный прогресс</p>
   </div>
   <div class="story">
     <button id="startApp">Начать</button>
   </div>
 </div>
 
-<!-- ===== APP ===== -->
 <div id="app" class="app hidden">
 
   <div class="screen active" id="screen-calc">
     <h2>Расчёт</h2>
     <label>Доход</label>
-    <input id="income" placeholder="100.000">
+    <input id="income">
     <label>Расходы</label>
-    <input id="expenses" placeholder="50.000">
+    <input id="expenses">
     <button id="calculate">Рассчитать</button>
-    <div id="planResult"></div>
   </div>
 
-  <div class="screen" id="screen-progress">
-    <h2>Прогресс</h2>
-    <canvas id="progressChart"></canvas>
-    <div id="progressInfo"></div>
-  </div>
+  <div class="screen" id="screen-progress"><h2>Прогресс</h2></div>
+  <div class="screen" id="screen-accounts"><h2>Счета</h2></div>
+  <div class="screen" id="screen-goals"><h2>Цели</h2></div>
 
-  <div class="screen" id="screen-accounts">
-    <h2>Счета</h2>
-    <div id="accounts"></div>
-  </div>
-
-  <div class="screen" id="screen-goals">
-    <h2>Цели</h2>
-    <div id="goals"></div>
-  </div>
-
-  <!-- ===== MONO NAV ===== -->
   <div class="bottom-nav">
+    <div class="nav-indicator"></div>
+
     <button class="nav-btn active" data-screen="calc">
       <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16"/></svg>
     </button>
@@ -79,30 +65,6 @@
 
 </div>
 
-<script src="app.js?v=1001"></script>
-
-<script>
-const seen = localStorage.getItem("onboarding_seen");
-if (!seen) {
-  onboarding.classList.remove("hidden");
-  let i = 0;
-  const stories = document.querySelectorAll(".story");
-  onboarding.onclick = () => {
-    if (i < stories.length - 1) {
-      stories[i].classList.remove("active");
-      stories[++i].classList.add("active");
-    }
-  };
-  startApp.onclick = e => {
-    e.stopPropagation();
-    localStorage.setItem("onboarding_seen","1");
-    onboarding.classList.add("hidden");
-    app.classList.remove("hidden");
-  };
-} else {
-  app.classList.remove("hidden");
-}
-</script>
-
+<script src="app.js?v=2000"></script>
 </body>
 </html>

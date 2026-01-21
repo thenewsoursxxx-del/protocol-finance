@@ -8,6 +8,7 @@ html, body {
   color: #fff;
   font-family: system-ui, -apple-system;
   font-size: 20px;
+  overflow: hidden;
 }
 
 .hidden { display: none !important; }
@@ -26,7 +27,8 @@ html, body {
 .story {
   display: none;
   text-align: center;
-  padding: 32px;
+  padding: 36px;
+  animation: fadeUp .6s ease forwards;
 }
 .story.active { display: block; }
 
@@ -35,19 +37,35 @@ html, body {
 
 .story button {
   margin-top: 48px;
-  padding: 20px 40px;
+  padding: 20px 44px;
   font-size: 20px;
   border-radius: 999px;
-  border: 1px solid #fff;
+  border: none;
   background: #fff;
   color: #000;
 }
 
 /* ===== APP ===== */
-.app { padding-bottom: 140px; }
+.app { padding-bottom: 150px; }
 
-.screen { display: none; padding: 36px; }
-.screen.active { display: block; }
+/* ===== SCREENS ===== */
+.screen {
+  position: absolute;
+  inset: 0;
+  padding: 36px;
+  opacity: 0;
+  transform: translateY(12px);
+  pointer-events: none;
+  transition:
+    opacity .45s cubic-bezier(.4,0,.2,1),
+    transform .45s cubic-bezier(.4,0,.2,1);
+}
+
+.screen.active {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
 
 h2 { font-size: 28px; margin-bottom: 28px; }
 
@@ -58,14 +76,14 @@ input {
   width: 100%;
   padding: 20px;
   font-size: 20px;
-  border-radius: 20px;
+  border-radius: 22px;
   background: #000;
   border: 1px solid #333;
   color: #fff;
   margin-bottom: 22px;
 }
 
-/* ===== BUTTON ===== */
+/* ===== BUTTONS ===== */
 button {
   width: 100%;
   padding: 20px;
@@ -74,14 +92,22 @@ button {
   background: #fff;
   color: #000;
   border: none;
+  transition:
+    transform .12s ease,
+    box-shadow .12s ease;
+}
+
+button:active {
+  transform: scale(.97);
+  box-shadow: 0 8px 24px rgba(255,255,255,.15);
 }
 
 /* ===== CARDS ===== */
 .card {
   border: 1px solid #333;
-  border-radius: 24px;
-  padding: 24px;
-  margin-bottom: 20px;
+  border-radius: 26px;
+  padding: 26px;
+  margin-bottom: 22px;
 }
 
 /* ===== GRAPH ===== */
@@ -90,32 +116,55 @@ canvas {
   height: 300px;
   background: #000;
   border: 1px solid #333;
-  border-radius: 24px;
+  border-radius: 26px;
 }
 
-/* ===== PREMIUM BOTTOM NAV ===== */
+/* ===== PREMIUM NAV ===== */
 .bottom-nav {
   position: fixed;
-  bottom: 24px;
-  left: 24px;
-  right: 24px;
+  bottom: 28px;
+  left: 28px;
+  right: 28px;
+  height: 82px;
+
   display: flex;
+  align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 18px;
+
+  background: rgba(0,0,0,.85);
+  backdrop-filter: blur(18px);
+  border-radius: 999px;
+  border: 1px solid #222;
+}
+
+/* активный «пузырь» */
+.nav-indicator {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  width: 70px;
+  height: 70px;
+  border-radius: 999px;
+  background: #fff;
+  transition:
+    transform .45s cubic-bezier(.4,0,.2,1);
+  z-index: 0;
 }
 
 .nav-btn {
   flex: 1;
-  height: 72px;
+  height: 70px;
   border-radius: 999px;
-  background: #000;
-  border: 1px solid #333;
+  background: transparent;
+  border: none;
 
   display: flex;
   align-items: center;
   justify-content: center;
 
-  transition: all .2s ease;
+  z-index: 1;
+  transition: transform .18s ease;
 }
 
 .nav-btn svg {
@@ -124,12 +173,19 @@ canvas {
   stroke: #fff;
   fill: none;
   stroke-width: 2;
-}
-
-.nav-btn.active {
-  background: #fff;
+  transition: stroke .3s ease;
 }
 
 .nav-btn.active svg {
   stroke: #000;
+}
+
+.nav-btn:active {
+  transform: scale(.92);
+}
+
+/* ===== ANIMATIONS ===== */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
 }
