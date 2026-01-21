@@ -3,14 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <title>Protocol</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="style.css">
+
+    <!-- ВАЖНО ДЛЯ TELEGRAM MOBILE -->
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+    <link rel="stylesheet" href="style.css?v=4">
 </head>
 <body>
 
 <div class="app">
 
-    <!-- ЭКРАНЫ -->
     <section id="screen-calc" class="screen active">
         <h2>Расчёт</h2>
 
@@ -32,30 +35,37 @@
 
     <section id="screen-plan" class="screen">
         <h2>План</h2>
-        <div id="planResult"></div>
+        <div id="planResult">План ещё не выбран</div>
     </section>
 
     <section id="screen-progress" class="screen">
         <h2>Прогресс</h2>
-        <div id="progressResult"></div>
+        <div id="progressResult">Нет данных</div>
     </section>
 
     <section id="screen-risk" class="screen">
         <h2>Риски</h2>
-        <div id="riskResult"></div>
+        <div id="riskResult">Protocol адаптируется автоматически</div>
     </section>
 
 </div>
 
-<!-- TELEGRAM-STYLE BOTTOM BAR -->
 <nav class="tg-tabs">
-    <button data-screen="calc" class="active">📊<span>Расчёт</span></button>
-    <button data-screen="plan">📌<span>План</span></button>
-    <button data-screen="progress">📈<span>Прогресс</span></button>
-    <button data-screen="risk">⚠️<span>Риски</span></button>
+    <button data-screen="calc" class="active">
+        <span>📊</span><small>Расчёт</small>
+    </button>
+    <button data-screen="plan">
+        <span>📌</span><small>План</small>
+    </button>
+    <button data-screen="progress">
+        <span>📈</span><small>Прогресс</small>
+    </button>
+    <button data-screen="risk">
+        <span>⚠️</span><small>Риски</small>
+    </button>
 </nav>
 
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-<script src="app.js"></script>
+<script src="app.js?v=4"></script>
 </body>
 </html>

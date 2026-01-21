@@ -1,21 +1,24 @@
 * {
     box-sizing: border-box;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+    height: 100%;
 }
 
 body {
     margin: 0;
     background: #0f0f0f;
-    color: #fff;
+    color: #ffffff;
+    touch-action: manipulation;
 }
 
 .app {
+    min-height: 100%;
     padding: 16px;
-    padding-bottom: 90px;
-}
-
-h2 {
-    margin-top: 0;
+    padding-bottom: calc(80px + env(safe-area-inset-bottom));
 }
 
 label {
@@ -25,13 +28,10 @@ label {
     color: #aaa;
 }
 
-input, button {
-    width: 100%;
-    margin-top: 6px;
-}
-
 input {
+    width: 100%;
     padding: 10px;
+    margin-top: 6px;
     border-radius: 8px;
     border: none;
     background: #1f1f1f;
@@ -40,6 +40,7 @@ input {
 }
 
 button {
+    width: 100%;
     margin-top: 16px;
     padding: 12px;
     background: #4f7cff;
@@ -49,6 +50,7 @@ button {
     font-size: 16px;
 }
 
+/* ЭКРАНЫ */
 .screen {
     display: none;
 }
@@ -60,13 +62,22 @@ button {
 /* ===== TELEGRAM BOTTOM BAR ===== */
 .tg-tabs {
     position: fixed;
-    bottom: 0;
     left: 0;
     right: 0;
+    bottom: 0;
+
     height: 64px;
+    padding-bottom: env(safe-area-inset-bottom);
+
     background: #151515;
-    display: flex;
     border-top: 1px solid #222;
+
+    display: flex;
+    flex-direction: row;
+    justify-content: space-around;
+    align-items: center;
+
+    z-index: 999;
 }
 
 .tg-tabs button {
@@ -74,14 +85,21 @@ button {
     background: none;
     border: none;
     color: #888;
-    font-size: 12px;
+
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
+
+    pointer-events: auto;
 }
 
 .tg-tabs button span {
+    font-size: 18px;
+}
+
+.tg-tabs button small {
+    font-size: 11px;
     margin-top: 4px;
 }
 
