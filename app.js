@@ -271,3 +271,19 @@ goalInput.value = "";
 
 openScreen("calc", buttons[0]);
 };
+/* ===== HIDE BOTTOM NAV WHEN KEYBOARD OPEN ===== */
+if (window.visualViewport) {
+  const baseHeight = window.visualViewport.height;
+
+  window.visualViewport.addEventListener("resize", () => {
+    const keyboardOpen = baseHeight - window.visualViewport.height > 120;
+
+    if (keyboardOpen) {
+      bottomNav.style.opacity = "0";
+      bottomNav.style.pointerEvents = "none";
+    } else {
+      bottomNav.style.opacity = "1";
+      bottomNav.style.pointerEvents = "auto";
+    }
+  });
+}
