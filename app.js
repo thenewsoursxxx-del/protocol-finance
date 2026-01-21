@@ -38,6 +38,7 @@ const confirmNo = document.getElementById("confirmNo");
 const screens = document.querySelectorAll(".screen");
 const buttons = document.querySelectorAll(".nav-btn");
 const indicator = document.querySelector(".nav-indicator");
+const bottomNav = document.querySelector(".bottom-nav");
 
 /* ===== STATE ===== */
 let lastCalc = {};
@@ -90,6 +91,14 @@ indicator.style.transform = `translateX(${r.left - p.left}px)`;
 }
 }
 buttons.forEach(btn => btn.onclick = () => openScreen(btn.dataset.screen, btn));
+
+/* ===== FIX NAV POSITION (NO JUMP) ===== */
+if (window.visualViewport) {
+const navBottom = bottomNav.getBoundingClientRect().bottom;
+window.visualViewport.addEventListener("resize", () => {
+bottomNav.style.transform = "translateY(0)";
+});
+}
 
 /* ===== BOTTOM SHEET ===== */
 function openSheet() {
@@ -162,6 +171,46 @@ requestAnimationFrame(step);
 step();
 }
 
+/* ===== KEYBOARD BUTTON (GLOBAL) ===== */
+const kbBtn = document.createElement("button");
+kbBtn.innerText = "⌄";
+kbBtn.style.cssText = `
+position: fixed;
+right: 16px;
+z-index: 9999;
+width: 48px;
+height: 48px;
+border-radius: 50%;
+background: #fff;
+color: #000;
+font-size: 22px;
+display: none;
+`;
+document.body.appendChild(kbBtn);
+
+kbBtn.onclick = () => {
+document.activeElement?.blur();
+kbBtn.style.display = "none";
+};
+
+/* ===== KEYBOARD TRACKING ===== */
+if (window.visualViewport) {
+const baseHeight = window.visualViewport.height;
+window.visualViewport.addEventListener("resize", () => {
+const keyboardHeight = baseHeight - window.visualViewport.height;
+const open = keyboardHeight > 100;
+
+if (open) {
+kbBtn.style.bottom = keyboardHeight + 12 + "px";
+kbBtn.style.display = "flex";
+kbBtn.style.alignItems = "center";
+kbBtn.style.justifyContent = "center";
+} else {
+kbBtn.style.display = "none";
+}
+});
+}
+
 /* ===== STAGED FLOW ===== */
 function protocolFlow(mode) {
 chosenPlan = mode;
@@ -197,24 +246,7 @@ loader.classList.add("hidden");
 
 adviceCard.innerHTML = `
 <div>План: ${plannedMonthly} ₽ в месяц</div>
-
 <canvas id="chart" width="360" height="260" style="margin:16px 0"></canvas>
-
-<div style="display:flex;gap:8px;align-items:center">
-<input
-id="factInput"
-inputmode="numeric"
-placeholder="Фактически отложено"
-style="flex:1"
-/>
-<button id="applyFact" style="width:52px;height:52px;border-radius:50%">➜</button>
-<button id="hideKb" style="width:52px;height:52px;border-radius:50%;display:none">⌄</button>
-</div>
-
-<div style="font-size:14px;opacity:.6;margin-top:8px">
-Введите сумму, которую вы реально отложили.
-Protocol сравнит её с планом и обновит график.
-</div>
 `;
 
 canvas = document.getElementById("chart");
@@ -227,36 +259,6 @@ h = canvas.height - pad * 2;
 drawAxes();
 drawPlan();
 drawFact(1);
-
-const factInput = document.getElementById("factInput");
-const applyBtn = document.getElementById("applyFact");
-const hideKb = document.getElementById("hideKb");
-
-factInput.addEventListener("input", e => {
-e.target.value = formatNumber(e.target.value);
-});
-
-applyBtn.onclick = () => {
-const fact = parseNumber(factInput.value);
-if (!fact) return;
-factInput.blur();
-animateFact(Math.min(fact / plannedMonthly, 1.3));
-};
-
-hideKb.onclick = () => {
-factInput.blur();
-document.activeElement?.blur();
-};
-
-// 👇 управление клавиатурой
-if (window.visualViewport) {
-const baseHeight = window.visualViewport.height;
-window.visualViewport.addEventListener("resize", () => {
-const keyboardOpen = window.visualViewport.height < baseHeight - 100;
-hideKb.style.display = keyboardOpen ? "block" : "none";
-});
-}
-
 }, 6000);
 }
 
@@ -264,11 +266,7 @@ hideKb.style.display = keyboardOpen ? "block" : "none";
 noBuffer.onclick = () => { closeSheet(); protocolFlow("direct"); };
 withBuffer.onclick = () => { closeSheet(); protocolFlow("buffer"); };
 
-/* ===== RESET (FIXED) ===== */
-resetBtn.style.pointerEvents = "auto";
-calcLock.style.pointerEvents = "none";
-calcLock.querySelector(".lockCard").style.pointerEvents = "auto";
-
+/* ===== RESET ===== */
 resetBtn.onclick = () => {
 confirmReset.style.display = "block";
 };
