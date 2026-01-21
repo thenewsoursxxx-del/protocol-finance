@@ -1,141 +1,113 @@
-const tg = window.Telegram?.WebApp;
-tg?.expand();
+const $=id=>document.getElementById(id);
 
-/* ===== HELPERS ===== */
-const $ = id => document.getElementById(id);
-const format = v => v.replace(/\D/g,"").replace(/\B(?=(\d{3})+(?!\d))/g,".");
-const parse = v => Number(v.replace(/\./g,""));
+/* ===== STORIES ===== */
+let storyIndex=0;
+const stories=$("stories");
+const track=$("storyTrack");
+
+function showStories(){
+  if(!localStorage.getItem("protocol_stories_done")){
+    stories.style.display="block";
+  }
+}
+function closeStories(){
+  localStorage.setItem("protocol_stories_done","1");
+  stories.style.display="none";
+}
+stories.addEventListener("touchstart",e=>{
+  startX=e.touches[0].clientX;
+});
+stories.addEventListener("touchend",e=>{
+  let dx=e.changedTouches[0].clientX-startX;
+  if(dx<-40 && storyIndex<2){storyIndex++}
+  if(dx>40 && storyIndex>0){storyIndex--}
+  track.style.transform=`translateX(-${storyIndex*100}%)`;
+});
 
 /* ===== STATE ===== */
-let state = JSON.parse(localStorage.getItem("protocol_state") || "{}");
+let state=JSON.parse(localStorage.getItem("protocol_state")||"{}");
+let monthly=state.monthly||0;
+let contributions=state.contributions||[];
 
-let monthly = state.monthly || 0;
-let contributions = state.contributions || [];
-let autoMode = state.autoMode || null;
-
-function saveState() {
-  localStorage.setItem("protocol_state", JSON.stringify({
-    monthly,
-    contributions,
-    autoMode
-  }));
-}
-
-/* ===== AUTO MODE (STRICT) ===== */
-function decideAutoMode(income, expenses) {
-  const free = income - expenses;
-  const ratio = free / income;
-
-  if (ratio < 0.25) return "conservative";
-  if (ratio < 0.45) return "balance";
-  return "aggressive";
-}
-
-function modeText(mode) {
-  if (mode === "conservative")
-    return "Режим: КОНСЕРВАТИВНЫЙ. Снижаю риск.";
-  if (mode === "aggressive")
-    return "Режим: АГРЕССИВНЫЙ. Давлю на цель.";
-  return "Режим: БАЛАНС. Оптимальное решение.";
+function save(){
+  localStorage.setItem("protocol_state",JSON.stringify({monthly,contributions}));
 }
 
 /* ===== TABS ===== */
-const screens = document.querySelectorAll(".screen");
-const tabs = document.querySelectorAll(".tg-tabs button");
-
-function openScreen(name) {
-  screens.forEach(s =>
-    s.classList.toggle("active", s.id === "screen-" + name)
-  );
-  tabs.forEach(b =>
-    b.classList.toggle("active", b.dataset.screen === name)
-  );
-}
-
-tabs.forEach(btn => {
-  btn.onclick = () => openScreen(btn.dataset.screen);
+const screens=document.querySelectorAll(".screen");
+document.querySelectorAll(".tabs button").forEach(b=>{
+  b.onclick=()=>{
+    screens.forEach(s=>s.classList.remove("active"));
+    document.querySelectorAll(".tabs button").forEach(x=>x.classList.remove("active"));
+    $("screen-"+b.dataset.screen).classList.add("active");
+    b.classList.add("active");
+    draw();
+  };
 });
 
 /* ===== INPUT FORMAT ===== */
-["income","expenses"].forEach(id => {
-  const el = $(id);
-  el.oninput = e => e.target.value = format(e.target.value);
+["income","expenses"].forEach(id=>{
+  $(id).oninput=e=>{
+    e.target.value=e.target.value.replace(/\D/g,"").replace(/\B(?=(\d{3})+(?!\d))/g,".");
+  };
 });
+const parse=v=>Number(v.replace(/\./g,""));
 
-/* ===== GRAPH (PLAN vs FACT) ===== */
-function drawChart() {
-  const canvas = $("progressChart");
-  if (!canvas || !monthly) return;
+/* ===== CALC ===== */
+$("calculate").onclick=()=>{
+  const income=parse($("income").value);
+  const expenses=parse($("expenses").value);
+  if(!income||income<=expenses)return;
+  monthly=Math.round((income-expenses)*0.5);
+  save();
+  document.querySelector('[data-screen="progress"]').click();
+};
 
-  const ctx = canvas.getContext("2d");
-  const w = canvas.width = canvas.offsetWidth;
-  const h = canvas.height = canvas.offsetHeight;
-
+/* ===== GRAPH ===== */
+function draw(){
+  const c=$("chart");
+  if(!c||!monthly)return;
+  const ctx=c.getContext("2d");
+  const w=c.width=c.offsetWidth;
+  const h=c.height=c.offsetHeight;
   ctx.clearRect(0,0,w,h);
 
-  const pad = 24;
-  const maxMonths = Math.max(contributions.length + 2, 6);
+  const pad=24;
+  const max=monthly*6;
 
-  // axes
-  ctx.strokeStyle = "#333";
+  // plan
+  ctx.strokeStyle="#4f7cff";
+  ctx.lineWidth=3;
   ctx.beginPath();
-  ctx.moveTo(pad,pad);
-  ctx.lineTo(pad,h-pad);
-  ctx.lineTo(w-pad,h-pad);
-  ctx.stroke();
-
-  // PLAN
-  ctx.strokeStyle = "#4f7cff";
-  ctx.lineWidth = 3;
-  ctx.beginPath();
-  let planSum = 0;
-  for (let i = 0; i < maxMonths; i++) {
-    const x = pad + (i / (maxMonths-1)) * (w - pad*2);
-    const y = h - pad - (planSum / (monthly * maxMonths)) * (h - pad*2);
-    i === 0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
-    planSum += monthly;
+  for(let i=0;i<6;i++){
+    const x=pad+(i/5)*(w-pad*2);
+    const y=h-pad-(monthly*i/max)*(h-pad*2);
+    i?ctx.lineTo(x,y):ctx.moveTo(x,y);
   }
   ctx.stroke();
 
-  // FACT
-  if (contributions.length) {
-    ctx.strokeStyle = "#fff";
-    ctx.lineWidth = 2;
+  // fact
+  if(contributions.length){
+    ctx.strokeStyle="#fff";
+    ctx.lineWidth=2;
     ctx.beginPath();
-    let factSum = 0;
-    contributions.forEach((c,i) => {
-      factSum += c;
-      const x = pad + (i / (maxMonths-1)) * (w - pad*2);
-      const y = h - pad - (factSum / (monthly * maxMonths)) * (h - pad*2);
-      i === 0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+    let sum=0;
+    contributions.forEach((v,i)=>{
+      sum+=v;
+      const x=pad+(i/5)*(w-pad*2);
+      const y=h-pad-(sum/max)*(h-pad*2);
+      i?ctx.lineTo(x,y):ctx.moveTo(x,y);
       ctx.beginPath();
       ctx.arc(x,y,4,0,Math.PI*2);
-      ctx.fillStyle = "#fff";
+      ctx.fillStyle="#fff";
       ctx.fill();
     });
     ctx.stroke();
   }
-
-  $("progressInfo").innerHTML =
-    `${modeText(autoMode)}
-` +
-    `Взносов: <b>${contributions.length}</b>`;
 }
 
-/* ===== CALC ===== */
-$("calculate").onclick = () => {
-  const income = parse($("income").value);
-  const expenses = parse($("expenses").value);
-  if (!income || !expenses || income <= expenses) return;
-
-  monthly = Math.round((income - expenses) * 0.5);
-  autoMode = decideAutoMode(income, expenses);
-  saveState();
-
-  openScreen("progress");
-  drawChart();
-};
-
 /* ===== INIT ===== */
-openScreen("calc");
-drawChart();
+document.addEventListener("DOMContentLoaded",()=>{
+  showStories();
+  draw();
+});
