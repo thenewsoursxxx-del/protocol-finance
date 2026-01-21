@@ -17,16 +17,9 @@ html, body {
 .screen { display: none; }
 .screen.active { display: block; }
 
-h2 {
-  font-size: 28px;
-  margin-bottom: 28px;
-}
+h2 { font-size: 28px; margin-bottom: 24px; }
 
-label {
-  opacity: .7;
-  margin-bottom: 8px;
-  display: block;
-}
+label { opacity: .7; margin-bottom: 8px; display: block; }
 
 input {
   width: 100%;
@@ -49,13 +42,10 @@ button {
   border: none;
 }
 
-/* ===== CARD ===== */
 .card {
   border: 1px solid #333;
   border-radius: 26px;
   padding: 26px;
-  margin-bottom: 28px;
-  line-height: 1.4;
 }
 
 /* ===== NAV ===== */
@@ -85,7 +75,7 @@ button {
   height: 72px;
   border-radius: 999px;
   background: #fff;
-  transition: transform .45s cubic-bezier(.4,0,.2,1);
+  transition: transform .4s cubic-bezier(.4,0,.2,1);
 }
 
 .nav-btn {
@@ -94,7 +84,6 @@ button {
   background: transparent;
   border: none;
   z-index: 1;
-
   display: flex;
   align-items: center;
   justify-content: center;

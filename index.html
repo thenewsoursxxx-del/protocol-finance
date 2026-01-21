@@ -11,13 +11,13 @@
   <title>Protocol</title>
 
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <link rel="stylesheet" href="style.css?v=5000">
+  <link rel="stylesheet" href="style.css?v=STABLE1">
 </head>
 <body>
 
 <div id="app" class="app">
 
-  <!-- ===== CALC ===== -->
+  <!-- ===== SCREENS ===== -->
   <div class="screen active" id="screen-calc">
     <h2>Расчёт</h2>
 
@@ -33,7 +33,46 @@
     <button id="calculate">Продолжить</button>
   </div>
 
-  <!-- ===== PROTOCOL ADVICE ===== -->
   <div class="screen" id="screen-advice">
     <h2>Protocol</h2>
-    <div id="adviceCard"
+    <div id="adviceCard" class="card"></div>
+  </div>
+
+  <div class="screen" id="screen-progress">
+    <h2>Прогресс</h2>
+  </div>
+
+  <div class="screen" id="screen-accounts">
+    <h2>Счета</h2>
+  </div>
+
+  <div class="screen" id="screen-goals">
+    <h2>Цели</h2>
+  </div>
+
+  <!-- ===== NAV ===== -->
+  <div class="bottom-nav">
+    <div class="nav-indicator"></div>
+
+    <button class="nav-btn active" data-screen="calc">
+      <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16"/></svg>
+    </button>
+
+    <button class="nav-btn" data-screen="advice">
+      <svg viewBox="0 0 24 24"><polyline points="4,16 10,10 14,14 20,6"/></svg>
+    </button>
+
+    <button class="nav-btn" data-screen="accounts">
+      <svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="10"/></svg>
+    </button>
+
+    <button class="nav-btn" data-screen="goals">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></svg>
+    </button>
+  </div>
+
+</div>
+
+<script src="app.js?v=STABLE1"></script>
+</body>
+</html>
