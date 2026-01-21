@@ -92,11 +92,13 @@ indicator.style.transform = `translateX(${r.left - p.left}px)`;
 }
 buttons.forEach(btn => btn.onclick = () => openScreen(btn.dataset.screen, btn));
 
-/* ===== FIX NAV POSITION (NO JUMP) ===== */
+/* ===== FIX BOTTOM NAV (ABSOLUTE NO MOVE) ===== */
+const navBottomPx = 26;
+bottomNav.style.bottom = navBottomPx + "px";
+
 if (window.visualViewport) {
-const navBottom = bottomNav.getBoundingClientRect().bottom;
 window.visualViewport.addEventListener("resize", () => {
-bottomNav.style.transform = "translateY(0)";
+bottomNav.style.bottom = navBottomPx + "px";
 });
 }
 
@@ -171,15 +173,16 @@ requestAnimationFrame(step);
 step();
 }
 
-/* ===== KEYBOARD BUTTON (GLOBAL) ===== */
+/* ===== KEYBOARD BUTTON (FIXED POSITION) ===== */
 const kbBtn = document.createElement("button");
 kbBtn.innerText = "⌄";
 kbBtn.style.cssText = `
 position: fixed;
-right: 16px;
+right: 14px;
+bottom: 0;
 z-index: 9999;
-width: 48px;
-height: 48px;
+width: 46px;
+height: 46px;
 border-radius: 50%;
 background: #fff;
 color: #000;
@@ -196,12 +199,13 @@ kbBtn.style.display = "none";
 /* ===== KEYBOARD TRACKING ===== */
 if (window.visualViewport) {
 const baseHeight = window.visualViewport.height;
+
 window.visualViewport.addEventListener("resize", () => {
-const keyboardHeight = baseHeight - window.visualViewport.height;
-const open = keyboardHeight > 100;
+const diff = baseHeight - window.visualViewport.height;
+const open = diff > 120;
 
 if (open) {
-kbBtn.style.bottom = keyboardHeight + 12 + "px";
+kbBtn.style.bottom = (diff + 8) + "px"; // 👈 ПРЯМО НА КЛАВИАТУРЕ
 kbBtn.style.display = "flex";
 kbBtn.style.alignItems = "center";
 kbBtn.style.justifyContent = "center";
