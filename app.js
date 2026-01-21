@@ -1,52 +1,50 @@
 const tg = window.Telegram?.WebApp;
 tg?.expand();
 
-const haptic = () => {
-  try { tg.HapticFeedback.impactOccurred("light"); } catch {}
-};
-
-const screens = document.querySelectorAll(".screen");
-const buttons = document.querySelectorAll(".nav-btn");
-const indicator = document.querySelector(".nav-indicator");
-
-function openScreen(name, btn) {
-  screens.forEach(s => s.classList.remove("active"));
-  document.getElementById("screen-" + name).classList.add("active");
-
-  buttons.forEach(b => b.classList.remove("active"));
-  btn.classList.add("active");
-
-  const rect = btn.getBoundingClientRect();
-  const parent = btn.parentElement.getBoundingClientRect();
-
-  indicator.style.transform =
-    `translateX(${rect.left - parent.left}px)`;
-
-  haptic();
+/* ===== FORMAT HELPERS ===== */
+function formatNumber(value) {
+  const digits = value.replace(/\D/g, "");
+  return digits.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 }
 
-buttons.forEach(btn => {
-  btn.onclick = () => openScreen(btn.dataset.screen, btn);
+function parseNumber(value) {
+  return Number(value.replace(/\./g, ""));
+}
+
+/* ===== INPUT FORMAT (MOBILE FIRST) ===== */
+["income", "expenses", "saving"].forEach(id => {
+  const input = document.getElementById(id);
+
+  input.addEventListener("input", e => {
+    const cursor = e.target.selectionStart;
+    const before = e.target.value.length;
+
+    e.target.value = formatNumber(e.target.value);
+
+    const after = e.target.value.length;
+    e.target.selectionEnd = cursor + (after - before);
+  });
 });
 
-/* onboarding */
-const seen = localStorage.getItem("onboarding_seen");
-if (!seen) {
-  onboarding.classList.remove("hidden");
-  let i = 0;
-  const stories = document.querySelectorAll(".story");
-  onboarding.onclick = () => {
-    if (i < stories.length - 1) {
-      stories[i].classList.remove("active");
-      stories[++i].classList.add("active");
-    }
-  };
-  startApp.onclick = e => {
-    e.stopPropagation();
-    localStorage.setItem("onboarding_seen","1");
-    onboarding.classList.add("hidden");
-    app.classList.remove("hidden");
-  };
-} else {
-  app.classList.remove("hidden");
-}
+/* ===== CALC ===== */
+document.getElementById("calculate").onclick = () => {
+  const income = parseNumber(income.value);
+  const expenses = parseNumber(expenses.value);
+  const saving = parseNumber(saving.value);
+
+  if (!income || !saving) {
+    tg?.HapticFeedback?.notificationOccurred("error");
+    return;
+  }
+
+  if (income - expenses < saving) {
+    tg?.HapticFeedback?.notificationOccurred("warning");
+    alert("Сумма накоплений превышает доступный доход");
+    return;
+  }
+
+  tg?.HapticFeedback?.impactOccurred("medium");
+
+  // пока просто лог — дальше подключим сценарии
+  console.log({ income, expenses, saving });
+};
