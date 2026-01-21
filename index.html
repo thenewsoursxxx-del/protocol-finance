@@ -11,7 +11,7 @@
   <title>Protocol</title>
 
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <link rel="stylesheet" href="style.css?v=9000">
+  <link rel="stylesheet" href="style.css?v=11000">
 </head>
 <body>
 
@@ -54,11 +54,21 @@
     </div>
 
     <button id="calculate">Продолжить</button>
+
+    <!-- ===== LOCK OVERLAY ===== -->
+    <div id="calcLock">
+      <div class="lockCard">
+        <div class="lockIcon">🔒</div>
+        <div id="lockText"></div>
+        <button id="resetPlan">Начать сначала</button>
+      </div>
+    </div>
   </div>
 
   <!-- ===== ADVICE ===== -->
   <div class="screen" id="screen-advice">
     <h2>Protocol</h2>
+    <div id="loader" class="loader hidden"></div>
     <div id="adviceCard" class="card"></div>
   </div>
 
@@ -91,7 +101,6 @@
 
 <!-- ===== BOTTOM SHEET ===== -->
 <div id="sheetOverlay"></div>
-
 <div id="sheet">
   <h2>Как копим?</h2>
 
@@ -108,6 +117,15 @@
   </div>
 </div>
 
-<script src="app.js?v=9000"></script>
+<!-- ===== CONFIRM RESET ===== -->
+<div id="confirmReset">
+  <div class="confirmCard">
+    <p>Если вы нажмёте «Начать сначала», весь прогресс и накопления будут сброшены.</p>
+    <button id="confirmYes">Начать сначала</button>
+    <button id="confirmNo">Отменить</button>
+  </div>
+</div>
+
+<script src="app.js?v=11000"></script>
 </body>
 </html>

@@ -18,6 +18,7 @@ const paceInput = document.getElementById("pace");
 const percentLabel = document.getElementById("percentLabel");
 const calculateBtn = document.getElementById("calculate");
 const adviceCard = document.getElementById("adviceCard");
+const loader = document.getElementById("loader");
 
 const sheet = document.getElementById("sheet");
 const sheetOverlay = document.getElementById("sheetOverlay");
@@ -26,8 +27,17 @@ const withBuffer = document.getElementById("withBuffer");
 
 const progressScreen = document.getElementById("screen-progress");
 
+const calcLock = document.getElementById("calcLock");
+const lockText = document.getElementById("lockText");
+const resetPlanBtn = document.getElementById("resetPlan");
+
+const confirmReset = document.getElementById("confirmReset");
+const confirmYes = document.getElementById("confirmYes");
+const confirmNo = document.getElementById("confirmNo");
+
 /* ===== STATE ===== */
 let lastCalc = {};
+let chosenPlan = null;
 
 /* ===== INPUT FORMAT ===== */
 [incomeInput, expensesInput, goalInput].forEach(input => {
@@ -67,10 +77,7 @@ indicator.style.transform = `translateX(${r.left - p.left}px)`;
 
 tg?.HapticFeedback?.impactOccurred("light");
 }
-
-buttons.forEach(btn => {
-btn.onclick = () => openScreen(btn.dataset.screen, btn);
-});
+buttons.forEach(btn => btn.onclick = () => openScreen(btn.dataset.screen, btn));
 
 /* ===== BOTTOM SHEET ===== */
 function openSheet() {
@@ -84,6 +91,7 @@ sheetOverlay.style.display = "none";
 
 /* ===== CALCULATE ===== */
 calculateBtn.onclick = () => {
+if (chosenPlan) return;
 const income = parseNumber(incomeInput.value);
 const expenses = parseNumber(expensesInput.value);
 const goal = parseNumber(goalInput.value);
@@ -93,7 +101,6 @@ if (!income || !goal || income - expenses <= 0) {
 tg?.HapticFeedback?.notificationOccurred("error");
 return;
 }
-
 lastCalc = { income, expenses, goal, pace };
 openSheet();
 };
@@ -104,7 +111,6 @@ progressScreen.innerHTML = `
 <h2>Прогресс</h2>
 <canvas id="chart" width="360" height="240"></canvas>
 `;
-
 const canvas = document.getElementById("chart");
 const ctx = canvas.getContext("2d");
 
@@ -133,26 +139,24 @@ ctx.stroke();
 
 /* ===== STAGED PROTOCOL FLOW ===== */
 function protocolFlow(mode) {
+chosenPlan = mode;
+lockText.innerText = `У вас уже выбран план: ${mode === "buffer" ? "с подушкой" : "без подушки"}`;
+calcLock.style.display = "block";
+
 openScreen("advice", buttons[1]);
+loader.classList.remove("hidden");
 
 const pacePercent = Math.round(lastCalc.pace * 100);
 const free = lastCalc.income - lastCalc.expenses;
 
 let monthly = Math.round(free * lastCalc.pace);
-if (mode === "buffer") {
-monthly = Math.round(monthly * 0.9);
-}
-
+if (mode === "buffer") monthly = Math.round(monthly * 0.9);
 const months = Math.ceil(lastCalc.goal / monthly);
 
-adviceCard.innerText =
-mode === "buffer"
-? "Выбран режим с подушкой."
-: "Выбран режим без подушки.";
+adviceCard.innerText = `Выбран режим ${mode === "buffer" ? "с подушкой" : "без подушки"}.`;
 
 setTimeout(() => {
-adviceCard.innerText =
-mode === "buffer"
+adviceCard.innerText = mode === "buffer"
 ? "Часть средств будет направляться в резерв для устойчивости плана."
 : "Все средства будут направляться напрямую в цель.";
 }, 2000);
@@ -162,22 +166,20 @@ adviceCard.innerText = "Готово.";
 }, 4000);
 
 setTimeout(() => {
+loader.classList.add("hidden");
 adviceCard.innerText =
 `Темп: ${pacePercent}%\n` +
 `Ежемесячно: ${monthly} ₽\n` +
 `Срок: ~${months} мес.`;
-
 drawGraph(monthly, lastCalc.goal);
 }, 6000);
 }
 
 /* ===== CHOICES ===== */
-noBuffer.onclick = () => {
-closeSheet();
-protocolFlow("direct");
-};
+noBuffer.onclick = () => { closeSheet(); protocolFlow("direct"); };
+withBuffer.onclick = () => { closeSheet(); protocolFlow("buffer"); };
 
-withBuffer.onclick = () => {
-closeSheet();
-protocolFlow("buffer");
-};
+/* ===== RESET ===== */
+resetPlanBtn.onclick = () => confirmReset.style.display = "block";
+confirmNo.onclick = () => confirmReset.style.display = "none";
+confirmYes.onclick = () => location.reload();
