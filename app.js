@@ -1,113 +1,241 @@
-const $=id=>document.getElementById(id);
+/* =====================================================
+PROTOCOL — Telegram Mini App (mobile-first)
+Auto Mode (strict) + Plan vs Fact + Onboarding + Reset
+===================================================== */
 
-/* ===== STORIES ===== */
-let storyIndex=0;
-const stories=$("stories");
-const track=$("storyTrack");
+const tg = window.Telegram?.WebApp;
+tg?.expand();
 
-function showStories(){
-  if(!localStorage.getItem("protocol_stories_done")){
-    stories.style.display="block";
-  }
-}
-function closeStories(){
-  localStorage.setItem("protocol_stories_done","1");
-  stories.style.display="none";
-}
-stories.addEventListener("touchstart",e=>{
-  startX=e.touches[0].clientX;
-});
-stories.addEventListener("touchend",e=>{
-  let dx=e.changedTouches[0].clientX-startX;
-  if(dx<-40 && storyIndex<2){storyIndex++}
-  if(dx>40 && storyIndex>0){storyIndex--}
-  track.style.transform=`translateX(-${storyIndex*100}%)`;
-});
-
-/* ===== STATE ===== */
-let state=JSON.parse(localStorage.getItem("protocol_state")||"{}");
-let monthly=state.monthly||0;
-let contributions=state.contributions||[];
-
-function save(){
-  localStorage.setItem("protocol_state",JSON.stringify({monthly,contributions}));
+/* ================= RESET VIA startapp ================= */
+const isReset = tg?.initDataUnsafe?.start_param === "reset";
+if (isReset) {
+localStorage.clear();
 }
 
-/* ===== TABS ===== */
-const screens=document.querySelectorAll(".screen");
-document.querySelectorAll(".tabs button").forEach(b=>{
-  b.onclick=()=>{
-    screens.forEach(s=>s.classList.remove("active"));
-    document.querySelectorAll(".tabs button").forEach(x=>x.classList.remove("active"));
-    $("screen-"+b.dataset.screen).classList.add("active");
-    b.classList.add("active");
-    draw();
-  };
-});
+/* ================= HELPERS ================= */
+const $ = id => document.getElementById(id);
+const format = v => v.replace(/\D/g,"").replace(/\B(?=(\d{3})+(?!\d))/g,".");
+const parse = v => Number(v.replace(/\./g,""));
 
-/* ===== INPUT FORMAT ===== */
+/* ================= ONBOARDING ================= */
+function showOnboarding(){
+const ob = $("onboarding");
+if (ob) ob.style.display = "flex";
+}
+
+function hideOnboarding(){
+localStorage.setItem("protocol_onboarding_done", "1");
+const ob = $("onboarding");
+if (ob) ob.style.display = "none";
+}
+
+function checkOnboarding(){
+const done = localStorage.getItem("protocol_onboarding_done");
+if (!done) {
+showOnboarding();
+}
+}
+
+/* ================= STATE ================= */
+let state = JSON.parse(localStorage.getItem("protocol_state") || "{}");
+
+let goals = state.goals || [
+{ id: 1, name: "Основная цель", target: 300000, balance: 0, priority: 1, active: true }
+];
+
+let bufferBalance = state.bufferBalance || 0;
+let monthly = state.monthly || 0;
+let contributions = state.contributions || [];
+let autoMode = state.autoMode || null;
+
+function saveState(){
+localStorage.setItem("protocol_state", JSON.stringify({
+goals,
+bufferBalance,
+monthly,
+contributions,
+autoMode
+}));
+}
+
+/* ================= AUTO MODE ================= */
+function decideAutoMode(income, expenses){
+const free = income - expenses;
+const ratio = free / income;
+
+if (ratio < 0.25) return "conservative";
+if (ratio < 0.45) return "balance";
+return "aggressive";
+}
+
+function modeParams(mode){
+if (mode === "conservative") return { goal: 0.6, buffer: 0.4 };
+if (mode === "aggressive") return { goal: 0.9, buffer: 0.1 };
+return { goal: 0.75, buffer: 0.25 };
+}
+
+function modeText(mode){
+if (mode === "conservative")
+return "Режим: КОНСЕРВАТИВНЫЙ. Риск высокий, скорость снижена.";
+if (mode === "aggressive")
+return "Режим: АГРЕССИВНЫЙ. Давлю на цель без компромиссов.";
+return "Режим: БАЛАНС. Оптимум между скоростью и устойчивостью.";
+}
+
+/* ================= TABS ================= */
+const screens = document.querySelectorAll(".screen");
+const tabs = document.querySelectorAll(".tg-tabs button");
+
+function openScreen(name){
+screens.forEach(s =>
+s.classList.toggle("active", s.id === "screen-" + name)
+);
+tabs.forEach(b =>
+b.classList.toggle("active", b.dataset.screen === name)
+);
+}
+tabs.forEach(btn => btn.onclick = () => openScreen(btn.dataset.screen));
+
+/* ================= INPUT FORMAT ================= */
 ["income","expenses"].forEach(id=>{
-  $(id).oninput=e=>{
-    e.target.value=e.target.value.replace(/\D/g,"").replace(/\B(?=(\d{3})+(?!\d))/g,".");
-  };
+const el = $(id);
+if (el) el.oninput = e => e.target.value = format(e.target.value);
 });
-const parse=v=>Number(v.replace(/\./g,""));
 
-/* ===== CALC ===== */
-$("calculate").onclick=()=>{
-  const income=parse($("income").value);
-  const expenses=parse($("expenses").value);
-  if(!income||income<=expenses)return;
-  monthly=Math.round((income-expenses)*0.5);
-  save();
-  document.querySelector('[data-screen="progress"]').click();
+/* ================= CANVAS ================= */
+function prepareCanvas(canvas){
+const dpr = window.devicePixelRatio || 1;
+const rect = canvas.getBoundingClientRect();
+canvas.width = rect.width * dpr;
+canvas.height = rect.height * dpr;
+const ctx = canvas.getContext("2d");
+ctx.setTransform(dpr,0,0,dpr,0,0);
+return ctx;
+}
+
+/* ================= GRAPH ================= */
+function drawChart(){
+const goal = goals.find(g => g.active) || goals[0];
+if (!goal || !monthly) return;
+
+const canvas = $("progressChart");
+const ctx = prepareCanvas(canvas);
+
+const w = canvas.getBoundingClientRect().width;
+const h = canvas.getBoundingClientRect().height;
+ctx.clearRect(0,0,w,h);
+
+const pad = 28;
+const target = goal.target;
+const months = Math.ceil(target / monthly);
+const gw = w - pad*2;
+const gh = h - pad*2;
+
+ctx.strokeStyle="#333";
+ctx.beginPath();
+ctx.moveTo(pad,pad);
+ctx.lineTo(pad,h-pad);
+ctx.lineTo(w-pad,h-pad);
+ctx.stroke();
+
+// PLAN
+ctx.strokeStyle="#4f7cff";
+ctx.lineWidth=3;
+ctx.beginPath();
+let planSum = 0;
+for(let i=0;i<=months;i++){
+const x = pad + (i/months)*gw;
+const y = h-pad-(planSum/target)*gh;
+i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+planSum += monthly;
+}
+ctx.stroke();
+
+// FACT
+if(contributions.length){
+ctx.strokeStyle="#fff";
+ctx.lineWidth=2;
+ctx.beginPath();
+let factSum = 0;
+contributions.forEach((c,i)=>{
+factSum += c.amount;
+const x = pad + ((i+1)/months)*gw;
+const y = h-pad-(factSum/target)*gh;
+i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+ctx.beginPath();
+ctx.arc(x,y,4,0,Math.PI*2);
+ctx.fillStyle="#fff";
+ctx.fill();
+});
+ctx.stroke();
+
+const expected = monthly * contributions.length;
+const diff = factSum - expected;
+
+$("progressInfo").innerHTML =
+`${modeText(autoMode)}<br>` +
+(diff >= 0
+? `Опережение плана: <b>${diff}</b> ₽`
+: `Отставание от плана: <b>${Math.abs(diff)}</b> ₽`);
+} else {
+$("progressInfo").innerHTML =
+`${modeText(autoMode)}<br>Ожидаю первый взнос.`;
+}
+}
+
+/* ================= CONTRIBUTIONS ================= */
+function injectContributionUI(){
+if ($("contributionInput")) return;
+
+const box = document.createElement("div");
+box.innerHTML = `
+<label>Внёс</label>
+<input id="contributionInput" placeholder="20.000">
+<button id="addContribution">Применить</button>
+`;
+$("screen-progress").prepend(box);
+
+$("contributionInput").oninput = e =>
+e.target.value = format(e.target.value);
+
+$("addContribution").onclick = ()=>{
+const amount = parse($("contributionInput").value);
+if (!amount) return;
+
+const p = modeParams(autoMode);
+const toGoal = Math.round(amount * p.goal);
+const toBuffer = amount - toGoal;
+
+goals[0].balance += toGoal;
+bufferBalance += toBuffer;
+contributions.push({ amount: toGoal, date: Date.now() });
+
+$("contributionInput").value="";
+saveState();
+drawChart();
+};
+}
+
+/* ================= CALC ================= */
+$("calculate").onclick = ()=>{
+const income = parse($("income").value);
+const expenses = parse($("expenses").value);
+if (!income || !expenses || income <= expenses) return;
+
+monthly = Math.round((income - expenses) * 0.5);
+autoMode = decideAutoMode(income, expenses);
+saveState();
+
+openScreen("progress");
+requestAnimationFrame(()=>{
+injectContributionUI();
+drawChart();
+});
 };
 
-/* ===== GRAPH ===== */
-function draw(){
-  const c=$("chart");
-  if(!c||!monthly)return;
-  const ctx=c.getContext("2d");
-  const w=c.width=c.offsetWidth;
-  const h=c.height=c.offsetHeight;
-  ctx.clearRect(0,0,w,h);
-
-  const pad=24;
-  const max=monthly*6;
-
-  // plan
-  ctx.strokeStyle="#4f7cff";
-  ctx.lineWidth=3;
-  ctx.beginPath();
-  for(let i=0;i<6;i++){
-    const x=pad+(i/5)*(w-pad*2);
-    const y=h-pad-(monthly*i/max)*(h-pad*2);
-    i?ctx.lineTo(x,y):ctx.moveTo(x,y);
-  }
-  ctx.stroke();
-
-  // fact
-  if(contributions.length){
-    ctx.strokeStyle="#fff";
-    ctx.lineWidth=2;
-    ctx.beginPath();
-    let sum=0;
-    contributions.forEach((v,i)=>{
-      sum+=v;
-      const x=pad+(i/5)*(w-pad*2);
-      const y=h-pad-(sum/max)*(h-pad*2);
-      i?ctx.lineTo(x,y):ctx.moveTo(x,y);
-      ctx.beginPath();
-      ctx.arc(x,y,4,0,Math.PI*2);
-      ctx.fillStyle="#fff";
-      ctx.fill();
-    });
-    ctx.stroke();
-  }
-}
-
-/* ===== INIT ===== */
-document.addEventListener("DOMContentLoaded",()=>{
-  showStories();
-  draw();
+/* ================= INIT ================= */
+document.addEventListener("DOMContentLoaded", ()=>{
+openScreen("calc");
+checkOnboarding(); // ← ВАЖНО: теперь вызывается ВСЕГДА
+drawChart();
 });
