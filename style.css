@@ -1,87 +1,142 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
+
 html, body {
-  width: 100%; height: 100%;
+  width: 100%;
+  height: 100%;
   background: #0f0f12;
   color: #fff;
-  font-family: system-ui;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont;
+  font-size: 18px;
 }
 
 .hidden { display: none !important; }
 
-/* ONBOARDING */
+/* ===== ONBOARDING ===== */
 .onboarding {
-  position: fixed; inset: 0;
+  position: fixed;
+  inset: 0;
   background: #0f0f12;
   z-index: 999;
   display: flex;
   align-items: center;
   justify-content: center;
 }
-.story { display: none; text-align: center; }
-.story.active { display: block; }
-.story h2 { font-size: 28px; margin-bottom: 12px; }
-.story p { opacity: .9; }
-.story button {
-  margin-top: 30px;
-  padding: 14px 24px;
-  background: #4f7cff;
-  border: none;
-  border-radius: 16px;
-  font-size: 18px;
+
+.story {
+  display: none;
+  text-align: center;
 }
 
-/* APP */
-.app { padding-bottom: 80px; }
-.screen { display: none; padding: 20px; }
+.story.active { display: block; }
+
+.story h2 {
+  font-size: 34px;
+  margin-bottom: 16px;
+}
+
+.story p {
+  font-size: 20px;
+  opacity: .9;
+}
+
+.story button {
+  margin-top: 40px;
+  padding: 18px 32px;
+  font-size: 20px;
+  border-radius: 20px;
+  background: #4f7cff;
+  border: none;
+  color: #fff;
+}
+
+/* ===== APP ===== */
+.app {
+  padding-bottom: 96px;
+}
+
+.screen {
+  display: none;
+  padding: 28px;
+}
+
 .screen.active { display: block; }
+
+h2 {
+  font-size: 26px;
+  margin-bottom: 20px;
+}
+
+/* ===== INPUTS ===== */
+label {
+  font-size: 16px;
+  opacity: .8;
+  margin-bottom: 6px;
+  display: block;
+}
 
 input {
   width: 100%;
-  padding: 14px;
-  border-radius: 14px;
+  padding: 18px;
+  font-size: 18px;
+  border-radius: 18px;
   background: #1c1c22;
   border: none;
   color: #fff;
-  margin-bottom: 12px;
+  margin-bottom: 18px;
 }
+
+/* ===== BUTTONS ===== */
 button {
   width: 100%;
-  padding: 14px;
-  border-radius: 16px;
+  padding: 18px;
+  font-size: 18px;
+  border-radius: 22px;
   background: #4f7cff;
   border: none;
   color: #fff;
+  transition: transform .08s ease, background .15s ease;
 }
 
-canvas {
-  width: 100%;
-  height: 220px;
-  background: #14141a;
-  border-radius: 16px;
+button:active {
+  transform: scale(0.97);
+  background: #3c66e0;
 }
 
-/* ACCOUNTS */
+/* ===== CARDS ===== */
 .card {
   background: #1c1c22;
-  padding: 16px;
-  border-radius: 16px;
-  margin-bottom: 12px;
+  padding: 20px;
+  border-radius: 22px;
+  margin-bottom: 16px;
+  font-size: 18px;
 }
 
-/* NAV */
+/* ===== GRAPH ===== */
+canvas {
+  width: 100%;
+  height: 260px;
+  background: #14141a;
+  border-radius: 22px;
+  margin: 20px 0;
+}
+
+/* ===== BOTTOM NAV ===== */
 .bottom-nav {
   position: fixed;
   bottom: 0; left: 0; right: 0;
-  height: 64px;
+  height: 80px;
   background: #14141a;
   display: flex;
+  border-top: 1px solid #1f1f27;
 }
+
 .bottom-nav button {
   flex: 1;
   background: none;
-  font-size: 22px;
-  color: #888;
+  font-size: 28px;
+  color: #777;
 }
+
 .bottom-nav button.active {
   color: #4f7cff;
 }

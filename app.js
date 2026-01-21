@@ -1,3 +1,12 @@
+const tg = window.Telegram?.WebApp;
+tg?.expand();
+
+const haptic = type => {
+  try {
+    tg?.HapticFeedback?.impactOccurred(type || "light");
+  } catch {}
+};
+
 const $ = id => document.getElementById(id);
 const parse = v => Number(v.replace(/\./g,""));
 const format = v => v.replace(/\D/g,"").replace(/\B(?=(\d{3})+(?!\d))/g,".");
@@ -7,27 +16,30 @@ let goals = state.goals || [{id:1,name:"Главная цель",target:300000,b
 let buffer = state.buffer || 0;
 let monthly = state.monthly || 0;
 
-function save() {
+function save(){
   localStorage.setItem("protocol_state", JSON.stringify({goals,buffer,monthly}));
 }
 
-/* NAV */
+/* ===== NAV ===== */
 document.querySelectorAll(".bottom-nav button").forEach(b=>{
-  b.onclick=()=>{
+  b.onclick = ()=>{
+    haptic("light");
     document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
     document.querySelectorAll(".bottom-nav button").forEach(x=>x.classList.remove("active"));
     $("screen-"+b.dataset.screen).classList.add("active");
     b.classList.add("active");
-  }
+  };
 });
 
-/* INPUT FORMAT */
+/* ===== INPUT FORMAT ===== */
 ["income","expenses","newGoalTarget"].forEach(id=>{
-  const el=$(id); if(el) el.oninput=e=>e.target.value=format(e.target.value);
+  const el=$(id);
+  if(el) el.oninput=e=>e.target.value=format(e.target.value);
 });
 
-/* CALC */
-$("calculate").onclick=()=>{
+/* ===== CALC ===== */
+$("calculate").onclick = ()=>{
+  haptic("medium");
   const income=parse($("income").value);
   const expenses=parse($("expenses").value);
   if(income<=expenses) return;
@@ -36,17 +48,19 @@ $("calculate").onclick=()=>{
   save();
 };
 
-/* ACCOUNTS */
+/* ===== ACCOUNTS ===== */
 function renderAccounts(){
-  $("accounts").innerHTML=`
-    <div class="card">🎯 Цель: ${goals[0].balance} / ${goals[0].target}</div>
-    <div class="card">🛡 Подушка: ${buffer}</div>
+  $("accounts").innerHTML = `
+    <div class="card">🎯 Цель
+<b>${goals[0].balance} / ${goals[0].target}</b></div>
+    <div class="card">🛡 Подушка
+<b>${buffer}</b></div>
   `;
 }
 
-/* GOALS */
+/* ===== GOALS ===== */
 function renderGoals(){
-  $("goals").innerHTML=goals.map((g,i)=>`
+  $("goals").innerHTML = goals.map(g=>`
     <div class="card">
       <b>${g.name}</b>
 ${g.balance} / ${g.target}
@@ -54,14 +68,16 @@ ${g.balance} / ${g.target}
   `).join("");
 }
 
-$("addGoal").onclick=()=>{
+$("addGoal").onclick = ()=>{
+  haptic("medium");
   const name=$("newGoalName").value;
   const target=parse($("newGoalTarget").value);
   if(!name||!target) return;
   goals.push({id:Date.now(),name,target,balance:0,priority:goals.length+1,active:true});
-  save(); renderGoals();
+  save();
+  renderGoals();
 };
 
-/* INIT */
+/* ===== INIT ===== */
 renderAccounts();
 renderGoals();
