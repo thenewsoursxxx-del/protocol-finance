@@ -6,22 +6,43 @@ const $ = id => document.getElementById(id);
 const format = v => v.replace(/\D/g,"").replace(/\B(?=(\d{3})+(?!\d))/g,".");
 const parse = v => Number(v.replace(/\./g,""));
 
-/* ================= STORAGE ================= */
-let goals = JSON.parse(localStorage.getItem("goals") || "null");
-let bufferBalance = Number(localStorage.getItem("buffer_balance") || 0);
-let contributions = JSON.parse(localStorage.getItem("contributions") || "[]");
+/* ================= ONBOARDING ================= */
+let onboardingDone = localStorage.getItem("protocol_onboarding_done");
 
-if (!goals) {
-goals = [
-{ id: 1, name: "Основная цель", target: 300000, balance: 0, priority: 1, active: true }
-];
-saveAll();
+function showOnboarding(){
+const ob = $("onboarding");
+if (!ob) return;
+ob.style.display = "flex";
 }
 
-function saveAll(){
-localStorage.setItem("goals", JSON.stringify(goals));
-localStorage.setItem("buffer_balance", bufferBalance);
-localStorage.setItem("contributions", JSON.stringify(contributions));
+function hideOnboarding(){
+localStorage.setItem("protocol_onboarding_done", "1");
+const ob = $("onboarding");
+if (ob) ob.style.display = "none";
+}
+
+if (!onboardingDone) {
+document.addEventListener("DOMContentLoaded", showOnboarding);
+}
+
+/* ================= STORAGE ================= */
+let state = JSON.parse(localStorage.getItem("protocol_state") || "{}");
+
+let goals = state.goals || [
+{ id: 1, name: "Основная цель", target: 300000, balance: 0, priority: 1, active: true }
+];
+
+let bufferBalance = state.bufferBalance || 0;
+let monthly = state.monthly || 0;
+let contributions = state.contributions || [];
+
+function saveState(){
+localStorage.setItem("protocol_state", JSON.stringify({
+goals,
+bufferBalance,
+monthly,
+contributions
+}));
 }
 
 /* ================= TABS ================= */
@@ -39,7 +60,7 @@ b.classList.toggle("active", b.dataset.screen === name)
 tabs.forEach(btn => btn.onclick = () => openScreen(btn.dataset.screen));
 
 /* ================= INPUT FORMAT ================= */
-["income","expenses","targetAmount"].forEach(id=>{
+["income","expenses"].forEach(id=>{
 const el = $(id);
 if(el) el.oninput = e => e.target.value = format(e.target.value);
 });
@@ -56,11 +77,10 @@ return ctx;
 }
 
 /* ================= GRAPH ================= */
-function drawChart(monthly){
-const mainGoal = goals.find(g => g.active);
-if(!mainGoal) return;
+function drawChart(){
+const goal = goals.find(g => g.active) || goals[0];
+if(!goal || !monthly) return;
 
-const target = mainGoal.target;
 const canvas = $("progressChart");
 const ctx = prepareCanvas(canvas);
 
@@ -69,153 +89,103 @@ const h = canvas.getBoundingClientRect().height;
 ctx.clearRect(0,0,w,h);
 
 const pad = 32;
+const target = goal.target;
 const months = Math.ceil(target / monthly);
 const gw = w - pad*2;
 const gh = h - pad*2;
 
-ctx.strokeStyle="#333";
+ctx.strokeStyle = "#333";
 ctx.beginPath();
 ctx.moveTo(pad,pad);
 ctx.lineTo(pad,h-pad);
 ctx.lineTo(w-pad,h-pad);
 ctx.stroke();
 
-ctx.strokeStyle="#4f7cff";
-ctx.lineWidth=3;
+// PLAN
+ctx.strokeStyle = "#4f7cff";
+ctx.lineWidth = 3;
 ctx.beginPath();
-
-let sum=0;
+let planSum = 0;
 for(let i=0;i<=months;i++){
 const x = pad + (i/months)*gw;
-const y = h-pad-(sum/target)*gh;
+const y = h-pad-(planSum/target)*gh;
 i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
-sum+=monthly;
+planSum += monthly;
 }
 ctx.stroke();
 
+// FACT
+if(contributions.length){
+ctx.strokeStyle = "#ffffff";
+ctx.lineWidth = 2;
+ctx.beginPath();
+let factSum = 0;
+contributions.forEach((c,i)=>{
+factSum += c.amount;
+const x = pad + ((i+1)/months)*gw;
+const y = h-pad-(factSum/target)*gh;
+i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+ctx.beginPath();
+ctx.arc(x,y,4,0,Math.PI*2);
+ctx.fillStyle="#fff";
+ctx.fill();
+});
+ctx.stroke();
+}
+
 $("progressInfo").innerHTML =
-goals.map(g =>
-`🎯 ${g.name}: <b>${g.balance}</b> / ${g.target}`
-).join("<br>") +
-`<br>🛡 Подушка: <b>${bufferBalance}</b>`;
+`🎯 ${goal.name}<br>
+${goal.balance} / ${goal.target}<br>
+🛡 Подушка: ${bufferBalance}`;
 }
 
 /* ================= CONTRIBUTIONS ================= */
 function injectContributionUI(){
 if($("contributionInput")) return;
 
-const box=document.createElement("div");
-box.innerHTML=`
+const box = document.createElement("div");
+box.innerHTML = `
 <label>Внёс</label>
 <input id="contributionInput" placeholder="20.000">
-<button id="addContribution">Распределить</button>
+<button id="addContribution">Добавить</button>
 `;
 $("screen-progress").prepend(box);
 
-$("contributionInput").oninput=e=>e.target.value=format(e.target.value);
+$("contributionInput").oninput = e =>
+e.target.value = format(e.target.value);
 
-$("addContribution").onclick=()=>{
-let amount = parse($("contributionInput").value);
-if(!amount) return;
+$("addContribution").onclick = ()=>{
+const v = parse($("contributionInput").value);
+if(!v) return;
 
-let bufferPart = Math.round(amount * 0.1);
-bufferBalance += bufferPart;
-amount -= bufferPart;
+contributions.push({ amount: v, date: Date.now() });
+goals[0].balance += v;
 
-goals
-.filter(g => g.active)
-.sort((a,b)=>a.priority-b.priority)
-.forEach(goal=>{
-if(amount <= 0) return;
-const need = goal.target - goal.balance;
-const add = Math.min(need, amount);
-goal.balance += add;
-amount -= add;
-if(goal.balance >= goal.target) goal.active = false;
-});
-
-contributions.push({ date: Date.now() });
-saveAll();
 $("contributionInput").value="";
-drawChart(window._monthly);
-renderGoals();
+saveState();
+drawChart();
 };
 }
-
-/* ================= GOALS UI ================= */
-function renderGoals(){
-const box = $("screen-goals");
-if(!box) return;
-
-box.innerHTML = `
-<h3>Цели</h3>
-${goals.map(g=>`
-<div class="goal-card">
-<b>${g.name}</b><br>
-${g.balance} / ${g.target}<br>
-<button onclick="moveGoal(${g.id},-1)">↑</button>
-<button onclick="moveGoal(${g.id},1)">↓</button>
-<button onclick="removeGoal(${g.id})">✕</button>
-</div>
-`).join("")}
-<hr>
-<input id="newGoalName" placeholder="Новая цель">
-<input id="newGoalTarget" placeholder="Сумма">
-<button onclick="addGoal()">Добавить цель</button>
-`;
-
-$("newGoalTarget").oninput=e=>e.target.value=format(e.target.value);
-}
-
-window.addGoal = () => {
-const name = $("newGoalName").value;
-const target = parse($("newGoalTarget").value);
-if(!name || !target) return;
-
-goals.push({
-id: Date.now(),
-name,
-target,
-balance: 0,
-priority: goals.length + 1,
-active: true
-});
-
-saveAll();
-renderGoals();
-};
-
-window.removeGoal = id => {
-goals = goals.filter(g => g.id !== id);
-saveAll();
-renderGoals();
-};
-
-window.moveGoal = (id,dir) => {
-const i = goals.findIndex(g=>g.id===id);
-const j = i + dir;
-if(j<0 || j>=goals.length) return;
-[goals[i],goals[j]] = [goals[j],goals[i]];
-goals.forEach((g,i)=>g.priority=i+1);
-saveAll();
-renderGoals();
-};
 
 /* ================= CALC ================= */
-$("calculate").onclick=()=>{
-const income=parse($("income").value);
-const expenses=parse($("expenses").value);
-if(!income||!expenses||income<=expenses) return;
+$("calculate").onclick = ()=>{
+const income = parse($("income").value);
+const expenses = parse($("expenses").value);
+if(!income || !expenses || income <= expenses) return;
 
-window._monthly=Math.round((income-expenses)*0.5);
+monthly = Math.round((income - expenses) * 0.5);
+saveState();
 
 openScreen("progress");
 
 requestAnimationFrame(()=>{
 injectContributionUI();
-drawChart(window._monthly);
-renderGoals();
+drawChart();
 });
 };
 
+/* ================= INIT ================= */
+document.addEventListener("DOMContentLoaded", ()=>{
 openScreen("calc");
+drawChart();
+});
