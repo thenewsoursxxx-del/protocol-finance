@@ -2,23 +2,23 @@ const tg = window.Telegram?.WebApp;
 tg?.expand();
 
 /* ===== FORMAT ===== */
-function formatNumber(value) {
-  const digits = value.replace(/\D/g, "");
-  return digits.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+function formatNumber(v) {
+  const d = v.replace(/\D/g, "");
+  return d.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 }
-function parseNumber(value) {
-  return Number(value.replace(/\./g, ""));
+function parseNumber(v) {
+  return Number(v.replace(/\./g, ""));
 }
 
 /* ===== INPUT FORMAT ===== */
-["income","expenses","saving"].forEach(id=>{
-  const input=document.getElementById(id);
-  input.addEventListener("input",e=>{
-    const pos=e.target.selectionStart;
-    const before=e.target.value.length;
+["income","expenses","goal"].forEach(id=>{
+  const i=document.getElementById(id);
+  i.addEventListener("input",e=>{
+    const p=e.target.selectionStart;
+    const b=e.target.value.length;
     e.target.value=formatNumber(e.target.value);
-    const after=e.target.value.length;
-    e.target.selectionEnd=pos+(after-before);
+    const a=e.target.value.length;
+    e.target.selectionEnd=p+(a-b);
   });
 });
 
@@ -45,18 +45,32 @@ buttons.forEach(btn=>{
   btn.onclick=()=>openScreen(btn.dataset.screen,btn);
 });
 
-/* ===== CALC ===== */
+/* ===== PROTOCOL LOGIC ===== */
 calculate.onclick=()=>{
   const income=parseNumber(income.value);
   const expenses=parseNumber(expenses.value);
-  const saving=parseNumber(saving.value);
+  const goal=parseNumber(goal.value);
 
-  if(income-expenses<saving){
-    tg?.HapticFeedback?.notificationOccurred("warning");
-    alert("Недостаточно средств");
-    return;
+  const free=income-expenses;
+
+  let text="";
+
+  if (free<=0) {
+    text="Protocol видит, что сейчас нет свободных средств. Сначала нужно стабилизировать баланс.";
+  } else if (goal/free<=6) {
+    text=`Цель достижима быстро. Protocol рекомендует откладывать ${free} ₽ и закрыть её за ~${Math.ceil(goal/free)} мес.`;
+  } else if (goal/free<=18) {
+    text=`Сбалансированный путь. Откладывая ${Math.round(free*0.6)} ₽ в месяц, цель будет достигнута без давления.`;
+  } else {
+    text=`Долгосрочная цель. Protocol предлагает начать с ${Math.round(free*0.4)} ₽ и сохранить гибкость.`;
   }
 
+  adviceCard.innerText=text;
   tg?.HapticFeedback?.impactOccurred("medium");
-  openScreen("progress",buttons[1]);
+  openScreen("advice",buttons[1]);
+};
+
+acceptPlan.onclick=()=>{
+  tg?.HapticFeedback?.notificationOccurred("success");
+  openScreen("progress",buttons[2]);
 };

@@ -14,20 +14,14 @@ html, body {
   padding-bottom: 160px;
 }
 
-/* ===== SCREENS ===== */
-.screen {
-  display: none;
-}
-.screen.active {
-  display: block;
-}
+.screen { display: none; }
+.screen.active { display: block; }
 
 h2 {
   font-size: 28px;
   margin-bottom: 28px;
 }
 
-/* ===== INPUTS ===== */
 label {
   opacity: .7;
   margin-bottom: 8px;
@@ -55,14 +49,23 @@ button {
   border: none;
 }
 
+/* ===== CARD ===== */
+.card {
+  border: 1px solid #333;
+  border-radius: 26px;
+  padding: 26px;
+  margin-bottom: 28px;
+  line-height: 1.4;
+}
+
 /* ===== NAV ===== */
 .bottom-nav {
   position: fixed;
   bottom: 28px;
   left: 24px;
   right: 24px;
-
   height: 88px;
+
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -88,14 +91,13 @@ button {
 .nav-btn {
   flex: 1;
   height: 72px;
-  border-radius: 999px;
   background: transparent;
   border: none;
+  z-index: 1;
 
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1;
 }
 
 .nav-btn svg {
