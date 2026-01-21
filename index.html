@@ -1,67 +1,137 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <title>Protocol</title>
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <link rel="stylesheet" href="style.css?v=10">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Protocol</title>
+
+  <style>
+    body {
+      margin: 0;
+      background: #0e0e11;
+      color: white;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont;
+      overflow: hidden;
+    }
+
+    .screen {
+      display: none;
+      height: 100vh;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+
+    .screen.active {
+      display: block;
+    }
+
+    .tg-tabs {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      background: #111;
+      display: flex;
+      border-top: 1px solid #222;
+    }
+
+    .tg-tabs button {
+      flex: 1;
+      background: none;
+      border: none;
+      color: #777;
+      font-size: 14px;
+    }
+
+    .tg-tabs button.active {
+      color: #4f7cff;
+      font-weight: 600;
+    }
+
+    input, button {
+      width: 100%;
+      padding: 14px;
+      margin: 8px 0;
+      border-radius: 12px;
+      border: none;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+
+    button {
+      background: #4f7cff;
+      color: white;
+    }
+
+    canvas {
+      width: 100%;
+      height: 240px;
+      margin-top: 16px;
+    }
+
+    /* ===== ONBOARDING ===== */
+    #onboarding {
+      position: fixed;
+      inset: 0;
+      background: #0e0e11;
+      z-index: 9999;
+      display: none;
+    }
+
+    .onb-slide {
+      height: 100%;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .onb-slide h1 {
+      font-size: 28px;
+    }
+
+    .onb-slide p {
+      font-size: 16px;
+      color: #bbb;
+    }
+  </style>
 </head>
+
 <body>
 
-<div class="app">
-
-    <!-- РАСЧЁТ -->
-    <section id="screen-calc" class="screen active">
-        <h2>Расчёт</h2>
-
-        <label>Доход</label>
-        <input id="income" type="text" placeholder="100.000">
-
-        <label>Траты</label>
-        <input id="expenses" type="text" placeholder="60.000">
-
-        <label>Цель</label>
-        <input id="targetAmount" type="text" placeholder="300.000">
-
-        <label class="range-label">
-            Темп <span id="aggressionPercent">40%</span>
-        </label>
-        <input type="range" id="aggression" min="30" max="80" value="40">
-        <div id="aggressionLabel"></div>
-
-        <button id="calculate">Рассчитать</button>
-    </section>
-
-    <!-- ПЛАН -->
-    <section id="screen-plan" class="screen">
-        <h2>План</h2>
-        <div id="planResult"></div>
-    </section>
-
-    <!-- ПРОГРЕСС -->
-    <section id="screen-progress" class="screen">
-        <h2>Прогресс</h2>
-        <canvas id="progressChart"></canvas>
-        <div id="progressInfo"></div>
-    </section>
-
-    <!-- РИСКИ -->
-    <section id="screen-risk" class="screen">
-        <h2>Риски</h2>
-        <p>Protocol автоматически подстроит план под изменения.</p>
-    </section>
-
+<!-- ===== ONBOARDING / STORIES ===== -->
+<div id="onboarding">
+  <div class="onb-slide">
+    <div>
+      <h1>Protocol</h1>
+      <p>Я беру управление твоими деньгами.</p>
+      <p>Без эмоций. Без догадок.</p>
+    </div>
+    <button onclick="hideOnboarding()">Начать</button>
+  </div>
 </div>
 
-<nav class="tg-tabs">
-    <button data-screen="calc" class="active">📊</button>
-    <button data-screen="plan">📌</button>
-    <button data-screen="progress">📈</button>
-    <button data-screen="risk">⚠️</button>
-</nav>
+<!-- ===== SCREENS ===== -->
+<div id="screen-calc" class="screen">
+  <h2>Расчёт</h2>
+  <input id="income" placeholder="Доход" />
+  <input id="expenses" placeholder="Расходы" />
+  <button id="calculate">Рассчитать</button>
+</div>
 
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
-<script src="app.js?v=10"></script>
+<div id="screen-progress" class="screen">
+  <h2>Прогресс</h2>
+  <div id="progressInfo"></div>
+  <canvas id="progressChart"></canvas>
+</div>
+
+<!-- ===== TABS ===== -->
+<div class="tg-tabs">
+  <button data-screen="calc" class="active">Расчёт</button>
+  <button data-screen="progress">Прогресс</button>
+</div>
+
+<script src="app.js"></script>
 </body>
 </html>
