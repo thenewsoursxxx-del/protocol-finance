@@ -1,85 +1,93 @@
 const tg = window.Telegram?.WebApp;
-if (tg) {
-tg.expand();
-tg.MainButton.hide();
+tg?.expand();
+tg?.MainButton.hide();
+
+// ===== STORY ONBOARDING =====
+const onboarding = document.getElementById("onboarding");
+const track = document.querySelector(".story-track");
+const dots = document.querySelectorAll(".dot");
+let index = 0;
+let startX = 0;
+
+if (localStorage.getItem("onboarding_done")) {
+    onboarding.style.display = "none";
 }
 
-// helpers
-const $ = id => document.getElementById(id);
-const format = v => v.replace(/\D/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-const parse = v => Number(v.replace(/\./g, ""));
-const money = v => v.toLocaleString("de-DE") + " ₽";
+function updateStory() {
+    track.style.transform = `translateX(-${index * 100}%)`;
+    dots.forEach((d, i) => d.classList.toggle("active", i === index));
+}
 
-// screens
+track.addEventListener("touchstart", e => {
+    startX = e.touches[0].clientX;
+});
+
+track.addEventListener("touchend", e => {
+    const dx = e.changedTouches[0].clientX - startX;
+    if (dx < -50 && index < 2) index++;
+    if (dx > 50 && index > 0) index--;
+    updateStory();
+});
+
+document.getElementById("startApp").onclick = () => {
+    localStorage.setItem("onboarding_done", "true");
+    onboarding.style.display = "none";
+};
+
+// ===== APP LOGIC =====
+const $ = id => document.getElementById(id);
+const format = v => v.replace(/\D/g,"").replace(/\B(?=(\d{3})+(?!\d))/g,".");
+const parse = v => Number(v.replace(/\./g,""));
+
+["income","expenses","targetAmount"].forEach(id => {
+    $(id).oninput = e => e.target.value = format(e.target.value);
+});
+
+const aggression = $("aggression");
+const aggrLabel = $("aggressionLabel");
+aggression.oninput = () => {
+    const v = +aggression.value;
+    aggrLabel.textContent =
+        v <= 40 ? "Комфортно" :
+        v <= 60 ? "Умеренно" :
+        "Агрессивно";
+};
+aggression.oninput();
+
+// tabs
 const screens = document.querySelectorAll(".screen");
 const tabs = document.querySelectorAll(".tg-tabs button");
 
 function openScreen(name) {
-screens.forEach(s =>
-s.classList.toggle("active", s.id === "screen-" + name)
-);
-tabs.forEach(b =>
-b.classList.toggle("active", b.dataset.screen === name)
-);
+    screens.forEach(s =>
+        s.classList.toggle("active", s.id === "screen-" + name)
+    );
+    tabs.forEach(b =>
+        b.classList.toggle("active", b.dataset.screen === name)
+    );
 }
 
-// MOBILE: touchstart вместо click
 tabs.forEach(btn => {
-btn.addEventListener("touchstart", e => {
-e.preventDefault();
-openScreen(btn.dataset.screen);
-}, { passive: false });
+    btn.addEventListener("touchstart", e => {
+        e.preventDefault();
+        openScreen(btn.dataset.screen);
+    }, { passive: false });
 });
 
-// inputs
-["income", "expenses", "targetAmount"].forEach(id => {
-$(id).addEventListener("input", e => {
-e.target.value = format(e.target.value);
-});
-});
+$("calculate").onclick = () => {
+    const income = parse($("income").value);
+    const expenses = parse($("expenses").value);
+    const target = parse($("targetAmount").value);
+    if (!income || !expenses || !target || income <= expenses) return;
 
-// slider
-const aggression = $("aggression");
-const aggrLabel = $("aggressionLabel");
+    const monthly = Math.round((income - expenses) * (+aggression.value / 100));
+    const months = Math.ceil(target / monthly);
 
-function updateAgg() {
-const v = +aggression.value;
-aggrLabel.textContent =
-v <= 40 ? "Комфортно" :
-v <= 60 ? "Умеренно" :
-"Агрессивно";
-}
-aggression.addEventListener("input", updateAgg);
-updateAgg();
-
-// calc
-function calculate() {
-const income = parse($("income").value);
-const expenses = parse($("expenses").value);
-const target = parse($("targetAmount").value);
-const percent = +aggression.value / 100;
-
-if (!income || !expenses || !target || income <= expenses) return null;
-
-const free = income - expenses;
-const monthly = Math.round(free * percent);
-
-return {
-monthly,
-months: Math.ceil(target / monthly)
+    openScreen("plan");
+    $("planResult").innerHTML =
+        `Откладывать <b>${monthly}</b> ₽ / мес
+Срок <b>${months} мес</b>`;
 };
-}
-
-$("calculate").addEventListener("click", () => {
-const d = calculate();
-if (!d) return;
-
-openScreen("plan");
-$("planResult").innerHTML = `
-Откладывать: <b>${money(d.monthly)}</b><br>
-Срок: <b>${d.months} мес</b>
-`;
-});
 
 // default
 openScreen("calc");
