@@ -5,7 +5,7 @@
     <title>Protocol</title>
     <meta name="viewport"
           content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <link rel="stylesheet" href="style.css?v=7">
+    <link rel="stylesheet" href="style.css?v=8">
 </head>
 <body>
 
@@ -30,8 +30,8 @@ Protocol считает варианты и риски.</p>
         <div class="story-slide">
             <div class="story-icon">📈</div>
             <h2>Живой путь</h2>
-            <p>План подстраивается.
-Прогресс всегда перед глазами.</p>
+            <p>Прогресс виден.
+План подстраивается.</p>
             <button id="startApp">Начать</button>
         </div>
     </div>
@@ -46,6 +46,7 @@ Protocol считает варианты и риски.</p>
 <!-- ===== APP ===== -->
 <div class="app">
 
+    <!-- РАСЧЁТ -->
     <section id="screen-calc" class="screen active">
         <h2>Расчёт</h2>
 
@@ -58,23 +59,28 @@ Protocol считает варианты и риски.</p>
         <label>Цель</label>
         <input id="targetAmount" type="text" placeholder="300.000">
 
-        <label>Темп</label>
+        <label class="range-label">
+            Темп <span id="aggressionPercent">40%</span>
+        </label>
         <input type="range" id="aggression" min="30" max="80" value="40">
         <div id="aggressionLabel"></div>
 
         <button id="calculate">Рассчитать</button>
     </section>
 
+    <!-- ПЛАН -->
     <section id="screen-plan" class="screen">
         <h2>План</h2>
         <div id="planResult">План ещё не выбран</div>
     </section>
 
+    <!-- ПРОГРЕСС -->
     <section id="screen-progress" class="screen">
         <h2>Прогресс</h2>
-        <div id="progressResult">Здесь будет график</div>
+        <canvas id="progressChart" width="320" height="200"></canvas>
     </section>
 
+    <!-- РИСКИ -->
     <section id="screen-risk" class="screen">
         <h2>Риски</h2>
         <div id="riskResult">Protocol адаптируется автоматически</div>
@@ -90,6 +96,6 @@ Protocol считает варианты и риски.</p>
 </nav>
 
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-<script src="app.js?v=7"></script>
+<script src="app.js?v=8"></script>
 </body>
 </html>
