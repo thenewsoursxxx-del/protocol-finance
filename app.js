@@ -37,7 +37,7 @@ function updatePercent() {
 paceInput.addEventListener("input", updatePercent);
 updatePercent();
 
-/* ===== NAV ===== */
+/* ===== NAV (НЕ ТРОГАЕМ) ===== */
 const screens = document.querySelectorAll(".screen");
 const buttons = document.querySelectorAll(".nav-btn");
 const indicator = document.querySelector(".nav-indicator");
@@ -62,26 +62,50 @@ buttons.forEach(btn => {
   btn.addEventListener("click", () => openScreen(btn.dataset.screen, btn));
 });
 
-/* ===== CALCULATE ===== */
+/* ===== PROTOCOL LOGIC (РАСШИРЕННАЯ) ===== */
 calculateBtn.addEventListener("click", () => {
   const income = parseNumber(incomeInput.value);
   const expenses = parseNumber(expensesInput.value);
   const goal = parseNumber(goalInput.value);
-  const pace = Number(paceInput.value) / 100;
+  const pacePercent = Number(paceInput.value);
+  const pace = pacePercent / 100;
+
+  if (!income || !goal) {
+    tg?.HapticFeedback?.notificationOccurred("error");
+    return;
+  }
 
   const free = income - expenses;
-  if (free <= 0 || !goal) {
-    tg?.HapticFeedback?.notificationOccurred("error");
+  if (free <= 0) {
+    adviceCard.innerText =
+      "Protocol: сейчас нет свободных средств. Сначала стабилизируй баланс.";
+    openScreen("advice", buttons[1]);
     return;
   }
 
   const monthly = Math.round(free * pace);
   const months = Math.ceil(goal / monthly);
 
+  let tone = "";
+  let risk = "";
+
+  if (pacePercent === 30) {
+    tone = "Спокойный режим.";
+    risk = "Минимальный стресс. План легко адаптируется.";
+  } else if (pacePercent === 50) {
+    tone = "Сбалансированный режим.";
+    risk = "Хороший баланс между скоростью и комфортом.";
+  } else {
+    tone = "Агрессивный режим.";
+    risk =
+      "Повышенная нагрузка. Protocol будет отслеживать риски перерасхода и выгорания.";
+  }
+
   adviceCard.innerText =
-    `Protocol выбран темп ${paceInput.value}%.\n` +
-    `Рекомендуется откладывать ${monthly} ₽ в месяц.\n` +
-    `Цель будет достигнута примерно за ${months} мес.`;
+    `${tone}\n\n` +
+    `Откладывать: ${monthly} ₽ в месяц.\n` +
+    `Срок достижения цели: ~${months} мес.\n\n` +
+    `${risk}`;
 
   tg?.HapticFeedback?.impactOccurred("medium");
   openScreen("advice", buttons[1]);
