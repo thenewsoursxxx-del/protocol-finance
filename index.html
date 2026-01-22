@@ -11,7 +11,7 @@
   <title>Protocol</title>
 
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <link rel="stylesheet" href="style.css?v=11000">
+  <link rel="stylesheet" href="style.css?v=12000">
 </head>
 <body>
 
@@ -30,21 +30,13 @@
     <label>Цель</label>
     <input id="goal" inputmode="numeric" placeholder="300.000">
 
-    <!-- ===== SLIDER ===== -->
     <div class="slider-block">
       <div class="slider-head">
         <span>Темп накопления</span>
         <span id="percentLabel">50%</span>
       </div>
 
-      <input
-        type="range"
-        id="pace"
-        min="30"
-        max="70"
-        step="20"
-        value="50"
-      />
+      <input type="range" id="pace" min="30" max="70" step="20" value="50"/>
 
       <div class="slider-labels">
         <span>Спокойно</span>
@@ -55,7 +47,6 @@
 
     <button id="calculate">Продолжить</button>
 
-    <!-- ===== LOCK OVERLAY ===== -->
     <div id="calcLock">
       <div class="lockCard">
         <div class="lockIcon">🔒</div>
@@ -78,23 +69,26 @@
 
   <!-- ===== NAV ===== -->
   <div class="bottom-nav">
-    <div class="nav-indicator"></div>
 
-    <button class="nav-btn active" data-screen="calc">
-      <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16"/></svg>
-    </button>
-
-    <button class="nav-btn" data-screen="advice">
+    <!-- LEFT -->
+    <button class="nav-btn side hidden" data-screen="advice">
       <svg viewBox="0 0 24 24"><polyline points="4,16 10,10 14,14 20,6"/></svg>
     </button>
 
-    <button class="nav-btn" data-screen="accounts">
+    <!-- CENTER (CALC) -->
+    <button class="nav-btn center active" data-screen="calc">
+      <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16"/></svg>
+    </button>
+
+    <!-- RIGHT -->
+    <button class="nav-btn side hidden" data-screen="accounts">
       <svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="10"/></svg>
     </button>
 
-    <button class="nav-btn" data-screen="goals">
+    <button class="nav-btn side hidden" data-screen="goals">
       <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></svg>
     </button>
+
   </div>
 
 </div>
@@ -106,13 +100,11 @@
 
   <div class="card" id="noBuffer">
     <b>Без подушки</b>
-
     Все деньги идут напрямую в цель.
   </div>
 
   <div class="card" id="withBuffer">
     <b>С подушкой</b>
-
     Часть средств идёт в резерв — защита от непредвиденных расходов.
   </div>
 </div>
@@ -126,6 +118,6 @@
   </div>
 </div>
 
-<script src="app.js?v=11000"></script>
+<script src="app.js?v=12000"></script>
 </body>
 </html>

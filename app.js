@@ -287,3 +287,14 @@ if (window.visualViewport) {
     }
   });
 }
+/* === ВЕСЬ ТВОЙ ТЕКУЩИЙ app.js БЕЗ ИЗМЕНЕНИЙ === */
+
+/* ===== NAV REVEAL AFTER CALC ===== */
+const sideButtons = document.querySelectorAll(".nav-btn.side");
+
+function revealNav() {
+  sideButtons.forEach(btn => btn.classList.remove("hidden"));
+}
+
+/* в calculateBtn.onclick — ДОБАВЬ В КОНЕЦ */
+revealNav();
