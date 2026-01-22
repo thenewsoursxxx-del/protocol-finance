@@ -6,6 +6,26 @@ document.documentElement.style.height = "100%";
 document.body.style.height = "100%";
 document.body.style.overflow = "hidden";
 
+/* ===== NAV ELEMENT ===== */
+const bottomNav = document.querySelector(".bottom-nav");
+
+/* ===== HIDE NAV WHEN KEYBOARD OPEN ===== */
+if (window.visualViewport) {
+const baseHeight = window.visualViewport.height;
+
+window.visualViewport.addEventListener("resize", () => {
+const keyboardOpen = baseHeight - window.visualViewport.height > 120;
+
+if (keyboardOpen) {
+bottomNav.style.opacity = "0";
+bottomNav.style.pointerEvents = "none";
+} else {
+bottomNav.style.opacity = "1";
+bottomNav.style.pointerEvents = "auto";
+}
+});
+}
+
 /* ===== TAP ANYWHERE TO CLOSE KEYBOARD ===== */
 document.addEventListener("touchstart", e => {
 const tag = e.target.tagName.toLowerCase();
@@ -50,7 +70,6 @@ const confirmNo = document.getElementById("confirmNo");
 /* ===== NAV ===== */
 const screens = document.querySelectorAll(".screen");
 const buttons = document.querySelectorAll(".nav-btn");
-const indicator = document.querySelector(".nav-indicator");
 
 /* ===== STATE ===== */
 let lastCalc = {};
