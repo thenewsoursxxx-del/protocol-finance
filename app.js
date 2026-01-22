@@ -51,6 +51,14 @@ const confirmNo = document.getElementById("confirmNo");
 const screens = document.querySelectorAll(".screen");
 const buttons = document.querySelectorAll(".nav-btn");
 const indicator = document.querySelector(".nav-indicator");
+const bottomNav = document.querySelector(".bottom-nav");
+
+/* ===== NAV NEVER MOVES ===== */
+bottomNav.style.position = "fixed";
+bottomNav.style.bottom = "26px";
+bottomNav.style.left = "20px";
+bottomNav.style.right = "20px";
+bottomNav.style.transform = "translateZ(0)";
 
 /* ===== STATE ===== */
 let lastCalc = {};
@@ -76,13 +84,15 @@ percentLabel.innerText = paceInput.value + "%";
 paceInput.addEventListener("input", updatePercent);
 updatePercent();
 
-/* ===== NAV INDICATOR ===== */
-function moveIndicator(btn) {
-const r = btn.getBoundingClientRect();
-const p = btn.parentElement.getBoundingClientRect();
-indicator.style.transform =
-`translateX(${r.left - p.left + (r.width - 60) / 2}px)`;
+/* ===== TAB LOCK ===== */
+function lockTabs(lock) {
+buttons.forEach((btn, i) => {
+if (i === 0) return;
+btn.style.opacity = lock ? "0.35" : "1";
+btn.style.pointerEvents = lock ? "none" : "auto";
+});
 }
+lockTabs(true);
 
 /* ===== OPEN SCREEN ===== */
 function openScreen(name, btn) {
@@ -92,20 +102,15 @@ screens.forEach(s => s.classList.remove("active"));
 document.getElementById("screen-" + name).classList.add("active");
 
 buttons.forEach(b => b.classList.remove("active"));
-btn.classList.add("active");
+if (btn) btn.classList.add("active");
 
-moveIndicator(btn);
+if (btn) {
+const r = btn.getBoundingClientRect();
+const p = btn.parentElement.getBoundingClientRect();
+indicator.style.transform = `translateX(${r.left - p.left}px)`;
 }
-
-buttons.forEach(btn => {
-btn.onclick = () => openScreen(btn.dataset.screen, btn);
-});
-
-/* ===== INIT INDICATOR ===== */
-window.addEventListener("load", () => {
-const active = document.querySelector(".nav-btn.active");
-if (active) moveIndicator(active);
-});
+}
+buttons.forEach(btn => btn.onclick = () => openScreen(btn.dataset.screen, btn));
 
 /* ===== BOTTOM SHEET ===== */
 function openSheet() {
@@ -177,6 +182,7 @@ step();
 function protocolFlow(mode) {
 chosenPlan = mode;
 isInitialized = true;
+lockTabs(false);
 
 lockText.innerText =
 `У вас уже выбран план: ${mode === "buffer" ? "с подушкой" : "без подушки"}`;
@@ -238,6 +244,7 @@ if (!fact) return;
 factInput.blur();
 animateFact(Math.min(fact / plannedMonthly, 1.3));
 };
+
 }, 6000);
 }
 
@@ -248,4 +255,35 @@ withBuffer.onclick = () => { closeSheet(); protocolFlow("buffer"); };
 /* ===== RESET ===== */
 resetBtn.onclick = () => confirmReset.style.display = "block";
 confirmNo.onclick = () => confirmReset.style.display = "none";
-confirmYes.onclick = () => location.reload();
+confirmYes.onclick = () => {
+chosenPlan = null;
+isInitialized = false;
+lastCalc = {};
+plannedMonthly = 0;
+
+calcLock.style.display = "none";
+confirmReset.style.display = "none";
+lockTabs(true);
+
+incomeInput.value = "";
+expensesInput.value = "";
+goalInput.value = "";
+
+openScreen("calc", buttons[0]);
+};
+/* ===== HIDE BOTTOM NAV WHEN KEYBOARD OPEN ===== */
+if (window.visualViewport) {
+  const baseHeight = window.visualViewport.height;
+
+  window.visualViewport.addEventListener("resize", () => {
+    const keyboardOpen = baseHeight - window.visualViewport.height > 120;
+
+    if (keyboardOpen) {
+      bottomNav.style.opacity = "0";
+      bottomNav.style.pointerEvents = "none";
+    } else {
+      bottomNav.style.opacity = "1";
+      bottomNav.style.pointerEvents = "auto";
+    }
+  });
+}
