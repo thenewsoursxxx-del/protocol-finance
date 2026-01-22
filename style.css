@@ -13,10 +13,9 @@ font-family: system-ui, -apple-system;
 font-size: 18px;
 }
 
-/* ===== APP ===== */
 .app {
 padding: 28px;
-padding-bottom: 160px;
+padding-bottom: 180px;
 position: relative;
 }
 
@@ -40,7 +39,6 @@ margin-bottom: 20px;
 
 /* ===== SLIDER ===== */
 .slider-block { margin-bottom: 26px; }
-
 .slider-head {
 display: flex;
 justify-content: space-between;
@@ -48,7 +46,6 @@ font-size: 15px;
 margin-bottom: 6px;
 opacity: .8;
 }
-
 input[type="range"] {
 width: 100%;
 appearance: none;
@@ -56,7 +53,6 @@ height: 4px;
 border-radius: 4px;
 background: #333;
 }
-
 input[type="range"]::-webkit-slider-thumb {
 appearance: none;
 width: 20px;
@@ -64,7 +60,6 @@ height: 20px;
 border-radius: 50%;
 background: #fff;
 }
-
 .slider-labels {
 display: flex;
 justify-content: space-between;
@@ -92,109 +87,67 @@ padding: 20px;
 margin-bottom: 16px;
 }
 
-/* ======================================================
-BOTTOM NAV (ПЕРЕРАБОТАНА, НО НИЧЕГО НЕ УДАЛЕНО)
-====================================================== */
-
+/* ===== BOTTOM NAV ===== */
 .bottom-nav {
 position: fixed;
 bottom: 26px;
 left: 20px;
 right: 20px;
-height: 86px;
+height: 92px;
 
 display: flex;
 align-items: center;
 justify-content: space-between;
 
 padding: 0 18px;
+}
 
+.nav-bg {
+position: absolute;
+inset: 0;
 background: rgba(0,0,0,.92);
 backdrop-filter: blur(18px);
 border-radius: 999px;
 border: 1px solid #222;
-
-transform: translateZ(0);
+z-index: 0;
 }
 
-/* ===== NAV BUTTONS ===== */
+/* ===== NAV BUTTON ===== */
 .nav-btn {
-width: 56px;
-height: 56px;
+width: 54px;
+height: 54px;
 background: transparent;
 border: none;
+z-index: 1;
 display: flex;
 align-items: center;
 justify-content: center;
 }
 
-/* ===== DEFAULT ICON ===== */
 .nav-btn svg {
 width: 22px;
 height: 22px;
 stroke: #777;
 fill: none;
 stroke-width: 2;
-transition: transform .25s ease, stroke .25s ease;
 }
 
-/* ===== ACTIVE ICON ===== */
-.nav-btn.active svg {
-stroke: #000;
+/* ===== CENTER CALC ===== */
+.calc-btn {
+width: 74px;
+height: 74px;
+margin-top: -22px;
 }
 
-/* ======================================================
-CENTRAL CALC BUTTON (ГЛАВНЫЙ АКЦЕНТ)
-====================================================== */
-
-.nav-btn[data-screen="calc"] {
-width: 76px;
-height: 76px;
-border-radius: 50%;
-background: #fff;
-margin-top: -24px;
-
-display: flex;
-align-items: center;
-justify-content: center;
-
-box-shadow: 0 12px 32px rgba(0,0,0,.6);
-}
-
-.nav-btn[data-screen="calc"] svg {
+.calc-btn svg {
 width: 26px;
 height: 26px;
-stroke: #000;
+stroke: #fff;
 }
 
-/* ===== SMALL SIDE ICONS ===== */
-.nav-btn:not([data-screen="calc"]) svg {
-transform: scale(0.9);
-}
-
-/* ===== ACTIVE SCALE ===== */
+/* ===== ACTIVE ===== */
 .nav-btn.active svg {
-transform: scale(1);
-}
-
-/* ===== BOTTOM SHEET ===== */
-#sheetOverlay {
-display: none;
-position: fixed;
-inset: 0;
-background: rgba(0,0,0,.45);
-}
-
-#sheet {
-position: fixed;
-left: 0;
-right: 0;
-bottom: -100%;
-background: #000;
-border-top-left-radius: 26px;
-border-top-right-radius: 26px;
-padding: 24px;
-transition: bottom .35s ease;
+stroke: #fff;
 }
 
 /* ===== LOADER ===== */
@@ -207,14 +160,10 @@ border-radius: 50%;
 animation: spin 1s linear infinite;
 margin: 20px auto;
 }
-
 .hidden { display: none; }
+@keyframes spin { to { transform: rotate(360deg); } }
 
-@keyframes spin {
-to { transform: rotate(360deg); }
-}
-
-/* ===== CALC LOCK ===== */
+/* ===== LOCK ===== */
 #calcLock {
 position: absolute;
 inset: 0;
@@ -222,7 +171,6 @@ background: rgba(0,0,0,.6);
 backdrop-filter: blur(8px);
 display: none;
 }
-
 .lockCard {
 position: absolute;
 top: 50%;
@@ -230,20 +178,15 @@ left: 50%;
 transform: translate(-50%, -50%);
 text-align: center;
 }
+.lockIcon { font-size: 32px; margin-bottom: 12px; }
 
-.lockIcon {
-font-size: 32px;
-margin-bottom: 12px;
-}
-
-/* ===== CONFIRM RESET ===== */
+/* ===== CONFIRM ===== */
 #confirmReset {
 display: none;
 position: fixed;
 inset: 0;
 background: rgba(0,0,0,.7);
 }
-
 .confirmCard {
 background: #000;
 border: 1px solid #333;
@@ -254,7 +197,4 @@ top: 50%;
 left: 50%;
 transform: translate(-50%, -50%);
 }
-
-.confirmCard button {
-margin-top: 12px;
-}
+.confirmCard button { margin-top: 12px; }
