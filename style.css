@@ -102,7 +102,6 @@ button {
   border-radius: 999px;
   border: 1px solid #222;
 }
-
 .nav-indicator {
   position: absolute;
   top: 7px;
@@ -113,7 +112,6 @@ button {
   background: #fff;
   transition: transform .35s cubic-bezier(.4,0,.2,1);
 }
-
 .nav-btn {
   flex: 1;
   height: 68px;
@@ -124,7 +122,6 @@ button {
   align-items: center;
   justify-content: center;
 }
-
 .nav-btn svg {
   width: 24px;
   height: 24px;
@@ -132,11 +129,7 @@ button {
   fill: none;
   stroke-width: 2;
 }
-
 .nav-btn.active svg { stroke: #000; }
-
-.main-btn { transform: scale(1.25); }
-.hidden { display: none !important; }
 
 /* ===== BOTTOM SHEET ===== */
 #sheetOverlay {
