@@ -6,26 +6,6 @@ document.documentElement.style.height = "100%";
 document.body.style.height = "100%";
 document.body.style.overflow = "hidden";
 
-/* ===== NAV ELEMENT ===== */
-const bottomNav = document.querySelector(".bottom-nav");
-
-/* ===== HIDE NAV WHEN KEYBOARD OPEN ===== */
-if (window.visualViewport) {
-const baseHeight = window.visualViewport.height;
-
-window.visualViewport.addEventListener("resize", () => {
-const keyboardOpen = baseHeight - window.visualViewport.height > 120;
-
-if (keyboardOpen) {
-bottomNav.style.opacity = "0";
-bottomNav.style.pointerEvents = "none";
-} else {
-bottomNav.style.opacity = "1";
-bottomNav.style.pointerEvents = "auto";
-}
-});
-}
-
 /* ===== TAP ANYWHERE TO CLOSE KEYBOARD ===== */
 document.addEventListener("touchstart", e => {
 const tag = e.target.tagName.toLowerCase();
@@ -70,6 +50,7 @@ const confirmNo = document.getElementById("confirmNo");
 /* ===== NAV ===== */
 const screens = document.querySelectorAll(".screen");
 const buttons = document.querySelectorAll(".nav-btn");
+const indicator = document.querySelector(".nav-indicator");
 
 /* ===== STATE ===== */
 let lastCalc = {};
@@ -95,6 +76,14 @@ percentLabel.innerText = paceInput.value + "%";
 paceInput.addEventListener("input", updatePercent);
 updatePercent();
 
+/* ===== NAV INDICATOR ===== */
+function moveIndicator(btn) {
+const r = btn.getBoundingClientRect();
+const p = btn.parentElement.getBoundingClientRect();
+indicator.style.transform =
+`translateX(${r.left - p.left + (r.width - 60) / 2}px)`;
+}
+
 /* ===== OPEN SCREEN ===== */
 function openScreen(name, btn) {
 if (!isInitialized && name !== "calc") return;
@@ -103,9 +92,20 @@ screens.forEach(s => s.classList.remove("active"));
 document.getElementById("screen-" + name).classList.add("active");
 
 buttons.forEach(b => b.classList.remove("active"));
-if (btn) btn.classList.add("active");
+btn.classList.add("active");
+
+moveIndicator(btn);
 }
-buttons.forEach(btn => btn.onclick = () => openScreen(btn.dataset.screen, btn));
+
+buttons.forEach(btn => {
+btn.onclick = () => openScreen(btn.dataset.screen, btn);
+});
+
+/* ===== INIT INDICATOR ===== */
+window.addEventListener("load", () => {
+const active = document.querySelector(".nav-btn.active");
+if (active) moveIndicator(active);
+});
 
 /* ===== BOTTOM SHEET ===== */
 function openSheet() {
@@ -131,6 +131,47 @@ if (!income || !goal || income - expenses <= 0) return;
 lastCalc = { income, expenses, goal, pace };
 openSheet();
 };
+
+/* ===== GRAPH ===== */
+let canvas, ctx, pad = 40, w, h;
+
+function drawAxes() {
+ctx.strokeStyle = "#333";
+ctx.beginPath();
+ctx.moveTo(pad, pad);
+ctx.lineTo(pad, canvas.height - pad);
+ctx.lineTo(canvas.width - pad, canvas.height - pad);
+ctx.stroke();
+}
+function drawPlan() {
+ctx.strokeStyle = "#fff";
+ctx.lineWidth = 2;
+ctx.beginPath();
+ctx.moveTo(pad, canvas.height - pad);
+ctx.lineTo(canvas.width - pad, pad);
+ctx.stroke();
+}
+function drawFact(progress) {
+ctx.setLineDash([6,6]);
+ctx.strokeStyle = "#777";
+ctx.beginPath();
+ctx.moveTo(pad, canvas.height - pad);
+ctx.lineTo(pad + w * progress, canvas.height - pad - h * progress);
+ctx.stroke();
+ctx.setLineDash([]);
+}
+function animateFact(target) {
+let current = 1;
+function step() {
+ctx.clearRect(0,0,canvas.width,canvas.height);
+drawAxes();
+drawPlan();
+drawFact(current);
+current += (target - current) * 0.06;
+if (Math.abs(target - current) > 0.002) requestAnimationFrame(step);
+}
+step();
+}
 
 /* ===== STAGED FLOW ===== */
 function protocolFlow(mode) {
@@ -159,8 +200,45 @@ mode === "buffer"
 
 setTimeout(() => {
 adviceCard.innerText = "Готово.";
-loader.classList.add("hidden");
 }, 4000);
+
+setTimeout(() => {
+loader.classList.add("hidden");
+
+adviceCard.innerHTML = `
+<div>План: ${plannedMonthly} ₽ / месяц</div>
+
+<canvas id="chart" width="360" height="260" style="margin:16px 0"></canvas>
+
+<div style="display:flex;gap:8px;align-items:center">
+<input id="factInput" inputmode="numeric" placeholder="Фактически отложено" style="flex:1"/>
+<button id="applyFact" style="width:52px;height:52px;border-radius:50%">➜</button>
+</div>
+`;
+
+canvas = document.getElementById("chart");
+ctx = canvas.getContext("2d");
+w = canvas.width - pad * 2;
+h = canvas.height - pad * 2;
+
+drawAxes();
+drawPlan();
+drawFact(1);
+
+const factInput = document.getElementById("factInput");
+const applyBtn = document.getElementById("applyFact");
+
+factInput.addEventListener("input", e => {
+e.target.value = formatNumber(e.target.value);
+});
+
+applyBtn.onclick = () => {
+const fact = parseNumber(factInput.value);
+if (!fact) return;
+factInput.blur();
+animateFact(Math.min(fact / plannedMonthly, 1.3));
+};
+}, 6000);
 }
 
 /* ===== CHOICES ===== */
