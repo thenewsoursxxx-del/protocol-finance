@@ -109,16 +109,15 @@ button {
   position: absolute;
   top: 13px;
   left: 0px;
-  width: 56px;
-  height: 56px;
+  width: 68px;
+  height: 68px;
   border-radius: 999px;
   background: #fff;
   transition: transform .35s cubic-bezier(.4,0,.2,1);
 }
 .nav-btn {
-  width: 56px;
-  height: 56px;
-  padding: 0;
+  flex: 1;
+  height: 68px;
   background: transparent;
   border: none;
   z-index: 1;
@@ -126,7 +125,7 @@ button {
   align-items: center;
   justify-content: center;
   position: relative;
-  flex: 0 0 56px; /* ← ВАЖНО */
+  padding: 0;            /* ← ВАЖНО */
 }
 .nav-btn svg {
   width: 24px;
