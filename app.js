@@ -95,10 +95,12 @@ function lockTabs(lock) {
 lockTabs(true);
 
 /* ===== OPEN SCREEN ===== */
+/* ❌ СТАРАЯ moveIndicator УДАЛЕНА ПО ТВОЕМУ РАЗРЕШЕНИЮ */
+
+/* ✅ НОВАЯ: СТАБИЛЬНАЯ ЧЕРЕЗ offsetLeft */
 function moveIndicator(btn) {
-  const r = btn.getBoundingClientRect();
-  const p = bottomNav.getBoundingClientRect();
-  indicator.style.transform = `translateX(${r.left - p.left}px)`;
+  if (!btn) return;
+  indicator.style.transform = `translateX(${btn.offsetLeft}px)`;
 }
 
 function openScreen(name, btn) {
@@ -288,16 +290,5 @@ if (window.visualViewport) {
   });
 }
 
-/* ===== SAFE INIT INDICATOR (FIX FIRST LOAD BUG) ===== */
-function initIndicatorSafe() {
-  const centerBtn = document.querySelector('.nav-btn[data-screen="calc"]');
-  if (!centerBtn) return;
-
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      moveIndicator(centerBtn);
-    });
-  });
-}
-
-window.addEventListener("load", initIndicatorSafe);
+/* ===== INIT INDICATOR (STABLE) ===== */
+moveIndicator(document.querySelector('.nav-btn[data-screen="calc"]'));
