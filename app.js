@@ -2,17 +2,6 @@ const tg = window.Telegram?.WebApp;
 tg?.expand();
 
 /* ===== TAP ANYWHERE TO CLOSE KEYBOARD ===== */
-document.addEventListener("click", e => {
-  if (
-    e.target.closest("button") ||
-    e.target.tagName === "INPUT" ||
-    e.target.tagName === "TEXTAREA"
-  ) {
-    return;
-  }
-
-  document.activeElement?.blur();
-});
 
 /* ===== FORMAT ===== */
 function formatNumber(v) {
