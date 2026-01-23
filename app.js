@@ -287,3 +287,13 @@ if (window.visualViewport) {
     }
   });
 }
+
+/* ===== PROFILE ===== */
+const profileBtn = document.getElementById("profileBtn");
+
+if (profileBtn) {
+  profileBtn.onclick = () => {
+    console.log("Profile clicked");
+    // позже: открыть профиль / настройки
+  };
+}
