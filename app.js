@@ -76,16 +76,9 @@ function moveIndicator(btn) {
   const navRect = bottomNav.getBoundingClientRect();
   const btnRect = btn.getBoundingClientRect();
 
-  function moveIndicator(btn) {
-  if (!btn) return;
+  const x = btnRect.left - navRect.left + btnRect.width / 2;
 
-  const navRect = bottomNav.getBoundingClientRect();
-  const btnRect = btn.getBoundingClientRect();
-
-  const center =
-    btnRect.left - navRect.left + btnRect.width / 2;
-
-  indicator.style.transform = `translateX(${center}px) translateX(-50%)`;
+  indicator.style.transform = `translateX(${x}px) translateX(-50%)`;
 }
 
 /* ===== NAV NEVER MOVES ===== */
@@ -126,6 +119,9 @@ btn.style.pointerEvents = lock ? "none" : "auto";
 }
 lockTabs(true);
 calcLock.style.display = "none";
+requestAnimationFrame(() => {
+  moveIndicator(buttons[0]);
+});
 
 /* ===== OPEN SCREEN ===== */
 function openScreen(name, btn) {
