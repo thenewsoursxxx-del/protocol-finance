@@ -101,11 +101,13 @@ button {
   backdrop-filter: blur(18px);
   border-radius: 999px;
   border: 1px solid #222;
+  justify-content: space-between; /* ← ВАЖНО */
+  padding: 13px;                  /* ← ВАЖНО */
 }
 .nav-indicator {
   position: absolute;
   top: 13px;
-  left: 7px;
+  left: 13px;
   width: 56px;
   height: 56px;
   border-radius: 999px;
@@ -113,8 +115,8 @@ button {
   transition: transform .35s cubic-bezier(.4,0,.2,1);
 }
 .nav-btn {
-  flex: 1;
-  height: 68px;
+  width: 56px;
+  height: 56px;
   background: transparent;
   border: none;
   z-index: 1;
@@ -122,6 +124,7 @@ button {
   align-items: center;
   justify-content: center;
   position: relative;
+  flex: 0 0 56px; /* ← ВАЖНО */
 }
 .nav-btn svg {
   width: 24px;
