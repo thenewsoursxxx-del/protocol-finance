@@ -30,12 +30,20 @@ const goalInput = document.getElementById("goal");
 const calculateBtn = document.getElementById("calculate");
 
 const modeButtons = document.querySelectorAll(".mode-btn");
+let selectedMode = "calm"; // calm | medium | aggressive
+
+const modeButtons = document.querySelectorAll(".mode-btn");
+
 modeButtons.forEach(btn => {
   btn.onclick = () => {
-    buttons.forEach(btn => {
-  btn.onclick = () => {
-    openScreen(btn.dataset.screen, btn);
-    moveIndicator(btn);
+    // снять активность со всех
+    modeButtons.forEach(b => b.classList.remove("active"));
+
+    // активировать текущую
+    btn.classList.add("active");
+
+    // сохранить режим
+    selectedMode = btn.dataset.mode;
   };
 });
 
@@ -318,9 +326,11 @@ if (window.visualViewport) {
     if (keyboardOpen) {
       bottomNav.style.opacity = "0";
       bottomNav.style.pointerEvents = "none";
+      bottomNav.style.transform = "translateY(40px)";
     } else {
       bottomNav.style.opacity = "1";
       bottomNav.style.pointerEvents = "auto";
+      bottomNav.style.transform = "translateY(0)";
     }
   });
 }
