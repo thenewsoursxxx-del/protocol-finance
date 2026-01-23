@@ -27,8 +27,6 @@ return Number(v.replace(/\./g, ""));
 const incomeInput = document.getElementById("income");
 const expensesInput = document.getElementById("expenses");
 const goalInput = document.getElementById("goal");
-const paceInput = document.getElementById("pace");
-const percentLabel = document.getElementById("percentLabel");
 const calculateBtn = document.getElementById("calculate");
 
 const adviceCard = document.getElementById("adviceCard");
@@ -77,12 +75,6 @@ e.target.selectionEnd = p + (a - b);
 });
 });
 
-/* ===== SLIDER ===== */
-function updatePercent() {
-percentLabel.innerText = paceInput.value + "%";
-}
-paceInput.addEventListener("input", updatePercent);
-updatePercent();
 
 /* ===== TAB LOCK ===== */
 function lockTabs(lock) {
