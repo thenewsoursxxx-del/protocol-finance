@@ -60,6 +60,21 @@ const buttons = document.querySelectorAll(".nav-btn");
 const indicator = document.querySelector(".nav-indicator");
 const bottomNav = document.querySelector(".bottom-nav");
 
+/* ===== NAV INDICATOR ===== */
+function moveIndicator(btn) {
+  if (!btn) return;
+
+  const navRect = bottomNav.getBoundingClientRect();
+  const btnRect = btn.getBoundingClientRect();
+
+  const x =
+    btnRect.left -
+    navRect.left +
+    (btnRect.width - indicator.offsetWidth) / 2;
+
+  indicator.style.transform = `translateX(${x}px)`;
+}
+
 /* ===== NAV NEVER MOVES ===== */
 bottomNav.style.position = "fixed";
 bottomNav.style.bottom = "26px";
