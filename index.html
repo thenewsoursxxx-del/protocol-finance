@@ -44,27 +44,11 @@
     <input id="goal" inputmode="numeric" placeholder="300.000">
 
     <!-- ===== SLIDER ===== -->
-    <div class="slider-block">
-      <div class="slider-head">
-        <span>Темп накопления</span>
-        <span id="percentLabel">50%</span>
-      </div>
-
-      <input
-        type="range"
-        id="pace"
-        min="30"
-        max="70"
-        step="20"
-        value="50"
-      />
-
-      <div class="slider-labels">
-        <span>Спокойно</span>
-        <span>Умеренно</span>
-        <span>Агрессивно</span>
-      </div>
-    </div>
+    <div class="pace-buttons">
+  <button class="pace-btn" data-pace="calm">Спокойно</button>
+  <button class="pace-btn" data-pace="normal">Умеренно</button>
+  <button class="pace-btn" data-pace="aggressive">Агрессивно</button>
+</div>
 
     <button id="calculate">Продолжить</button>
 
