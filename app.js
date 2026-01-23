@@ -71,7 +71,8 @@ function moveIndicator(btn) {
     btnRect.width / 2 -
     indicator.offsetWidth / 2; // ← ВАЖНО
 
-  indicator.style.transform = `translateX(${x}px)`;
+indicator.style.transform =
+  `translateX(${x}px) translateY(-50%)`;
 }
 
 /* ===== NAV NEVER MOVES ===== */
