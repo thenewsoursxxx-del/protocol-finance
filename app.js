@@ -87,10 +87,15 @@ function lockTabs(lock) {
 }
 lockTabs(true);
 
-/* ===== NAV LOGIC (OFFSET INSIDE APP) ===== */
+/* ===== NAV LOGIC (FINAL, WITH PADDING FIX) ===== */
 function moveIndicator(btn) {
   if (!btn) return;
-  indicator.style.transform = `translateX(${btn.offsetLeft}px)`;
+
+  const navStyle = getComputedStyle(bottomNav);
+  const paddingLeft = parseInt(navStyle.paddingLeft) || 0;
+
+  indicator.style.transform =
+    `translateX(${btn.offsetLeft + paddingLeft}px)`;
 }
 
 function openScreen(name, btn) {
