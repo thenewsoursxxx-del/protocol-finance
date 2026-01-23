@@ -1,7 +1,19 @@
 const tg = window.Telegram?.WebApp;
 tg?.expand();
 
-/* ===== TAP ANYWHERE TO CLOSE KEYBOARD ===== */
+document.addEventListener("click", e => {
+  if (
+    e.target.closest("input") ||
+    e.target.closest("textarea") ||
+    e.target.closest("button")
+  ) {
+    return;
+  }
+
+  if (document.activeElement instanceof HTMLElement) {
+    document.activeElement.blur();
+  }
+});
 
 /* ===== FORMAT ===== */
 function formatNumber(v) {
@@ -314,3 +326,19 @@ window.addEventListener("load", () => {
     });
   });
 });
+if (window.visualViewport) {
+  window.visualViewport.addEventListener("resize", () => {
+    const keyboardOpen =
+      window.visualViewport.height < window.innerHeight - 100;
+
+    if (keyboardOpen) {
+      bottomNav.style.transform = "translateY(140%)";
+      bottomNav.style.opacity = "0";
+      bottomNav.style.pointerEvents = "none";
+    } else {
+      bottomNav.style.transform = "translateY(0)";
+      bottomNav.style.opacity = "1";
+      bottomNav.style.pointerEvents = "auto";
+    }
+  });
+}
