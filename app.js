@@ -122,8 +122,6 @@ btn.style.pointerEvents = lock ? "none" : "auto";
 }
 lockTabs(true);
 calcLock.style.display = "none";
-moveIndicator(buttons[0]);
-
 
 /* ===== OPEN SCREEN ===== */
 function openScreen(name, btn) {
@@ -333,3 +331,10 @@ if (profileBtn) {
 moveIndicator(document.querySelector(".nav-btn.active"));
   };
 }
+window.addEventListener("load", () => {
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      moveIndicator(document.querySelector(".nav-btn.active"));
+    });
+  });
+});
