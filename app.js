@@ -64,6 +64,19 @@ let chosenPlan = null;
 let plannedMonthly = 0;
 let isInitialized = false;
 
+/* ===== PACE SELECT ===== */
+let selectedPace = null;
+
+const paceButtons = document.querySelectorAll(".pace-btn");
+
+paceButtons.forEach(btn => {
+  btn.onclick = () => {
+    paceButtons.forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    selectedPace = btn.dataset.pace;
+  };
+});
+
 /* ===== INPUT FORMAT ===== */
 [incomeInput, expensesInput, goalInput].forEach(input => {
 input.addEventListener("input", e => {
