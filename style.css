@@ -148,15 +148,22 @@ button {
   opacity: 0.6;
 }
 
-/* центральная активная */
+/* центральная активная кнопка */
 .nav-btn.active {
-  transform: scale(1.2);
   z-index: 2;
 }
 
-/* иконка активной */
+/* иконку делаем больше, а не кнопку */
 .nav-btn.active svg {
+  transform: scale(1.25);
   stroke: #000;
+}
+
+/* индикатор — главный акцент */
+.nav-indicator {
+  width: 72px;
+  height: 72px;
+  top: 5px;
 }
 
 /* ===== BOTTOM SHEET ===== */
