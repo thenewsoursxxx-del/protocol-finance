@@ -14,9 +14,10 @@ html, body {
 }
 
 .app {
-  padding: 28px;
-  padding-bottom: 160px;
   position: relative;
+  min-height: 100vh;
+  padding: 28px;
+  padding-bottom: 160px; /* место под навбар */
 }
 
 .screen { display: none; }
@@ -87,12 +88,12 @@ button {
   margin-bottom: 16px;
 }
 
-/* ===== NAV ===== */
+/* ===== NAV (ABSOLUTE) ===== */
 .bottom-nav {
-  position: fixed;
-  bottom: 26px;
+  position: absolute;
   left: 20px;
   right: 20px;
+  bottom: 26px;
   height: 82px;
   display: flex;
   align-items: center;
