@@ -80,22 +80,23 @@ updatePercent();
 /* ===== TAB LOCK ===== */
 function lockTabs(lock) {
   buttons.forEach((btn, i) => {
-    if (i === 2) return; // calc по центру всегда доступен
+    if (i === 2) return; // центральный calc всегда доступен
     btn.style.opacity = lock ? "0.35" : "1";
     btn.style.pointerEvents = lock ? "none" : "auto";
   });
 }
 lockTabs(true);
 
-/* ===== NAV LOGIC (FINAL, WITH PADDING FIX) ===== */
+/* ===== NAV LOGIC (CENTER FIX — ЕДИНСТВЕННОЕ ИЗМЕНЕНИЕ) ===== */
 function moveIndicator(btn) {
   if (!btn) return;
 
-  const navStyle = getComputedStyle(bottomNav);
-  const paddingLeft = parseInt(navStyle.paddingLeft) || 0;
+  const x =
+    btn.offsetLeft +
+    btn.offsetWidth / 2 -
+    indicator.offsetWidth / 2;
 
-  indicator.style.transform =
-    `translateX(${btn.offsetLeft + paddingLeft}px)`;
+  indicator.style.transform = `translateX(${x}px)`;
 }
 
 function openScreen(name, btn) {
@@ -212,7 +213,9 @@ function protocolFlow(mode) {
 
     adviceCard.innerHTML = `
       <div>План: ${plannedMonthly} ₽ / месяц</div>
+
       <canvas id="chart" width="360" height="260" style="margin:16px 0"></canvas>
+
       <div style="display:flex;gap:8px;align-items:center">
         <input id="factInput" inputmode="numeric" placeholder="Фактически отложено" style="flex:1"/>
         <button id="applyFact" style="width:52px;height:52px;border-radius:50%">➜</button>
