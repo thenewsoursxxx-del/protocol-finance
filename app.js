@@ -53,13 +53,6 @@ const buttons = document.querySelectorAll(".nav-btn");
 const indicator = document.querySelector(".nav-indicator");
 const bottomNav = document.querySelector(".bottom-nav");
 
-/* ===== NAV NEVER MOVES ===== */
-bottomNav.style.position = "fixed";
-bottomNav.style.bottom = "26px";
-bottomNav.style.left = "20px";
-bottomNav.style.right = "20px";
-bottomNav.style.transform = "translateZ(0)";
-
 /* ===== STATE ===== */
 let lastCalc = {};
 let chosenPlan = null;
@@ -94,10 +87,7 @@ function lockTabs(lock) {
 }
 lockTabs(true);
 
-/* ===== OPEN SCREEN ===== */
-/* ❌ СТАРАЯ moveIndicator УДАЛЕНА ПО ТВОЕМУ РАЗРЕШЕНИЮ */
-
-/* ✅ НОВАЯ: СТАБИЛЬНАЯ ЧЕРЕЗ offsetLeft */
+/* ===== NAV LOGIC (OFFSET INSIDE APP) ===== */
 function moveIndicator(btn) {
   if (!btn) return;
   indicator.style.transform = `translateX(${btn.offsetLeft}px)`;
@@ -273,22 +263,5 @@ confirmYes.onclick = () => {
   openScreen("calc", buttons[2]);
 };
 
-/* ===== HIDE BOTTOM NAV WHEN KEYBOARD OPEN ===== */
-if (window.visualViewport) {
-  const baseHeight = window.visualViewport.height;
-
-  window.visualViewport.addEventListener("resize", () => {
-    const keyboardOpen = baseHeight - window.visualViewport.height > 120;
-
-    if (keyboardOpen) {
-      bottomNav.style.opacity = "0";
-      bottomNav.style.pointerEvents = "none";
-    } else {
-      bottomNav.style.opacity = "1";
-      bottomNav.style.pointerEvents = "auto";
-    }
-  });
-}
-
-/* ===== INIT INDICATOR (STABLE) ===== */
+/* ===== INIT INDICATOR ===== */
 moveIndicator(document.querySelector('.nav-btn[data-screen="calc"]'));
