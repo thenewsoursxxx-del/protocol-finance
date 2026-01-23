@@ -138,7 +138,6 @@ if (btn) btn.classList.add("active");
 
 if (btn) moveIndicator(btn);
 }
-buttons.forEach(btn => btn.onclick = () => openScreen(btn.dataset.screen, btn));
 
 /* ===== BOTTOM SHEET ===== */
 function openSheet() {
