@@ -17,7 +17,7 @@ html, body {
   position: relative;
   min-height: 100vh;
   padding: 28px;
-  padding-bottom: 160px; /* место под навбар */
+  padding-bottom: 160px;
 }
 
 .screen { display: none; }
@@ -88,7 +88,7 @@ button {
   margin-bottom: 16px;
 }
 
-/* ===== NAV (ABSOLUTE) ===== */
+/* ===== NAV ===== */
 .bottom-nav {
   position: absolute;
   left: 20px;
@@ -103,15 +103,7 @@ button {
   border-radius: 999px;
   border: 1px solid #222;
   padding: 7px;
-}
-
-.nav-indicator {
-  position: absolute;
-  width: 68px;
-  height: 68px;
-  border-radius: 999px;
-  background: #fff;
-  transition: transform .35s cubic-bezier(.4,0,.2,1);
+  pointer-events: none;
 }
 
 .nav-btn {
@@ -119,10 +111,11 @@ button {
   height: 68px;
   background: transparent;
   border: none;
-  z-index: 1;
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
+  pointer-events: auto;
 }
 
 .nav-btn svg {
@@ -131,9 +124,18 @@ button {
   stroke: #fff;
   fill: none;
   stroke-width: 2;
+  z-index: 1;
 }
 
 .nav-btn.active svg { stroke: #000; }
+
+.nav-indicator {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: #fff;
+  z-index: 0;
+}
 
 /* ===== BOTTOM SHEET ===== */
 #sheetOverlay {
