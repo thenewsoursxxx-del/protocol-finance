@@ -15,12 +15,15 @@ html, body {
 
 .app {
   position: relative;
-  min-height: 100vh;
   padding: 28px;
-  padding-bottom: 160px;
+  padding-bottom: 180px;
 }
 
-.screen { display: none; }
+.screen {
+  display: none;
+  position: relative;
+  z-index: 2;
+}
 .screen.active { display: block; }
 
 h2 { font-size: 26px; margin-bottom: 22px; }
@@ -80,42 +83,43 @@ button {
   border: none;
 }
 
-/* ===== CARD ===== */
-.card {
-  border: 1px solid #333;
-  border-radius: 22px;
-  padding: 20px;
-  margin-bottom: 16px;
-}
-
 /* ===== NAV ===== */
 .bottom-nav {
-  position: absolute;
+  position: fixed;
   left: 20px;
   right: 20px;
   bottom: 26px;
   height: 82px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 16px;
   background: rgba(0,0,0,.9);
   backdrop-filter: blur(18px);
   border-radius: 999px;
   border: 1px solid #222;
-  padding: 7px;
-  pointer-events: none;
+  z-index: 1;
+}
+
+.nav-indicator {
+  position: absolute;
+  top: 7px;
+  left: 7px;
+  width: 68px;
+  height: 68px;
+  border-radius: 999px;
+  background: #fff;
+  transition: transform .35s cubic-bezier(.4,0,.2,1);
 }
 
 .nav-btn {
-  width: 68px;
+  flex: 1;
   height: 68px;
   background: transparent;
   border: none;
-  position: relative;
+  z-index: 2;
   display: flex;
   align-items: center;
   justify-content: center;
-  pointer-events: auto;
 }
 
 .nav-btn svg {
@@ -124,37 +128,9 @@ button {
   stroke: #fff;
   fill: none;
   stroke-width: 2;
-  z-index: 1;
 }
 
 .nav-btn.active svg { stroke: #000; }
-
-.nav-indicator {
-  position: absolute;
-  inset: 0;
-  border-radius: 999px;
-  background: #fff;
-  z-index: 0;
-}
-
-/* ===== BOTTOM SHEET ===== */
-#sheetOverlay {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,.45);
-}
-#sheet {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: -100%;
-  background: #000;
-  border-top-left-radius: 26px;
-  border-top-right-radius: 26px;
-  padding: 24px;
-  transition: bottom .35s ease;
-}
 
 /* ===== LOADER ===== */
 .loader {
@@ -168,42 +144,3 @@ button {
 }
 .hidden { display: none; }
 @keyframes spin { to { transform: rotate(360deg); } }
-
-/* ===== CALC LOCK ===== */
-#calcLock {
-  position: absolute;
-  inset: 0;
-  background: rgba(0,0,0,.6);
-  backdrop-filter: blur(8px);
-  display: none;
-}
-.lockCard {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  text-align: center;
-}
-.lockIcon {
-  font-size: 32px;
-  margin-bottom: 12px;
-}
-
-/* ===== CONFIRM RESET ===== */
-#confirmReset {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,.7);
-}
-.confirmCard {
-  background: #000;
-  border: 1px solid #333;
-  border-radius: 22px;
-  padding: 24px;
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-}
-.confirmCard button { margin-top: 12px; }
