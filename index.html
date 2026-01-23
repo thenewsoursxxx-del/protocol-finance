@@ -64,16 +64,45 @@
   <div class="screen" id="screen-assistant"><h2>AI Ассистент</h2></div>
 
   <!-- ===== NAV ===== -->
-  <div class="bottom-nav">
-    <div class="nav-indicator"></div>
+  <!-- ===== NAV ===== -->
+<div class="bottom-nav">
+  <div class="nav-indicator"></div>
 
-    <button class="nav-btn" data-screen="progress">
-      <svg viewBox="0 0 24 24"><polyline points="4,16 10,10 14,14 20,6"/></svg>
-    </button>
+  <!-- Левая 1 -->
+  <button class="nav-btn" data-screen="advice">
+    <svg viewBox="0 0 24 24">
+      <polyline points="4,16 10,10 14,14 20,6"/>
+    </svg>
+  </button>
 
-    <button class="nav-btn" data-screen="accounts">
-      <svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="10"/></svg>
-    </button>
+  <!-- Левая 2 -->
+  <button class="nav-btn" data-screen="accounts">
+    <svg viewBox="0 0 24 24">
+      <rect x="3" y="7" width="18" height="10"/>
+    </svg>
+  </button>
+
+  <!-- ЦЕНТР — РАСЧЁТ -->
+  <button class="nav-btn active" data-screen="calc">
+    <svg viewBox="0 0 24 24">
+      <rect x="4" y="4" width="16" height="16"/>
+    </svg>
+  </button>
+
+  <!-- Правая 1 -->
+  <button class="nav-btn" data-screen="goals">
+    <svg viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="8"/>
+    </svg>
+  </button>
+
+  <!-- Правая 2 — AI ассистент -->
+  <button class="nav-btn" data-screen="assistant">
+    <svg viewBox="0 0 24 24">
+      <path d="M12 2v20M2 12h20"/>
+    </svg>
+  </button>
+</div>
 
     <!-- CENTER -->
     <button class="nav-btn active" data-screen="calc">
