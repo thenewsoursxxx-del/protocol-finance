@@ -96,7 +96,7 @@ button {
   height: 82px;
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 8px;
   background: rgba(0,0,0,.9);
   backdrop-filter: blur(18px);
   border-radius: 999px;
@@ -104,10 +104,10 @@ button {
 }
 .nav-indicator {
   position: absolute;
-  top: 7px;
+  top: 13px;
   left: 7px;
-  width: 68px;
-  height: 68px;
+  width: 56px;
+  height: 56px;
   border-radius: 999px;
   background: #fff;
   transition: transform .35s cubic-bezier(.4,0,.2,1);
@@ -121,6 +121,7 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
 }
 .nav-btn svg {
   width: 24px;
