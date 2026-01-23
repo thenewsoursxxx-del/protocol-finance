@@ -14,8 +14,8 @@ html, body {
 }
 
 .app {
-  padding: 24px;
-  padding-bottom: 200px; /* ← ВАЖНО */
+  padding: 20px;
+  padding-bottom: 220px; /* ← ВАЖНО */
   position: relative;
 }
 
