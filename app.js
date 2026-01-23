@@ -288,5 +288,16 @@ if (window.visualViewport) {
   });
 }
 
-/* ===== INIT INDICATOR ===== */
-moveIndicator(document.querySelector('.nav-btn[data-screen="calc"]'));
+/* ===== SAFE INIT INDICATOR (FIX FIRST LOAD BUG) ===== */
+function initIndicatorSafe() {
+  const centerBtn = document.querySelector('.nav-btn[data-screen="calc"]');
+  if (!centerBtn) return;
+
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      moveIndicator(centerBtn);
+    });
+  });
+}
+
+window.addEventListener("load", initIndicatorSafe);
