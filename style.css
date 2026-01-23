@@ -205,8 +205,8 @@ button {
 /* ===== TOP PROFILE ===== */
 .top-profile {
   position: fixed;
-  top: 16px;
-  right: 16px;
+  top: 18px;
+  right: 18px;
   z-index: 5;
 }
 
@@ -223,6 +223,5 @@ button {
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  background: #222;
-  border: 1px solid #333;
+  background: #fff; /* временно, потом будет фото */
 }
