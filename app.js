@@ -87,7 +87,7 @@ updatePercent();
 /* ===== TAB LOCK ===== */
 function lockTabs(lock) {
   buttons.forEach((btn, i) => {
-    if (i === 0) return;
+    if (i === 2) return; // calc по центру всегда доступен
     btn.style.opacity = lock ? "0.35" : "1";
     btn.style.pointerEvents = lock ? "none" : "auto";
   });
@@ -190,7 +190,7 @@ function protocolFlow(mode) {
     `У вас уже выбран план: ${mode === "buffer" ? "с подушкой" : "без подушки"}`;
   calcLock.style.display = "block";
 
-  openScreen("advice", buttons[1]);
+  openScreen("advice", buttons[0]);
   loader.classList.remove("hidden");
 
   const free = lastCalc.income - lastCalc.expenses;
@@ -215,9 +215,7 @@ function protocolFlow(mode) {
 
     adviceCard.innerHTML = `
       <div>План: ${plannedMonthly} ₽ / месяц</div>
-
       <canvas id="chart" width="360" height="260" style="margin:16px 0"></canvas>
-
       <div style="display:flex;gap:8px;align-items:center">
         <input id="factInput" inputmode="numeric" placeholder="Фактически отложено" style="flex:1"/>
         <button id="applyFact" style="width:52px;height:52px;border-radius:50%">➜</button>
@@ -246,7 +244,6 @@ function protocolFlow(mode) {
       factInput.blur();
       animateFact(Math.min(fact / plannedMonthly, 1.3));
     };
-
   }, 6000);
 }
 
@@ -271,7 +268,7 @@ confirmYes.onclick = () => {
   expensesInput.value = "";
   goalInput.value = "";
 
-  openScreen("calc", buttons[0]);
+  openScreen("calc", buttons[2]);
 };
 
 /* ===== HIDE BOTTOM NAV WHEN KEYBOARD OPEN ===== */
@@ -292,4 +289,4 @@ if (window.visualViewport) {
 }
 
 /* ===== INIT INDICATOR ===== */
-moveIndicator(document.querySelector(".nav-btn.active"));
+moveIndicator(document.querySelector('.nav-btn[data-screen="calc"]'));
