@@ -80,11 +80,9 @@ function moveIndicator(btn) {
   const x =
     btnRect.left -
     navRect.left +
-    btnRect.width / 2 -
-    indicator.offsetWidth / 2; // ← ВАЖНО
+    (btnRect.width - indicator.offsetWidth) / 2;
 
-indicator.style.transform =
-  `translateX(${x}px) translateY(-50%)`;
+  indicator.style.transform = `translateX(${x}px)`;
 }
 
 /* ===== NAV NEVER MOVES ===== */
