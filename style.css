@@ -103,7 +103,7 @@ button {
   border-radius: 999px;
   border: 1px solid #222;
 
-  padding: 7px;                 /* под размер индикатора */
+  padding: 0px;                 /* под размер индикатора */
   gap: 0;
 }
 .nav-indicator {
