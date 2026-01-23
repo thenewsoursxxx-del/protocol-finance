@@ -131,6 +131,33 @@ button {
 }
 .nav-btn.active svg { stroke: #000; }
 
+/* ===== NAV BUTTON SIZES ===== */
+.nav-btn {
+  flex: 1;
+  height: 68px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav-btn.active {
+  transform: scale(1.15);
+}
+
+.nav-btn.active svg {
+  stroke: #000;
+}
+
+/* Центр всегда поверх */
+.nav-btn.active {
+  z-index: 2;
+}
+
+/* Индикатор под центральной */
+.nav-indicator {
+  transition: transform .35s cubic-bezier(.4,0,.2,1);
+}
+
 /* ===== BOTTOM SHEET ===== */
 #sheetOverlay {
   display: none;
