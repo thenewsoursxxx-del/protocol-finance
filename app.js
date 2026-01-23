@@ -29,6 +29,15 @@ const expensesInput = document.getElementById("expenses");
 const goalInput = document.getElementById("goal");
 const calculateBtn = document.getElementById("calculate");
 
+const modeButtons = document.querySelectorAll(".mode-btn");
+modeButtons.forEach(btn => {
+  btn.onclick = () => {
+    modeButtons.forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    saveMode = btn.dataset.mode;
+  };
+});
+
 const adviceCard = document.getElementById("adviceCard");
 const loader = document.getElementById("loader");
 
@@ -63,6 +72,7 @@ let lastCalc = {};
 let chosenPlan = null;
 let plannedMonthly = 0;
 let isInitialized = false;
+let saveMode = "calm";
 
 /* ===== PACE SELECT ===== */
 let selectedPace = null;
@@ -136,10 +146,11 @@ const expenses = parseNumber(expensesInput.value);
 const goal = parseNumber(goalInput.value);
 if (!selectedPace) return;
 
-let pace;
-if (selectedPace === "calm") pace = 0.3;
-if (selectedPace === "normal") pace = 0.5;
-if (selectedPace === "aggressive") pace = 0.7;
+let pace = 0.5;
+
+if (saveMode === "calm") pace = 0.4;
+if (saveMode === "normal") pace = 0.5;
+if (saveMode === "aggressive") pace = 0.6;
 
 if (!income || !goal || income - expenses <= 0) return;
 
