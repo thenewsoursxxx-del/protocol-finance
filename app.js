@@ -1,20 +1,6 @@
 const tg = window.Telegram?.WebApp;
 tg?.expand();
 
-document.addEventListener("touchstart", e => {
-  const tag = e.target.tagName.toLowerCase();
-  if (tag !== "input" && tag !== "textarea") {
-    if (document.activeElement instanceof HTMLElement) {
-      document.activeElement.blur();
-    }
-  }
-}, { passive: true });
-
-/* ===== HARD FIX: NO LAYOUT JUMP ===== */
-document.documentElement.style.height = "100%";
-document.body.style.height = "100%";
-document.body.style.overflow = "hidden";
-
 /* ===== TAP ANYWHERE TO CLOSE KEYBOARD ===== */
 document.addEventListener("touchstart", e => {
 const tag = e.target.tagName.toLowerCase();
@@ -38,7 +24,6 @@ const expensesInput = document.getElementById("expenses");
 const goalInput = document.getElementById("goal");
 const calculateBtn = document.getElementById("calculate");
 
-const modeButtons = document.querySelectorAll(".mode-btn");
 let selectedMode = "calm"; // calm | medium | aggressive
 
 const modeButtons = document.querySelectorAll(".mode-btn");
@@ -53,6 +38,7 @@ modeButtons.forEach(btn => {
 
     // сохранить режим
     selectedMode = btn.dataset.mode;
+    saveMode = btn.dataset.mode;
   };
 });
 
@@ -98,7 +84,6 @@ bottomNav.style.position = "fixed";
 bottomNav.style.bottom = "26px";
 bottomNav.style.left = "20px";
 bottomNav.style.right = "20px";
-bottomNav.style.transform = "translateZ(0)";
 
 /* ===== STATE ===== */
 let lastCalc = {};
@@ -152,11 +137,7 @@ document.getElementById("screen-" + name).classList.add("active");
 buttons.forEach(b => b.classList.remove("active"));
 if (btn) btn.classList.add("active");
 
-if (btn) {
-const r = btn.getBoundingClientRect();
-const p = btn.parentElement.getBoundingClientRect();
-indicator.style.transform = `translateX(${r.left - p.left}px)`;
-}
+if (btn) moveIndicator(btn);
 }
 buttons.forEach(btn => btn.onclick = () => openScreen(btn.dataset.screen, btn));
 
