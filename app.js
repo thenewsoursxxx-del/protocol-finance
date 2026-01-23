@@ -3,10 +3,15 @@ tg?.expand();
 
 /* ===== TAP ANYWHERE TO CLOSE KEYBOARD ===== */
 document.addEventListener("click", e => {
-const tag = e.target.tagName.toLowerCase();
-if (tag !== "input" && tag !== "textarea") {
-document.activeElement?.blur();
-}
+  if (
+    e.target.closest("button") ||
+    e.target.tagName === "INPUT" ||
+    e.target.tagName === "TEXTAREA"
+  ) {
+    return;
+  }
+
+  document.activeElement?.blur();
 });
 
 /* ===== FORMAT ===== */
@@ -116,6 +121,9 @@ btn.style.pointerEvents = lock ? "none" : "auto";
 });
 }
 lockTabs(true);
+calcLock.style.display = "none";
+moveIndicator(buttons[0]);
+
 
 /* ===== OPEN SCREEN ===== */
 function openScreen(name, btn) {
