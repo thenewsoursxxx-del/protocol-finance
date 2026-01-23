@@ -76,12 +76,16 @@ function moveIndicator(btn) {
   const navRect = bottomNav.getBoundingClientRect();
   const btnRect = btn.getBoundingClientRect();
 
-  const x =
-    btnRect.left -
-    navRect.left +
-    (btnRect.width - indicator.offsetWidth) / 2;
+  function moveIndicator(btn) {
+  if (!btn) return;
 
-  indicator.style.transform = `translateX(${x}px)`;
+  const navRect = bottomNav.getBoundingClientRect();
+  const btnRect = btn.getBoundingClientRect();
+
+  const center =
+    btnRect.left - navRect.left + btnRect.width / 2;
+
+  indicator.style.transform = `translateX(${center}px) translateX(-50%)`;
 }
 
 /* ===== NAV NEVER MOVES ===== */
