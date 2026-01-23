@@ -259,9 +259,8 @@ button {
   stroke-width: 2;
 }
 
-/* ===== GLOBAL UI SCALE (FIXED HEIGHT) ===== */
-.app {
+/* ===== GLOBAL UI SCALE (SAFE FOR TELEGRAM) ===== */
+.app-scale {
   transform: scale(0.94);
   transform-origin: top center;
-  height: calc(100% / 0.94);
 }
