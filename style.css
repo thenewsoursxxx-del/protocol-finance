@@ -131,41 +131,6 @@ button {
 }
 .nav-btn.active svg { stroke: #000; }
 
-/* ===== NAV BUTTON SIZES ===== */
-.nav-btn {
-  flex: 1;
-  height: 68px;
-  background: transparent;
-  border: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: transform .25s ease, opacity .25s ease;
-}
-
-/* неактивные — спокойнее */
-.nav-btn:not(.active) {
-  opacity: 0.6;
-}
-
-/* центральная активная кнопка */
-.nav-btn.active {
-  z-index: 2;
-}
-
-/* иконку делаем больше, а не кнопку */
-.nav-btn.active svg {
-  transform: scale(1.25);
-  stroke: #000;
-}
-
-/* индикатор — главный акцент */
-.nav-indicator {
-  width: 72px;
-  height: 72px;
-  top: 5px;
-}
-
 /* ===== BOTTOM SHEET ===== */
 #sheetOverlay {
   display: none;
