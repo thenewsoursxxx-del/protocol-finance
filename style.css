@@ -258,3 +258,9 @@ button {
   fill: none;
   stroke-width: 2;
 }
+
+/* ===== GLOBAL UI SCALE (EXCEPT BOTTOM NAV) ===== */
+.app {
+  transform: scale(0.94);
+  transform-origin: top center;
+}
