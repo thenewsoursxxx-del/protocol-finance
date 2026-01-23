@@ -134,7 +134,12 @@ if (chosenPlan) return;
 const income = parseNumber(incomeInput.value);
 const expenses = parseNumber(expensesInput.value);
 const goal = parseNumber(goalInput.value);
-const pace = Number(paceInput.value) / 100;
+if (!selectedPace) return;
+
+let pace;
+if (selectedPace === "calm") pace = 0.3;
+if (selectedPace === "normal") pace = 0.5;
+if (selectedPace === "aggressive") pace = 0.7;
 
 if (!income || !goal || income - expenses <= 0) return;
 
