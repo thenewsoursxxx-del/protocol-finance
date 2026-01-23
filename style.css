@@ -96,7 +96,7 @@ button {
   height: 82px;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 0px;
   background: rgba(0,0,0,.9);
   backdrop-filter: blur(18px);
   border-radius: 999px;
@@ -117,6 +117,7 @@ button {
 .nav-btn {
   width: 56px;
   height: 56px;
+  padding: 0;
   background: transparent;
   border: none;
   z-index: 1;
