@@ -135,27 +135,28 @@ button {
 .nav-btn {
   flex: 1;
   height: 68px;
+  background: transparent;
+  border: none;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: transform .25s ease, opacity .25s ease;
 }
 
+/* неактивные — спокойнее */
+.nav-btn:not(.active) {
+  opacity: 0.6;
+}
+
+/* центральная активная */
 .nav-btn.active {
-  transform: scale(1.15);
-}
-
-.nav-btn.active svg {
-  stroke: #000;
-}
-
-/* Центр всегда поверх */
-.nav-btn.active {
+  transform: scale(1.2);
   z-index: 2;
 }
 
-/* Индикатор под центральной */
-.nav-indicator {
-  transition: transform .35s cubic-bezier(.4,0,.2,1);
+/* иконка активной */
+.nav-btn.active svg {
+  stroke: #000;
 }
 
 /* ===== BOTTOM SHEET ===== */
