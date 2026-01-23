@@ -1,6 +1,15 @@
 const tg = window.Telegram?.WebApp;
 tg?.expand();
 
+document.addEventListener("touchstart", e => {
+  const tag = e.target.tagName.toLowerCase();
+  if (tag !== "input" && tag !== "textarea") {
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+  }
+}, { passive: true });
+
 /* ===== HARD FIX: NO LAYOUT JUMP ===== */
 document.documentElement.style.height = "100%";
 document.body.style.height = "100%";
@@ -316,21 +325,21 @@ goalInput.value = "";
 
 openScreen("calc", buttons[0]);
 };
+
 /* ===== HIDE BOTTOM NAV WHEN KEYBOARD OPEN ===== */
 if (window.visualViewport) {
-  const baseHeight = window.visualViewport.height;
-
   window.visualViewport.addEventListener("resize", () => {
-    const keyboardOpen = baseHeight - window.visualViewport.height > 120;
+    const keyboardOpen =
+      window.visualViewport.height < window.innerHeight - 100;
 
     if (keyboardOpen) {
+      bottomNav.style.transform = "translateY(140%)";
       bottomNav.style.opacity = "0";
       bottomNav.style.pointerEvents = "none";
-      bottomNav.style.transform = "translateY(40px)";
     } else {
+      bottomNav.style.transform = "translateY(0)";
       bottomNav.style.opacity = "1";
       bottomNav.style.pointerEvents = "auto";
-      bottomNav.style.transform = "translateY(0)";
     }
   });
 }
