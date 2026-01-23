@@ -88,7 +88,48 @@ button {
 }
 
 /* ===== NAV ===== */
-
+.bottom-nav {
+  position: fixed;
+  bottom: 26px;
+  left: 20px;
+  right: 20px;
+  height: 82px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: rgba(0,0,0,.9);
+  backdrop-filter: blur(18px);
+  border-radius: 999px;
+  border: 1px solid #222;
+}
+.nav-indicator {
+  position: absolute;
+  top: 7px;
+  left: 7px;
+  width: 68px;
+  height: 68px;
+  border-radius: 999px;
+  background: #fff;
+  transition: transform .35s cubic-bezier(.4,0,.2,1);
+}
+.nav-btn {
+  flex: 1;
+  height: 68px;
+  background: transparent;
+  border: none;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.nav-btn svg {
+  width: 24px;
+  height: 24px;
+  stroke: #fff;
+  fill: none;
+  stroke-width: 2;
+}
+.nav-btn.active svg { stroke: #000; }
 
 /* ===== BOTTOM SHEET ===== */
 #sheetOverlay {
