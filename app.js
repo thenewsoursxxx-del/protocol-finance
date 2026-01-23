@@ -119,7 +119,6 @@ btn.style.pointerEvents = lock ? "none" : "auto";
 }
 lockTabs(true);
 calcLock.style.display = "none";
-requestAnimationFrame(() => {
   moveIndicator(buttons[0]);
 });
 
