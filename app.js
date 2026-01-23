@@ -32,9 +32,10 @@ const calculateBtn = document.getElementById("calculate");
 const modeButtons = document.querySelectorAll(".mode-btn");
 modeButtons.forEach(btn => {
   btn.onclick = () => {
-    modeButtons.forEach(b => b.classList.remove("active"));
-    btn.classList.add("active");
-    saveMode = btn.dataset.mode;
+    buttons.forEach(btn => {
+  btn.onclick = () => {
+    openScreen(btn.dataset.screen, btn);
+    moveIndicator(btn);
   };
 });
 
@@ -331,5 +332,6 @@ if (profileBtn) {
   profileBtn.onclick = () => {
     console.log("Profile clicked");
     // позже: открыть профиль / настройки
+moveIndicator(document.querySelector(".nav-btn.active"));
   };
 }
