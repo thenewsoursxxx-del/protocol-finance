@@ -108,12 +108,12 @@ button {
 }
 .nav-indicator {
   position: absolute;
-  top: 13px;
   left: 0px;
   width: 68px;
   height: 68px;
   border-radius: 999px;
   background: #fff;
+  transform: translateY(-50%);
   transition: transform .35s cubic-bezier(.4,0,.2,1);
 }
 .nav-btn {
