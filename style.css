@@ -107,7 +107,7 @@ button {
 .nav-indicator {
   position: absolute;
   top: 13px;
-  left: 13px;
+  left: 0px;
   width: 56px;
   height: 56px;
   border-radius: 999px;
