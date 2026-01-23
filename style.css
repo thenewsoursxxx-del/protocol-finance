@@ -316,3 +316,9 @@ button {
   color: #000;
   opacity: 1;
 }
+/* === TEMP FIX: allow clicks === */
+#calcLock,
+#sheetOverlay,
+#confirmReset {
+  pointer-events: none !important;
+}
