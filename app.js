@@ -2,7 +2,7 @@ const tg = window.Telegram?.WebApp;
 tg?.expand();
 
 /* ===== TAP ANYWHERE TO CLOSE KEYBOARD ===== */
-document.addEventListener("touchstart", e => {
+document.addEventListener("click", e => {
 const tag = e.target.tagName.toLowerCase();
 if (tag !== "input" && tag !== "textarea") {
 document.activeElement?.blur();
@@ -93,17 +93,7 @@ let isInitialized = false;
 let saveMode = "calm";
 
 /* ===== PACE SELECT ===== */
-let selectedPace = null;
 
-const paceButtons = document.querySelectorAll(".pace-btn");
-
-paceButtons.forEach(btn => {
-  btn.onclick = () => {
-    paceButtons.forEach(b => b.classList.remove("active"));
-    btn.classList.add("active");
-    selectedPace = btn.dataset.pace;
-  };
-});
 
 /* ===== INPUT FORMAT ===== */
 [incomeInput, expensesInput, goalInput].forEach(input => {
@@ -158,7 +148,7 @@ if (chosenPlan) return;
 const income = parseNumber(incomeInput.value);
 const expenses = parseNumber(expensesInput.value);
 const goal = parseNumber(goalInput.value);
-if (!selectedPace) return;
+if (!saveMode) return;
 
 let pace = 0.5;
 
