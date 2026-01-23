@@ -201,3 +201,28 @@ button {
   transform: translate(-50%, -50%);
 }
 .confirmCard button { margin-top: 12px; }
+
+/* ===== TOP PROFILE ===== */
+.top-profile {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 5;
+}
+
+#profileBtn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+
+.avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #222;
+  border: 1px solid #333;
+}
