@@ -11,7 +11,7 @@
   <title>Protocol</title>
 
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <link rel="stylesheet" href="style.css?v=11000">
+  <link rel="stylesheet" href="style.css?v=13000">
 </head>
 <body>
 
@@ -30,21 +30,13 @@
     <label>Цель</label>
     <input id="goal" inputmode="numeric" placeholder="300.000">
 
-    <!-- ===== SLIDER ===== -->
     <div class="slider-block">
       <div class="slider-head">
         <span>Темп накопления</span>
         <span id="percentLabel">50%</span>
       </div>
 
-      <input
-        type="range"
-        id="pace"
-        min="30"
-        max="70"
-        step="20"
-        value="50"
-      />
+      <input type="range" id="pace" min="30" max="70" step="20" value="50"/>
 
       <div class="slider-labels">
         <span>Спокойно</span>
@@ -55,7 +47,6 @@
 
     <button id="calculate">Продолжить</button>
 
-    <!-- ===== LOCK OVERLAY ===== -->
     <div id="calcLock">
       <div class="lockCard">
         <div class="lockIcon">🔒</div>
@@ -75,6 +66,7 @@
   <div class="screen" id="screen-progress"><h2>Прогресс</h2></div>
   <div class="screen" id="screen-accounts"><h2>Счета</h2></div>
   <div class="screen" id="screen-goals"><h2>Цели</h2></div>
+  <div class="screen" id="screen-ai"><h2>AI ассистент</h2></div>
 
   <!-- ===== NAV ===== -->
   <div class="bottom-nav">
@@ -95,6 +87,12 @@
     <button class="nav-btn" data-screen="goals">
       <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></svg>
     </button>
+
+    <button class="nav-btn" data-screen="ai">
+      <svg viewBox="0 0 24 24">
+        <path d="M12 2 L14 8 L20 10 L14 12 L12 18 L10 12 L4 10 L10 8 Z"/>
+      </svg>
+    </button>
   </div>
 
 </div>
@@ -106,13 +104,11 @@
 
   <div class="card" id="noBuffer">
     <b>Без подушки</b>
-
     Все деньги идут напрямую в цель.
   </div>
 
   <div class="card" id="withBuffer">
     <b>С подушкой</b>
-
     Часть средств идёт в резерв — защита от непредвиденных расходов.
   </div>
 </div>
@@ -126,6 +122,6 @@
   </div>
 </div>
 
-<script src="app.js?v=11000"></script>
+<script src="app.js?v=13000"></script>
 </body>
 </html>
