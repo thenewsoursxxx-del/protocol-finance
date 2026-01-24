@@ -56,6 +56,11 @@ const confirmReset = document.getElementById("confirmReset");
 const confirmYes = document.getElementById("confirmYes");
 const confirmNo = document.getElementById("confirmNo");
 
+/* ===== NAV ===== */
+const screens = document.querySelectorAll(".screen");
+const buttons = document.querySelectorAll(".nav-btn");
+const indicator = document.querySelector(".nav-indicator");
+const bottomNav = document.querySelector(".bottom-nav");
 function hideBottomNav() {
   bottomNav.style.transform = "translateY(140%)";
   bottomNav.style.opacity = "0";
@@ -67,13 +72,6 @@ function showBottomNav() {
   bottomNav.style.opacity = "1";
   bottomNav.style.pointerEvents = "auto";
 }
-
-/* ===== NAV ===== */
-const screens = document.querySelectorAll(".screen");
-const buttons = document.querySelectorAll(".nav-btn");
-const indicator = document.querySelector(".nav-indicator");
-const bottomNav = document.querySelector(".bottom-nav");
-
 /* ===== NAV INDICATOR ===== */
 function moveIndicator(btn) {
 if (!btn) return;
@@ -360,3 +358,15 @@ document.querySelectorAll(".input-wrap input").forEach(input => {
     wrap.classList.remove("show-hint");
   });
 });
+if (window.visualViewport) {
+  window.visualViewport.addEventListener("resize", () => {
+    const keyboardOpen =
+      window.visualViewport.height < window.innerHeight - 120;
+
+    if (keyboardOpen) {
+      hideBottomNav();
+    } else {
+      showBottomNav();
+    }
+  });
+}
