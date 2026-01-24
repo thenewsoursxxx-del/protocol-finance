@@ -58,6 +58,28 @@ viewport-fit=cover" />
   </div>
 </div>
 
+<!-- ===== PROFILE ===== -->
+<div class="screen" id="screen-profile">
+  <h2>Профиль</h2>
+
+  <div class="profile-card">
+    <div class="profile-avatar">
+      <svg viewBox="0 0 24 24">
+        <circle cx="12" cy="8" r="4"></circle>
+        <path d="M4 20c0-4 4-6 8-6s8 2 8 6"></path>
+      </svg>
+    </div>
+
+    <div>
+      <div class="profile-name">Пользователь</div>
+      <div class="profile-status">Protocol Finance</div>
+    </div>
+  </div>
+
+  <button class="profile-btn">⚙️ Настройки</button>
+  <button class="profile-btn danger">🔄 Сбросить план</button>
+</div>
+
 <!-- ===== SLIDER ===== -->
 <label>Режим накопления</label>
 
@@ -153,3 +175,65 @@ viewport-fit=cover" />
 <script src="app.js?v=11000"></script>
 </body>
 </html>
+
+/* ===== PROFILE ===== */
+.profile-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  border: 1px solid #333;
+  border-radius: 22px;
+  padding: 16px;
+  margin-bottom: 24px;
+}
+
+.profile-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #111;
+  border: 1px solid #333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.profile-avatar svg {
+  width: 28px;
+  height: 28px;
+  stroke: #fff;
+  fill: none;
+  stroke-width: 2;
+}
+
+.profile-name {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.profile-status {
+  font-size: 13px;
+  opacity: .6;
+  margin-top: 2px;
+}
+
+.profile-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.profile-btn {
+  padding: 14px;
+  border-radius: 16px;
+  background: #000;
+  color: #fff;
+  border: 1px solid #333;
+  text-align: left;
+  font-size: 15px;
+}
+
+.profile-btn.danger {
+  border-color: #442;
+  color: #f55;
+}
