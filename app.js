@@ -339,20 +339,16 @@ moveIndicator(document.querySelector(".nav-btn.active"));
 });
 });
 if (window.visualViewport) {
-window.visualViewport.addEventListener("resize", () => {
-const keyboardOpen =
-window.visualViewport.height < window.innerHeight - 100;
+  window.visualViewport.addEventListener("resize", () => {
+    const keyboardOpen =
+      window.visualViewport.height < window.innerHeight - 100;
 
-if (keyboardOpen) {
-bottomNav.style.transform = "translateY(140%)";
-bottomNav.style.opacity = "0";
-bottomNav.style.pointerEvents = "none";
-} else {
-bottomNav.style.transform = "translateY(0)";
-bottomNav.style.opacity = "1";
-bottomNav.style.pointerEvents = "auto";
-}
-});
+    if (keyboardOpen) {
+      bottomNav.style.display = "none";
+    } else {
+      bottomNav.style.display = "flex";
+    }
+  });
 }
 
 /* ===== INPUT HINT LOGIC ===== */
