@@ -1,11 +1,11 @@
 const tg = window.Telegram?.WebApp;
-tg?.expand();
+tg?.
 
-document.addEventListener("touchstart", e => {
-  if (!e.target.closest("input, textarea")) {
-    document.activeElement?.blur();
+function closeKeyboard() {
+  if (document.activeElement instanceof HTMLElement) {
+    document.activeElement.blur();
   }
-});
+}
 
 /* ===== FORMAT ===== */
 function formatNumber(v) {
