@@ -1,6 +1,10 @@
 const tg = window.Telegram?.WebApp;
 tg?.expand();
 
+document.addEventListener("touchstart", e => {
+  if (!e.target.closest("input, textarea")) {
+    document.activeElement?.blur();
+  }
 });
 
 /* ===== FORMAT ===== */
