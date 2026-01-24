@@ -56,6 +56,18 @@ const confirmReset = document.getElementById("confirmReset");
 const confirmYes = document.getElementById("confirmYes");
 const confirmNo = document.getElementById("confirmNo");
 
+function hideBottomNav() {
+  bottomNav.style.transform = "translateY(140%)";
+  bottomNav.style.opacity = "0";
+  bottomNav.style.pointerEvents = "none";
+}
+
+function showBottomNav() {
+  bottomNav.style.transform = "translateY(0)";
+  bottomNav.style.opacity = "1";
+  bottomNav.style.pointerEvents = "auto";
+}
+
 /* ===== NAV ===== */
 const screens = document.querySelectorAll(".screen");
 const buttons = document.querySelectorAll(".nav-btn");
