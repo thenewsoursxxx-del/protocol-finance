@@ -2,17 +2,17 @@ const tg = window.Telegram?.WebApp;
 tg?.expand();
 
 document.addEventListener("click", e => {
-  if (
-    e.target.closest("input") ||
-    e.target.closest("textarea") ||
-    e.target.closest("button")
-  ) {
-    return;
-  }
+if (
+e.target.closest("input") ||
+e.target.closest("textarea") ||
+e.target.closest("button")
+) {
+return;
+}
 
-  if (document.activeElement instanceof HTMLElement) {
-    document.activeElement.blur();
-  }
+if (document.activeElement instanceof HTMLElement) {
+document.activeElement.blur();
+}
 });
 
 /* ===== FORMAT ===== */
@@ -35,17 +35,17 @@ let selectedMode = "calm"; // calm | medium | aggressive
 const modeButtons = document.querySelectorAll(".mode-btn");
 
 modeButtons.forEach(btn => {
-  btn.onclick = () => {
-    // снять активность со всех
-    modeButtons.forEach(b => b.classList.remove("active"));
+btn.onclick = () => {
+// снять активность со всех
+modeButtons.forEach(b => b.classList.remove("active"));
 
-    // активировать текущую
-    btn.classList.add("active");
+// активировать текущую
+btn.classList.add("active");
 
-    // сохранить режим
-    selectedMode = btn.dataset.mode;
-    saveMode = btn.dataset.mode;
-  };
+// сохранить режим
+selectedMode = btn.dataset.mode;
+saveMode = btn.dataset.mode;
+};
 });
 
 const adviceCard = document.getElementById("adviceCard");
@@ -72,17 +72,17 @@ const bottomNav = document.querySelector(".bottom-nav");
 
 /* ===== NAV INDICATOR ===== */
 function moveIndicator(btn) {
-  if (!btn) return;
+if (!btn) return;
 
-  const navRect = bottomNav.getBoundingClientRect();
-  const btnRect = btn.getBoundingClientRect();
+const navRect = bottomNav.getBoundingClientRect();
+const btnRect = btn.getBoundingClientRect();
 
-  const x =
-    btnRect.left -
-    navRect.left +
-    (btnRect.width - indicator.offsetWidth) / 2;
+const x =
+btnRect.left -
+navRect.left +
+(btnRect.width - indicator.offsetWidth) / 2;
 
-  indicator.style.transform = `translateX(${x}px)`;
+indicator.style.transform = `translateX(${x}px)`;
 }
 
 /* ===== NAV NEVER MOVES ===== */
@@ -112,27 +112,6 @@ e.target.selectionEnd = p + (a - b);
 });
 });
 
-/* ===== INPUT HINT LOGIC ===== */
-document.querySelectorAll(".input-wrap input").forEach(input => {
-  const wrap = input.closest(".input-wrap");
-
-  input.addEventListener("focus", () => {
-    if (!input.value) {
-      wrap.classList.add("show-hint");
-    }
-  });
-
-  input.addEventListener("input", () => {
-    if (input.value) {
-      wrap.classList.remove("show-hint");
-    }
-  });
-
-  input.addEventListener("blur", () => {
-    wrap.classList.remove("show-hint");
-  });
-});
-
 
 /* ===== TAB LOCK ===== */
 function lockTabs(lock) {
@@ -144,7 +123,7 @@ btn.style.pointerEvents = lock ? "none" : "auto";
 }
 lockTabs(true);
 calcLock.style.display = "none";
-  moveIndicator(buttons[0]);
+moveIndicator(buttons[0]);
 
 /* ===== OPEN SCREEN ===== */
 function openScreen(name, btn) {
@@ -159,7 +138,7 @@ if (btn) btn.classList.add("active");
 if (btn) moveIndicator(btn);
 }
 buttons.forEach(btn => {
-  btn.onclick = () => openScreen(btn.dataset.screen, btn);
+btn.onclick = () => openScreen(btn.dataset.screen, btn);
 });
 
 /* ===== BOTTOM SHEET ===== */
@@ -332,32 +311,32 @@ openScreen("calc", buttons[0]);
 const profileBtn = document.getElementById("profileBtn");
 
 if (profileBtn) {
-  profileBtn.onclick = () => {
-    console.log("Profile clicked");
-    // позже: открыть профиль / настройки
+profileBtn.onclick = () => {
+console.log("Profile clicked");
+// позже: открыть профиль / настройки
 moveIndicator(document.querySelector(".nav-btn.active"));
-  };
+};
 }
 window.addEventListener("load", () => {
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      moveIndicator(document.querySelector(".nav-btn.active"));
-    });
-  });
+requestAnimationFrame(() => {
+requestAnimationFrame(() => {
+moveIndicator(document.querySelector(".nav-btn.active"));
+});
+});
 });
 if (window.visualViewport) {
-  window.visualViewport.addEventListener("resize", () => {
-    const keyboardOpen =
-      window.visualViewport.height < window.innerHeight - 100;
+window.visualViewport.addEventListener("resize", () => {
+const keyboardOpen =
+window.visualViewport.height < window.innerHeight - 100;
 
-    if (keyboardOpen) {
-      bottomNav.style.transform = "translateY(140%)";
-      bottomNav.style.opacity = "0";
-      bottomNav.style.pointerEvents = "none";
-    } else {
-      bottomNav.style.transform = "translateY(0)";
-      bottomNav.style.opacity = "1";
-      bottomNav.style.pointerEvents = "auto";
-    }
-  });
+if (keyboardOpen) {
+bottomNav.style.transform = "translateY(140%)";
+bottomNav.style.opacity = "0";
+bottomNav.style.pointerEvents = "none";
+} else {
+bottomNav.style.transform = "translateY(0)";
+bottomNav.style.opacity = "1";
+bottomNav.style.pointerEvents = "auto";
+}
+});
 }
