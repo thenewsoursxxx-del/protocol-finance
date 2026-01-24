@@ -1,11 +1,19 @@
 const tg = window.Telegram?.WebApp;
-tg?.
+tg?.expand();
 
-function closeKeyboard() {
-  if (document.activeElement instanceof HTMLElement) {
-    document.activeElement.blur();
-  }
+document.addEventListener("click", e => {
+if (
+e.target.closest("input") ||
+e.target.closest("textarea") ||
+e.target.closest("button")
+) {
+return;
 }
+
+if (document.activeElement instanceof HTMLElement) {
+document.activeElement.blur();
+}
+});
 
 /* ===== FORMAT ===== */
 function formatNumber(v) {
@@ -61,17 +69,7 @@ const screens = document.querySelectorAll(".screen");
 const buttons = document.querySelectorAll(".nav-btn");
 const indicator = document.querySelector(".nav-indicator");
 const bottomNav = document.querySelector(".bottom-nav");
-function hideBottomNav() {
-  bottomNav.style.transform = "translateY(140%)";
-  bottomNav.style.opacity = "0";
-  bottomNav.style.pointerEvents = "none";
-}
 
-function showBottomNav() {
-  bottomNav.style.transform = "translateY(0)";
-  bottomNav.style.opacity = "1";
-  bottomNav.style.pointerEvents = "auto";
-}
 /* ===== NAV INDICATOR ===== */
 function moveIndicator(btn) {
 if (!btn) return;
@@ -313,23 +311,8 @@ openScreen("calc", buttons[0]);
 const profileBtn = document.getElementById("profileBtn");
 
 if (profileBtn) {
-  profileBtn.onclick = () => {
-    // закрываем клавиатуру если была
-    document.activeElement?.blur();
-
-    // открываем экран профиля
-    screens.forEach(s => s.classList.remove("active"));
-    document.getElementById("screen-profile").classList.add("active");
-
-    // убираем активность с нижнего навбара
-    buttons.forEach(b => b.classList.remove("active"));
-
-    // скрываем навбар (как в iOS)
-    bottomNav.style.transform = "translateY(140%)";
-    bottomNav.style.opacity = "0";
-    bottomNav.style.pointerEvents = "none";
-  };
-}
+profileBtn.onclick = () => {
+console.log("Profile clicked");
 // позже: открыть профиль / настройки
 moveIndicator(document.querySelector(".nav-btn.active"));
 };
@@ -341,32 +324,19 @@ moveIndicator(document.querySelector(".nav-btn.active"));
 });
 });
 });
-
-/* ===== INPUT HINT LOGIC ===== */
-document.querySelectorAll(".input-wrap input").forEach(input => {
-  const wrap = input.closest(".input-wrap");
-
-  input.addEventListener("focus", () => {
-    wrap.classList.add("show-hint");
-  });
-
-  input.addEventListener("input", () => {
-    wrap.classList.remove("show-hint");
-  });
-
-  input.addEventListener("blur", () => {
-    wrap.classList.remove("show-hint");
-  });
-});
 if (window.visualViewport) {
-  window.visualViewport.addEventListener("resize", () => {
-    const keyboardOpen =
-      window.visualViewport.height < window.innerHeight - 120;
+window.visualViewport.addEventListener("resize", () => {
+const keyboardOpen =
+window.visualViewport.height < window.innerHeight - 100;
 
-    if (keyboardOpen) {
-      hideBottomNav();
-    } else {
-      showBottomNav();
-    }
-  });
+if (keyboardOpen) {
+bottomNav.style.transform = "translateY(140%)";
+bottomNav.style.opacity = "0";
+bottomNav.style.pointerEvents = "none";
+} else {
+bottomNav.style.transform = "translateY(0)";
+bottomNav.style.opacity = "1";
+bottomNav.style.pointerEvents = "auto";
+}
+});
 }
