@@ -338,18 +338,6 @@ moveIndicator(document.querySelector(".nav-btn.active"));
 });
 });
 });
-if (window.visualViewport) {
-  window.visualViewport.addEventListener("resize", () => {
-    const keyboardOpen =
-      window.visualViewport.height < window.innerHeight - 100;
-
-    if (keyboardOpen) {
-      bottomNav.style.display = "none";
-    } else {
-      bottomNav.style.display = "flex";
-    }
-  });
-}
 
 /* ===== INPUT HINT LOGIC ===== */
 document.querySelectorAll(".input-wrap input").forEach(input => {
