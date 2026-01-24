@@ -112,6 +112,27 @@ e.target.selectionEnd = p + (a - b);
 });
 });
 
+/* ===== INPUT HINT LOGIC ===== */
+document.querySelectorAll(".input-wrap input").forEach(input => {
+  const wrap = input.closest(".input-wrap");
+
+  input.addEventListener("focus", () => {
+    if (!input.value) {
+      wrap.classList.add("show-hint");
+    }
+  });
+
+  input.addEventListener("input", () => {
+    if (input.value) {
+      wrap.classList.remove("show-hint");
+    }
+  });
+
+  input.addEventListener("blur", () => {
+    wrap.classList.remove("show-hint");
+  });
+});
+
 
 /* ===== TAB LOCK ===== */
 function lockTabs(lock) {
