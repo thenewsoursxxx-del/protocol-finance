@@ -1,166 +1,137 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport"
-        content="width=device-width,
-                 initial-scale=1.0,
-                 maximum-scale=1.0,
-                 user-scalable=no,
-                 viewport-fit=cover" />
-  <title>Protocol</title>
+<meta charset="UTF-8" />
+<meta name="viewport"
+content="width=device-width,
+initial-scale=1.0,
+maximum-scale=1.0,
+user-scalable=no,
+viewport-fit=cover" />
+<title>Protocol</title>
 
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <link rel="stylesheet" href="style.css?v=11000">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="stylesheet" href="style.css?v=11000">
 </head>
 <body>
 
 <div id="app" class="app">
 
-  <!-- ===== TOP PROFILE ===== -->
-  <div class="top-profile">
-    <button id="profileBtn">
-      <div class="avatar">
-        <svg viewBox="0 0 24 24">
-          <circle cx="12" cy="8" r="4"></circle>
-          <path d="M4 20c0-4 4-6 8-6s8 2 8 6"></path>
-        </svg>
-      </div>
-    </button>
-  </div>
+<!-- ===== TOP PROFILE ===== -->
+<div class="top-profile">
+<button id="profileBtn">
+<div class="avatar">
+<svg viewBox="0 0 24 24">
+<circle cx="12" cy="8" r="4"></circle>
+<path d="M4 20c0-4 4-6 8-6s8 2 8 6"></path>
+</svg>
+</div>
+</button>
+</div>
 
-  <!-- ===== CALC ===== -->
-  <div class="screen active" id="screen-calc">
-    <h2>Расчёт</h2>
+<!-- ===== CALC ===== -->
+<div class="screen active" id="screen-calc">
+<h2>Расчёт</h2>
 
-    <label>Доход</label>
-    <div class="input-wrap">
-      <input id="income" type="text" inputmode="numeric" placeholder="100.000">
-      <div class="input-hint">
-        Укажите ваш ежемесячный доход после налогов
-      </div>
-    </div>
+<label>Доход</label>
+<input id="income" inputmode="numeric" placeholder="100.000">
 
-    <label>Расходы</label>
-    <div class="input-wrap">
-      <input id="expenses" type="text" inputmode="numeric" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="100.000" placeholder="50.000">
-      <div class="input-hint">
-        Сумма обязательных ежемесячных расходов
-      </div>
-    </div>
+<label>Расходы</label>
+<input id="expenses" inputmode="numeric" placeholder="50.000">
 
-    <label>Цель</label>
-    <div class="input-wrap">
-      <input id="goal" type="text" inputmode="numeric" placeholder="300.000">
-      <div class="input-hint">
-        Сумма, которую вы хотите накопить
-      </div>
-    </div>
+<label>Цель</label>
+<input id="goal" inputmode="numeric" placeholder="300.000">
 
-    <label>Режим накопления</label>
-    <div class="mode-buttons">
-      <button class="mode-btn active" data-mode="calm">Спокойно</button>
-      <button class="mode-btn" data-mode="normal">Умеренно</button>
-      <button class="mode-btn" data-mode="aggressive">Агрессивно</button>
-    </div>
+<!-- ===== SLIDER ===== -->
+<label>Режим накопления</label>
 
-    <button id="calculate">Продолжить</button>
+<div class="mode-buttons">
+<button class="mode-btn active" data-mode="calm">Спокойно</button>
+<button class="mode-btn" data-mode="normal">Умеренно</button>
+<button class="mode-btn" data-mode="aggressive">Агрессивно</button>
+</div>
 
-    <div id="calcLock">
-      <div class="lockCard">
-        <div class="lockIcon">🔒</div>
-        <div id="lockText"></div>
-        <button id="resetPlan">Начать сначала</button>
-      </div>
-    </div>
-  </div>
+<button id="calculate">Продолжить</button>
 
-  <!-- ===== PROFILE ===== -->
-  <div class="screen" id="screen-profile">
-    <h2>Профиль</h2>
+<!-- ===== LOCK OVERLAY ===== -->
+<div id="calcLock">
+<div class="lockCard">
+<div class="lockIcon">🔒</div>
+<div id="lockText"></div>
+<button id="resetPlan">Начать сначала</button>
+</div>
+</div>
+</div>
 
-    <div class="profile-card">
-      <div class="profile-avatar">
-        <svg viewBox="0 0 24 24">
-          <circle cx="12" cy="8" r="4"></circle>
-          <path d="M4 20c0-4 4-6 8-6s8 2 8 6"></path>
-        </svg>
-      </div>
+<!-- ===== ADVICE ===== -->
+<div class="screen" id="screen-advice">
+<h2>Protocol</h2>
+<div id="loader" class="loader hidden"></div>
+<div id="adviceCard" class="card"></div>
+</div>
 
-      <div>
-        <div class="profile-name">Пользователь</div>
-        <div class="profile-status">Protocol Finance</div>
-      </div>
-    </div>
+<div class="screen" id="screen-progress"><h2>Прогресс</h2></div>
+<div class="screen" id="screen-accounts"><h2>Счета</h2></div>
+<div class="screen" id="screen-goals"><h2>Цели</h2></div>
+<div class="screen" id="screen-ai">
+<h2>AI ассистент</h2>
+</div>
 
-    <button class="profile-btn">⚙️ Настройки</button>
-    <button class="profile-btn danger">🔄 Сбросить план</button>
-  </div>
+<!-- ===== NAV ===== -->
+<div class="bottom-nav">
+<div class="nav-indicator"></div>
 
-  <!-- ===== ADVICE ===== -->
-  <div class="screen" id="screen-advice">
-    <h2>Protocol</h2>
-    <div id="loader" class="loader hidden"></div>
-    <div id="adviceCard" class="card"></div>
-  </div>
+<button class="nav-btn active" data-screen="calc">
+<svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16"/></svg>
+</button>
 
-  <div class="screen" id="screen-progress"><h2>Прогресс</h2></div>
-  <div class="screen" id="screen-accounts"><h2>Счета</h2></div>
-  <div class="screen" id="screen-goals"><h2>Цели</h2></div>
-  <div class="screen" id="screen-ai"><h2>AI ассистент</h2></div>
+<button class="nav-btn" data-screen="advice">
+<svg viewBox="0 0 24 24"><polyline points="4,16 10,10 14,14 20,6"/></svg>
+</button>
 
-  <!-- ===== NAV ===== -->
-  <div class="bottom-nav">
-    <div class="nav-indicator"></div>
+<button class="nav-btn" data-screen="accounts">
+<svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="10"/></svg>
+</button>
 
-    <button class="nav-btn active" data-screen="calc">
-      <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16"/></svg>
-    </button>
+<button class="nav-btn" data-screen="goals">
+<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></svg>
+</button>
 
-    <button class="nav-btn" data-screen="advice">
-      <svg viewBox="0 0 24 24"><polyline points="4,16 10,10 14,14 20,6"/></svg>
-    </button>
-
-    <button class="nav-btn" data-screen="accounts">
-      <svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="10"/></svg>
-    </button>
-
-    <button class="nav-btn" data-screen="goals">
-      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></svg>
-    </button>
-
-    <button class="nav-btn" data-screen="ai">
-      <svg viewBox="0 0 24 24">
-        <path d="M12 2v4M12 18v4M2 12h4M18 12h4M5 5l3 3M16 16l3 3M5 19l3-3M16 8l3-3"/>
-      </svg>
-    </button>
-  </div>
+<button class="nav-btn" data-screen="ai">
+<svg viewBox="0 0 24 24">
+<path d="M12 2v4M12 18v4M2 12h4M18 12h4M5 5l3 3M16 16l3 3M5 19l3-3M16 8l3-3"/>
+</svg>
+</button>
+</div>
 
 </div>
 
 <!-- ===== BOTTOM SHEET ===== -->
 <div id="sheetOverlay"></div>
 <div id="sheet">
-  <h2>Как копим?</h2>
+<h2>Как копим?</h2>
 
-  <div class="card" id="noBuffer">
-    <b>Без подушки</b>
-    Все деньги идут напрямую в цель.
-  </div>
+<div class="card" id="noBuffer">
+<b>Без подушки</b>
 
-  <div class="card" id="withBuffer">
-    <b>С подушкой</b>
-    Часть средств идёт в резерв.
-  </div>
+Все деньги идут напрямую в цель.
+</div>
+
+<div class="card" id="withBuffer">
+<b>С подушкой</b>
+
+Часть средств идёт в резерв — защита от непредвиденных расходов.
+</div>
 </div>
 
 <!-- ===== CONFIRM RESET ===== -->
 <div id="confirmReset">
-  <div class="confirmCard">
-    <p>Если вы нажмёте «Начать сначала», весь прогресс будет сброшен.</p>
-    <button id="confirmYes">Начать сначала</button>
-    <button id="confirmNo">Отменить</button>
-  </div>
+<div class="confirmCard">
+<p>Если вы нажмёте «Начать сначала», весь прогресс и накопления будут сброшены.</p>
+<button id="confirmYes">Начать сначала</button>
+<button id="confirmNo">Отменить</button>
+</div>
+</div>
 </div>
 
 <script src="app.js?v=11000"></script>
