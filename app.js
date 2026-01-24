@@ -311,8 +311,23 @@ openScreen("calc", buttons[0]);
 const profileBtn = document.getElementById("profileBtn");
 
 if (profileBtn) {
-profileBtn.onclick = () => {
-console.log("Profile clicked");
+  profileBtn.onclick = () => {
+    // закрываем клавиатуру если была
+    document.activeElement?.blur();
+
+    // открываем экран профиля
+    screens.forEach(s => s.classList.remove("active"));
+    document.getElementById("screen-profile").classList.add("active");
+
+    // убираем активность с нижнего навбара
+    buttons.forEach(b => b.classList.remove("active"));
+
+    // скрываем навбар (как в iOS)
+    bottomNav.style.transform = "translateY(140%)";
+    bottomNav.style.opacity = "0";
+    bottomNav.style.pointerEvents = "none";
+  };
+}
 // позже: открыть профиль / настройки
 moveIndicator(document.querySelector(".nav-btn.active"));
 };
