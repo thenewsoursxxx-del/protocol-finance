@@ -105,6 +105,8 @@ border: 1px solid #222;
 
 padding: 0px; /* под размер индикатора */
 gap: 0;
+
+z-index: 50;
 }
 .nav-indicator {
 position: absolute;
