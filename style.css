@@ -354,3 +354,52 @@ opacity: 1;
   opacity: 1;
   transform: translateY(0);
 }
+
+/* ===== PROFILE ===== */
+
+.profile-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  border: 1px solid #333;
+  border-radius: 22px;
+  padding: 16px;
+  margin-bottom: 24px;
+}
+
+.profile-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #111;
+  border: 1px solid #333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.profile-avatar svg {
+  width: 28px;
+  height: 28px;
+  stroke: #fff;
+  fill: none;
+  stroke-width: 2;
+}
+
+.profile-name {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.profile-status {
+  font-size: 13px;
+  opacity: .6;
+  margin-top: 2px;
+}
+
+.profile-btn {
+  margin-top: 12px;
+  background: #111;
+  color: #fff;
+  border: 1px solid #333;
+}
