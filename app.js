@@ -153,6 +153,7 @@ sheetOverlay.style.display = "none";
 
 /* ===== CALCULATE ===== */
 calculateBtn.onclick = () => {
+  haptic("medium");
 if (chosenPlan) return;
 
 const income = parseNumber(incomeInput.value);
