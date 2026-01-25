@@ -2,17 +2,17 @@ const tg = window.Telegram?.WebApp;
 tg?.expand();
 
 document.addEventListener("click", e => {
-if (
-e.target.closest("input") ||
-e.target.closest("textarea") ||
-e.target.closest("button")
-) {
-return;
-}
+  if (
+    e.target.closest("input") ||
+    e.target.closest("textarea") ||
+    e.target.closest(".mode-btn") ||
+    e.target.closest(".nav-btn") ||
+    e.target.closest("#profileBtn")
+  ) {
+    return;
+  }
 
-if (document.activeElement instanceof HTMLElement) {
-document.activeElement.blur();
-}
+  document.activeElement?.blur();
 });
 
 /* ===== FORMAT ===== */
