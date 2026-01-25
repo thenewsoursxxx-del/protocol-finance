@@ -340,3 +340,20 @@ bottomNav.style.pointerEvents = "auto";
 }
 });
 }
+
+/* ===== INPUT HINT LOGIC ===== */
+document.querySelectorAll(".input-wrap input").forEach(input => {
+  const wrap = input.closest(".input-wrap");
+
+  input.addEventListener("focus", () => {
+    wrap.classList.add("show-hint");
+  });
+
+  input.addEventListener("input", () => {
+    wrap.classList.remove("show-hint");
+  });
+
+  input.addEventListener("blur", () => {
+    wrap.classList.remove("show-hint");
+  });
+});
