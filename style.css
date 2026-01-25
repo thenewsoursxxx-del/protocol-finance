@@ -353,3 +353,18 @@ opacity: 1;
   opacity: 1;
   transform: translateY(0);
 }
+button {
+  transition: transform .12s ease, opacity .12s ease;
+}
+
+button:active {
+  transform: scale(0.97);
+  opacity: 0.9;
+}
+.mode-btn {
+  transition: transform .12s ease, background .2s ease;
+}
+
+.mode-btn:active {
+  transform: scale(0.96);
+}
