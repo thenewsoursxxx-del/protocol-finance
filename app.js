@@ -357,3 +357,10 @@ document.querySelectorAll(".input-wrap input").forEach(input => {
     wrap.classList.remove("show-hint");
   });
 });
+
+/* ===== MICRO UX: HAPTIC ===== */
+function haptic(type = "light") {
+  if (window.Telegram?.WebApp?.HapticFeedback) {
+    Telegram.WebApp.HapticFeedback.impactOccurred(type);
+  }
+}
