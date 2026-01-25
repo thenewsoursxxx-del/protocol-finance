@@ -36,6 +36,7 @@ const modeButtons = document.querySelectorAll(".mode-btn");
 
 modeButtons.forEach(btn => {
 btn.onclick = () => {
+  haptic("light");
 // снять активность со всех
 modeButtons.forEach(b => b.classList.remove("active"));
 
