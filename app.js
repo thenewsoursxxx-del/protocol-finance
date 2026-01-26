@@ -340,27 +340,27 @@ const profileBtn = document.getElementById("profileBtn");
 if (profileBtn) {
   profileBtn.onclick = () => {
     haptic("light");
-    
-    // скрываем подсказку навсегда
-    localStorage.setItem("profile_seen", "1");
-    profileHint?.classList.remove("show");
 
-    console.log("Profile clicked");
-    moveIndicator(document.querySelector(".nav-btn.active"));
-  };
-}
+    // запоминаем, откуда пришли
+    const activeBtn = document.querySelector(".nav-btn.active");
+    lastNavBtnBeforeProfile = activeBtn;
+    lastScreenBeforeProfile = activeBtn?.dataset.screen || "calc";
 
     // закрываем клавиатуру
     document.activeElement?.blur();
 
+    // скрываем подсказку
+    localStorage.setItem("profile_seen", "1");
+    profileHint?.classList.remove("show");
+
     // показываем профиль
     screens.forEach(s => s.classList.remove("active"));
-    document.getElementById("screen-profile").classList.add("active");
+    document.getElementById("screen-profile")?.classList.add("active");
 
-    // убираем активность навбара
+    // снимаем активность с навбара
     buttons.forEach(b => b.classList.remove("active"));
 
-    // прячем нижний навбар (iOS-style)
+    // прячем нижний нав (iOS-style)
     bottomNav.style.transform = "translateY(140%)";
     bottomNav.style.opacity = "0";
     bottomNav.style.pointerEvents = "none";
