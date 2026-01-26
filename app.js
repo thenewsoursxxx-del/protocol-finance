@@ -158,8 +158,7 @@ if (profileBack) {
   profileBack.onclick = () => {
     haptic("light");
 
-    // возвращаемся на экран расчёта
-    openScreen("calc", buttons[0]);
+openScreen(lastScreenBeforeProfile, lastNavBtnBeforeProfile);
 
     // возвращаем нижний нав
     bottomNav.style.transform = "translateY(0)";
