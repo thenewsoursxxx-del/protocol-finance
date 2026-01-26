@@ -391,6 +391,10 @@ const profileNameEl = document.querySelector(".profile-name");
 const profileAvatarEl = document.querySelector(".profile-avatar");
 
 function renderProfile() {
+  tgAuthBtn.onclick = () => {
+  haptic("medium");
+  renderProfile();
+};
   const user = Telegram.WebApp.initDataUnsafe?.user;
   if (!user) return;
 
@@ -426,4 +430,33 @@ if (tgAuthBtn) {
 // если уже авторизован — сразу рендерим
 if (localStorage.getItem("tg_authed") === "1") {
   renderProfile();
+}
+const profileHint = document.getElementById("profileHint");
+
+if (!localStorage.getItem("profile_seen")) {
+  setTimeout(() => {
+    profileHint?.classList.add("show");
+  }, 800);
+}
+const tgAuthBtn = document.getElementById("tgAuthBtn");
+const profileNameEl = document.querySelector(".profile-name");
+const profileAvatarEl = document.querySelector(".profile-avatar");
+
+function renderProfile() {
+  const user = Telegram.WebApp.initDataUnsafe?.user;
+  if (!user) return;
+
+  profileNameEl.innerText =
+    user.first_name + (user.last_name ? " " + user.last_name : "");
+
+  if (user.photo_url) {
+    profileAvatarEl.innerHTML = `
+      <img src="${user.photo_url}"
+        style="width:100%;height:100%;border-radius:50%;object-fit:cover;" />
+    `;
+  }
+
+  tgAuthBtn.style.display = "none";
+  localStorage.setItem("profile_seen", "1");
+  profileHint?.classList.remove("show");
 }
