@@ -2,7 +2,11 @@ const tg = window.Telegram?.WebApp;
 tg?.expand();
 
 document.addEventListener("click", e => {
-  if (e.target.closest("input") || e.target.closest("textarea")) {
+  if (
+    e.target.closest("input") ||
+    e.target.closest("textarea") ||
+    e.target.closest("#profileBtn")
+  ) {
     return;
   }
   document.activeElement?.blur();
