@@ -341,17 +341,19 @@ if (profileBtn) {
   profileBtn.onclick = () => {
     haptic("light");
 
-    // закрываем клавиатуру
+    // запоминаем, где были
+    const activeBtn = document.querySelector(".nav-btn.active");
+    lastNavBtnBeforeProfile = activeBtn || buttons[0];
+    lastScreenBeforeProfile =
+      activeBtn?.dataset.screen || "calc";
+
     document.activeElement?.blur();
 
-    // показываем профиль
     screens.forEach(s => s.classList.remove("active"));
     document.getElementById("screen-profile").classList.add("active");
 
-    // убираем активность навбара
     buttons.forEach(b => b.classList.remove("active"));
 
-    // прячем нижний навбар (iOS-style)
     bottomNav.style.transform = "translateY(140%)";
     bottomNav.style.opacity = "0";
     bottomNav.style.pointerEvents = "none";
