@@ -390,26 +390,18 @@ if (profileBtn) {
 
 /* ===== INPUT HINT LOGIC ===== */
 document.querySelectorAll(".input-wrap input").forEach(input => {
-  input.addEventListener("input", () => {
   const wrap = input.closest(".input-wrap");
-  wrap.classList.remove("error", "shake");
+
+  input.addEventListener("focus", () => {
+    wrap.classList.remove("error", "shake");
 
     if (input.dataset.placeholder) {
       input.placeholder = input.dataset.placeholder;
     }
   });
-});
-
-  input.addEventListener("focus", () => {
-    wrap.classList.add("show-hint");
-  });
 
   input.addEventListener("input", () => {
-    wrap.classList.remove("show-hint");
-  });
-
-  input.addEventListener("blur", () => {
-    wrap.classList.remove("show-hint");
+    wrap.classList.remove("error", "shake");
   });
 });
 
@@ -460,9 +452,9 @@ function validateRequired(input) {
   if (!value) {
     wrap.classList.add("error");
 
-    // shake (перезапуск анимации)
+    // перезапуск shake
     wrap.classList.remove("shake");
-    void wrap.offsetWidth; // force reflow
+    void wrap.offsetWidth; // force reflow (ВАЖНО)
     wrap.classList.add("shake");
 
     // placeholder
@@ -473,13 +465,12 @@ function validateRequired(input) {
     input.value = "";
     input.placeholder = "Обязательное поле";
 
-    // iOS-like haptic
     haptic("error");
 
     return false;
   }
 
-  wrap.classList.remove("error");
+  wrap.classList.remove("error", "shake");
 
   if (input.dataset.placeholder) {
     input.placeholder = input.dataset.placeholder;
