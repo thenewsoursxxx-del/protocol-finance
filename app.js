@@ -71,6 +71,10 @@ const screens = document.querySelectorAll(".screen");
 const buttons = document.querySelectorAll(".nav-btn");
 const indicator = document.querySelector(".nav-indicator");
 const bottomNav = document.querySelector(".bottom-nav");
+// ❌ скрываем bottom-nav при старте (экран расчёта)
+bottomNav.style.opacity = "0";
+bottomNav.style.pointerEvents = "none";
+bottomNav.style.transform = "translateY(140%)";
 
 /* ===== NAV INDICATOR ===== */
 function moveIndicator(btn) {
