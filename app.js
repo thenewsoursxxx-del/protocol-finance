@@ -98,6 +98,8 @@ let chosenPlan = null;
 let plannedMonthly = 0;
 let isInitialized = false;
 let saveMode = "calm";
+let lastScreenBeforeProfile = "calc";
+let lastNavBtnBeforeProfile = buttons[0];
 
 /* ===== PACE SELECT ===== */
 
