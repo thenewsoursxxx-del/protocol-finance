@@ -366,7 +366,16 @@ if (profileBtn) {
     bottomNav.style.pointerEvents = "none";
     
     renderProfile();
+    if (tgAuthBtn) {
+  tgAuthBtn.onclick = () => {
+    haptic("medium");
+    renderProfile();
   };
+}
+  };
+}
+if (Telegram.WebApp.initDataUnsafe?.user) {
+  renderProfile();
 }
 
 /* ===== INPUT HINT LOGIC ===== */
@@ -475,4 +484,31 @@ if (authBtn) {
     haptic("medium");
     renderProfile();
   };
+}
+const tgAuthBtn = document.getElementById("tgAuthBtn");
+const profileName = document.querySelector(".profile-name");
+const profileAvatar = document.getElementById("profileAvatar");
+
+function renderProfile() {
+  const user = Telegram.WebApp.initDataUnsafe?.user;
+  if (!user) return;
+
+  // имя
+  profileName.innerText =
+    user.first_name + (user.last_name ? " " + user.last_name : "");
+
+  // аватар
+  if (user.photo_url && profileAvatar) {
+    profileAvatar.innerHTML = `
+      <img src="${user.photo_url}"
+        style="width:100%;height:100%;border-radius:50%;object-fit:cover;" />
+    `;
+  }
+
+  // прячем кнопку входа
+  tgAuthBtn.style.display = "none";
+
+  // убираем подсказку
+  localStorage.setItem("profile_seen", "1");
+  profileHint?.classList.remove("show");
 }
