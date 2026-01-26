@@ -355,11 +355,6 @@ if (profileBtn) {
     bottomNav.style.transform = "translateY(140%)";
     bottomNav.style.opacity = "0";
     bottomNav.style.pointerEvents = "none";
-    
-    if (profileHint) {
-  profileHint.classList.remove("show");
-}
-localStorage.setItem("profile_seen", "1");
   };
 }
 
@@ -385,14 +380,4 @@ function haptic(type = "light") {
   if (window.Telegram?.WebApp?.HapticFeedback) {
     Telegram.WebApp.HapticFeedback.impactOccurred(type);
   }
-}
-/* ===== PROFILE HINT LOGIC ===== */
-const profileHint = document.getElementById("profileHint");
-
-const isProfileSeen = localStorage.getItem("profile_seen");
-
-if (!isProfileSeen && profileHint) {
-  setTimeout(() => {
-    profileHint.classList.add("show");
-  }, 800);
 }
