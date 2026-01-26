@@ -400,44 +400,10 @@ if (!isProfileSeen && profileHint) {
   }, 800);
 }
 
-/* ===== TELEGRAM USER ===== */
-const tgUser = Telegram.WebApp.initDataUnsafe?.user;
-
-if (tgUser) {
-  // имя
-  const name =
-    tgUser.first_name +
-    (tgUser.last_name ? " " + tgUser.last_name : "");
-
-  // вставим имя в профиль
-  const profileName = document.querySelector(".profile-name");
-  if (profileName) profileName.innerText = name;
-
-  // аватар
-  if (tgUser.photo_url) {
-    const avatar = document.getElementById("profileAvatar");
-    avatar.innerHTML = `
-      <img src="${tgUser.photo_url}" alt="avatar"
-        style="
-          width:100%;
-          height:100%;
-          border-radius:50%;
-          object-fit:cover;
-        "
-      />
-    `;
-  }
-
   // подсказка больше не нужна
   localStorage.setItem("profile_seen", "1");
   profileHint?.classList.remove("show");
 }
-
-const tgUser = Telegram.WebApp.initDataUnsafe?.user;
-
-const authBtn = document.getElementById("tgAuthBtn");
-const profileName = document.querySelector(".profile-name");
-const profileAvatar = document.getElementById("profileAvatar");
 
 /* ===== PROFILE LOGIC (FINAL) ===== */
 
@@ -450,13 +416,11 @@ function renderProfile() {
   const user = Telegram.WebApp.initDataUnsafe?.user;
   if (!user) return;
 
-  // имя
   if (profileNameEl) {
     profileNameEl.innerText =
       user.first_name + (user.last_name ? " " + user.last_name : "");
   }
 
-  // аватар
   if (user.photo_url && profileAvatarEl) {
     profileAvatarEl.innerHTML = `
       <img src="${user.photo_url}"
@@ -464,10 +428,8 @@ function renderProfile() {
     `;
   }
 
-  // скрываем кнопку входа
   if (tgAuthBtn) tgAuthBtn.style.display = "none";
 
-  // убираем подсказку
   localStorage.setItem("profile_seen", "1");
   profileHint?.classList.remove("show");
 }
