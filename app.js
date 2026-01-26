@@ -181,13 +181,20 @@ sheetOverlay.style.display = "none";
 /* ===== CALCULATE ===== */
 calculateBtn.onclick = () => {
   haptic("medium");
-if (chosenPlan) return;
+  if (chosenPlan) return;
 
-const income = parseNumber(incomeInput.value);
-const expenses = parseNumber(expensesInput.value);
-const goal = parseNumber(goalInput.value);
-const saved = parseNumber(savedInput.value || "0");
-if (!saveMode) return;
+  const validIncome = validateRequired(incomeInput);
+  const validExpenses = validateRequired(expensesInput);
+  const validGoal = validateRequired(goalInput);
+
+  if (!validIncome || !validExpenses || !validGoal) {
+    return;
+  }
+
+  const income = parseNumber(incomeInput.value);
+  const expenses = parseNumber(expensesInput.value);
+  const goal = parseNumber(goalInput.value);
+  if (!saveMode) return;
 
 let pace = 0.5;
 
@@ -430,3 +437,21 @@ if (tgUser) {
     if (profileAvatar) profileAvatar.innerHTML = img;
   }
 }
+function validateRequired(input) {
+  const wrap = input.closest(".input-wrap");
+  const value = parseNumber(input.value || "0");
+
+  if (!value) {
+    wrap.classList.add("error");
+    return false;
+  }
+
+  wrap.classList.remove("error");
+  return true;
+}
+document.querySelectorAll(".input-wrap input").forEach(input => {
+  input.addEventListener("input", () => {
+    const wrap = input.closest(".input-wrap");
+    wrap.classList.remove("error");
+  });
+});
