@@ -422,3 +422,24 @@ button:active {
   border-color: #442;
   color: #f55;
 }
+
+.profile-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+#profileBack {
+  width: auto;
+  padding: 6px 10px;
+  font-size: 22px;
+  background: transparent;
+  color: #fff;
+  border: none;
+}
+
+.profile-title {
+  font-size: 22px;
+  font-weight: 600;
+}
