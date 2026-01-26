@@ -383,3 +383,47 @@ function haptic(type = "light") {
     Telegram.WebApp.HapticFeedback.impactOccurred(type);
   }
 }
+
+/* ===== PROFILE AUTH (SAFE) ===== */
+
+const tgAuthBtn = document.getElementById("tgAuthBtn");
+const profileNameEl = document.querySelector(".profile-name");
+const profileAvatarEl = document.querySelector(".profile-avatar");
+
+function renderProfile() {
+  const user = Telegram.WebApp.initDataUnsafe?.user;
+  if (!user) return;
+
+  // имя
+  if (profileNameEl) {
+    profileNameEl.innerText =
+      user.first_name + (user.last_name ? " " + user.last_name : "");
+  }
+
+  // аватар
+  if (user.photo_url && profileAvatarEl) {
+    profileAvatarEl.innerHTML = `
+      <img src="${user.photo_url}"
+        style="width:100%;height:100%;border-radius:50%;object-fit:cover;" />
+    `;
+  }
+
+  // скрываем кнопку
+  if (tgAuthBtn) tgAuthBtn.style.display = "none";
+
+  // помечаем как авторизованного
+  localStorage.setItem("tg_authed", "1");
+}
+
+// клик по кнопке
+if (tgAuthBtn) {
+  tgAuthBtn.onclick = () => {
+    haptic("medium");
+    renderProfile();
+  };
+}
+
+// если уже авторизован — сразу рендерим
+if (localStorage.getItem("tg_authed") === "1") {
+  renderProfile();
+}
