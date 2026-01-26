@@ -454,13 +454,13 @@ button:active {
   top: 26px;
   right: 72px;
 
-  background: rgba(20, 20, 20, 0.92);
+  background: rgba(30, 30, 30, 0.9);
   border: 1px solid #333;
   border-radius: 14px;
 
   padding: 6px 10px;
   font-size: 12px;
-  color: #ccc;
+  color: #ddd;
 
   white-space: nowrap;
   pointer-events: none;
