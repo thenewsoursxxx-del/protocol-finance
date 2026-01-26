@@ -357,6 +357,7 @@ if (profileBtn) {
     bottomNav.style.transform = "translateY(140%)";
     bottomNav.style.opacity = "0";
     bottomNav.style.pointerEvents = "none";
+    renderProfile();
   };
 }
 
