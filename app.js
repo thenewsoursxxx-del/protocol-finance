@@ -2,16 +2,9 @@ const tg = window.Telegram?.WebApp;
 tg?.expand();
 
 document.addEventListener("click", e => {
-  if (
-    e.target.closest("input") ||
-    e.target.closest("textarea") ||
-    e.target.closest(".mode-btn") ||
-    e.target.closest(".nav-btn") ||
-    e.target.closest("#profileBtn")
-  ) {
+  if (e.target.closest("input") || e.target.closest("textarea")) {
     return;
   }
-
   document.activeElement?.blur();
 });
 
@@ -158,7 +151,7 @@ if (profileBack) {
   profileBack.onclick = () => {
     haptic("light");
 
-openScreen(lastScreenBeforeProfile, lastNavBtnBeforeProfile);
+    openScreen(lastScreenBeforeProfile, lastNavBtnBeforeProfile);
 
     // возвращаем нижний нав
     bottomNav.style.transform = "translateY(0)";
@@ -341,26 +334,23 @@ if (profileBtn) {
   profileBtn.onclick = () => {
     haptic("light");
 
-    // запоминаем, откуда пришли
+    // запоминаем, где были
     const activeBtn = document.querySelector(".nav-btn.active");
-    lastNavBtnBeforeProfile = activeBtn;
-    lastScreenBeforeProfile = activeBtn?.dataset.screen || "calc";
+    lastNavBtnBeforeProfile = activeBtn || buttons[0];
+    lastScreenBeforeProfile =
+      activeBtn?.dataset.screen || "calc";
 
     // закрываем клавиатуру
     document.activeElement?.blur();
-
-    // скрываем подсказку
-    localStorage.setItem("profile_seen", "1");
-    profileHint?.classList.remove("show");
 
     // показываем профиль
     screens.forEach(s => s.classList.remove("active"));
     document.getElementById("screen-profile")?.classList.add("active");
 
-    // снимаем активность с навбара
+    // убираем активность навбара
     buttons.forEach(b => b.classList.remove("active"));
 
-    // прячем нижний нав (iOS-style)
+    // прячем нижний навбар
     bottomNav.style.transform = "translateY(140%)";
     bottomNav.style.opacity = "0";
     bottomNav.style.pointerEvents = "none";
