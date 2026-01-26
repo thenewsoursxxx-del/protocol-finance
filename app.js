@@ -141,10 +141,15 @@ if (btn) btn.classList.add("active");
 if (btn) moveIndicator(btn);
 }
 buttons.forEach(btn => {
-btn.onclick = () => {
-  haptic("light");
-  openScreen(btn.dataset.screen, btn);
-};
+  btn.onclick = () => {
+    haptic("light");
+
+    // запоминаем, откуда пришли
+    lastScreenBeforeProfile = btn.dataset.screen;
+    lastNavBtnBeforeProfile = btn;
+
+    openScreen(btn.dataset.screen, btn);
+  };
 });
 
 const profileBack = document.getElementById("profileBack");
