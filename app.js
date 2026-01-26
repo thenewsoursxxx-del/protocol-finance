@@ -390,7 +390,15 @@ if (profileBtn) {
 
 /* ===== INPUT HINT LOGIC ===== */
 document.querySelectorAll(".input-wrap input").forEach(input => {
+  input.addEventListener("input", () => {
   const wrap = input.closest(".input-wrap");
+  wrap.classList.remove("error", "shake");
+
+    if (input.dataset.placeholder) {
+      input.placeholder = input.dataset.placeholder;
+    }
+  });
+});
 
   input.addEventListener("focus", () => {
     wrap.classList.add("show-hint");
@@ -452,7 +460,12 @@ function validateRequired(input) {
   if (!value) {
     wrap.classList.add("error");
 
-    // сохраняем оригинальный placeholder
+    // shake (перезапуск анимации)
+    wrap.classList.remove("shake");
+    void wrap.offsetWidth; // force reflow
+    wrap.classList.add("shake");
+
+    // placeholder
     if (!input.dataset.placeholder) {
       input.dataset.placeholder = input.placeholder;
     }
@@ -460,12 +473,14 @@ function validateRequired(input) {
     input.value = "";
     input.placeholder = "Обязательное поле";
 
+    // iOS-like haptic
+    haptic("error");
+
     return false;
   }
 
   wrap.classList.remove("error");
 
-  // возвращаем placeholder
   if (input.dataset.placeholder) {
     input.placeholder = input.dataset.placeholder;
   }
