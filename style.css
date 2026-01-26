@@ -442,31 +442,30 @@ button:active {
 
 /* ===== PROFILE HINT ===== */
 .profile-hint {
-  position: fixed;
-  top: 26px;
-  right: 72px;
+  position: absolute;
+  right: 56px;
+  top: 50%;
+  transform: translateY(-50%) translateX(6px);
 
-  background: rgba(30, 30, 30, 0.9);
+  background: rgba(20,20,20,0.92);
   border: 1px solid #333;
   border-radius: 14px;
 
   padding: 6px 10px;
   font-size: 12px;
-  color: #ddd;
+  color: #ccc;
 
   white-space: nowrap;
   pointer-events: none;
 
-  z-index: 9999;
-
   opacity: 0;
-  transform: translateX(6px);
   transition: opacity .25s ease, transform .25s ease;
+  z-index: 1000;
 }
 
 .profile-hint.show {
   opacity: 1;
-  transform: translateX(0);
+  transform: translateY(-50%) translateX(0);
 }
 
 .profile-hint::after {
