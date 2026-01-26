@@ -145,6 +145,22 @@ btn.onclick = () => {
 };
 });
 
+const profileBack = document.getElementById("profileBack");
+
+if (profileBack) {
+  profileBack.onclick = () => {
+    haptic("light");
+
+    // возвращаемся на экран расчёта
+    openScreen("calc", buttons[0]);
+
+    // возвращаем нижний нав
+    bottomNav.style.transform = "translateY(0)";
+    bottomNav.style.opacity = "1";
+    bottomNav.style.pointerEvents = "auto";
+  };
+}
+
 /* ===== BOTTOM SHEET ===== */
 function openSheet() {
 sheetOverlay.style.display = "block";
