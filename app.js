@@ -389,22 +389,6 @@ function haptic(type = "light") {
   }
 }
 
-/* ===== PROFILE HINT LOGIC ===== */
-const profileHint = document.getElementById("profileHint");
-
-const isProfileSeen = localStorage.getItem("profile_seen");
-
-if (!isProfileSeen && profileHint) {
-  setTimeout(() => {
-    profileHint.classList.add("show");
-  }, 800);
-}
-
-  // подсказка больше не нужна
-  localStorage.setItem("profile_seen", "1");
-  profileHint?.classList.remove("show");
-}
-
 /* ===== PROFILE LOGIC (FINAL) ===== */
 
 const tgAuthBtn = document.getElementById("tgAuthBtn");
