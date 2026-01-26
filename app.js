@@ -364,6 +364,8 @@ if (profileBtn) {
     bottomNav.style.transform = "translateY(140%)";
     bottomNav.style.opacity = "0";
     bottomNav.style.pointerEvents = "none";
+    
+    renderProfile();
   };
 }
 
@@ -467,4 +469,10 @@ function renderProfile() {
   // подсказка больше не нужна
   localStorage.setItem("profile_seen", "1");
   profileHint?.classList.remove("show");
+}
+if (authBtn) {
+  authBtn.onclick = () => {
+    haptic("medium");
+    renderProfile();
+  };
 }
