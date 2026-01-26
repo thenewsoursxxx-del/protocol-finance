@@ -333,16 +333,6 @@ const profileBtn = document.getElementById("profileBtn");
 if (profileBtn) {
   profileBtn.onclick = () => {
     haptic("light");
-    
-    // помечаем, что профиль уже открывали
-  localStorage.setItem("profile_seen", "1");
-
-  // убираем подсказку
-  profileHint?.classList.remove("show");
-
-  // дальше — показ профиля
-  openProfile();
-};
 
     // запоминаем, где были
     const activeBtn = document.querySelector(".nav-btn.active");
@@ -350,30 +340,27 @@ if (profileBtn) {
     lastScreenBeforeProfile =
       activeBtn?.dataset.screen || "calc";
 
+    // убираем подсказку
+    localStorage.setItem("profile_seen", "1");
+    profileHint?.classList.remove("show");
+
     // закрываем клавиатуру
     document.activeElement?.blur();
 
     // показываем профиль
     screens.forEach(s => s.classList.remove("active"));
-    document.getElementById("screen-profile")?.classList.add("active");
-
-    // убираем активность навбара
-    buttons.forEach(b => b.classList.remove("active"));
+    document.getElementById("screen-profile").classList.add("active");
 
     // прячем нижний навбар
     bottomNav.style.transform = "translateY(140%)";
     bottomNav.style.opacity = "0";
     bottomNav.style.pointerEvents = "none";
-    
-    renderProfile();
-    if (tgAuthBtn) {
-  tgAuthBtn.onclick = () => {
-    haptic("medium");
+
+    // если пользователь уже есть — сразу рендерим
     renderProfile();
   };
 }
-  };
-}
+
 if (Telegram.WebApp.initDataUnsafe?.user) {
   renderProfile();
 }
@@ -452,63 +439,42 @@ const authBtn = document.getElementById("tgAuthBtn");
 const profileName = document.querySelector(".profile-name");
 const profileAvatar = document.getElementById("profileAvatar");
 
-function renderProfile() {
-  if (!tgUser) {
-    // пользователь не определён (редко, но пусть будет)
-    authBtn.style.display = "block";
-    return;
-  }
+/* ===== PROFILE LOGIC (FINAL) ===== */
 
-  // имя
-  profileName.innerText =
-    tgUser.first_name +
-    (tgUser.last_name ? " " + tgUser.last_name : "");
-
-  // аватар
-  if (tgUser.photo_url) {
-    profileAvatar.innerHTML = `
-      <img src="${tgUser.photo_url}"
-           style="width:100%;height:100%;border-radius:50%;object-fit:cover;" />
-    `;
-  }
-
-  // кнопка больше не нужна
-  authBtn.style.display = "none";
-
-  // подсказка больше не нужна
-  localStorage.setItem("profile_seen", "1");
-  profileHint?.classList.remove("show");
-}
-if (authBtn) {
-  authBtn.onclick = () => {
-    haptic("medium");
-    renderProfile();
-  };
-}
 const tgAuthBtn = document.getElementById("tgAuthBtn");
-const profileName = document.querySelector(".profile-name");
-const profileAvatar = document.getElementById("profileAvatar");
+const profileNameEl = document.querySelector(".profile-name");
+const profileAvatarEl = document.querySelector(".profile-avatar");
+const profileHint = document.getElementById("profileHint");
 
 function renderProfile() {
   const user = Telegram.WebApp.initDataUnsafe?.user;
   if (!user) return;
 
   // имя
-  profileName.innerText =
-    user.first_name + (user.last_name ? " " + user.last_name : "");
+  if (profileNameEl) {
+    profileNameEl.innerText =
+      user.first_name + (user.last_name ? " " + user.last_name : "");
+  }
 
   // аватар
-  if (user.photo_url && profileAvatar) {
-    profileAvatar.innerHTML = `
+  if (user.photo_url && profileAvatarEl) {
+    profileAvatarEl.innerHTML = `
       <img src="${user.photo_url}"
         style="width:100%;height:100%;border-radius:50%;object-fit:cover;" />
     `;
   }
 
-  // прячем кнопку входа
-  tgAuthBtn.style.display = "none";
+  // скрываем кнопку входа
+  if (tgAuthBtn) tgAuthBtn.style.display = "none";
 
   // убираем подсказку
   localStorage.setItem("profile_seen", "1");
   profileHint?.classList.remove("show");
+}
+
+if (tgAuthBtn) {
+  tgAuthBtn.onclick = () => {
+    haptic("medium");
+    renderProfile();
+  };
 }
