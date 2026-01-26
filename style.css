@@ -215,12 +215,12 @@ transform: translate(-50%, -50%);
   position: fixed;
   top: 16px;
   right: 16px;
-  z-index: 10;
+  z-index: 20;
 
   display: flex;
   align-items: center;
-  position: relative; /* ← КЛЮЧЕВО */
 }
+
 
 #profileBtn {
 width: 44px;
@@ -236,14 +236,6 @@ width: 44px;
 height: 44px;
 border-radius: 50%;
 background: #fff; /* временно, потом будет фото */
-}
-
-/* ===== TOP PROFILE AVATAR ===== */
-.top-profile {
-position: fixed;
-top: 16px;
-right: 16px;
-z-index: 5;
 }
 
 #profileBtn {
@@ -485,17 +477,6 @@ button:active {
   transform: translateY(-50%);
 
   border-left: 6px solid rgba(20, 20, 20, 0.92);
-  border-top: 6px solid transparent;
-  border-bottom: 6px solid transparent;
-}
-
-.profile-hint::after {
-  content: "";
-  position: absolute;
-  right: -6px;
-  top: 50%;
-  transform: translateY(-50%);
-  border-left: 6px solid rgba(20,20,20,0.92);
   border-top: 6px solid transparent;
   border-bottom: 6px solid transparent;
 }
