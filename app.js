@@ -28,6 +28,7 @@ return Number(v.replace(/\./g, ""));
 const incomeInput = document.getElementById("income");
 const expensesInput = document.getElementById("expenses");
 const goalInput = document.getElementById("goal");
+const savedInput = document.getElementById("saved");
 const calculateBtn = document.getElementById("calculate");
 
 let selectedMode = "calm"; // calm | medium | aggressive
@@ -105,7 +106,7 @@ let lastNavBtnBeforeProfile = buttons[0];
 
 
 /* ===== INPUT FORMAT ===== */
-[incomeInput, expensesInput, goalInput].forEach(input => {
+[incomeInput, expensesInput, goalInput, savedInput].forEach(input => {
 input.addEventListener("input", e => {
 const p = e.target.selectionStart;
 const b = e.target.value.length;
@@ -185,6 +186,7 @@ if (chosenPlan) return;
 const income = parseNumber(incomeInput.value);
 const expenses = parseNumber(expensesInput.value);
 const goal = parseNumber(goalInput.value);
+const saved = parseNumber(savedInput.value || "0");
 if (!saveMode) return;
 
 let pace = 0.5;
@@ -195,7 +197,16 @@ if (saveMode === "aggressive") pace = 0.6;
 
 if (!income || !goal || income - expenses <= 0) return;
 
-lastCalc = { income, expenses, goal, pace };
+const remainingGoal = Math.max(goal - saved, 0);
+
+lastCalc = {
+  income,
+  expenses,
+  goal,
+  saved,
+  remainingGoal,
+  pace
+};
 openSheet();
 };
 
@@ -255,6 +266,10 @@ loader.classList.remove("hidden");
 
 const free = lastCalc.income - lastCalc.expenses;
 plannedMonthly = Math.round(free * lastCalc.pace);
+
+if (lastCalc.remainingGoal <= 0) {
+  plannedMonthly = 0;
+}
 if (mode === "buffer") plannedMonthly = Math.round(plannedMonthly * 0.9);
 
 adviceCard.innerText = "Protocol анализирует данные…";
