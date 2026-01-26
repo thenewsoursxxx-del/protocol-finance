@@ -340,6 +340,9 @@ const profileBtn = document.getElementById("profileBtn");
 if (profileBtn) {
   profileBtn.onclick = () => {
     haptic("light");
+    
+    localStorage.setItem("profile_seen", "1");
+profileHint?.classList.remove("show");
 
     // закрываем клавиатуру
     document.activeElement?.blur();
@@ -380,4 +383,14 @@ function haptic(type = "light") {
   if (window.Telegram?.WebApp?.HapticFeedback) {
     Telegram.WebApp.HapticFeedback.impactOccurred(type);
   }
+}
+/* ===== PROFILE HINT LOGIC ===== */
+const profileHint = document.getElementById("profileHint");
+
+const isProfileSeen = localStorage.getItem("profile_seen");
+
+if (!isProfileSeen && profileHint) {
+  setTimeout(() => {
+    profileHint.classList.add("show");
+  }, 800);
 }
