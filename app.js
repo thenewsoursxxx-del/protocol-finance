@@ -340,9 +340,6 @@ const profileBtn = document.getElementById("profileBtn");
 if (profileBtn) {
   profileBtn.onclick = () => {
     haptic("light");
-    
-    localStorage.setItem("profile_seen", "1");
-profileHint?.classList.remove("show");
 
     // закрываем клавиатуру
     document.activeElement?.blur();
@@ -358,6 +355,11 @@ profileHint?.classList.remove("show");
     bottomNav.style.transform = "translateY(140%)";
     bottomNav.style.opacity = "0";
     bottomNav.style.pointerEvents = "none";
+    
+    if (profileHint) {
+  profileHint.classList.remove("show");
+}
+localStorage.setItem("profile_seen", "1");
   };
 }
 
