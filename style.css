@@ -443,3 +443,42 @@ button:active {
   font-size: 22px;
   font-weight: 600;
 }
+
+/* ===== PROFILE HINT ===== */
+.profile-hint {
+  position: absolute;
+  right: 56px;
+  top: 50%;
+  transform: translateY(-50%);
+
+  background: rgba(20,20,20,0.92);
+  border: 1px solid #333;
+  border-radius: 14px;
+
+  padding: 6px 10px;
+  font-size: 12px;
+  color: #ccc;
+
+  white-space: nowrap;
+  pointer-events: none;
+
+  opacity: 0;
+  transform: translateY(-50%) translateX(6px);
+  transition: opacity .25s ease, transform .25s ease;
+}
+
+.profile-hint::after {
+  content: "";
+  position: absolute;
+  right: -6px;
+  top: 50%;
+  transform: translateY(-50%);
+  border-left: 6px solid rgba(20,20,20,0.92);
+  border-top: 6px solid transparent;
+  border-bottom: 6px solid transparent;
+}
+
+.profile-hint.show {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
+}
