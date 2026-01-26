@@ -333,6 +333,16 @@ const profileBtn = document.getElementById("profileBtn");
 if (profileBtn) {
   profileBtn.onclick = () => {
     haptic("light");
+    
+    // помечаем, что профиль уже открывали
+  localStorage.setItem("profile_seen", "1");
+
+  // убираем подсказку
+  profileHint?.classList.remove("show");
+
+  // дальше — показ профиля
+  openProfile();
+};
 
     // запоминаем, где были
     const activeBtn = document.querySelector(".nav-btn.active");
@@ -419,6 +429,40 @@ if (tgUser) {
       />
     `;
   }
+
+  // подсказка больше не нужна
+  localStorage.setItem("profile_seen", "1");
+  profileHint?.classList.remove("show");
+}
+
+const tgUser = Telegram.WebApp.initDataUnsafe?.user;
+
+const authBtn = document.getElementById("tgAuthBtn");
+const profileName = document.querySelector(".profile-name");
+const profileAvatar = document.getElementById("profileAvatar");
+
+function renderProfile() {
+  if (!tgUser) {
+    // пользователь не определён (редко, но пусть будет)
+    authBtn.style.display = "block";
+    return;
+  }
+
+  // имя
+  profileName.innerText =
+    tgUser.first_name +
+    (tgUser.last_name ? " " + tgUser.last_name : "");
+
+  // аватар
+  if (tgUser.photo_url) {
+    profileAvatar.innerHTML = `
+      <img src="${tgUser.photo_url}"
+           style="width:100%;height:100%;border-radius:50%;object-fit:cover;" />
+    `;
+  }
+
+  // кнопка больше не нужна
+  authBtn.style.display = "none";
 
   // подсказка больше не нужна
   localStorage.setItem("profile_seen", "1");
