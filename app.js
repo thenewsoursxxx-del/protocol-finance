@@ -181,6 +181,10 @@ sheetOverlay.style.display = "none";
 /* ===== CALCULATE ===== */
 calculateBtn.onclick = () => {
   haptic("medium");
+  
+  bottomNav.style.opacity = "0";
+  bottomNav.style.pointerEvents = "none";
+  bottomNav.style.transform = "translateY(140%)";
 
   const validIncome = validateRequired(incomeInput);
   const validExpenses = validateRequired(expensesInput);
@@ -209,6 +213,10 @@ calculateBtn.onclick = () => {
     goal: effectiveGoal,
     pace
   };
+  
+  bottomNav.style.opacity = "1";
+bottomNav.style.pointerEvents = "auto";
+bottomNav.style.transform = "translateY(0)";
 
   openSheet();
 };
@@ -256,6 +264,10 @@ step();
 
 /* ===== STAGED FLOW ===== */
 function protocolFlow(mode) {
+    // возвращаем bottom nav после старта плана
+  bottomNav.style.opacity = "1";
+  bottomNav.style.pointerEvents = "auto";
+  bottomNav.style.transform = "translateY(0)";
 chosenPlan = mode;
 isInitialized = true;
 lockTabs(false);
