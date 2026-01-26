@@ -181,40 +181,36 @@ sheetOverlay.style.display = "none";
 /* ===== CALCULATE ===== */
 calculateBtn.onclick = () => {
   haptic("medium");
-  if (chosenPlan) return;
 
   const validIncome = validateRequired(incomeInput);
   const validExpenses = validateRequired(expensesInput);
   const validGoal = validateRequired(goalInput);
 
-  if (!validIncome || !validExpenses || !validGoal) {
-    return;
-  }
+  if (!validIncome || !validExpenses || !validGoal) return;
 
   const income = parseNumber(incomeInput.value);
   const expenses = parseNumber(expensesInput.value);
   const goal = parseNumber(goalInput.value);
-  if (!saveMode) return;
+  const saved = parseNumber(savedInput?.value || "0");
 
-let pace = 0.5;
+  let effectiveGoal = goal - saved;
+  if (effectiveGoal < 0) effectiveGoal = 0;
 
-if (saveMode === "calm") pace = 0.4;
-if (saveMode === "normal") pace = 0.5;
-if (saveMode === "aggressive") pace = 0.6;
+  if (income - expenses <= 0) return;
 
-if (!income || !goal || income - expenses <= 0) return;
+  let pace = 0.5;
+  if (saveMode === "calm") pace = 0.4;
+  if (saveMode === "normal") pace = 0.5;
+  if (saveMode === "aggressive") pace = 0.6;
 
-const remainingGoal = Math.max(goal - saved, 0);
+  lastCalc = {
+    income,
+    expenses,
+    goal: effectiveGoal,
+    pace
+  };
 
-lastCalc = {
-  income,
-  expenses,
-  goal,
-  saved,
-  remainingGoal,
-  pace
-};
-openSheet();
+  openSheet();
 };
 
 /* ===== GRAPH ===== */
