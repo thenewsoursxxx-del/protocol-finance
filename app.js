@@ -340,6 +340,15 @@ const profileBtn = document.getElementById("profileBtn");
 if (profileBtn) {
   profileBtn.onclick = () => {
     haptic("light");
+    
+    // скрываем подсказку навсегда
+    localStorage.setItem("profile_seen", "1");
+    profileHint?.classList.remove("show");
+
+    console.log("Profile clicked");
+    moveIndicator(document.querySelector(".nav-btn.active"));
+  };
+}
 
     // закрываем клавиатуру
     document.activeElement?.blur();
@@ -380,4 +389,48 @@ function haptic(type = "light") {
   if (window.Telegram?.WebApp?.HapticFeedback) {
     Telegram.WebApp.HapticFeedback.impactOccurred(type);
   }
+}
+
+/* ===== PROFILE HINT LOGIC ===== */
+const profileHint = document.getElementById("profileHint");
+
+const isProfileSeen = localStorage.getItem("profile_seen");
+
+if (!isProfileSeen && profileHint) {
+  setTimeout(() => {
+    profileHint.classList.add("show");
+  }, 800);
+}
+
+/* ===== TELEGRAM USER ===== */
+const tgUser = Telegram.WebApp.initDataUnsafe?.user;
+
+if (tgUser) {
+  // имя
+  const name =
+    tgUser.first_name +
+    (tgUser.last_name ? " " + tgUser.last_name : "");
+
+  // вставим имя в профиль
+  const profileName = document.querySelector(".profile-name");
+  if (profileName) profileName.innerText = name;
+
+  // аватар
+  if (tgUser.photo_url) {
+    const avatar = document.getElementById("profileAvatar");
+    avatar.innerHTML = `
+      <img src="${tgUser.photo_url}" alt="avatar"
+        style="
+          width:100%;
+          height:100%;
+          border-radius:50%;
+          object-fit:cover;
+        "
+      />
+    `;
+  }
+
+  // подсказка больше не нужна
+  localStorage.setItem("profile_seen", "1");
+  profileHint?.classList.remove("show");
 }
