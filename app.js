@@ -451,15 +451,24 @@ function validateRequired(input) {
 
   if (!value) {
     wrap.classList.add("error");
+
+    // сохраняем оригинальный placeholder
+    if (!input.dataset.placeholder) {
+      input.dataset.placeholder = input.placeholder;
+    }
+
+    input.value = "";
+    input.placeholder = "Обязательное поле";
+
     return false;
   }
 
   wrap.classList.remove("error");
+
+  // возвращаем placeholder
+  if (input.dataset.placeholder) {
+    input.placeholder = input.dataset.placeholder;
+  }
+
   return true;
 }
-document.querySelectorAll(".input-wrap input").forEach(input => {
-  input.addEventListener("input", () => {
-    const wrap = input.closest(".input-wrap");
-    wrap.classList.remove("error");
-  });
-});
