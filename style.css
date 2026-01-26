@@ -472,6 +472,11 @@ button:active {
   transition: opacity .25s ease, transform .25s ease;
 }
 
+.profile-hint.show {
+  opacity: 1;
+  transform: translateX(0);
+}
+
 .profile-hint::after {
   content: "";
   position: absolute;
@@ -493,9 +498,4 @@ button:active {
   border-left: 6px solid rgba(20,20,20,0.92);
   border-top: 6px solid transparent;
   border-bottom: 6px solid transparent;
-}
-
-.profile-hint.show {
-  opacity: 1;
-  transform: translateX(0);
 }
