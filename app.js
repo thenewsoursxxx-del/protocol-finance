@@ -213,10 +213,6 @@ calculateBtn.onclick = () => {
     goal: effectiveGoal,
     pace
   };
-  
-  bottomNav.style.opacity = "1";
-bottomNav.style.pointerEvents = "auto";
-bottomNav.style.transform = "translateY(0)";
 
   openSheet();
 };
@@ -282,7 +278,7 @@ loader.classList.remove("hidden");
 const free = lastCalc.income - lastCalc.expenses;
 plannedMonthly = Math.round(free * lastCalc.pace);
 
-if (lastCalc.remainingGoal <= 0) {
+if (lastCalc.goal <= 0) {
   plannedMonthly = 0;
 }
 if (mode === "buffer") plannedMonthly = Math.round(plannedMonthly * 0.9);
