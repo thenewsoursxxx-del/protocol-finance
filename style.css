@@ -449,14 +449,13 @@ button:active {
   border-color: #ff3b30;
 }
 
-.input-error {
-  margin-top: 6px;
-  font-size: 12px;
+/* ===== INPUT ERROR (INLINE) ===== */
+.input-wrap.error input {
+  border-color: #ff3b30;
   color: #ff3b30;
-  opacity: 0;
-  transition: opacity .2s ease;
 }
 
-.input-wrap.error .input-error {
-  opacity: 1;
+.input-wrap.error input::placeholder {
+  color: #ff3b30;
+  opacity: 0.9;
 }
