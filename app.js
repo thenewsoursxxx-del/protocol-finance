@@ -381,3 +381,37 @@ function haptic(type = "light") {
     Telegram.WebApp.HapticFeedback.impactOccurred(type);
   }
 }
+/* ===== TELEGRAM USER AUTO FILL ===== */
+
+const tgUser = Telegram.WebApp.initDataUnsafe?.user;
+
+// верхняя иконка
+const topAvatar = document.querySelector("#profileBtn .avatar");
+
+// профиль
+const profileAvatar = document.querySelector(".profile-avatar");
+const profileName = document.querySelector(".profile-name");
+
+if (tgUser) {
+  const fullName =
+    tgUser.first_name + (tgUser.last_name ? " " + tgUser.last_name : "");
+
+  // имя в профиле
+  if (profileName) {
+    profileName.innerText = fullName;
+  }
+
+  // если есть фото
+  if (tgUser.photo_url) {
+    const img = `
+      <img src="${tgUser.photo_url}"
+        style="width:100%;height:100%;border-radius:50%;object-fit:cover;" />
+    `;
+
+    // верхняя иконка
+    if (topAvatar) topAvatar.innerHTML = img;
+
+    // аватар в профиле
+    if (profileAvatar) profileAvatar.innerHTML = img;
+  }
+}
