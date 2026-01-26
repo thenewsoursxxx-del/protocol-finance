@@ -316,34 +316,24 @@ openScreen("calc", buttons[0]);
 const profileBtn = document.getElementById("profileBtn");
 
 if (profileBtn) {
-profileBtn.onclick = () => {
-console.log("Profile clicked");
-// позже: открыть профиль / настройки
-moveIndicator(document.querySelector(".nav-btn.active"));
-};
-}
-window.addEventListener("load", () => {
-requestAnimationFrame(() => {
-requestAnimationFrame(() => {
-moveIndicator(document.querySelector(".nav-btn.active"));
-});
-});
-});
-if (window.visualViewport) {
-window.visualViewport.addEventListener("resize", () => {
-const keyboardOpen =
-window.visualViewport.height < window.innerHeight - 100;
+  profileBtn.onclick = () => {
+    haptic("light");
 
-if (keyboardOpen) {
-bottomNav.style.transform = "translateY(140%)";
-bottomNav.style.opacity = "0";
-bottomNav.style.pointerEvents = "none";
-} else {
-bottomNav.style.transform = "translateY(0)";
-bottomNav.style.opacity = "1";
-bottomNav.style.pointerEvents = "auto";
-}
-});
+    // закрываем клавиатуру
+    document.activeElement?.blur();
+
+    // показываем профиль
+    screens.forEach(s => s.classList.remove("active"));
+    document.getElementById("screen-profile").classList.add("active");
+
+    // убираем активность навбара
+    buttons.forEach(b => b.classList.remove("active"));
+
+    // прячем нижний навбар (iOS-style)
+    bottomNav.style.transform = "translateY(140%)";
+    bottomNav.style.opacity = "0";
+    bottomNav.style.pointerEvents = "none";
+  };
 }
 
 /* ===== INPUT HINT LOGIC ===== */
