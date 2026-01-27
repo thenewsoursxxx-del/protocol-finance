@@ -225,26 +225,6 @@ calculateBtn.onclick = () => {
 
   openSheet();
 };
-  
-  // === PROTOCOL CORE ===
-const baseResult = ProtocolCore.calculateBase({
-  income,
-  expenses,
-  goal,
-  saved,
-  mode: saveMode
-});
-
-const advice = ProtocolCore.buildAdvice(baseResult);
-const explanation = ProtocolCore.explain(baseResult);
-
-// временно — просто в консоль
-console.log("CORE RESULT:", baseResult);
-console.log("ADVICE:", advice.text);
-console.log("EXPLAIN:", explanation);
-
-  openSheet();
-};
 
 /* ===== GRAPH ===== */
 let canvas, ctx, pad = 40, w, h;
