@@ -103,6 +103,7 @@ let chosenPlan = null;
 let plannedMonthly = 0;
 let isInitialized = false;
 let saveMode = "calm";
+let isCalcLocked = true; // ⬅ мы на этапе расчёта, nav скрыт
 let lastScreenBeforeProfile = "calc";
 let lastNavBtnBeforeProfile = buttons[0];
 
@@ -132,6 +133,9 @@ btn.style.pointerEvents = lock ? "none" : "auto";
 lockTabs(true);
 calcLock.style.display = "none";
 moveIndicator(buttons[0]);
+bottomNav.style.opacity = "0";
+bottomNav.style.pointerEvents = "none";
+bottomNav.style.transform = "translateY(140%)";
 
 /* ===== OPEN SCREEN ===== */
 function openScreen(name, btn) {
@@ -217,6 +221,12 @@ calculateBtn.onclick = () => {
     goal: effectiveGoal,
     pace
   };
+  
+  isCalcLocked = false;
+
+bottomNav.style.opacity = "1";
+bottomNav.style.pointerEvents = "auto";
+bottomNav.style.transform = "translateY(0)";
 
   openSheet();
 };
