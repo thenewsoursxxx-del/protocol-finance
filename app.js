@@ -188,6 +188,29 @@ sheet.style.bottom = "-100%";
 sheetOverlay.style.display = "none";
 }
 
+function renderProtocolResult(baseResult, explanation, advice) {
+  adviceCard.innerHTML = `
+    <div style="font-size:18px;margin-bottom:12px">
+      <b>План накопления</b>
+    </div>
+
+    <div style="opacity:.8;margin-bottom:14px;white-space:pre-line">
+      ${explanation}
+    </div>
+
+    <div style="
+      padding:14px;
+      border-radius:14px;
+      background:#111;
+      border:1px solid #333;
+      font-size:15px;
+      line-height:1.4
+    ">
+      ${advice.text}
+    </div>
+  `;
+}
+
 /* ===== CALCULATE ===== */
 calculateBtn.onclick = () => {
   haptic("medium");
@@ -218,11 +241,9 @@ calculateBtn.onclick = () => {
   const explanation = ProtocolCore.explain(baseResult);
   const advice = ProtocolCore.buildAdvice(baseResult);
 
-  console.log("EXPLANATION:", explanation);
-  console.log("ADVICE:", advice);
-
   lastCalc = baseResult;
 
+renderProtocolResult(baseResult, explanation, advice);
   openSheet();
 };
 
