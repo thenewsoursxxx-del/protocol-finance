@@ -64,6 +64,36 @@ const ProtocolCore = (() => {
       advice.push("План выглядит устойчивым и реалистичным.");
     }
 
+function buildScenarios({ income, expenses, goal, saved = 0 }) {
+  const modes = [
+    { mode: "calm", title: "Спокойный", pace: 0.4 },
+    { mode: "normal", title: "Сбалансированный", pace: 0.5 },
+    { mode: "aggressive", title: "Быстрый", pace: 0.6 }
+  ];
+
+  return modes.map(m => {
+    const free = income - expenses;
+    const monthlySave = Math.round(free * m.pace);
+    const effectiveGoal = Math.max(goal - saved, 0);
+    const months = monthlySave > 0
+      ? Math.ceil(effectiveGoal / monthlySave)
+      : Infinity;
+
+    return {
+      mode: m.mode,
+      title: m.title,
+      monthlySave,
+      months,
+      risk:
+        m.pace >= 0.6
+          ? "Высокая нагрузка"
+          : m.pace <= 0.4
+          ? "Минимальный риск"
+          : "Баланс"
+    };
+  });
+}
+
     return {
       tone: "neutral",
       text: advice.join(" ")
@@ -86,10 +116,11 @@ const ProtocolCore = (() => {
 `;
   }
 
-  return {
-    calculateBase,
-    buildAdvice,
-    explain
-  };
+return {
+  calculateBase,
+  buildAdvice,
+  explain,
+  buildScenarios
+};
 
 })();
