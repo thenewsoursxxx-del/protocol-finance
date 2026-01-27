@@ -137,7 +137,11 @@ stroke: #fff;
 fill: none;
 stroke-width: 2;
 }
-.nav-btn.active svg { stroke: #000; }
+.nav-btn.active svg {
+  stroke: #000;
+  stroke-width: 2.6;
+  transform: scale(1.06);
+}
 
 /* ===== BOTTOM SHEET ===== */
 #sheetOverlay {
@@ -472,4 +476,40 @@ button:active {
 
 .input-wrap.shake input {
   animation: input-shake 0.35s ease;
+}
+
+/* === NAV ICON BOUNCE === */
+.nav-btn svg {
+  transition: transform 0.18s cubic-bezier(.34,1.56,.64,1),
+              stroke-width 0.2s ease;
+}
+
+.nav-btn:active svg {
+  transform: translateY(-6px) scale(1.05);
+}
+
+/* === MODE BUTTON PRESS EFFECT === */
+.mode-btn {
+  transition:
+    transform 0.14s ease,
+    background 0.2s ease,
+    color 0.2s ease;
+}
+
+.mode-btn:active {
+  transform: scale(0.96);
+}
+
+/* === GLOBAL BUTTON PRESS (iOS FEEL) === */
+button {
+  transition:
+    transform 0.14s ease,
+    box-shadow 0.14s ease,
+    opacity 0.14s ease;
+}
+
+button:active {
+  transform: scale(0.965);
+  box-shadow: 0 6px 14px rgba(0,0,0,.35) inset;
+  opacity: 0.92;
 }
