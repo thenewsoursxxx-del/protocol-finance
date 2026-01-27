@@ -117,6 +117,8 @@ function showBottomNav() {
   bottomNav.style.transform = "translateY(0)";
 }
 
+hideBottomNav();
+
 /* ===== PACE SELECT ===== */
 
 
@@ -171,13 +173,18 @@ buttons.forEach(btn => {
 const profileBack = document.getElementById("profileBack");
 
 if (profileBack) {
-  profileBack.onclick = () => {
-    haptic("light");
+profileBack.onclick = () => {
+  haptic("light");
 
-openScreen(lastScreenBeforeProfile, lastNavBtnBeforeProfile);
+  openScreen(lastScreenBeforeProfile, lastNavBtnBeforeProfile);
 
-  };
-}
+  if (isCalcLocked) {
+    hideBottomNav();
+  } else {
+    showBottomNav();
+  }
+  hideBottomNav();
+};
 
 /* ===== BOTTOM SHEET ===== */
 function openSheet() {
@@ -222,7 +229,7 @@ calculateBtn.onclick = () => {
   };
   
   isCalcLocked = false;
-
+  showBottomNav();
   openSheet();
 };
 
