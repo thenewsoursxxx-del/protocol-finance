@@ -326,14 +326,44 @@ adviceCard.innerText = "Готово.";
 setTimeout(() => {
 loader.classList.add("hidden");
 
+const explanation = ProtocolCore.explain(lastCalc);
+const advice = ProtocolCore.buildAdvice(lastCalc);
+
 adviceCard.innerHTML = `
-<div>План: ${plannedMonthly} ₽ / месяц</div>
+<div style="font-size:16px;font-weight:600">
+  План: ${plannedMonthly.toLocaleString()} ₽ / месяц
+</div>
+
+<div style="
+  margin-top:8px;
+  font-size:14px;
+  line-height:1.4;
+  opacity:0.75;
+">
+  ${explanation.replace(/\n/g, "<br>")}
+</div>
+
+<div style="
+  margin-top:10px;
+  padding:10px 12px;
+  border-radius:14px;
+  background:#111;
+  border:1px solid #222;
+  font-size:14px;
+">
+  ${advice.text}
+</div>
 
 <canvas id="chart" width="360" height="260" style="margin:16px 0"></canvas>
 
 <div style="display:flex;gap:8px;align-items:center">
-<input id="factInput" inputmode="numeric" placeholder="Фактически отложено" style="flex:1"/>
-<button id="applyFact" style="width:52px;height:52px;border-radius:50%">➜</button>
+  <input id="factInput" inputmode="numeric"
+    placeholder="Фактически отложено"
+    style="flex:1"/>
+  <button id="applyFact"
+    style="width:52px;height:52px;border-radius:50%">
+    ➜
+  </button>
 </div>
 `;
 
