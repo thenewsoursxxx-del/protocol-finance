@@ -43,8 +43,8 @@ label { display: block; margin-bottom: 6px; opacity: .7; font-size: 14px }
 
 input {
 width: 100%;
-padding: 14px;
-font-size: 18px;
+padding: 12px 14px;
+font-size: 16px;
 border-radius: 18px;
 background: #000;
 border: 1px solid #333;
@@ -338,7 +338,7 @@ opacity: 1;
 /* ===== INPUT HINTS ===== */
 .input-wrap {
   position: relative;
-  margin-bottom: 22px;
+  margin-bottom: 16px;
 }
 
 .input-hint {
@@ -461,7 +461,8 @@ button:active {
 
 /* ===== INPUT ERROR ===== */
 .input-wrap.error input {
-  border-color: #ff3b30;
+  border-color: #ff453a;
+  box-shadow: 0 0 0 1px rgba(255,69,58,0.35);
 }
 
 /* ===== INPUT ERROR (INLINE) ===== */
