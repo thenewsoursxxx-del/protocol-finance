@@ -19,20 +19,8 @@ padding-bottom: 220px; /* ← ВАЖНО */
 position: relative;
 }
 
-.screen {
-  display: none;
-  opacity: 0;
-  transform: translateX(16px);
-}
-
-.screen.active {
-  display: block;
-  opacity: 1;
-  transform: translateX(0);
-  transition:
-    opacity .28s ease,
-    transform .32s cubic-bezier(.2,.8,.2,1);
-}
+.screen { display: none; }
+.screen.active { display: block; }
 
 h2 { font-size: 22px; margin-bottom: 18px; }
 
