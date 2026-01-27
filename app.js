@@ -72,6 +72,9 @@ const buttons = document.querySelectorAll(".nav-btn");
 const indicator = document.querySelector(".nav-indicator");
 const bottomNav = document.querySelector(".bottom-nav");
 // ❌ скрываем bottom-nav при старте (экран расчёта)
+bottomNav.style.opacity = "0";
+bottomNav.style.pointerEvents = "none";
+bottomNav.style.transform = "translateY(140%)";
 
 /* ===== NAV INDICATOR ===== */
 function moveIndicator(btn) {
@@ -100,24 +103,8 @@ let chosenPlan = null;
 let plannedMonthly = 0;
 let isInitialized = false;
 let saveMode = "calm";
-let isCalcLocked = true; // ⬅ мы на этапе расчёта, nav скрыт
 let lastScreenBeforeProfile = "calc";
 let lastNavBtnBeforeProfile = buttons[0];
-
-/* ===== NAV VISIBILITY ===== */
-function hideBottomNav() {
-  bottomNav.style.opacity = "0";
-  bottomNav.style.pointerEvents = "none";
-  bottomNav.style.transform = "translateY(140%)";
-}
-
-function showBottomNav() {
-  bottomNav.style.opacity = "1";
-  bottomNav.style.pointerEvents = "auto";
-  bottomNav.style.transform = "translateY(0)";
-}
-
-hideBottomNav();
 
 /* ===== PACE SELECT ===== */
 
@@ -176,13 +163,12 @@ if (profileBack) {
   profileBack.onclick = () => {
     haptic("light");
 
-    openScreen(lastScreenBeforeProfile, lastNavBtnBeforeProfile);
+openScreen(lastScreenBeforeProfile, lastNavBtnBeforeProfile);
 
-    if (isCalcLocked) {
-      hideBottomNav();
-    } else {
-      showBottomNav();
-    }
+    // возвращаем нижний нав
+    bottomNav.style.transform = "translateY(0)";
+    bottomNav.style.opacity = "1";
+    bottomNav.style.pointerEvents = "auto";
   };
 }
 
@@ -200,6 +186,10 @@ sheetOverlay.style.display = "none";
 calculateBtn.onclick = () => {
   haptic("medium");
   
+  bottomNav.style.opacity = "0";
+  bottomNav.style.pointerEvents = "none";
+  bottomNav.style.transform = "translateY(140%)";
+
   const validIncome = validateRequired(incomeInput);
   const validExpenses = validateRequired(expensesInput);
   const validGoal = validateRequired(goalInput);
@@ -227,9 +217,7 @@ calculateBtn.onclick = () => {
     goal: effectiveGoal,
     pace
   };
-  
-  isCalcLocked = false;
-  showBottomNav();
+
   openSheet();
 };
 
@@ -276,7 +264,10 @@ step();
 
 /* ===== STAGED FLOW ===== */
 function protocolFlow(mode) {
-
+    // возвращаем bottom nav после старта плана
+  bottomNav.style.opacity = "1";
+  bottomNav.style.pointerEvents = "auto";
+  bottomNav.style.transform = "translateY(0)";
 chosenPlan = mode;
 isInitialized = true;
 lockTabs(false);
@@ -357,8 +348,6 @@ withBuffer.onclick = () => { closeSheet(); protocolFlow("buffer"); };
 resetBtn.onclick = () => confirmReset.style.display = "block";
 confirmNo.onclick = () => confirmReset.style.display = "none";
 confirmYes.onclick = () => {
-  isCalcLocked = true;
-
 chosenPlan = null;
 isInitialized = false;
 lastCalc = {};
@@ -392,6 +381,10 @@ if (profileBtn) {
     // убираем активность навбара
     buttons.forEach(b => b.classList.remove("active"));
 
+    // прячем нижний навбар (iOS-style)
+    bottomNav.style.transform = "translateY(140%)";
+    bottomNav.style.opacity = "0";
+    bottomNav.style.pointerEvents = "none";
   };
 }
 
