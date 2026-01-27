@@ -239,14 +239,19 @@ calculateBtn.onclick = () => {
   if (!validIncome || !validExpenses || !validGoal) return;
 
   const baseResult = ProtocolCore.calculateBase({
-    income: parseNumber(incomeInput.value),
-    expenses: parseNumber(expensesInput.value),
-    goal: parseNumber(goalInput.value),
-    saved: parseNumber(savedInput?.value || "0"),
-    mode: saveMode
-  });
-  
-  const scenarios = ProtocolCore.buildScenarios({
+  income: parseNumber(incomeInput.value),
+  expenses: parseNumber(expensesInput.value),
+  goal: parseNumber(goalInput.value),
+  saved: parseNumber(savedInput?.value || "0"),
+  mode: saveMode
+});
+
+if (!baseResult.ok) {
+  alert(baseResult.message);
+  return;
+}
+
+const scenarios = ProtocolCore.buildScenarios({
   income: parseNumber(incomeInput.value),
   expenses: parseNumber(expensesInput.value),
   goal: parseNumber(goalInput.value),
@@ -262,18 +267,16 @@ const scenariosHTML = scenarios.map(s => `
   </div>
 `).join("");
 
-  if (!baseResult.ok) {
-    alert(baseResult.message);
-    return;
-  }
+const advice = ProtocolCore.buildAdvice(baseResult);
 
-  const explanation = ProtocolCore.explain(baseResult);
-  const advice = ProtocolCore.buildAdvice(baseResult);
+lastCalc = baseResult;
 
-  lastCalc = baseResult;
+renderProtocolResult({
+  scenariosHTML,
+  advice
+});
 
-renderProtocolResult(baseResult, explanation, advice);
-  openSheet();
+openSheet();
   return;
 };
 
