@@ -245,6 +245,7 @@ calculateBtn.onclick = () => {
 
 renderProtocolResult(baseResult, explanation, advice);
   openSheet();
+  return;
 };
 
 /* ===== GRAPH ===== */
