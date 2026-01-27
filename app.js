@@ -394,14 +394,16 @@ document.querySelectorAll(".input-wrap input").forEach(input => {
 
   input.addEventListener("focus", () => {
     wrap.classList.remove("error", "shake");
-
-    if (input.dataset.placeholder) {
-      input.placeholder = input.dataset.placeholder;
-    }
+    wrap.classList.add("show-hint"); // ← ВОТ ЧЕГО НЕ ХВАТАЛО
   });
 
   input.addEventListener("input", () => {
     wrap.classList.remove("error", "shake");
+    wrap.classList.remove("show-hint");
+  });
+
+  input.addEventListener("blur", () => {
+    wrap.classList.remove("show-hint");
   });
 });
 
