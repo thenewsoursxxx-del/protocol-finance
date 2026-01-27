@@ -72,9 +72,6 @@ const buttons = document.querySelectorAll(".nav-btn");
 const indicator = document.querySelector(".nav-indicator");
 const bottomNav = document.querySelector(".bottom-nav");
 // ❌ скрываем bottom-nav при старте (экран расчёта)
-bottomNav.style.opacity = "0";
-bottomNav.style.pointerEvents = "none";
-bottomNav.style.transform = "translateY(140%)";
 
 /* ===== NAV INDICATOR ===== */
 function moveIndicator(btn) {
@@ -107,6 +104,19 @@ let isCalcLocked = true; // ⬅ мы на этапе расчёта, nav скр�
 let lastScreenBeforeProfile = "calc";
 let lastNavBtnBeforeProfile = buttons[0];
 
+/* ===== NAV VISIBILITY ===== */
+function hideBottomNav() {
+  bottomNav.style.opacity = "0";
+  bottomNav.style.pointerEvents = "none";
+  bottomNav.style.transform = "translateY(140%)";
+}
+
+function showBottomNav() {
+  bottomNav.style.opacity = "1";
+  bottomNav.style.pointerEvents = "auto";
+  bottomNav.style.transform = "translateY(0)";
+}
+
 /* ===== PACE SELECT ===== */
 
 
@@ -133,9 +143,6 @@ btn.style.pointerEvents = lock ? "none" : "auto";
 lockTabs(true);
 calcLock.style.display = "none";
 moveIndicator(buttons[0]);
-bottomNav.style.opacity = "0";
-bottomNav.style.pointerEvents = "none";
-bottomNav.style.transform = "translateY(140%)";
 
 /* ===== OPEN SCREEN ===== */
 function openScreen(name, btn) {
@@ -169,10 +176,6 @@ if (profileBack) {
 
 openScreen(lastScreenBeforeProfile, lastNavBtnBeforeProfile);
 
-    // возвращаем нижний нав
-    bottomNav.style.transform = "translateY(0)";
-    bottomNav.style.opacity = "1";
-    bottomNav.style.pointerEvents = "auto";
   };
 }
 
@@ -190,10 +193,6 @@ sheetOverlay.style.display = "none";
 calculateBtn.onclick = () => {
   haptic("medium");
   
-  bottomNav.style.opacity = "0";
-  bottomNav.style.pointerEvents = "none";
-  bottomNav.style.transform = "translateY(140%)";
-
   const validIncome = validateRequired(incomeInput);
   const validExpenses = validateRequired(expensesInput);
   const validGoal = validateRequired(goalInput);
@@ -223,10 +222,6 @@ calculateBtn.onclick = () => {
   };
   
   isCalcLocked = false;
-
-bottomNav.style.opacity = "1";
-bottomNav.style.pointerEvents = "auto";
-bottomNav.style.transform = "translateY(0)";
 
   openSheet();
 };
@@ -274,10 +269,7 @@ step();
 
 /* ===== STAGED FLOW ===== */
 function protocolFlow(mode) {
-    // возвращаем bottom nav после старта плана
-  bottomNav.style.opacity = "1";
-  bottomNav.style.pointerEvents = "auto";
-  bottomNav.style.transform = "translateY(0)";
+
 chosenPlan = mode;
 isInitialized = true;
 lockTabs(false);
@@ -360,9 +352,6 @@ confirmNo.onclick = () => confirmReset.style.display = "none";
 confirmYes.onclick = () => {
   isCalcLocked = true;
 
-bottomNav.style.opacity = "0";
-bottomNav.style.pointerEvents = "none";
-bottomNav.style.transform = "translateY(140%)";
 chosenPlan = null;
 isInitialized = false;
 lastCalc = {};
@@ -396,10 +385,6 @@ if (profileBtn) {
     // убираем активность навбара
     buttons.forEach(b => b.classList.remove("active"));
 
-    // прячем нижний навбар (iOS-style)
-    bottomNav.style.transform = "translateY(140%)";
-    bottomNav.style.opacity = "0";
-    bottomNav.style.pointerEvents = "none";
   };
 }
 
