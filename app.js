@@ -191,7 +191,7 @@ sheetOverlay.style.display = "none";
 /* ===== CALCULATE ===== */
 calculateBtn.onclick = () => {
   haptic("medium");
-  
+
   bottomNav.style.opacity = "0";
   bottomNav.style.pointerEvents = "none";
   bottomNav.style.transform = "translateY(140%)";
@@ -202,27 +202,29 @@ calculateBtn.onclick = () => {
 
   if (!validIncome || !validExpenses || !validGoal) return;
 
-  const income = parseNumber(incomeInput.value);
-  const expenses = parseNumber(expensesInput.value);
-  const goal = parseNumber(goalInput.value);
-  const saved = parseNumber(savedInput?.value || "0");
+  const baseResult = ProtocolCore.calculateBase({
+    income: parseNumber(incomeInput.value),
+    expenses: parseNumber(expensesInput.value),
+    goal: parseNumber(goalInput.value),
+    saved: parseNumber(savedInput?.value || "0"),
+    mode: saveMode
+  });
 
-  let effectiveGoal = goal - saved;
-  if (effectiveGoal < 0) effectiveGoal = 0;
+  if (!baseResult.ok) {
+    alert(baseResult.message);
+    return;
+  }
 
-  if (income - expenses <= 0) return;
+  const explanation = ProtocolCore.explain(baseResult);
+  const advice = ProtocolCore.buildAdvice(baseResult);
 
-  let pace = 0.5;
-  if (saveMode === "calm") pace = 0.4;
-  if (saveMode === "normal") pace = 0.5;
-  if (saveMode === "aggressive") pace = 0.6;
+  console.log("EXPLANATION:", explanation);
+  console.log("ADVICE:", advice);
 
-  lastCalc = {
-    income,
-    expenses,
-    goal: effectiveGoal,
-    pace
-  };
+  lastCalc = baseResult;
+
+  openSheet();
+};
   
   // === PROTOCOL CORE ===
 const baseResult = ProtocolCore.calculateBase({
