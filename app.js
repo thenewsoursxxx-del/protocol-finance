@@ -160,22 +160,21 @@ buttons.forEach(btn => {
 const profileBack = document.getElementById("profileBack");
 
 if (profileBack) {
-profileBack.onclick = () => {
+profileBtn.onclick = () => {
   haptic("light");
 
-  openScreen(lastScreenBeforeProfile, lastNavBtnBeforeProfile);
+  document.activeElement?.blur();
 
-  if (lastScreenBeforeProfile === "calc") {
-    // если вернулись на расчёт — nav скрыт
-    bottomNav.style.transform = "translateY(140%)";
-    bottomNav.style.opacity = "0";
-    bottomNav.style.pointerEvents = "none";
-  } else {
-    // иначе — показываем
-    bottomNav.style.transform = "translateY(0)";
-    bottomNav.style.opacity = "1";
-    bottomNav.style.pointerEvents = "auto";
-  }
+  // запоминаем откуда пришли
+  lastScreenBeforeProfile = document.querySelector(".screen.active")?.id?.replace("screen-", "");
+  lastNavBtnBeforeProfile = document.querySelector(".nav-btn.active");
+
+  openScreen("profile");
+
+  // nav всегда скрыт в профиле
+  bottomNav.style.transform = "translateY(140%)";
+  bottomNav.style.opacity = "0";
+  bottomNav.style.pointerEvents = "none";
 };
 
 /* ===== BOTTOM SHEET ===== */
