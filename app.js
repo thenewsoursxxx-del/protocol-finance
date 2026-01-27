@@ -160,24 +160,23 @@ buttons.forEach(btn => {
 const profileBack = document.getElementById("profileBack");
 
 if (profileBack) {
-profileBtn.onclick = () => {
-  haptic("light");
+  profileBack.onclick = () => {
+    haptic("light");
 
-  document.activeElement?.blur();
+    openScreen(lastScreenBeforeProfile, lastNavBtnBeforeProfile);
 
-  // запоминаем активный экран и кнопку
-  const activeScreen = document.querySelector(".screen.active");
-  lastScreenBeforeProfile = activeScreen?.id.replace("screen-", "");
-  lastNavBtnBeforeProfile = document.querySelector(".nav-btn.active");
-
-  // открываем профиль через общую систему
-  openScreen("profile");
-
-  // nav всегда скрыт в профиле
-  bottomNav.style.transform = "translateY(140%)";
-  bottomNav.style.opacity = "0";
-  bottomNav.style.pointerEvents = "none";
-};
+    // nav показываем ТОЛЬКО если это не calc
+    if (lastScreenBeforeProfile === "calc") {
+      bottomNav.style.transform = "translateY(140%)";
+      bottomNav.style.opacity = "0";
+      bottomNav.style.pointerEvents = "none";
+    } else {
+      bottomNav.style.transform = "translateY(0)";
+      bottomNav.style.opacity = "1";
+      bottomNav.style.pointerEvents = "auto";
+    }
+  };
+}
 
 /* ===== BOTTOM SHEET ===== */
 function openSheet() {
