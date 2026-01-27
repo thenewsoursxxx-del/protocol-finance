@@ -160,17 +160,23 @@ buttons.forEach(btn => {
 const profileBack = document.getElementById("profileBack");
 
 if (profileBack) {
-  profileBack.onclick = () => {
-    haptic("light");
+profileBack.onclick = () => {
+  haptic("light");
 
-openScreen(lastScreenBeforeProfile, lastNavBtnBeforeProfile);
+  openScreen(lastScreenBeforeProfile, lastNavBtnBeforeProfile);
 
-    // возвращаем нижний нав
+  if (lastScreenBeforeProfile === "calc") {
+    // если вернулись на расчёт — nav скрыт
+    bottomNav.style.transform = "translateY(140%)";
+    bottomNav.style.opacity = "0";
+    bottomNav.style.pointerEvents = "none";
+  } else {
+    // иначе — показываем
     bottomNav.style.transform = "translateY(0)";
     bottomNav.style.opacity = "1";
     bottomNav.style.pointerEvents = "auto";
-  };
-}
+  }
+};
 
 /* ===== BOTTOM SHEET ===== */
 function openSheet() {
