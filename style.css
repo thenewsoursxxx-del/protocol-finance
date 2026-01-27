@@ -19,8 +19,23 @@ padding-bottom: 220px; /* ← ВАЖНО */
 position: relative;
 }
 
-.screen { display: none; }
-.screen.active { display: block; }
+.screen {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transform: translateX(12px);
+  pointer-events: none;
+
+  transition:
+    opacity 0.28s ease,
+    transform 0.32s cubic-bezier(.2,.8,.2,1);
+}
+
+.screen.active {
+  opacity: 1;
+  transform: translateX(0);
+  pointer-events: auto;
+}
 
 h2 { font-size: 22px; margin-bottom: 18px; }
 
