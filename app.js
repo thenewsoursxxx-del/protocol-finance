@@ -189,14 +189,29 @@ sheetOverlay.style.display = "none";
 }
 
 function renderProtocolResult(baseResult, explanation, advice) {
-  adviceCard.innerHTML = `
-    <div style="font-size:18px;margin-bottom:12px">
-      <b>План накопления</b>
+adviceCard.innerHTML = `
+  <div style="margin-bottom:12px">
+    <div style="font-size:14px;opacity:.7;margin-bottom:6px">
+      Возможные варианты:
     </div>
+    ${scenariosHTML}
+  </div>
+  
+  document.querySelectorAll(".scenario-card").forEach(card => {
+  card.onclick = () => {
+    document
+      .querySelectorAll(".scenario-card")
+      .forEach(c => c.classList.remove("active"));
 
-    <div style="opacity:.8;margin-bottom:14px;white-space:pre-line">
-      ${explanation}
-    </div>
+    card.classList.add("active");
+    saveMode = card.dataset.mode;
+
+    haptic("light");
+  };
+});
+
+  <canvas id="chart" width="360" height="260"></canvas>
+`;
 
     <div style="
       padding:14px;
