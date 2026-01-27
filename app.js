@@ -188,32 +188,17 @@ sheet.style.bottom = "-100%";
 sheetOverlay.style.display = "none";
 }
 
-function renderProtocolResult(baseResult, explanation, advice) {
-adviceCard.innerHTML = `
-  <div style="margin-bottom:12px">
-    <div style="font-size:14px;opacity:.7;margin-bottom:6px">
-      Возможные варианты:
+function renderProtocolResult({ scenariosHTML, advice }) {
+  adviceCard.innerHTML = `
+    <div style="margin-bottom:12px">
+      <div style="font-size:14px;opacity:.7;margin-bottom:6px">
+        Возможные варианты:
+      </div>
+      ${scenariosHTML}
     </div>
-    ${scenariosHTML}
-  </div>
-  
-  document.querySelectorAll(".scenario-card").forEach(card => {
-  card.onclick = () => {
-    document
-      .querySelectorAll(".scenario-card")
-      .forEach(c => c.classList.remove("active"));
-
-    card.classList.add("active");
-    saveMode = card.dataset.mode;
-
-    haptic("light");
-  };
-});
-
-  <canvas id="chart" width="360" height="260"></canvas>
-`;
 
     <div style="
+      margin-top:10px;
       padding:14px;
       border-radius:14px;
       background:#111;
@@ -224,6 +209,19 @@ adviceCard.innerHTML = `
       ${advice.text}
     </div>
   `;
+
+  document.querySelectorAll(".scenario-card").forEach(card => {
+    card.onclick = () => {
+      document
+        .querySelectorAll(".scenario-card")
+        .forEach(c => c.classList.remove("active"));
+
+      card.classList.add("active");
+      saveMode = card.dataset.mode;
+
+      haptic("light");
+    };
+  });
 }
 
 /* ===== CALCULATE ===== */
