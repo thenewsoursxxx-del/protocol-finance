@@ -393,15 +393,21 @@ document.querySelectorAll(".input-wrap input").forEach(input => {
   const wrap = input.closest(".input-wrap");
 
   input.addEventListener("focus", () => {
-    wrap.classList.add("show-hint");
+    wrap.classList.remove("error", "shake");
+    wrap.classList.add("show-hint"); // ← ВОТ ЭТОГО НЕ ХВАТАЛО
+
+    if (input.dataset.placeholder) {
+      input.placeholder = input.dataset.placeholder;
+    }
   });
 
   input.addEventListener("input", () => {
-    wrap.classList.remove("show-hint");
+    wrap.classList.remove("error", "shake");
+    wrap.classList.remove("show-hint"); // ← прячем при вводе
   });
 
   input.addEventListener("blur", () => {
-    wrap.classList.remove("show-hint");
+    wrap.classList.remove("show-hint"); // ← прячем при уходе
   });
 });
 
