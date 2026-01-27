@@ -306,12 +306,8 @@ calcLock.style.display = "block";
 openScreen("advice", buttons[1]);
 loader.classList.remove("hidden");
 
-const free = lastCalc.income - lastCalc.expenses;
-plannedMonthly = Math.round(free * lastCalc.pace);
+plannedMonthly = lastCalc.monthlySave;
 
-if (lastCalc.goal <= 0) {
-  plannedMonthly = 0;
-}
 if (mode === "buffer") plannedMonthly = Math.round(plannedMonthly * 0.9);
 
 adviceCard.innerText = "Protocol анализирует данные…";
