@@ -1,30 +1,9 @@
 const ProtocolCore = (() => {
 
   /**
-   * Рассчитать финансовое состояние
+   * 1. Чистый расчёт — без текста и советов
    */
   function calculateBase({ income, expenses, goal, saved = 0, mode }) {
-    function explain(result) {
-  if (!result.ok) {
-    return result.message;
-  }
-
-  const lines = [];
-
-  lines.push(`Свободно в месяц: ${result.free.toLocaleString()} ₽`);
-  lines.push(`Откладываем: ${result.monthlySave.toLocaleString()} ₽ / мес`);
-  lines.push(`Срок до цели: ${result.months} мес`);
-
-  if (result.pace >= 0.6) {
-    lines.push("⚠️ Агрессивный режим. Возможен стресс для бюджета.");
-  }
-
-  if (result.pace <= 0.4) {
-    lines.push("🟢 Комфортный режим. Минимальный риск.");
-  }
-
-  return lines.join("\n");
-}
     const free = income - expenses;
 
     if (free <= 0) {
@@ -57,7 +36,7 @@ const ProtocolCore = (() => {
   }
 
   /**
-   * Сформировать рекомендации (не приказ!)
+   * 2. Мягкие рекомендации (НЕ приказ)
    */
   function buildAdvice(baseResult) {
     if (!baseResult.ok) {
@@ -92,7 +71,7 @@ const ProtocolCore = (() => {
   }
 
   /**
-   * Объяснение «почему так»
+   * 3. Объяснение «почему так»
    */
   function explain(baseResult) {
     if (!baseResult.ok) {
@@ -100,9 +79,10 @@ const ProtocolCore = (() => {
     }
 
     return `
-Вы откладываете ${baseResult.monthlySave} ₽ в месяц.
-Это примерно ${Math.round(baseResult.pace * 100)}% от свободных средств.
-Цель будет достигнута примерно за ${baseResult.months} мес.
+Свободно в месяц: ${baseResult.free.toLocaleString()} ₽
+Откладываете: ${baseResult.monthlySave.toLocaleString()} ₽
+Это ~${Math.round(baseResult.pace * 100)}% от свободных средств
+Цель будет достигнута примерно за ${baseResult.months} мес
 `;
   }
 
@@ -111,4 +91,5 @@ const ProtocolCore = (() => {
     buildAdvice,
     explain
   };
+
 })();
