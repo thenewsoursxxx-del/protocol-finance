@@ -472,7 +472,7 @@ button:active {
 }
 
 .input-wrap.error input::placeholder {
-  color: #ff3b30;
+  color: rgba(255,69,58,0.75);
   opacity: 0.9;
 }
 
