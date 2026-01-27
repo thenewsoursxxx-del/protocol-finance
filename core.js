@@ -1,7 +1,7 @@
 const ProtocolCore = (() => {
 
   /**
-   * 1. Чистый расчёт — без текста и советов
+   * 1. Чистый расчёт
    */
   function calculateBase({ income, expenses, goal, saved = 0, mode }) {
     const free = income - expenses;
@@ -36,7 +36,40 @@ const ProtocolCore = (() => {
   }
 
   /**
-   * 2. Мягкие рекомендации (НЕ приказ)
+   * 2. Сценарии (ВЫБОР, НЕ ПРИКАЗ)
+   */
+  function buildScenarios({ income, expenses, goal, saved = 0 }) {
+    const modes = [
+      { mode: "calm", title: "Спокойный", pace: 0.4 },
+      { mode: "normal", title: "Сбалансированный", pace: 0.5 },
+      { mode: "aggressive", title: "Быстрый", pace: 0.6 }
+    ];
+
+    return modes.map(m => {
+      const free = income - expenses;
+      const monthlySave = Math.round(free * m.pace);
+      const effectiveGoal = Math.max(goal - saved, 0);
+      const months = monthlySave > 0
+        ? Math.ceil(effectiveGoal / monthlySave)
+        : Infinity;
+
+      return {
+        mode: m.mode,
+        title: m.title,
+        monthlySave,
+        months,
+        risk:
+          m.pace >= 0.6
+            ? "Высокая нагрузка"
+            : m.pace <= 0.4
+            ? "Минимальный риск"
+            : "Баланс"
+      };
+    });
+  }
+
+  /**
+   * 3. Рекомендации
    */
   function buildAdvice(baseResult) {
     if (!baseResult.ok) {
@@ -64,36 +97,6 @@ const ProtocolCore = (() => {
       advice.push("План выглядит устойчивым и реалистичным.");
     }
 
-function buildScenarios({ income, expenses, goal, saved = 0 }) {
-  const modes = [
-    { mode: "calm", title: "Спокойный", pace: 0.4 },
-    { mode: "normal", title: "Сбалансированный", pace: 0.5 },
-    { mode: "aggressive", title: "Быстрый", pace: 0.6 }
-  ];
-
-  return modes.map(m => {
-    const free = income - expenses;
-    const monthlySave = Math.round(free * m.pace);
-    const effectiveGoal = Math.max(goal - saved, 0);
-    const months = monthlySave > 0
-      ? Math.ceil(effectiveGoal / monthlySave)
-      : Infinity;
-
-    return {
-      mode: m.mode,
-      title: m.title,
-      monthlySave,
-      months,
-      risk:
-        m.pace >= 0.6
-          ? "Высокая нагрузка"
-          : m.pace <= 0.4
-          ? "Минимальный риск"
-          : "Баланс"
-    };
-  });
-}
-
     return {
       tone: "neutral",
       text: advice.join(" ")
@@ -101,7 +104,7 @@ function buildScenarios({ income, expenses, goal, saved = 0 }) {
   }
 
   /**
-   * 3. Объяснение «почему так»
+   * 4. Объяснение «почему так»
    */
   function explain(baseResult) {
     if (!baseResult.ok) {
@@ -116,11 +119,11 @@ function buildScenarios({ income, expenses, goal, saved = 0 }) {
 `;
   }
 
-return {
-  calculateBase,
-  buildAdvice,
-  explain,
-  buildScenarios
-};
+  return {
+    calculateBase,
+    buildScenarios,
+    buildAdvice,
+    explain
+  };
 
 })();
