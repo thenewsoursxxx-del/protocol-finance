@@ -20,8 +20,9 @@ position: relative;
 }
 
 .screen {
+  overflow: visible;
   position: absolute;
-  inset: 0;
+  inset: 20px 20px 0 20px; /* ← УВАЖАЕМ padding app */
   opacity: 0;
   transform: translateX(12px);
   pointer-events: none;
