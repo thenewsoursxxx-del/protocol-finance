@@ -358,6 +358,11 @@ withBuffer.onclick = () => { closeSheet(); protocolFlow("buffer"); };
 resetBtn.onclick = () => confirmReset.style.display = "block";
 confirmNo.onclick = () => confirmReset.style.display = "none";
 confirmYes.onclick = () => {
+  isCalcLocked = true;
+
+bottomNav.style.opacity = "0";
+bottomNav.style.pointerEvents = "none";
+bottomNav.style.transform = "translateY(140%)";
 chosenPlan = null;
 isInitialized = false;
 lastCalc = {};
