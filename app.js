@@ -165,10 +165,12 @@ profileBtn.onclick = () => {
 
   document.activeElement?.blur();
 
-  // запоминаем откуда пришли
-  lastScreenBeforeProfile = document.querySelector(".screen.active")?.id?.replace("screen-", "");
+  // запоминаем активный экран и кнопку
+  const activeScreen = document.querySelector(".screen.active");
+  lastScreenBeforeProfile = activeScreen?.id.replace("screen-", "");
   lastNavBtnBeforeProfile = document.querySelector(".nav-btn.active");
 
+  // открываем профиль через общую систему
   openScreen("profile");
 
   // nav всегда скрыт в профиле
