@@ -58,8 +58,6 @@ const sheetOverlay = document.getElementById("sheetOverlay");
 const noBuffer = document.getElementById("noBuffer");
 const withBuffer = document.getElementById("withBuffer");
 
-const calcLock = document.getElementById("calcLock");
-const lockText = document.getElementById("lockText");
 const resetBtn = document.getElementById("resetPlan");
 
 const confirmReset = document.getElementById("confirmReset");
