@@ -128,7 +128,6 @@ btn.style.pointerEvents = lock ? "none" : "auto";
 });
 }
 lockTabs(true);
-calcLock.style.display = "none";
 moveIndicator(buttons[0]);
 
 /* ===== OPEN SCREEN ===== */
@@ -331,7 +330,6 @@ lockTabs(false);
 
 lockText.innerText =
 `У вас уже выбран план: ${mode === "buffer" ? "с подушкой" : "без подушки"}`;
-calcLock.style.display = "block";
 
 openScreen("advice", buttons[1]);
 loader.classList.remove("hidden");
@@ -436,7 +434,6 @@ isInitialized = false;
 lastCalc = {};
 plannedMonthly = 0;
 
-calcLock.style.display = "none";
 confirmReset.style.display = "none";
 lockTabs(true);
 
