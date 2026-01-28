@@ -365,6 +365,7 @@ animateFact(Math.min(fact / plannedMonthly, 1.3));
 
 }, 6000);
 }
+setCalcLock(true);
 
 /* ===== RESET ===== */
 resetBtn.onclick = () => confirmReset.style.display = "block";
