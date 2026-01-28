@@ -63,7 +63,6 @@ const sheetOverlay = document.getElementById("sheetOverlay");
 const noBuffer = document.getElementById("noBuffer");
 const withBuffer = document.getElementById("withBuffer");
 
-const calcLock = document.getElementById("calcLock");
 const lockText = document.getElementById("lockText");
 const resetBtn = document.getElementById("resetPlan");
 
@@ -336,9 +335,6 @@ chosenPlan = mode;
 isInitialized = true;
 lockTabs(false);
 
-lockText.innerText =
-`У вас уже выбран план: ${mode === "buffer" ? "с подушкой" : "без подушки"}`;
-calcLock.style.display = "block";
 
 openScreen("advice", buttons[1]);
 loader.classList.remove("hidden");
