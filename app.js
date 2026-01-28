@@ -376,6 +376,8 @@ isInitialized = false;
 lastCalc = {};
 plannedMonthly = 0;
 
+setCalcLock(false);
+
 calcLock.style.display = "none";
 calcLock.style.pointerEvents = "none";
 
