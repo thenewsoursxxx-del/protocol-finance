@@ -533,3 +533,14 @@ button:active {
   z-index: 2000; /* выше всего UI */
   pointer-events: auto;
 }
+
+html, body {
+  height: 100%;
+  overflow: hidden; /* 🔒 ВАЖНО */
+}
+
+.app {
+  height: 100%;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch; /* iOS smooth scroll */
+}
