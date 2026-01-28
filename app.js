@@ -396,24 +396,6 @@ animateFact(Math.min(fact / plannedMonthly, 1.3));
 noBuffer.onclick = () => { closeSheet(); protocolFlow("direct"); };
 withBuffer.onclick = () => { closeSheet(); protocolFlow("buffer"); };
 
-/* ===== RESET ===== */
-resetBtn.onclick = () => confirmReset.style.display = "block";
-confirmNo.onclick = () => confirmReset.style.display = "none";
-confirmYes.onclick = () => {
-chosenPlan = null;
-isInitialized = false;
-lastCalc = {};
-plannedMonthly = 0;
-
-confirmReset.style.display = "none";
-
-incomeInput.value = "";
-expensesInput.value = "";
-goalInput.value = "";
-
-openScreen("calc", buttons[0]);
-};
-
 /* ===== PROFILE ===== */
 const profileBtn = document.getElementById("profileBtn");
 
