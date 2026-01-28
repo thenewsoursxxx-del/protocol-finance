@@ -53,11 +53,6 @@ saveMode = btn.dataset.mode;
 const adviceCard = document.getElementById("adviceCard");
 const loader = document.getElementById("loader");
 
-const sheet = document.getElementById("sheet");
-const sheetOverlay = document.getElementById("sheetOverlay");
-const noBuffer = document.getElementById("noBuffer");
-const withBuffer = document.getElementById("withBuffer");
-
 const calcLock = document.getElementById("calcLock");
 const lockText = document.getElementById("lockText");
 const resetBtn = document.getElementById("resetPlan");
@@ -176,16 +171,6 @@ if (profileBack) {
       bottomNav.style.pointerEvents = "auto";
     }
   };
-}
-
-/* ===== BOTTOM SHEET ===== */
-function openSheet() {
-sheetOverlay.style.display = "block";
-sheet.style.bottom = "0";
-}
-function closeSheet() {
-sheet.style.bottom = "-100%";
-sheetOverlay.style.display = "none";
 }
 
 /* ===== CALCULATE ===== */
