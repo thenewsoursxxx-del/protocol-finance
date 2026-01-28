@@ -541,7 +541,7 @@ function startProtocolAnalysis() {
   adviceCard.innerHTML = "Protocol анализирует данные…";
   loader.classList.remove("hidden");
   loader.classList.add("hidden");
-loader.style.pointerEvents = "none";
+  loader.style.pointerEvents = "none";
 
   setTimeout(() => {
     loader.classList.add("hidden");
