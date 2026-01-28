@@ -122,7 +122,6 @@ btn.style.pointerEvents = lock ? "none" : "auto";
 });
 }
 lockTabs(true);
-calcLock.style.display = "none";
 moveIndicator(buttons[0]);
 
 /* ===== OPEN SCREEN ===== */
@@ -196,6 +195,7 @@ calculateBtn.onclick = () => {
   });
 
   renderScenarioSelection(scenarios);
+  lockTabs(false);
   openScreen("advice", buttons[1]);
 };
 
@@ -239,79 +239,6 @@ if (Math.abs(target - current) > 0.002) requestAnimationFrame(step);
 }
 step();
 }
-
-/* ===== STAGED FLOW ===== */
-
-setTimeout(() => {
-loader.classList.add("hidden");
-
-const explanation = ProtocolCore.explain(lastCalc);
-const advice = ProtocolCore.buildAdvice(lastCalc);
-
-adviceCard.innerHTML = `
-<div style="font-size:16px;font-weight:600">
-  План: ${plannedMonthly.toLocaleString()} ₽ / месяц
-</div>
-
-<div style="
-  margin-top:8px;
-  font-size:14px;
-  line-height:1.4;
-  opacity:0.75;
-">
-  ${explanation.replace(/\n/g, "<br>")}
-</div>
-
-<div style="
-  margin-top:10px;
-  padding:10px 12px;
-  border-radius:14px;
-  background:#111;
-  border:1px solid #222;
-  font-size:14px;
-">
-  ${advice.text}
-</div>
-
-<canvas id="chart" width="360" height="260" style="margin:16px 0"></canvas>
-
-<div style="display:flex;gap:8px;align-items:center">
-  <input id="factInput" inputmode="numeric"
-    placeholder="Фактически отложено"
-    style="flex:1"/>
-  <button id="applyFact"
-    style="width:52px;height:52px;border-radius:50%">
-    ➜
-  </button>
-</div>
-`;
-
-canvas = document.getElementById("chart");
-ctx = canvas.getContext("2d");
-w = canvas.width - pad * 2;
-h = canvas.height - pad * 2;
-
-drawAxes();
-drawPlan();
-drawFact(1);
-
-const factInput = document.getElementById("factInput");
-const applyBtn = document.getElementById("applyFact");
-
-factInput.addEventListener("input", e => {
-e.target.value = formatNumber(e.target.value);
-});
-
-applyBtn.onclick = () => {
-const fact = parseNumber(factInput.value);
-if (!fact) return;
-factInput.blur();
-animateFact(Math.min(fact / plannedMonthly, 1.3));
-};
-
-}, 6000);
-}
-setCalcLock(true);
 
 /* ===== RESET ===== */
 resetBtn.onclick = () => confirmReset.style.display = "block";
