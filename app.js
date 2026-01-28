@@ -115,17 +115,6 @@ e.target.selectionEnd = p + (a - b);
 });
 });
 
-
-/* ===== TAB LOCK ===== */
-function lockTabs(lock) {
-buttons.forEach((btn, i) => {
-if (i === 0) return;
-btn.style.opacity = lock ? "0.35" : "1";
-btn.style.pointerEvents = lock ? "none" : "auto";
-});
-}
-moveIndicator(buttons[0]);
-
 /* ===== OPEN SCREEN ===== */
 function openScreen(name, btn) {
   screens.forEach(s => s.classList.remove("active"));
@@ -312,9 +301,6 @@ function protocolFlow(mode) {
   bottomNav.style.transform = "translateY(0)";
 chosenPlan = mode;
 isInitialized = true;
-
-lockText.innerText =
-`У вас уже выбран план: ${mode === "buffer" ? "с подушкой" : "без подушки"}`;
 
 openScreen("advice", buttons[1]);
 loader.classList.remove("hidden");
