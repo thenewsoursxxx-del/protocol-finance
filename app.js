@@ -248,6 +248,8 @@ document.querySelectorAll(".scenario-card").forEach(card => {
     selectedScenario = card.dataset.id;
 
     haptic("light");
+    
+    protocolFlow(selectedScenario);
   };
 });
 
@@ -321,11 +323,9 @@ const scenariosHTML = scenarios.map(s => `
 `).join("");
 
 renderProtocolResult({
-  scenariosHTML: "",
+  scenariosHTML,
   advice
 });
-
-protocolFlow("direct");
 
 // показать summary
 planSummary.style.display = "block";
