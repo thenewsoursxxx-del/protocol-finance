@@ -283,15 +283,16 @@ const advice = ProtocolCore.buildAdvice(baseResult);
 
 lastCalc = baseResult;
 
-renderProtocolResult({
-  scenariosHTML,
-  advice
-  
 // показать экран Protocol с загрузкой
 openScreen("advice", buttons[1]);
 loader.classList.remove("hidden");
 
-// запустить staged flow
+renderProtocolResult({
+  scenariosHTML,
+  advice
+});
+
+// 🔥 ВОТ ОН — ПОТЕРЯННЫЙ ЗАПУСК
 protocolFlow("direct");
 });
 
