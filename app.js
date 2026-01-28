@@ -53,15 +53,6 @@ saveMode = btn.dataset.mode;
 const adviceCard = document.getElementById("adviceCard");
 const loader = document.getElementById("loader");
 const resetBtn = document.getElementById("resetPlan");
-function setCalcLock(locked) {
-  if (locked) {
-    calcLock.style.display = "flex";
-    calculateBtn.disabled = true;
-  } else {
-    calcLock.style.display = "none";
-    calculateBtn.disabled = false;
-  }
-}
 
 const confirmReset = document.getElementById("confirmReset");
 const confirmYes = document.getElementById("confirmYes");
@@ -183,38 +174,29 @@ if (profileBack) {
 calculateBtn.onclick = () => {
   haptic("medium");
 
-  const validIncome = validateRequired(incomeInput);
-  const validExpenses = validateRequired(expensesInput);
-  const validGoal = validateRequired(goalInput);
-  if (!validIncome || !validExpenses || !validGoal) return;
+  if (
+    !validateRequired(incomeInput) ||
+    !validateRequired(expensesInput) ||
+    !validateRequired(goalInput)
+  ) return;
 
-  const baseResult = ProtocolCore.calculateBase({
+  lastCalc = ProtocolCore.calculateBase({
     income: parseNumber(incomeInput.value),
     expenses: parseNumber(expensesInput.value),
     goal: parseNumber(goalInput.value),
-    saved: parseNumber(savedInput?.value || "0"),
+    saved: parseNumber(savedInput.value || "0"),
     mode: saveMode
   });
 
-  if (!baseResult.ok) {
-    alert(baseResult.message);
-    return;
-  }
-
-  lastCalc = baseResult;
-  activatePlanUI();
-openScreen("advice", buttons[1]);
-
   const scenarios = ProtocolCore.buildScenarios({
-  income: parseNumber(incomeInput.value),
-  expenses: parseNumber(expensesInput.value),
-  goal: parseNumber(goalInput.value),
-  saved: parseNumber(savedInput?.value || "0")
-});
+    income: parseNumber(incomeInput.value),
+    expenses: parseNumber(expensesInput.value),
+    goal: parseNumber(goalInput.value),
+    saved: parseNumber(savedInput.value || "0")
+  });
 
   renderScenarioSelection(scenarios);
   openScreen("advice", buttons[1]);
-
 };
 
 /* ===== GRAPH ===== */
@@ -479,19 +461,16 @@ function validateRequired(input) {
 function renderScenarioSelection(scenarios) {
   adviceCard.innerHTML = `
     <div style="font-size:14px;opacity:.7;margin-bottom:8px">
-      Protocol рассчитал несколько сценариев — выберите подходящий
+      Выберите сценарий накопления
     </div>
 
     ${scenarios.map(s => `
-      <div class="card scenario-card ${s.mode === saveMode ? "active initial" : ""}"
+      <div class="card scenario-card ${s.mode === saveMode ? "active" : ""}"
            data-mode="${s.mode}">
         <b>${s.title}</b><br>
         ${s.monthlySave.toLocaleString()} ₽ / месяц<br>
         ≈ ${s.months} мес<br>
         <span style="opacity:.6">${s.risk}</span>
-        ${s.mode === saveMode
-          ? `<div class="scenario-initial">Вы начали с этого сценария</div>`
-          : ""}
       </div>
     `).join("")}
 
@@ -511,9 +490,7 @@ function renderScenarioSelection(scenarios) {
     };
   });
 
-  document.getElementById("applyScenario").onclick = () => {
-  protocolFlow(saveMode);
-};
+  document.getElementById("applyScenario").onclick = showFinalPlan;
 }
 
 function startProtocolAnalysis() {
@@ -557,39 +534,3 @@ function showFinalPlan() {
 
   // тут же — drawAxes(), drawPlan(), drawFact()
 }
-function activatePlanUI() {
-  isInitialized = true;
-
-  // скрываем форму
-  document.getElementById("calcForm").style.display = "none";
-
-  // показываем summary
-  document.getElementById("calcSummary").classList.remove("hidden");
-
-  // заполняем данные
-  document.getElementById("summaryMode").innerText = saveMode;
-  document.getElementById("summaryMonthly").innerText =
-    lastCalc.monthlySave.toLocaleString() + " ₽";
-
-  document.getElementById("summaryGoal").innerText =
-    parseNumber(goalInput.value).toLocaleString() + " ₽";
-}
-document
-  .getElementById("resetPlanFromCalc")
-  .onclick = () => {
-
-  isInitialized = false;
-  lastCalc = {};
-
-  // показываем форму обратно
-  document.getElementById("calcForm").style.display = "block";
-  document.getElementById("calcSummary").classList.add("hidden");
-
-  // очищаем поля
-  incomeInput.value = "";
-  expensesInput.value = "";
-  goalInput.value = "";
-  savedInput.value = "";
-
-  openScreen("calc", buttons[0]);
-};
