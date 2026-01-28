@@ -283,17 +283,9 @@ const advice = ProtocolCore.buildAdvice(baseResult);
 
 lastCalc = baseResult;
 
-// показать экран Protocol с загрузкой
-openScreen("advice", buttons[1]);
-loader.classList.remove("hidden");
-
 renderProtocolResult({
   scenariosHTML,
   advice
-});
-
-// 🔥 ВОТ ОН — ПОТЕРЯННЫЙ ЗАПУСК
-protocolFlow("direct");
 });
 
 // показать summary
@@ -312,6 +304,8 @@ document.querySelectorAll(
   "#screen-calc label, #screen-calc .input-wrap, .mode-buttons, #calculate"
 ).forEach(el => el.style.display = "none");
 
+openSheet();
+  return;
 };
 
 /* ===== EDIT PLAN ===== */
@@ -468,6 +462,10 @@ animateFact(Math.min(fact / plannedMonthly, 1.3));
 
 }, 6000);
 }
+
+/* ===== CHOICES ===== */
+noBuffer.onclick = () => { closeSheet(); protocolFlow("direct"); };
+withBuffer.onclick = () => { closeSheet(); protocolFlow("buffer"); };
 
 /* ===== RESET ===== */
 resetBtn.onclick = () => confirmReset.style.display = "block";
