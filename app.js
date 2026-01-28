@@ -287,7 +287,12 @@ renderProtocolResult({
   scenariosHTML,
   advice
   
-  protocolFlow("direct");
+// показать экран Protocol с загрузкой
+openScreen("advice", buttons[1]);
+loader.classList.remove("hidden");
+
+// запустить staged flow
+protocolFlow("direct");
 });
 
 // показать summary
