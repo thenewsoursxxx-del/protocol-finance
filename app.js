@@ -131,15 +131,13 @@ moveIndicator(buttons[0]);
 
 /* ===== OPEN SCREEN ===== */
 function openScreen(name, btn) {
-if (!isInitialized && !["calc", "profile"].includes(name)) return;
+  screens.forEach(s => s.classList.remove("active"));
+  document.getElementById("screen-" + name).classList.add("active");
 
-screens.forEach(s => s.classList.remove("active"));
-document.getElementById("screen-" + name).classList.add("active");
+  buttons.forEach(b => b.classList.remove("active"));
+  if (btn) btn.classList.add("active");
 
-buttons.forEach(b => b.classList.remove("active"));
-if (btn) btn.classList.add("active");
-
-if (btn) moveIndicator(btn);
+  if (btn) moveIndicator(btn);
 }
 buttons.forEach(btn => {
   btn.onclick = () => {
