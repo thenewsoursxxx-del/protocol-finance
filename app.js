@@ -200,13 +200,14 @@ calculateBtn.onclick = () => {
   lastCalc = baseResult;
 
   const scenarios = ProtocolCore.buildScenarios({
-    income: baseResult.free + parseNumber(expensesInput.value),
-    expenses: parseNumber(expensesInput.value),
-    goal: parseNumber(goalInput.value),
-    saved: parseNumber(savedInput?.value || "0")
-  });
+  income: parseNumber(incomeInput.value),
+  expenses: parseNumber(expensesInput.value),
+  goal: parseNumber(goalInput.value),
+  saved: parseNumber(savedInput?.value || "0")
+});
 
   renderScenarioSelection(scenarios);
+  openScreen("advice", buttons[1]);
 
 };
 
@@ -539,6 +540,8 @@ function renderScenarioSelection(scenarios) {
 function startProtocolAnalysis() {
   adviceCard.innerHTML = "Protocol анализирует данные…";
   loader.classList.remove("hidden");
+  loader.classList.add("hidden");
+loader.style.pointerEvents = "none";
 
   setTimeout(() => {
     loader.classList.add("hidden");
