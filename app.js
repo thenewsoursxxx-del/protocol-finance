@@ -207,6 +207,8 @@ calculateBtn.onclick = () => {
   }
 
   lastCalc = baseResult;
+  activatePlanUI();
+openScreen("advice", buttons[1]);
 
   const scenarios = ProtocolCore.buildScenarios({
   income: parseNumber(incomeInput.value),
@@ -593,3 +595,39 @@ function showFinalPlan() {
 
   // тут же — drawAxes(), drawPlan(), drawFact()
 }
+function activatePlanUI() {
+  isInitialized = true;
+
+  // скрываем форму
+  document.getElementById("calcForm").style.display = "none";
+
+  // показываем summary
+  document.getElementById("calcSummary").classList.remove("hidden");
+
+  // заполняем данные
+  document.getElementById("summaryMode").innerText = saveMode;
+  document.getElementById("summaryMonthly").innerText =
+    lastCalc.monthlySave.toLocaleString() + " ₽";
+
+  document.getElementById("summaryGoal").innerText =
+    parseNumber(goalInput.value).toLocaleString() + " ₽";
+}
+document
+  .getElementById("resetPlanFromCalc")
+  .onclick = () => {
+
+  isInitialized = false;
+  lastCalc = {};
+
+  // показываем форму обратно
+  document.getElementById("calcForm").style.display = "block";
+  document.getElementById("calcSummary").classList.add("hidden");
+
+  // очищаем поля
+  incomeInput.value = "";
+  expensesInput.value = "";
+  goalInput.value = "";
+  savedInput.value = "";
+
+  openScreen("calc", buttons[0]);
+};
