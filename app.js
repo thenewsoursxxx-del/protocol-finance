@@ -52,6 +52,14 @@ saveMode = btn.dataset.mode;
 
 const adviceCard = document.getElementById("adviceCard");
 const loader = document.getElementById("loader");
+
+const sheet = document.getElementById("sheet");
+const sheetOverlay = document.getElementById("sheetOverlay");
+const noBuffer = document.getElementById("noBuffer");
+const withBuffer = document.getElementById("withBuffer");
+
+const calcLock = document.getElementById("calcLock");
+const lockText = document.getElementById("lockText");
 const resetBtn = document.getElementById("resetPlan");
 
 const confirmReset = document.getElementById("confirmReset");
@@ -122,11 +130,12 @@ btn.style.pointerEvents = lock ? "none" : "auto";
 });
 }
 lockTabs(true);
+calcLock.style.display = "none";
 moveIndicator(buttons[0]);
 
 /* ===== OPEN SCREEN ===== */
 function openScreen(name, btn) {
-if (!isInitialized && !["calc", "advice"].includes(name)) return;
+if (!isInitialized && name !== "calc") return;
 
 screens.forEach(s => s.classList.remove("active"));
 document.getElementById("screen-" + name).classList.add("active");
@@ -169,34 +178,106 @@ if (profileBack) {
   };
 }
 
+/* ===== BOTTOM SHEET ===== */
+function openSheet() {
+sheetOverlay.style.display = "block";
+sheet.style.bottom = "0";
+}
+function closeSheet() {
+sheet.style.bottom = "-100%";
+sheetOverlay.style.display = "none";
+}
+
+function renderProtocolResult({ scenariosHTML, advice }) {
+  adviceCard.innerHTML = `
+    <div style="margin-bottom:12px">
+      <div style="font-size:14px;opacity:.7;margin-bottom:6px">
+        Возможные варианты:
+      </div>
+      ${scenariosHTML}
+    </div>
+
+    <div style="
+      margin-top:10px;
+      padding:14px;
+      border-radius:14px;
+      background:#111;
+      border:1px solid #333;
+      font-size:15px;
+      line-height:1.4
+    ">
+      ${advice.text}
+    </div>
+  `;
+
+  document.querySelectorAll(".scenario-card").forEach(card => {
+    card.onclick = () => {
+      document
+        .querySelectorAll(".scenario-card")
+        .forEach(c => c.classList.remove("active"));
+
+      card.classList.add("active");
+      saveMode = card.dataset.mode;
+
+      haptic("light");
+    };
+  });
+}
+
 /* ===== CALCULATE ===== */
 calculateBtn.onclick = () => {
   haptic("medium");
 
-  if (
-    !validateRequired(incomeInput) ||
-    !validateRequired(expensesInput) ||
-    !validateRequired(goalInput)
-  ) return;
+  bottomNav.style.opacity = "0";
+  bottomNav.style.pointerEvents = "none";
+  bottomNav.style.transform = "translateY(140%)";
 
-  lastCalc = ProtocolCore.calculateBase({
-    income: parseNumber(incomeInput.value),
-    expenses: parseNumber(expensesInput.value),
-    goal: parseNumber(goalInput.value),
-    saved: parseNumber(savedInput.value || "0"),
-    mode: saveMode
-  });
+  const validIncome = validateRequired(incomeInput);
+  const validExpenses = validateRequired(expensesInput);
+  const validGoal = validateRequired(goalInput);
 
-  const scenarios = ProtocolCore.buildScenarios({
-    income: parseNumber(incomeInput.value),
-    expenses: parseNumber(expensesInput.value),
-    goal: parseNumber(goalInput.value),
-    saved: parseNumber(savedInput.value || "0")
-  });
+  if (!validIncome || !validExpenses || !validGoal) return;
 
-  renderScenarioSelection(scenarios);
-  lockTabs(false);
-  openScreen("advice", buttons[1]);
+  const baseResult = ProtocolCore.calculateBase({
+  income: parseNumber(incomeInput.value),
+  expenses: parseNumber(expensesInput.value),
+  goal: parseNumber(goalInput.value),
+  saved: parseNumber(savedInput?.value || "0"),
+  mode: saveMode
+});
+
+if (!baseResult.ok) {
+  alert(baseResult.message);
+  return;
+}
+
+const scenarios = ProtocolCore.buildScenarios({
+  income: parseNumber(incomeInput.value),
+  expenses: parseNumber(expensesInput.value),
+  goal: parseNumber(goalInput.value),
+  saved: parseNumber(savedInput?.value || "0")
+});
+
+const scenariosHTML = scenarios.map(s => `
+  <div class="card scenario-card" data-mode="${s.mode}">
+    <b>${s.title}</b><br>
+    ${s.monthlySave.toLocaleString()} ₽ / мес<br>
+    ~ ${s.months} мес<br>
+    <span style="opacity:.6">${s.risk}</span>
+  </div>
+`).join("");
+
+const advice = ProtocolCore.buildAdvice(baseResult);
+
+lastCalc = baseResult;
+
+renderProtocolResult({
+  scenariosHTML,
+  advice
+});
+
+openSheet();
+  return;
 };
 
 /* ===== GRAPH ===== */
@@ -240,6 +321,114 @@ if (Math.abs(target - current) > 0.002) requestAnimationFrame(step);
 step();
 }
 
+/* ===== STAGED FLOW ===== */
+function protocolFlow(mode) {
+    // возвращаем bottom nav после старта плана
+  bottomNav.style.opacity = "1";
+  bottomNav.style.pointerEvents = "auto";
+  bottomNav.style.transform = "translateY(0)";
+chosenPlan = mode;
+isInitialized = true;
+lockTabs(false);
+
+lockText.innerText =
+`У вас уже выбран план: ${mode === "buffer" ? "с подушкой" : "без подушки"}`;
+calcLock.style.display = "block";
+
+openScreen("advice", buttons[1]);
+loader.classList.remove("hidden");
+
+plannedMonthly = lastCalc.monthlySave;
+
+if (mode === "buffer") plannedMonthly = Math.round(plannedMonthly * 0.9);
+
+adviceCard.innerText = "Protocol анализирует данные…";
+
+setTimeout(() => {
+adviceCard.innerText =
+mode === "buffer"
+? "Часть средств будет направляться в резерв."
+: "Все средства идут напрямую в цель.";
+}, 2000);
+
+setTimeout(() => {
+adviceCard.innerText = "Готово.";
+}, 4000);
+
+setTimeout(() => {
+loader.classList.add("hidden");
+
+const explanation = ProtocolCore.explain(lastCalc);
+const advice = ProtocolCore.buildAdvice(lastCalc);
+
+adviceCard.innerHTML = `
+<div style="font-size:16px;font-weight:600">
+  План: ${plannedMonthly.toLocaleString()} ₽ / месяц
+</div>
+
+<div style="
+  margin-top:8px;
+  font-size:14px;
+  line-height:1.4;
+  opacity:0.75;
+">
+  ${explanation.replace(/\n/g, "<br>")}
+</div>
+
+<div style="
+  margin-top:10px;
+  padding:10px 12px;
+  border-radius:14px;
+  background:#111;
+  border:1px solid #222;
+  font-size:14px;
+">
+  ${advice.text}
+</div>
+
+<canvas id="chart" width="360" height="260" style="margin:16px 0"></canvas>
+
+<div style="display:flex;gap:8px;align-items:center">
+  <input id="factInput" inputmode="numeric"
+    placeholder="Фактически отложено"
+    style="flex:1"/>
+  <button id="applyFact"
+    style="width:52px;height:52px;border-radius:50%">
+    ➜
+  </button>
+</div>
+`;
+
+canvas = document.getElementById("chart");
+ctx = canvas.getContext("2d");
+w = canvas.width - pad * 2;
+h = canvas.height - pad * 2;
+
+drawAxes();
+drawPlan();
+drawFact(1);
+
+const factInput = document.getElementById("factInput");
+const applyBtn = document.getElementById("applyFact");
+
+factInput.addEventListener("input", e => {
+e.target.value = formatNumber(e.target.value);
+});
+
+applyBtn.onclick = () => {
+const fact = parseNumber(factInput.value);
+if (!fact) return;
+factInput.blur();
+animateFact(Math.min(fact / plannedMonthly, 1.3));
+};
+
+}, 6000);
+}
+
+/* ===== CHOICES ===== */
+noBuffer.onclick = () => { closeSheet(); protocolFlow("direct"); };
+withBuffer.onclick = () => { closeSheet(); protocolFlow("buffer"); };
+
 /* ===== RESET ===== */
 resetBtn.onclick = () => confirmReset.style.display = "block";
 confirmNo.onclick = () => confirmReset.style.display = "none";
@@ -249,11 +438,7 @@ isInitialized = false;
 lastCalc = {};
 plannedMonthly = 0;
 
-setCalcLock(false);
-
 calcLock.style.display = "none";
-calcLock.style.pointerEvents = "none";
-
 confirmReset.style.display = "none";
 lockTabs(true);
 
@@ -383,81 +568,4 @@ function validateRequired(input) {
   }
 
   return true;
-}
-
-function renderScenarioSelection(scenarios) {
-  adviceCard.innerHTML = `
-    <div style="font-size:14px;opacity:.7;margin-bottom:8px">
-      Выберите сценарий накопления
-    </div>
-
-    ${scenarios.map(s => `
-      <div class="card scenario-card ${s.mode === saveMode ? "active" : ""}"
-           data-mode="${s.mode}">
-        <b>${s.title}</b><br>
-        ${s.monthlySave.toLocaleString()} ₽ / месяц<br>
-        ≈ ${s.months} мес<br>
-        <span style="opacity:.6">${s.risk}</span>
-      </div>
-    `).join("")}
-
-    <button id="applyScenario" style="margin-top:12px">
-      Применить сценарий
-    </button>
-  `;
-
-  document.querySelectorAll(".scenario-card").forEach(card => {
-    card.onclick = () => {
-      document.querySelectorAll(".scenario-card")
-        .forEach(c => c.classList.remove("active"));
-
-      card.classList.add("active");
-      saveMode = card.dataset.mode;
-      haptic("light");
-    };
-  });
-
-  document.getElementById("applyScenario").onclick = showFinalPlan;
-}
-
-function startProtocolAnalysis() {
-  adviceCard.innerHTML = "Protocol анализирует данные…";
-  loader.classList.remove("hidden");
-  loader.classList.add("hidden");
-  loader.style.pointerEvents = "none";
-
-  setTimeout(() => {
-    loader.classList.add("hidden");
-    showFinalPlan();
-  }, 2500);
-}
-
-function showFinalPlan() {
-  const explanation = ProtocolCore.explain(lastCalc);
-  const advice = ProtocolCore.buildAdvice(lastCalc);
-
-  adviceCard.innerHTML = `
-    <div style="font-size:16px;font-weight:600">
-      План: ${lastCalc.monthlySave.toLocaleString()} ₽ / месяц
-    </div>
-
-    <div style="margin-top:8px;font-size:14px;opacity:.75">
-      ${explanation.replace(/\n/g, "<br>")}
-    </div>
-
-    <div style="
-      margin-top:10px;
-      padding:12px;
-      border-radius:14px;
-      background:#111;
-      border:1px solid #222;
-      font-size:14px
-    ">
-      ${advice.text}
-    </div>
-
-    <canvas id="chart" width="360" height="260" style="margin:16px 0"></canvas>
-  `;
-
-  // тут же — drawAxes(), drawPlan(), drawFact()
 }

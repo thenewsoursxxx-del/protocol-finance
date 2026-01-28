@@ -33,28 +33,6 @@ viewport-fit=cover" />
 <div class="screen active" id="screen-calc">
 <h2>Расчёт</h2>
 
-<div id="calcForm">
-  <div id="calcSummary" class="hidden">
-
-  <div class="card">
-    <b>План активен</b><br><br>
-
-    Режим:
-    <span id="summaryMode"></span><br>
-
-    В месяц:
-    <span id="summaryMonthly"></span><br>
-
-    Цель:
-    <span id="summaryGoal"></span>
-  </div>
-
-  <button id="resetPlanFromCalc">
-    Сбросить план
-  </button>
-
-</div>
-
 <label>Доход</label>
 <div class="input-wrap">
   <input id="income" inputmode="numeric" placeholder="100.000">
@@ -98,13 +76,21 @@ viewport-fit=cover" />
 
 <button id="calculate">Продолжить</button>
 
+<!-- ===== LOCK OVERLAY ===== -->
+<div id="calcLock">
+<div class="lockCard">
+<div class="lockIcon">🔒</div>
+<div id="lockText"></div>
+<button id="resetPlan">Начать сначала</button>
+</div>
+</div>
+</div>
+
 <!-- ===== ADVICE ===== -->
 <div class="screen" id="screen-advice">
 <h2>Protocol</h2>
 <div id="loader" class="loader hidden"></div>
 <div id="adviceCard" class="card"></div>
-  </div>
-</div>
 </div>
 
 <div class="screen" id="screen-progress"><h2>Прогресс</h2></div>
@@ -167,6 +153,24 @@ viewport-fit=cover" />
 </button>
 </div>
 
+</div>
+
+<!-- ===== BOTTOM SHEET ===== -->
+<div id="sheetOverlay"></div>
+<div id="sheet">
+<h2>Как копим?</h2>
+
+<div class="card" id="noBuffer">
+<b>Без подушки</b>
+
+Все деньги идут напрямую в цель.
+</div>
+
+<div class="card" id="withBuffer">
+<b>С подушкой</b>
+
+Часть средств идёт в резерв — защита от непредвиденных расходов.
+</div>
 </div>
 
 <!-- ===== CONFIRM RESET ===== -->
