@@ -126,7 +126,6 @@ btn.style.opacity = lock ? "0.35" : "1";
 btn.style.pointerEvents = lock ? "none" : "auto";
 });
 }
-lockTabs(true);
 moveIndicator(buttons[0]);
 
 /* ===== OPEN SCREEN ===== */
@@ -323,7 +322,6 @@ function protocolFlow(mode) {
   bottomNav.style.transform = "translateY(0)";
 chosenPlan = mode;
 isInitialized = true;
-lockTabs(false);
 
 lockText.innerText =
 `У вас уже выбран план: ${mode === "buffer" ? "с подушкой" : "без подушки"}`;
@@ -432,7 +430,6 @@ lastCalc = {};
 plannedMonthly = 0;
 
 confirmReset.style.display = "none";
-lockTabs(true);
 
 incomeInput.value = "";
 expensesInput.value = "";
