@@ -236,6 +236,21 @@ function renderProtocolResult({ scenariosHTML, advice }) {
   });
 }
 
+let selectedScenario = "direct";
+
+document.querySelectorAll(".scenario-card").forEach(card => {
+  card.onclick = () => {
+    document
+      .querySelectorAll(".scenario-card")
+      .forEach(c => c.classList.remove("active"));
+
+    card.classList.add("active");
+    selectedScenario = card.dataset.id;
+
+    haptic("light");
+  };
+});
+
 /* ===== CALCULATE ===== */
 calculateBtn.onclick = () => {
   haptic("medium");
