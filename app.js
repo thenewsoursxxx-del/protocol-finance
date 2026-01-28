@@ -207,7 +207,7 @@ calculateBtn.onclick = () => {
   });
 
   renderScenarioSelection(scenarios);
-  openSheet();
+
 };
 
 /* ===== GRAPH ===== */
