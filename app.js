@@ -286,6 +286,8 @@ lastCalc = baseResult;
 renderProtocolResult({
   scenariosHTML,
   advice
+  
+  protocolFlow("direct");
 });
 
 // показать summary
