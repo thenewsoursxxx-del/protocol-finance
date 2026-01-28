@@ -36,6 +36,14 @@ const goalInput = document.getElementById("goal");
 const savedInput = document.getElementById("saved");
 const calculateBtn = document.getElementById("calculate");
 
+// ===== PLAN SUMMARY ELEMENTS =====
+const planSummary = document.getElementById("planSummary");
+const editPlanBtn = document.getElementById("editPlan");
+
+const summaryMonthly = document.getElementById("summaryMonthly");
+const summaryMonths = document.getElementById("summaryMonths");
+const summaryMode = document.getElementById("summaryMode");
+
 let selectedMode = "calm"; // calm | medium | aggressive
 
 const modeButtons = document.querySelectorAll(".mode-btn");
@@ -280,8 +288,37 @@ renderProtocolResult({
   advice
 });
 
+// показать summary
+planSummary.style.display = "block";
+
+// заполнить данные
+summaryMonthly.innerText = lastCalc.monthlySave.toLocaleString();
+summaryMonths.innerText = lastCalc.months;
+summaryMode.innerText =
+  saveMode === "calm" ? "Спокойный"
+  : saveMode === "normal" ? "Умеренный"
+  : "Агрессивный";
+
+// спрятать форму
+document.querySelectorAll(
+  "#screen-calc label, #screen-calc .input-wrap, .mode-buttons, #calculate"
+).forEach(el => el.style.display = "none");
+
 openSheet();
   return;
+};
+
+/* ===== EDIT PLAN ===== */
+editPlanBtn.onclick = () => {
+  haptic("light");
+
+  // показать форму обратно
+  document.querySelectorAll(
+    "#screen-calc label, #screen-calc .input-wrap, .mode-buttons, #calculate"
+  ).forEach(el => el.style.display = "");
+
+  // спрятать summary
+  planSummary.style.display = "none";
 };
 
 /* ===== GRAPH ===== */
