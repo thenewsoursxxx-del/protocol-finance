@@ -58,6 +58,9 @@ const sheetOverlay = document.getElementById("sheetOverlay");
 const noBuffer = document.getElementById("noBuffer");
 const withBuffer = document.getElementById("withBuffer");
 
+const calcLock = document.getElementById("calcLock");
+const lockText = document.getElementById("lockText");
+const resetBtn = document.getElementById("resetPlan");
 
 const confirmReset = document.getElementById("confirmReset");
 const confirmYes = document.getElementById("confirmYes");
@@ -96,7 +99,9 @@ bottomNav.style.right = "20px";
 
 /* ===== STATE ===== */
 let lastCalc = {};
+let chosenPlan = null;
 let plannedMonthly = 0;
+let isInitialized = false;
 let saveMode = "calm";
 let lastScreenBeforeProfile = "calc";
 let lastNavBtnBeforeProfile = buttons[0];
@@ -115,15 +120,30 @@ e.target.selectionEnd = p + (a - b);
 });
 });
 
+
+/* ===== TAB LOCK ===== */
+function lockTabs(lock) {
+buttons.forEach((btn, i) => {
+if (i === 0) return;
+btn.style.opacity = lock ? "0.35" : "1";
+btn.style.pointerEvents = lock ? "none" : "auto";
+});
+}
+lockTabs(true);
+calcLock.style.display = "none";
+moveIndicator(buttons[0]);
+
 /* ===== OPEN SCREEN ===== */
 function openScreen(name, btn) {
-  screens.forEach(s => s.classList.remove("active"));
-  document.getElementById("screen-" + name).classList.add("active");
+if (!isInitialized && name !== "calc") return;
 
-  buttons.forEach(b => b.classList.remove("active"));
-  if (btn) btn.classList.add("active");
+screens.forEach(s => s.classList.remove("active"));
+document.getElementById("screen-" + name).classList.add("active");
 
-  if (btn) moveIndicator(btn);
+buttons.forEach(b => b.classList.remove("active"));
+if (btn) btn.classList.add("active");
+
+if (btn) moveIndicator(btn);
 }
 buttons.forEach(btn => {
   btn.onclick = () => {
@@ -140,15 +160,23 @@ buttons.forEach(btn => {
 const profileBack = document.getElementById("profileBack");
 
 if (profileBack) {
-profileBack.onclick = () => {
-  haptic("light");
+  profileBack.onclick = () => {
+    haptic("light");
 
-  openScreen("calc", buttons[0]);
+    openScreen(lastScreenBeforeProfile, lastNavBtnBeforeProfile);
 
-  bottomNav.style.transform = "translateY(140%)";
-  bottomNav.style.opacity = "0";
-  bottomNav.style.pointerEvents = "none";
-};
+    // nav показываем ТОЛЬКО если это не calc
+    if (lastScreenBeforeProfile === "calc") {
+      bottomNav.style.transform = "translateY(140%)";
+      bottomNav.style.opacity = "0";
+      bottomNav.style.pointerEvents = "none";
+    } else {
+      bottomNav.style.transform = "translateY(0)";
+      bottomNav.style.opacity = "1";
+      bottomNav.style.pointerEvents = "auto";
+    }
+  };
+}
 
 /* ===== BOTTOM SHEET ===== */
 function openSheet() {
@@ -301,6 +329,11 @@ function protocolFlow(mode) {
   bottomNav.style.transform = "translateY(0)";
 chosenPlan = mode;
 isInitialized = true;
+lockTabs(false);
+
+lockText.innerText =
+`У вас уже выбран план: ${mode === "buffer" ? "с подушкой" : "без подушки"}`;
+calcLock.style.display = "block";
 
 openScreen("advice", buttons[1]);
 loader.classList.remove("hidden");
@@ -395,6 +428,26 @@ animateFact(Math.min(fact / plannedMonthly, 1.3));
 /* ===== CHOICES ===== */
 noBuffer.onclick = () => { closeSheet(); protocolFlow("direct"); };
 withBuffer.onclick = () => { closeSheet(); protocolFlow("buffer"); };
+
+/* ===== RESET ===== */
+resetBtn.onclick = () => confirmReset.style.display = "block";
+confirmNo.onclick = () => confirmReset.style.display = "none";
+confirmYes.onclick = () => {
+chosenPlan = null;
+isInitialized = false;
+lastCalc = {};
+plannedMonthly = 0;
+
+calcLock.style.display = "none";
+confirmReset.style.display = "none";
+lockTabs(true);
+
+incomeInput.value = "";
+expensesInput.value = "";
+goalInput.value = "";
+
+openScreen("calc", buttons[0]);
+};
 
 /* ===== PROFILE ===== */
 const profileBtn = document.getElementById("profileBtn");
