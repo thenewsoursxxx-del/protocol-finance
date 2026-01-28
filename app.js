@@ -1,6 +1,11 @@
 const tg = window.Telegram?.WebApp;
 tg?.expand();
 
+if (window.Telegram?.WebApp) {
+  Telegram.WebApp.ready();
+  Telegram.WebApp.expand();
+}
+
 document.addEventListener("click", e => {
   if (
     e.target.closest("input") ||
