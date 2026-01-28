@@ -188,52 +188,6 @@ sheet.style.bottom = "-100%";
 sheetOverlay.style.display = "none";
 }
 
-function renderProtocolResult({ scenariosHTML, advice }) {
-  adviceCard.innerHTML = `
-    <div style="margin-bottom:12px">
-      <div style="font-size:14px;opacity:.7;margin-bottom:6px">
-        Возможные варианты:
-      </div>
-
-      ${scenariosHTML}
-    </div>
-
-    <button id="applyPlan">Применить выбранный план</button>
-
-    <div style="
-      margin-top:10px;
-      padding:14px;
-      border-radius:14px;
-      background:#111;
-      border:1px solid #333;
-      font-size:15px;
-      line-height:1.4
-    ">
-      ${advice.text}
-    </div>
-  `;
-
-  // обработка клика по карточкам
-  document.querySelectorAll(".scenario-card").forEach(card => {
-    card.onclick = () => {
-      document
-        .querySelectorAll(".scenario-card")
-        .forEach(c => c.classList.remove("active"));
-
-      card.classList.add("active");
-      saveMode = card.dataset.mode;
-
-      haptic("light");
-    };
-  });
-
-  // кнопка "Применить"
-  document.getElementById("applyPlan").onclick = () => {
-    closeSheet();
-    protocolFlow(saveMode);
-  };
-}
-
 /* ===== CALCULATE ===== */
 calculateBtn.onclick = () => {
   haptic("medium");
@@ -413,10 +367,6 @@ animateFact(Math.min(fact / plannedMonthly, 1.3));
 
 }, 6000);
 }
-
-/* ===== CHOICES ===== */
-noBuffer.onclick = () => { closeSheet(); protocolFlow("direct"); };
-withBuffer.onclick = () => { closeSheet(); protocolFlow("buffer"); };
 
 /* ===== RESET ===== */
 resetBtn.onclick = () => confirmReset.style.display = "block";
