@@ -52,11 +52,6 @@ saveMode = btn.dataset.mode;
 
 const adviceCard = document.getElementById("adviceCard");
 const loader = document.getElementById("loader");
-
-const calcLock = document.getElementById("calcLock");
-calcLock.style.display = "none";
-calcLock.style.pointerEvents = "none";
-const lockText = document.getElementById("lockText");
 const resetBtn = document.getElementById("resetPlan");
 function setCalcLock(locked) {
   if (locked) {
@@ -264,14 +259,7 @@ step();
 }
 
 /* ===== STAGED FLOW ===== */
-function protocolFlow(mode) {
-    // возвращаем bottom nav после старта плана
-  bottomNav.style.opacity = "1";
-  bottomNav.style.pointerEvents = "auto";
-  bottomNav.style.transform = "translateY(0)";
-chosenPlan = mode;
-isInitialized = true;
-lockTabs(false);
+
 
 lockText.innerText =
 `У вас уже выбран план: ${mode === "buffer" ? "с подушкой" : "без подушки"}`;
