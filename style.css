@@ -602,3 +602,17 @@ button:active {
   font-size: 12px;
   opacity: .5;
 }
+
+#calculate {
+  position: relative;
+  z-index: 50;
+}
+
+#calcLock {
+  pointer-events: none;
+}
+
+#screen-calc {
+  position: relative;
+  z-index: 10;
+}
