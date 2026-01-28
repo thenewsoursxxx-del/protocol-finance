@@ -314,6 +314,9 @@ renderProtocolResult({
   advice
 });
 
+isInitialized = true;              // разрешаем переходы
+openScreen("advice", null);        // показываем экран с карточками
+
 // показать summary
 planSummary.style.display = "block";
 
