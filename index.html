@@ -33,6 +33,28 @@ viewport-fit=cover" />
 <div class="screen active" id="screen-calc">
 <h2>Расчёт</h2>
 
+<div id="calcForm">
+  <div id="calcSummary" class="hidden">
+
+  <div class="card">
+    <b>План активен</b><br><br>
+
+    Режим:
+    <span id="summaryMode"></span><br>
+
+    В месяц:
+    <span id="summaryMonthly"></span><br>
+
+    Цель:
+    <span id="summaryGoal"></span>
+  </div>
+
+  <button id="resetPlanFromCalc">
+    Сбросить план
+  </button>
+
+</div>
+
 <label>Доход</label>
 <div class="input-wrap">
   <input id="income" inputmode="numeric" placeholder="100.000">
