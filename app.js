@@ -153,23 +153,15 @@ buttons.forEach(btn => {
 const profileBack = document.getElementById("profileBack");
 
 if (profileBack) {
-  profileBack.onclick = () => {
-    haptic("light");
+profileBack.onclick = () => {
+  haptic("light");
 
-    openScreen(lastScreenBeforeProfile, lastNavBtnBeforeProfile);
+  openScreen("calc", buttons[0]);
 
-    // nav показываем ТОЛЬКО если это не calc
-    if (lastScreenBeforeProfile === "calc") {
-      bottomNav.style.transform = "translateY(140%)";
-      bottomNav.style.opacity = "0";
-      bottomNav.style.pointerEvents = "none";
-    } else {
-      bottomNav.style.transform = "translateY(0)";
-      bottomNav.style.opacity = "1";
-      bottomNav.style.pointerEvents = "auto";
-    }
-  };
-}
+  bottomNav.style.transform = "translateY(140%)";
+  bottomNav.style.opacity = "0";
+  bottomNav.style.pointerEvents = "none";
+};
 
 /* ===== BOTTOM SHEET ===== */
 function openSheet() {
