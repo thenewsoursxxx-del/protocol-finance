@@ -96,9 +96,7 @@ bottomNav.style.right = "20px";
 
 /* ===== STATE ===== */
 let lastCalc = {};
-let chosenPlan = null;
 let plannedMonthly = 0;
-let isInitialized = false;
 let saveMode = "calm";
 let lastScreenBeforeProfile = "calc";
 let lastNavBtnBeforeProfile = buttons[0];
