@@ -524,3 +524,12 @@ button:active {
   opacity: 1;
   border-color: #fff;
 }
+
+/* ===== FIX TOP PROFILE (STATIC) ===== */
+.top-profile {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 1000; /* выше всего UI */
+  pointer-events: auto;
+}
