@@ -76,6 +76,28 @@ viewport-fit=cover" />
 
 <button id="calculate">Продолжить</button>
 
+<!-- ===== PLAN SUMMARY (HIDDEN BY DEFAULT) ===== -->
+<div id="planSummary" style="display:none">
+
+  <div class="card">
+    <div style="font-size:14px;opacity:.7">Текущий план</div>
+
+    <div style="margin-top:8px;font-size:18px;font-weight:600">
+      <span id="summaryMonthly">—</span> ₽ / месяц
+    </div>
+
+    <div style="margin-top:4px;font-size:14px;opacity:.7">
+      Примерно <span id="summaryMonths">—</span> месяцев
+    </div>
+
+    <div style="margin-top:8px;font-size:13px;opacity:.6">
+      Режим: <span id="summaryMode">—</span>
+    </div>
+  </div>
+
+  <button id="editPlan">Изменить расчёт</button>
+</div>
+
 <!-- ===== LOCK OVERLAY ===== -->
 <div id="calcLock">
 <div class="lockCard">
