@@ -306,6 +306,29 @@ const scenariosHTML = scenarios.map(s => `
     Срок: ~${s.months} мес<br>
 
     <span style="opacity:.6">Риск: ${s.risk}</span>
+        ${
+      s.id === "buffer"
+        ? `
+        <div style="
+          margin-top:12px;
+          padding:10px 12px;
+          border-radius:12px;
+          background:#0f0f0f;
+          border:1px solid #222;
+          font-size:13px;
+          line-height:1.45;
+          opacity:.85
+        ">
+          <b>Резерв</b><br>
+          Резерв — это ваша подушка безопасности.  
+          Эти средства можно откладывать на отдельный накопительный
+          или инвестиционный счёт.<br><br>
+          Резерв защищает план от непредвиденных расходов
+          и снижает риск срыва цели.
+        </div>
+        `
+        : ""
+    }
   </div>
 `).join("");
 
