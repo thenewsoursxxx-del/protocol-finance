@@ -533,8 +533,8 @@ function renderScenarioSelection(scenarios) {
   });
 
   document.getElementById("applyScenario").onclick = () => {
-    startProtocolAnalysis();
-  };
+  protocolFlow(saveMode);
+};
 }
 
 function startProtocolAnalysis() {
