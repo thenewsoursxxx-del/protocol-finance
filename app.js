@@ -367,6 +367,8 @@ lastCalc = {};
 plannedMonthly = 0;
 
 calcLock.style.display = "none";
+calcLock.style.pointerEvents = "none";
+
 confirmReset.style.display = "none";
 lockTabs(true);
 
