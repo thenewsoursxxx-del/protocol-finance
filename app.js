@@ -306,8 +306,6 @@ document.querySelectorAll(
   "#screen-calc label, #screen-calc .input-wrap, .mode-buttons, #calculate"
 ).forEach(el => el.style.display = "none");
 
-openSheet();
-  return;
 };
 
 /* ===== EDIT PLAN ===== */
