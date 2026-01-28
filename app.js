@@ -58,6 +58,15 @@ calcLock.style.display = "none";
 calcLock.style.pointerEvents = "none";
 const lockText = document.getElementById("lockText");
 const resetBtn = document.getElementById("resetPlan");
+function setCalcLock(locked) {
+  if (locked) {
+    calcLock.style.display = "flex";
+    calculateBtn.disabled = true;
+  } else {
+    calcLock.style.display = "none";
+    calculateBtn.disabled = false;
+  }
+}
 
 const confirmReset = document.getElementById("confirmReset");
 const confirmYes = document.getElementById("confirmYes");
