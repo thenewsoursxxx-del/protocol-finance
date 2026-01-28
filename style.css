@@ -525,12 +525,15 @@ button:active {
   border-color: #fff;
 }
 
-/* ===== FIX TOP PROFILE (STATIC) ===== */
+/* ===== TOP PROFILE (TELEGRAM iOS FIX) ===== */
 .top-profile {
   position: fixed;
-  top: 16px;
+
+  /* 🔥 КЛЮЧЕВОЕ */
+  top: calc(16px + var(--tg-safe-area-inset-top, 0px));
   right: 16px;
-  z-index: 2000; /* выше всего UI */
+
+  z-index: 2000;
   pointer-events: auto;
 }
 
