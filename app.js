@@ -267,6 +267,44 @@ const advice = ProtocolCore.buildAdvice(baseResult);
 
 lastCalc = baseResult;
 
+// ===== BUILD 2 SCENARIOS (DIRECT vs BUFFER) =====
+const baseMonthly = lastCalc.monthlySave;
+const bufferRate = 0.1; // 10% в подушку
+
+const scenarios = [
+  {
+    id: "direct",
+    title: "Всё в цель",
+    toGoal: baseMonthly,
+    toBuffer: 0,
+    months: lastCalc.months,
+    risk: "Выше"
+  },
+  {
+    id: "buffer",
+    title: "С резервом",
+    toGoal: Math.round(baseMonthly * (1 - bufferRate)),
+    toBuffer: Math.round(baseMonthly * bufferRate),
+    months: Math.ceil(
+      lastCalc.effectiveGoal /
+      Math.round(baseMonthly * (1 - bufferRate))
+    ),
+    risk: "Ниже"
+  }
+];
+
+const scenariosHTML = scenarios.map(s => `
+  <div class="card scenario-card" data-id="${s.id}">
+    <b>${s.title}</b><br><br>
+
+    В цель: ${s.toGoal.toLocaleString()} ₽ / мес<br>
+    ${s.toBuffer ? `В резерв: ${s.toBuffer.toLocaleString()} ₽<br>` : ""}
+    Срок: ~${s.months} мес<br>
+
+    <span style="opacity:.6">Риск: ${s.risk}</span>
+  </div>
+`).join("");
+
 renderProtocolResult({
   scenariosHTML: "",
   advice
