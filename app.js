@@ -265,6 +265,7 @@ lockTabs(false);
 lockText.innerText =
 `У вас уже выбран план: ${mode === "buffer" ? "с подушкой" : "без подушки"}`;
 calcLock.style.display = "block";
+calcLock.style.pointerEvents = "auto";
 
 openScreen("advice", buttons[1]);
 loader.classList.remove("hidden");
