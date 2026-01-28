@@ -288,6 +288,8 @@ renderProtocolResult({
   advice
 });
 
+protocolFlow("direct");
+
 // показать summary
 planSummary.style.display = "block";
 
@@ -462,10 +464,6 @@ animateFact(Math.min(fact / plannedMonthly, 1.3));
 
 }, 6000);
 }
-
-/* ===== CHOICES ===== */
-noBuffer.onclick = () => { closeSheet(); protocolFlow("direct"); };
-withBuffer.onclick = () => { closeSheet(); protocolFlow("buffer"); };
 
 /* ===== RESET ===== */
 resetBtn.onclick = () => confirmReset.style.display = "block";
