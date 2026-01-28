@@ -85,9 +85,9 @@ border: 1px solid #333;
 border-radius: 22px;
 padding: 20px;
 margin-bottom: 16px;
-background: rgba(255,255,255,0.025);
-  border: 1px solid rgba(255,255,255,0.08);
-  color: rgba(255,255,255,0.78);
+background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.10);
+  color: rgba(255,255,255,0.85);
 }
 
 .card b {
@@ -95,8 +95,14 @@ background: rgba(255,255,255,0.025);
 }
 
 .reserve-info {
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.12);
+  background: linear-gradient(
+    180deg,
+    rgba(58,123,253,0.06),
+    rgba(255,255,255,0.02)
+  );
+  border: 1px dashed rgba(58,123,253,0.25);
+  color: rgba(230,238,255,0.9);
+  font-size: 14px;
 }
 
 /* ===== NAV ===== */
@@ -557,9 +563,13 @@ button:active {
 .protocol-verdict {
   background: linear-gradient(
     180deg,
-    rgba(58,123,253,0.08),
-    rgba(255,255,255,0.02)
+    rgba(58,123,253,0.14),
+    rgba(58,123,253,0.04)
   );
-  border: 1px solid rgba(58,123,253,0.25);
-  color: #e6eeff;
+  border: 1px solid rgba(58,123,253,0.45);
+  color: #f2f6ff;
+  font-weight: 500;
+  box-shadow:
+    0 0 0 1px rgba(58,123,253,0.25),
+    0 12px 28px rgba(58,123,253,0.12);
 }
