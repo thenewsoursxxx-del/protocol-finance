@@ -260,24 +260,6 @@ step();
 
 /* ===== STAGED FLOW ===== */
 
-
-lockText.innerText =
-`У вас уже выбран план: ${mode === "buffer" ? "с подушкой" : "без подушки"}`;
-calcLock.style.display = "block";
-calcLock.style.pointerEvents = "auto";
-
-openScreen("advice", buttons[1]);
-
-plannedMonthly = lastCalc.monthlySave;
-
-if (mode === "buffer") plannedMonthly = Math.round(plannedMonthly * 0.9);
-
-adviceCard.innerText = "Protocol анализирует данные…";
-
-setTimeout(() => {
-adviceCard.innerText = "Готово.";
-}, 4000);
-
 setTimeout(() => {
 loader.classList.add("hidden");
 
