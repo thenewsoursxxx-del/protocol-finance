@@ -238,56 +238,35 @@ function renderProtocolResult({ scenariosHTML, advice }) {
 calculateBtn.onclick = () => {
   haptic("medium");
 
-  bottomNav.style.opacity = "0";
-  bottomNav.style.pointerEvents = "none";
-  bottomNav.style.transform = "translateY(140%)";
-
   const validIncome = validateRequired(incomeInput);
   const validExpenses = validateRequired(expensesInput);
   const validGoal = validateRequired(goalInput);
-
   if (!validIncome || !validExpenses || !validGoal) return;
 
   const baseResult = ProtocolCore.calculateBase({
-  income: parseNumber(incomeInput.value),
-  expenses: parseNumber(expensesInput.value),
-  goal: parseNumber(goalInput.value),
-  saved: parseNumber(savedInput?.value || "0"),
-  mode: saveMode
-});
+    income: parseNumber(incomeInput.value),
+    expenses: parseNumber(expensesInput.value),
+    goal: parseNumber(goalInput.value),
+    saved: parseNumber(savedInput?.value || "0"),
+    mode: saveMode
+  });
 
-if (!baseResult.ok) {
-  alert(baseResult.message);
-  return;
-}
+  if (!baseResult.ok) {
+    alert(baseResult.message);
+    return;
+  }
 
-const scenarios = ProtocolCore.buildScenarios({
-  income: parseNumber(incomeInput.value),
-  expenses: parseNumber(expensesInput.value),
-  goal: parseNumber(goalInput.value),
-  saved: parseNumber(savedInput?.value || "0")
-});
+  lastCalc = baseResult;
 
-const scenariosHTML = scenarios.map(s => `
-  <div class="card scenario-card" data-mode="${s.mode}">
-    <b>${s.title}</b><br>
-    ${s.monthlySave.toLocaleString()} ₽ / мес<br>
-    ~ ${s.months} мес<br>
-    <span style="opacity:.6">${s.risk}</span>
-  </div>
-`).join("");
+  const scenarios = ProtocolCore.buildScenarios({
+    income: baseResult.free + parseNumber(expensesInput.value),
+    expenses: parseNumber(expensesInput.value),
+    goal: parseNumber(goalInput.value),
+    saved: parseNumber(savedInput?.value || "0")
+  });
 
-const advice = ProtocolCore.buildAdvice(baseResult);
-
-lastCalc = baseResult;
-
-renderProtocolResult({
-  scenariosHTML,
-  advice
-});
-
-openSheet();
-  return;
+  renderScenarioSelection(scenarios);
+  openSheet();
 };
 
 /* ===== GRAPH ===== */
@@ -578,4 +557,84 @@ function validateRequired(input) {
   }
 
   return true;
+}
+
+function renderScenarioSelection(scenarios) {
+  adviceCard.innerHTML = `
+    <div style="font-size:14px;opacity:.7;margin-bottom:8px">
+      Protocol рассчитал несколько сценариев — выберите подходящий
+    </div>
+
+    ${scenarios.map(s => `
+      <div class="card scenario-card ${s.mode === saveMode ? "active initial" : ""}"
+           data-mode="${s.mode}">
+        <b>${s.title}</b><br>
+        ${s.monthlySave.toLocaleString()} ₽ / месяц<br>
+        ≈ ${s.months} мес<br>
+        <span style="opacity:.6">${s.risk}</span>
+        ${s.mode === saveMode
+          ? `<div class="scenario-initial">Вы начали с этого сценария</div>`
+          : ""}
+      </div>
+    `).join("")}
+
+    <button id="applyScenario" style="margin-top:12px">
+      Применить сценарий
+    </button>
+  `;
+
+  document.querySelectorAll(".scenario-card").forEach(card => {
+    card.onclick = () => {
+      document.querySelectorAll(".scenario-card")
+        .forEach(c => c.classList.remove("active"));
+
+      card.classList.add("active");
+      saveMode = card.dataset.mode;
+      haptic("light");
+    };
+  });
+
+  document.getElementById("applyScenario").onclick = () => {
+    startProtocolAnalysis();
+  };
+}
+
+function startProtocolAnalysis() {
+  adviceCard.innerHTML = "Protocol анализирует данные…";
+  loader.classList.remove("hidden");
+
+  setTimeout(() => {
+    loader.classList.add("hidden");
+    showFinalPlan();
+  }, 2500);
+}
+
+function showFinalPlan() {
+  const explanation = ProtocolCore.explain(lastCalc);
+  const advice = ProtocolCore.buildAdvice(lastCalc);
+
+  adviceCard.innerHTML = `
+    <div style="font-size:16px;font-weight:600">
+      План: ${lastCalc.monthlySave.toLocaleString()} ₽ / месяц
+    </div>
+
+    <div style="margin-top:8px;font-size:14px;opacity:.75">
+      ${explanation.replace(/\n/g, "<br>")}
+    </div>
+
+    <div style="
+      margin-top:10px;
+      padding:12px;
+      border-radius:14px;
+      background:#111;
+      border:1px solid #222;
+      font-size:14px
+    ">
+      ${advice.text}
+    </div>
+
+    <canvas id="chart" width="360" height="260" style="margin:16px 0"></canvas>
+  `;
+
+  // тут же — drawAxes(), drawPlan(), drawFact()
 }
