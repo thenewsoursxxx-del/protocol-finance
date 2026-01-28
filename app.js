@@ -194,23 +194,11 @@ function renderProtocolResult({ scenariosHTML, advice }) {
       <div style="font-size:14px;opacity:.7;margin-bottom:6px">
         Возможные варианты:
       </div>
+
       ${scenariosHTML}
     </div>
 
-document.querySelectorAll(".scenario-card").forEach(card => {
-  card.onclick = () => {
-    document
-      .querySelectorAll(".scenario-card")
-      .forEach(c => c.classList.remove("active"));
-
-    card.classList.add("active");
-
-    // меняем текущий режим, НО не трогаем initial
-    saveMode = card.dataset.mode;
-
-    haptic("light");
-  };
-});
+    <button id="applyPlan">Применить выбранный план</button>
 
     <div style="
       margin-top:10px;
@@ -225,6 +213,7 @@ document.querySelectorAll(".scenario-card").forEach(card => {
     </div>
   `;
 
+  // обработка клика по карточкам
   document.querySelectorAll(".scenario-card").forEach(card => {
     card.onclick = () => {
       document
@@ -237,6 +226,12 @@ document.querySelectorAll(".scenario-card").forEach(card => {
       haptic("light");
     };
   });
+
+  // кнопка "Применить"
+  document.getElementById("applyPlan").onclick = () => {
+    closeSheet();
+    protocolFlow(saveMode);
+  };
 }
 
 /* ===== CALCULATE ===== */
