@@ -197,6 +197,21 @@ function renderProtocolResult({ scenariosHTML, advice }) {
       ${scenariosHTML}
     </div>
 
+document.querySelectorAll(".scenario-card").forEach(card => {
+  card.onclick = () => {
+    document
+      .querySelectorAll(".scenario-card")
+      .forEach(c => c.classList.remove("active"));
+
+    card.classList.add("active");
+
+    // меняем текущий режим, НО не трогаем initial
+    saveMode = card.dataset.mode;
+
+    haptic("light");
+  };
+});
+
     <div style="
       margin-top:10px;
       padding:14px;
