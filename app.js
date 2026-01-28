@@ -263,28 +263,12 @@ if (!baseResult.ok) {
   return;
 }
 
-const scenarios = ProtocolCore.buildScenarios({
-  income: parseNumber(incomeInput.value),
-  expenses: parseNumber(expensesInput.value),
-  goal: parseNumber(goalInput.value),
-  saved: parseNumber(savedInput?.value || "0")
-});
-
-const scenariosHTML = scenarios.map(s => `
-  <div class="card scenario-card" data-mode="${s.mode}">
-    <b>${s.title}</b><br>
-    ${s.monthlySave.toLocaleString()} ₽ / мес<br>
-    ~ ${s.months} мес<br>
-    <span style="opacity:.6">${s.risk}</span>
-  </div>
-`).join("");
-
 const advice = ProtocolCore.buildAdvice(baseResult);
 
 lastCalc = baseResult;
 
 renderProtocolResult({
-  scenariosHTML,
+  scenariosHTML: "",
   advice
 });
 
