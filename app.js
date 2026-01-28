@@ -132,7 +132,7 @@ moveIndicator(buttons[0]);
 
 /* ===== OPEN SCREEN ===== */
 function openScreen(name, btn) {
-if (!isInitialized && name !== "calc") return;
+if (!isInitialized && !["calc", "advice"].includes(name)) return;
 
 screens.forEach(s => s.classList.remove("active"));
 document.getElementById("screen-" + name).classList.add("active");
