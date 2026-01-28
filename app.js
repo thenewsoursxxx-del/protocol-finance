@@ -54,6 +54,8 @@ const adviceCard = document.getElementById("adviceCard");
 const loader = document.getElementById("loader");
 
 const calcLock = document.getElementById("calcLock");
+calcLock.style.display = "none";
+calcLock.style.pointerEvents = "none";
 const lockText = document.getElementById("lockText");
 const resetBtn = document.getElementById("resetPlan");
 
