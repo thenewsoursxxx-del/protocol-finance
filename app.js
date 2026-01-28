@@ -229,29 +229,15 @@ function renderProtocolResult({ scenariosHTML, advice }) {
         .forEach(c => c.classList.remove("active"));
 
       card.classList.add("active");
-      saveMode = card.dataset.mode;
+
+      selectedScenario = card.dataset.id;
 
       haptic("light");
+
+      protocolFlow(selectedScenario);
     };
   });
 }
-
-let selectedScenario = "direct";
-
-document.querySelectorAll(".scenario-card").forEach(card => {
-  card.onclick = () => {
-    document
-      .querySelectorAll(".scenario-card")
-      .forEach(c => c.classList.remove("active"));
-
-    card.classList.add("active");
-    selectedScenario = card.dataset.id;
-
-    haptic("light");
-    
-    protocolFlow(selectedScenario);
-  };
-});
 
 /* ===== CALCULATE ===== */
 calculateBtn.onclick = () => {
