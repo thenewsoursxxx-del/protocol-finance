@@ -543,9 +543,6 @@ const monthLabels = Array.from({ length: monthsCount }, (_, i) => {
   const d = new Date(start.getFullYear(), start.getMonth() + i, 1);
   return d.toLocaleString("ru-RU", { month: "short", year: "2-digit" });
 });
-drawAxes();
-drawPlan();
-drawFact(1);
 
 const factInput = document.getElementById("factInput");
 const applyBtn = document.getElementById("applyFact");
@@ -558,7 +555,6 @@ applyBtn.onclick = () => {
 const fact = parseNumber(factInput.value);
 if (!fact) return;
 factInput.blur();
-animateFact(Math.min(fact / plannedMonthly, 1.3));
 };
 
 }, 6000);
@@ -703,4 +699,84 @@ input.placeholder = input.dataset.placeholder;
 }
 
 return true;
+}
+/* ===== GRAPH (CLEAN & STABLE) ===== */
+
+let canvas, ctx;
+const pad = 40;
+
+function initChart() {
+  canvas = document.getElementById("chart");
+  if (!canvas) return;
+  ctx = canvas.getContext("2d");
+  drawChart();
+}
+
+function drawChart() {
+  const w = canvas.width - pad * 2;
+  const h = canvas.height - pad * 2;
+
+  const startDate = new Date();
+  const months = lastCalc.months;
+  const monthly = plannedMonthly;
+
+  const points = buildPlanTimeline(startDate, monthly, months);
+  const maxValue = points[points.length - 1].value || 1;
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  ctx.strokeStyle = "#333";
+  ctx.beginPath();
+  ctx.moveTo(pad, pad);
+  ctx.lineTo(pad, canvas.height - pad);
+  ctx.lineTo(canvas.width - pad, canvas.height - pad);
+  ctx.stroke();
+
+  ctx.strokeStyle = "#fff";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+
+  points.forEach((p, i) => {
+    const x = pad + (i / (points.length - 1)) * w;
+    const y = canvas.height - pad - (p.value / maxValue) * h;
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  });
+
+  ctx.stroke();
+
+  ctx.fillStyle = "#888";
+  ctx.font = "12px system-ui";
+  ctx.textAlign = "center";
+
+  const step = Math.max(1, Math.floor(points.length / 4));
+
+  points.forEach((p, i) => {
+    if (i % step !== 0 && i !== points.length - 1) return;
+    const x = pad + (i / (points.length - 1)) * w;
+    ctx.fillText(formatDate(p.date), x, canvas.height - 12);
+  });
+}
+
+function addMonths(date, n) {
+  const d = new Date(date);
+  d.setMonth(d.getMonth() + n);
+  return d;
+}
+
+function buildPlanTimeline(startDate, monthlyAmount, months) {
+  const points = [];
+  let total = 0;
+  for (let i = 0; i <= months; i++) {
+    points.push({ date: addMonths(startDate, i), value: total });
+    total += monthlyAmount;
+  }
+  return points;
+}
+
+function formatDate(d) {
+  return d.toLocaleDateString("ru-RU", {
+    month: "short",
+    year: "2-digit"
+  });
 }
