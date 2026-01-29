@@ -638,7 +638,16 @@ const pad = 40;
 function initChart() {
   canvas = document.getElementById("chart");
   if (!canvas) return;
+
+  const dpr = window.devicePixelRatio || 1;
+
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+
   ctx = canvas.getContext("2d");
+  ctx.scale(dpr, dpr);
+
   drawChart();
 }
 
@@ -675,9 +684,10 @@ function drawChart() {
 
   ctx.stroke();
 
-  ctx.fillStyle = "#888";
-  ctx.font = "12px system-ui";
-  ctx.textAlign = "center";
+ctx.fillStyle = "#9a9a9a";
+ctx.font = "13px -apple-system, BlinkMacSystemFont, system-ui";
+ctx.textAlign = "center";
+ctx.textBaseline = "top";
 
   const step = Math.max(1, Math.floor(points.length / 4));
 
