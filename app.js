@@ -771,7 +771,11 @@ function runBrain() {
 }
 
 function showBrainMessage(text) {
+  const old = adviceCard.querySelector(".brain-message");
+  if (old) old.remove();
+
   const block = document.createElement("div");
+  block.className = "brain-message";
 
   block.style.marginTop = "12px";
   block.style.padding = "12px";
