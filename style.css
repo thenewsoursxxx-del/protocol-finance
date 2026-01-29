@@ -673,3 +673,11 @@ color: #fff;
       0 16px 40px rgba(58,123,253,0.35);
   }
 }
+
+.scenario-card:active {
+  transform: scale(0.98);
+  border-color: #fff;
+  box-shadow:
+    0 0 0 2px rgba(255,255,255,0.9),
+    0 12px 30px rgba(255,255,255,0.25);
+}
