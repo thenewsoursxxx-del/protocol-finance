@@ -299,6 +299,7 @@ risk: "Ниже"
 
 const scenariosHTML = scenarios.map(s => `
 <div class="card scenario-card" data-id="${s.id}">
+<div class="scenario-title">${s.title}</div>
 <b>${s.title}</b><br><br>
 
 В цель: ${s.toGoal.toLocaleString()} ₽ / мес<br>
