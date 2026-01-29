@@ -378,7 +378,6 @@ ctx.stroke();
 }
 function drawPlan() {
   const startDate = new Date();
-
   const points = buildPlanTimeline(
     startDate,
     plannedMonthly,
@@ -394,7 +393,6 @@ function drawPlan() {
   points.forEach((p, i) => {
     const x = pad + (i / (points.length - 1)) * w;
     const y = canvas.height - pad - (p.value / maxValue) * h;
-
     if (i === 0) ctx.moveTo(x, y);
     else ctx.lineTo(x, y);
   });
