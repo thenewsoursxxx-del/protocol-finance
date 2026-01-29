@@ -224,21 +224,28 @@ ${advice.text}
 `;
 
 document.querySelectorAll(".scenario-card").forEach(card => {
-card.onclick = () => {
-document
-.querySelectorAll(".scenario-card")
-.forEach(c => c.classList.remove("active"));
+  card.onclick = () => {
+    // 1️⃣ убрать активность с других
+    document
+      .querySelectorAll(".scenario-card")
+      .forEach(c => c.classList.remove("active", "flash"));
 
-card.classList.add("active");
+    // 2️⃣ мгновенная визуальная вспышка
+    card.classList.add("active", "flash");
 
-selectedScenario = card.dataset.id;
+    selectedScenario = card.dataset.id;
 
-haptic("light");
+    haptic("light");
 
-protocolFlow(selectedScenario);
-};
+    // 3️⃣ убрать flash через мгновение
+    setTimeout(() => {
+      card.classList.remove("flash");
+    }, 180);
+
+    // 4️⃣ сразу запускаем текущую логику (НИЧЕГО НЕ МЕНЯЕМ)
+    protocolFlow(selectedScenario);
+  };
 });
-}
 
 /* ===== CALCULATE ===== */
 calculateBtn.onclick = () => {
