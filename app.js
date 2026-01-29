@@ -457,7 +457,10 @@ font-size:14px;
 ${advice.text}
 </div>
 
-<canvas id="chart" width="360" height="260" style="margin:16px 0"></canvas>
+<canvas
+  id="chart"
+  style="width:360px; height:260px; margin:16px 0;"
+></canvas>
 
 <div style="display:flex;gap:8px;align-items:center">
 <input id="factInput" inputmode="numeric"
