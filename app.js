@@ -716,28 +716,35 @@ if (typeof factRatio === "number") {
 
   ctx.stroke();
   
-  // ===== ЛИНИЯ ФАКТА =====
+// ===== ЛИНИЯ ФАКТА =====
 if (factHistory.length > 0) {
-  ctx.strokeStyle = "#60a5fa"; // синий факт
-  ctx.lineWidth = 2;
-  ctx.setLineDash([6, 4]); // пунктир
+  ctx.strokeStyle = "rgba(96,165,250,0.9)"; // мягкий синий
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([]); // БЕЗ пунктира
 
   ctx.beginPath();
 
-  let factTotal = 0;
+  factHistory.forEach((f, i) => {
+    const progress = (i + 1) / (points.length - 1);
 
-  factHistory.forEach((item, i) => {
-    factTotal += item.value;
+    const x = pad + progress * (W - pad * 2);
 
-    const x = pad + ((i + 1) / (points.length - 1)) * (W - pad * 2);
-    const y = H - pad - (factTotal / maxValue) * (H - pad * 2);
+    const value = factHistory
+      .slice(0, i + 1)
+      .reduce((s, x) => s + x.value, 0);
+
+    const jitter = (Math.random() - 0.5) * 1.5; // микро-живость
+    const y =
+      H -
+      pad -
+      (value / maxValue) * (H - pad * 2) +
+      jitter;
 
     if (i === 0) ctx.moveTo(x, y);
     else ctx.lineTo(x, y);
   });
 
   ctx.stroke();
-  ctx.setLineDash([]); // сброс пунктира
 }
 
 // ===== ПРОГНОЗ (ЕСЛИ ПРОДОЛЖИШЬ ТАК ЖЕ) =====
