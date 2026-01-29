@@ -720,7 +720,6 @@ if (typeof factRatio === "number") {
 if (factHistory.length > 0) {
   ctx.strokeStyle = "rgba(96,165,250,0.9)"; // спокойный синий
   ctx.lineWidth = 1.6;
-  ctx.setLineDash([]); // без пунктира
 
   ctx.beginPath();
 
@@ -760,7 +759,6 @@ if (factHistory.length >= 2) {
 
   ctx.strokeStyle = "#a855f7"; // фиолетовый прогноз
   ctx.lineWidth = 2;
-  ctx.setLineDash([2, 6]); // точечная линия
 
   ctx.beginPath();
 
@@ -777,7 +775,6 @@ if (factHistory.length >= 2) {
   }
 
   ctx.stroke();
-  ctx.setLineDash([]);
 }
 
   // ПОДПИСИ X
