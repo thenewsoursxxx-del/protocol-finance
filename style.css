@@ -548,6 +548,8 @@ color: rgba(255,255,255,0.85);
 .scenario-card b {
 font-size: 19px;
 color: #fff;
+opacity: 1;
+font-weight: 600
 }
 
 .scenario-card.active {
