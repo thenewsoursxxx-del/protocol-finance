@@ -383,6 +383,7 @@ function drawPlan() {
     startDate,
     plannedMonthly,
     lastCalc.months
+    drawMonthLabels(monthLabels);
   );
 
   const maxValue = points[points.length - 1].value;
@@ -545,7 +546,13 @@ canvas = document.getElementById("chart");
 ctx = canvas.getContext("2d");
 w = canvas.width - pad * 2;
 h = canvas.height - pad * 2;
+const start = new Date();
+const monthsCount = lastCalc.months;
 
+const monthLabels = Array.from({ length: monthsCount }, (_, i) => {
+  const d = new Date(start.getFullYear(), start.getMonth() + i, 1);
+  return d.toLocaleString("ru-RU", { month: "short", year: "2-digit" });
+});
 drawAxes();
 function drawMonthLabels(months) {
   ctx.fillStyle = "#aaa";
