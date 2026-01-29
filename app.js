@@ -365,27 +365,41 @@ document.querySelectorAll(
 planSummary.style.display = "none";
 };
 
-/* ===== GRAPH ===== */
-let canvas, ctx, pad = 40, w, h;
+/* ===== GRAPH (CLEAN & STABLE) ===== */
 
-function drawAxes() {
-ctx.strokeStyle = "#333";
-ctx.beginPath();
-ctx.moveTo(pad, pad);
-ctx.lineTo(pad, canvas.height - pad);
-ctx.lineTo(canvas.width - pad, canvas.height - pad);
-ctx.stroke();
+let canvas, ctx;
+const pad = 40;
+
+function initChart() {
+  canvas = document.getElementById("chart");
+  if (!canvas) return;
+
+  ctx = canvas.getContext("2d");
+  drawChart();
 }
-function drawPlan() {
+
+function drawChart() {
+  const w = canvas.width - pad * 2;
+  const h = canvas.height - pad * 2;
+
   const startDate = new Date();
-  const points = buildPlanTimeline(
-    startDate,
-    plannedMonthly,
-    lastCalc.months
-  );
+  const months = lastCalc.months;
+  const monthly = plannedMonthly;
 
-  const maxValue = points[points.length - 1].value;
+  const points = buildPlanTimeline(startDate, monthly, months);
+  const maxValue = points[points.length - 1].value || 1;
 
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // axes
+  ctx.strokeStyle = "#333";
+  ctx.beginPath();
+  ctx.moveTo(pad, pad);
+  ctx.lineTo(pad, canvas.height - pad);
+  ctx.lineTo(canvas.width - pad, canvas.height - pad);
+  ctx.stroke();
+
+  // plan line
   ctx.strokeStyle = "#fff";
   ctx.lineWidth = 2;
   ctx.beginPath();
@@ -398,67 +412,50 @@ function drawPlan() {
   });
 
   ctx.stroke();
-}
 
-  // подписи дат (начало / середина / конец)
-  ctx.fillStyle = "#777";
+  // month labels
+  ctx.fillStyle = "#888";
   ctx.font = "12px system-ui";
+  ctx.textAlign = "center";
 
-  [0, Math.floor(points.length / 2), points.length - 1].forEach(i => {
-    const p = points[i];
+  const step = Math.max(1, Math.floor(points.length / 4));
+
+  points.forEach((p, i) => {
+    if (i % step !== 0 && i !== points.length - 1) return;
     const x = pad + (i / (points.length - 1)) * w;
-
-    ctx.fillText(
-      formatDate(p.date),
-      x - 22,
-      canvas.height - 10
-    );
+    ctx.fillText(formatDate(p.date), x, canvas.height - 12);
   });
 }
-function drawFact(progress) {
-ctx.setLineDash([6,6]);
-ctx.strokeStyle = "#777";
-ctx.beginPath();
-ctx.moveTo(pad, canvas.height - pad);
-ctx.lineTo(pad + w * progress, canvas.height - pad - h * progress);
-ctx.stroke();
-ctx.setLineDash([]);
+
+/* ===== TIME HELPERS ===== */
+
+function addMonths(date, n) {
+  const d = new Date(date);
+  d.setMonth(d.getMonth() + n);
+  return d;
 }
-function animateFact(target) {
-let current = 1;
-function step() {
-ctx.clearRect(0,0,canvas.width,canvas.height);
-function animateFact(target) {
-  let current = 1;
 
-  function step() {
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-    drawAxes();
-    drawPlan();
-    drawMonthLabels(monthLabels);
-    drawFact(current);
+function buildPlanTimeline(startDate, monthlyAmount, months) {
+  const points = [];
+  let total = 0;
 
-    current += (target - current) * 0.06;
-    if (Math.abs(target - current) > 0.002) {
-      requestAnimationFrame(step);
-    }
+  for (let i = 0; i <= months; i++) {
+    points.push({
+      date: addMonths(startDate, i),
+      value: total
+    });
+    total += monthlyAmount;
   }
 
-  step();
+  return points;
 }
-drawAxes();
-drawPlan();
-drawFact(current);
-const start = new Date();
-const monthsCount = lastCalc.months;
 
-const monthLabels = Array.from({ length: monthsCount + 1 }, (_, i) => {
-  const d = new Date(start.getFullYear(), start.getMonth() + i, 1);
-  return d.toLocaleString("ru-RU", {
+function formatDate(d) {
+  return d.toLocaleDateString("ru-RU", {
     month: "short",
     year: "2-digit"
   });
-});
+}
 
 drawMonthLabels(monthLabels);
 current += (target - current) * 0.06;
