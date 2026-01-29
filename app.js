@@ -226,20 +226,21 @@ ${advice.text}
 
 document.querySelectorAll(".scenario-card").forEach(card => {
 card.onclick = () => {
-document
-.querySelectorAll(".scenario-card")
-.forEach(c => c.classList.remove("active"));
+  document
+    .querySelectorAll(".scenario-card")
+    .forEach(c => c.classList.remove("active"));
 
-card.classList.add("active");
+  card.classList.add("active");
 
-selectedScenario = card.dataset.id;
+  selectedScenario = card.dataset.id;
 
-haptic("light");
+  haptic("light");
 
-protocolFlow(selectedScenario);
+  // ⏱ даём глазу зафиксировать выбор
+  setTimeout(() => {
+    protocolFlow(selectedScenario);
+  }, 280);
 };
-});
-}
 
 /* ===== CALCULATE ===== */
 calculateBtn.onclick = () => {
