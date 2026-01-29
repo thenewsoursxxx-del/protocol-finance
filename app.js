@@ -681,11 +681,14 @@ function drawChart() {
 
   const step = Math.max(1, Math.floor(points.length / 4));
 
-  points.forEach((p, i) => {
-    if (i % step !== 0 && i !== points.length - 1) return;
-    const x = pad + (i / (points.length - 1)) * w;
-    ctx.fillText(i, x, canvas.height - 12);
-  });
+points.forEach((p, i) => {
+  if (i % step !== 0 && i !== points.length - 1) return;
+
+  const x = pad + (i / (points.length - 1)) * w;
+  const label = i === 0 ? "0" : `+${i}`;
+
+  ctx.fillText(label, x, canvas.height - 12);
+});
 }
 
 function addMonths(date, n) {
