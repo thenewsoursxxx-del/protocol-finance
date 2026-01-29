@@ -239,7 +239,6 @@ function renderProtocolResult({ scenariosHTML, advice }) {
     // 👇 визуальное подтверждение выбора
     setTimeout(() => {
       card.classList.remove("flash");
-      protocolFlow(selectedScenario);
     }, 350);
   };
 });
@@ -329,6 +328,9 @@ const scenariosHTML = scenarios.map(s => `
 `).join("");
 
 renderProtocolResult({
+  // 👉 запускаем дефолтный сценарий
+selectedScenario = "direct";
+protocolFlow(selectedScenario);
   scenariosHTML,
   advice
 });
