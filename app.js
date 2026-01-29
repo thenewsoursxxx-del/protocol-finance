@@ -225,32 +225,17 @@ ${advice.text}
 
 document.querySelectorAll(".scenario-card").forEach(card => {
 card.onclick = () => {
-  // снять старое
   document
     .querySelectorAll(".scenario-card")
-    .forEach(c => {
-      c.classList.remove("active");
-      c.style.outline = "";
-    });
+    .forEach(c => c.classList.remove("active"));
 
-  // логика как была
   card.classList.add("active");
+
   selectedScenario = card.dataset.id;
+
   haptic("light");
 
-  // 🔥 ЯВНОЕ ВИЗУАЛЬНОЕ ПОДТВЕРЖДЕНИЕ
-  card.style.outline = "2px solid #fff";
-  card.style.outlineOffset = "2px";
-
-  // убрать через мгновение
-  setTimeout(() => {
-    card.style.outline = "";
-  }, 220);
-
-  // запуск логики — БЕЗ ЗАДЕРЖЕК
-setTimeout(() => {
   protocolFlow(selectedScenario);
-}, 180);
 };
 
 /* ===== CALCULATE ===== */
