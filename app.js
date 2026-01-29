@@ -547,6 +547,20 @@ w = canvas.width - pad * 2;
 h = canvas.height - pad * 2;
 
 drawAxes();
+function drawMonthLabels(months) {
+  ctx.fillStyle = "#aaa";
+  ctx.font = "13px system-ui";
+  ctx.textAlign = "center";
+
+  const stepX = w / (months.length - 1);
+
+  months.forEach((m, i) => {
+    const x = pad + i * stepX;
+    const y = canvas.height - pad + 18;
+
+    ctx.fillText(m, x, y);
+  });
+}
 drawPlan();
 drawFact(1);
 
