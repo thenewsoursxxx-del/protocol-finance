@@ -499,6 +499,7 @@ applyBtn.onclick = () => {
   factRatio = fact / plannedMonthly;
 
   drawChart();
+  runBrain();
   factInput.blur();
 };
 
