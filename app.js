@@ -684,7 +684,7 @@ function drawChart() {
   points.forEach((p, i) => {
     if (i % step !== 0 && i !== points.length - 1) return;
     const x = pad + (i / (points.length - 1)) * w;
-    ctx.fillText(formatDate(p.date), x, canvas.height - 12);
+    ctx.fillText(i, x, canvas.height - 12);
   });
 }
 
