@@ -635,3 +635,10 @@ color: #fff;
   opacity: 1 !important;
   font-weight: 600;
 }
+
+.scenario-title {
+  font-size: 19px;
+  font-weight: 600;
+  color: #ffffff;
+  margin-bottom: 12px;
+}
