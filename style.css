@@ -86,23 +86,23 @@ border-radius: 22px;
 padding: 20px;
 margin-bottom: 16px;
 background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.10);
-  color: rgba(255,255,255,0.85);
+border: 1px solid rgba(255,255,255,0.10);
+color: rgba(255,255,255,0.85);
 }
 
 .card b {
-  color: #fff;
+color: #fff;
 }
 
 .reserve-info {
-  background: linear-gradient(
-    180deg,
-    rgba(58,123,253,0.06),
-    rgba(255,255,255,0.02)
-  );
-  border: 1px dashed rgba(58,123,253,0.25);
-  color: rgba(230,238,255,0.9);
-  font-size: 14px;
+background: linear-gradient(
+180deg,
+rgba(58,123,253,0.06),
+rgba(255,255,255,0.02)
+);
+border: 1px dashed rgba(58,123,253,0.25);
+color: rgba(230,238,255,0.9);
+font-size: 14px;
 }
 
 /* ===== NAV ===== */
@@ -156,9 +156,9 @@ fill: none;
 stroke-width: 2;
 }
 .nav-btn.active svg {
-  stroke: #000;
-  stroke-width: 2.6;
-  transform: scale(1.06);
+stroke: #000;
+stroke-width: 2.6;
+transform: scale(1.06);
 }
 
 /* ===== BOTTOM SHEET ===== */
@@ -344,302 +344,286 @@ opacity: 1;
 
 /* ===== INPUT HINTS ===== */
 .input-wrap {
-  position: relative;
-  margin-bottom: 22px;
+position: relative;
+margin-bottom: 22px;
 }
 
 .input-hint {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: calc(100% + 6px);
+position: absolute;
+left: 0;
+right: 0;
+top: calc(100% + 6px);
 
-  background: #111;
-  border: 1px solid #333;
-  border-radius: 14px;
+background: #111;
+border: 1px solid #333;
+border-radius: 14px;
 
-  padding: 10px 12px;
-  font-size: 13px;
-  line-height: 1.3;
-  color: #aaa;
+padding: 10px 12px;
+font-size: 13px;
+line-height: 1.3;
+color: #aaa;
 
-  opacity: 0;
-  transform: translateY(-6px);
-  pointer-events: none;
+opacity: 0;
+transform: translateY(-6px);
+pointer-events: none;
 
-  transition: opacity .25s ease, transform .25s ease;
-  z-index: 10;
+transition: opacity .25s ease, transform .25s ease;
+z-index: 10;
 }
 
 .input-wrap.show-hint .input-hint {
-  opacity: 1;
-  transform: translateY(0);
+opacity: 1;
+transform: translateY(0);
 }
 button {
-  transition: transform .12s ease, opacity .12s ease;
+transition: transform .12s ease, opacity .12s ease;
 }
 
 button:active {
-  transform: scale(0.97);
-  opacity: 0.9;
+transform: scale(0.97);
+opacity: 0.9;
 }
 .mode-btn {
-  transition: transform .12s ease, background .2s ease;
+transition: transform .12s ease, background .2s ease;
 }
 
 .mode-btn:active {
-  transform: scale(0.96);
+transform: scale(0.96);
 }
 
 /* ===== PROFILE ===== */
 
 .profile-card {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  border: 1px solid #333;
-  border-radius: 22px;
-  padding: 16px;
-  margin-bottom: 24px;
+display: flex;
+align-items: center;
+gap: 14px;
+border: 1px solid #333;
+border-radius: 22px;
+padding: 16px;
+margin-bottom: 24px;
 }
 
 .profile-avatar {
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  background: #111;
-  border: 1px solid #333;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+width: 56px;
+height: 56px;
+border-radius: 50%;
+background: #111;
+border: 1px solid #333;
+display: flex;
+align-items: center;
+justify-content: center;
 }
 
 .profile-avatar svg {
-  width: 28px;
-  height: 28px;
-  stroke: #fff;
-  fill: none;
-  stroke-width: 2;
+width: 28px;
+height: 28px;
+stroke: #fff;
+fill: none;
+stroke-width: 2;
 }
 
 .profile-name {
-  font-size: 18px;
-  font-weight: 600;
+font-size: 18px;
+font-weight: 600;
 }
 
 .profile-status {
-  font-size: 13px;
-  opacity: .6;
-  margin-top: 2px;
+font-size: 13px;
+opacity: .6;
+margin-top: 2px;
 }
 
 .profile-btn {
-  margin-top: 12px;
-  background: #111;
-  color: #fff;
-  border: 1px solid #333;
+margin-top: 12px;
+background: #111;
+color: #fff;
+border: 1px solid #333;
 }
 
 .profile-btn.danger {
-  border-color: #442;
-  color: #f55;
+border-color: #442;
+color: #f55;
 }
 
 .profile-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 20px;
+display: flex;
+align-items: center;
+gap: 12px;
+margin-bottom: 20px;
 }
 
 #profileBack {
-  width: auto;
-  padding: 6px 10px;
-  font-size: 22px;
-  background: transparent;
-  color: #fff;
-  border: none;
+width: auto;
+padding: 6px 10px;
+font-size: 22px;
+background: transparent;
+color: #fff;
+border: none;
 }
 
 .profile-title {
-  font-size: 22px;
-  font-weight: 600;
+font-size: 22px;
+font-weight: 600;
 }
 
 /* ===== INPUT ERROR ===== */
 .input-wrap.error input {
-  border-color: #ff3b30;
+border-color: #ff3b30;
 }
 
 /* ===== INPUT ERROR (INLINE) ===== */
 .input-wrap.error input {
-  border-color: #ff3b30;
-  color: #ff3b30;
+border-color: #ff3b30;
+color: #ff3b30;
 }
 
 .input-wrap.error input::placeholder {
-  color: #ff3b30;
-  opacity: 0.9;
+color: #ff3b30;
+opacity: 0.9;
 }
 
 /* ===== INPUT SHAKE (iOS STYLE) ===== */
 @keyframes input-shake {
-  0%   { transform: translateX(0); }
-  20%  { transform: translateX(-6px); }
-  40%  { transform: translateX(6px); }
-  60%  { transform: translateX(-4px); }
-  80%  { transform: translateX(4px); }
-  100% { transform: translateX(0); }
+0% { transform: translateX(0); }
+20% { transform: translateX(-6px); }
+40% { transform: translateX(6px); }
+60% { transform: translateX(-4px); }
+80% { transform: translateX(4px); }
+100% { transform: translateX(0); }
 }
 
 .input-wrap.shake input {
-  animation: input-shake 0.35s ease;
+animation: input-shake 0.35s ease;
 }
 
 /* === NAV ICON BOUNCE === */
 .nav-btn svg {
-  transition: transform 0.18s cubic-bezier(.34,1.56,.64,1),
-              stroke-width 0.2s ease;
+transition: transform 0.18s cubic-bezier(.34,1.56,.64,1),
+stroke-width 0.2s ease;
 }
 
 .nav-btn:active svg {
-  transform: translateY(-6px) scale(1.05);
+transform: translateY(-6px) scale(1.05);
 }
 
 /* === MODE BUTTON PRESS EFFECT === */
 .mode-btn {
-  transition:
-    transform 0.14s ease,
-    background 0.2s ease,
-    color 0.2s ease;
+transition:
+transform 0.14s ease,
+background 0.2s ease,
+color 0.2s ease;
 }
 
 .mode-btn:active {
-  transform: scale(0.96);
+transform: scale(0.96);
 }
 
 /* === GLOBAL BUTTON PRESS (iOS FEEL) === */
 button {
-  transition:
-    transform 0.14s ease,
-    box-shadow 0.14s ease,
-    opacity 0.14s ease;
+transition:
+transform 0.14s ease,
+box-shadow 0.14s ease,
+opacity 0.14s ease;
 }
 
 button:active {
-  transform: scale(0.965);
-  box-shadow: 0 6px 14px rgba(0,0,0,.35) inset;
-  opacity: 0.92;
+transform: scale(0.965);
+box-shadow: 0 6px 14px rgba(0,0,0,.35) inset;
+opacity: 0.92;
 }
 
 .scenario-card {
-  cursor: pointer;
+cursor: pointer;
 
-  opacity: 0.65;
-  transition:
-    opacity .2s ease,
-    border-color .25s ease,
-    background .25s ease,
-    box-shadow .25s ease;
+opacity: 0.65;
+transition:
+opacity .2s ease,
+border-color .25s ease,
+background .25s ease,
+box-shadow .25s ease;
 
-  color: rgba(255,255,255,0.85);
+color: rgba(255,255,255,0.85);
 }
 
 .scenario-card b {
-  font-size: 19px;
-  color: #ffffff;
+font-size: 19px;
+color: #ffffff;
 }
 
 .scenario-card.active {
-  opacity: 1;
+opacity: 1;
 
-  border-color: #3a7bfd;
+border-color: #3a7bfd;
 
-  background: radial-gradient(
-    120% 120% at 50% 0%,
-    rgba(58,123,253,0.22),
-    rgba(255,255,255,0.03)
-  );
+background: radial-gradient(
+120% 120% at 50% 0%,
+rgba(58,123,253,0.22),
+rgba(255,255,255,0.03)
+);
 
-  box-shadow:
-    0 0 0 1px rgba(58,123,253,0.45),
-    0 16px 40px rgba(58,123,253,0.35);
+box-shadow:
+0 0 0 1px rgba(58,123,253,0.45),
+0 16px 40px rgba(58,123,253,0.35);
 }
 
 .protocol-verdict {
-  margin-top: 18px;
+margin-top: 18px;
 
-  background: linear-gradient(
-    180deg,
-    rgba(58,123,253,0.28),
-    rgba(58,123,253,0.10)
-  );
+background: linear-gradient(
+180deg,
+rgba(58,123,253,0.28),
+rgba(58,123,253,0.10)
+);
 
-  border: 1px solid rgba(58,123,253,0.65);
-  border-radius: 20px;
+border: 1px solid rgba(58,123,253,0.65);
+border-radius: 20px;
 
-  padding: 16px 18px;
+padding: 16px 18px;
 
-  color: #ffffff;
-  font-size: 16px;
-  font-weight: 500;
+color: #ffffff;
+font-size: 16px;
+font-weight: 500;
 
-  box-shadow:
-    0 0 0 1px rgba(58,123,253,0.35),
-    0 20px 55px rgba(58,123,253,0.45);
+box-shadow:
+0 0 0 1px rgba(58,123,253,0.35),
+0 20px 55px rgba(58,123,253,0.45);
 }
 
 .app {
-  background:
-    radial-gradient(
-      120% 60% at 50% 0%,
-      rgba(255,255,255,0.04),
-      rgba(0,0,0,0) 70%
-    );
+background:
+radial-gradient(
+120% 60% at 50% 0%,
+rgba(255,255,255,0.04),
+rgba(0,0,0,0) 70%
+);
 }
 
 .reserve-info {
-  margin-top: 12px;
+margin-top: 12px;
 
-  background: linear-gradient(
-    180deg,
-    rgba(58,123,253,0.14),
-    rgba(58,123,253,0.04)
-  );
+background: linear-gradient(
+180deg,
+rgba(58,123,253,0.14),
+rgba(58,123,253,0.04)
+);
 
-  border: 1px dashed rgba(58,123,253,0.45);
-  border-radius: 18px;
+border: 1px dashed rgba(58,123,253,0.45);
+border-radius: 18px;
 
-  padding: 14px;
+padding: 14px;
 
-  font-size: 14px;
-  line-height: 1.4;
+font-size: 14px;
+line-height: 1.4;
 
-  color: #e6eeff;
+color: #e6eeff;
 }
 
 .scenario-card.active .reserve-info {
-  background: linear-gradient(
-    180deg,
-    rgba(58,123,253,0.22),
-    rgba(58,123,253,0.06)
-  );
-  border-color: rgba(58,123,253,0.55);
-  color: #fff;
-}
-
-/* === SCENARIO TAP FLASH === */
-.scenario-card.flash {
-  border-color: #fff !important;
-  box-shadow:
-    0 0 0 2px rgba(255,255,255,0.9),
-    0 0 18px rgba(255,255,255,0.35);
-}
-
-/* === SCENARIO TAP FEEDBACK (SAFE) === */
-.scenario-card:active {
-  border-color: #fff;
-  box-shadow:
-    0 0 0 2px rgba(255,255,255,0.85),
-    0 0 16px rgba(255,255,255,0.35);
+background: linear-gradient(
+180deg,
+rgba(58,123,253,0.22),
+rgba(58,123,253,0.06)
+);
+border-color: rgba(58,123,253,0.55);
+color: #fff;
 }
