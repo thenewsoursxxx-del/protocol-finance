@@ -457,41 +457,6 @@ function formatDate(d) {
   });
 }
 
-drawMonthLabels(monthLabels);
-current += (target - current) * 0.06;
-if (Math.abs(target - current) > 0.002) requestAnimationFrame(step);
-}
-step();
-}
-// ===== TIME HELPERS =====
-function addMonths(date, n) {
-  const d = new Date(date);
-  d.setMonth(d.getMonth() + n);
-  return d;
-}
-
-function buildPlanTimeline(startDate, monthlyAmount, months) {
-  const points = [];
-  let total = 0;
-
-  for (let i = 0; i <= months; i++) {
-    points.push({
-      date: addMonths(startDate, i),
-      value: total
-    });
-    total += monthlyAmount;
-  }
-
-  return points;
-}
-
-function formatDate(d) {
-  return d.toLocaleDateString("ru-RU", {
-    month: "short",
-    year: "numeric"
-  });
-}
-
 /* ===== STAGED FLOW ===== */
 function protocolFlow(mode) {
 // возвращаем bottom nav после старта плана
