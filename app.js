@@ -1,23 +1,24 @@
+App
 const tg = window.Telegram?.WebApp;
 tg?.expand();
 
 if (window.Telegram?.WebApp) {
-  Telegram.WebApp.ready();
-  Telegram.WebApp.expand();
+Telegram.WebApp.ready();
+Telegram.WebApp.expand();
 }
 
 document.addEventListener("click", e => {
-  if (
-    e.target.closest("input") ||
-    e.target.closest("textarea") ||
-    e.target.closest(".mode-btn") ||
-    e.target.closest(".nav-btn") ||
-    e.target.closest("#profileBtn")
-  ) {
-    return;
-  }
+if (
+e.target.closest("input") ||
+e.target.closest("textarea") ||
+e.target.closest(".mode-btn") ||
+e.target.closest(".nav-btn") ||
+e.target.closest("#profileBtn")
+) {
+return;
+}
 
-  document.activeElement?.blur();
+document.activeElement?.blur();
 });
 
 /* ===== FORMAT ===== */
@@ -50,7 +51,7 @@ const modeButtons = document.querySelectorAll(".mode-btn");
 
 modeButtons.forEach(btn => {
 btn.onclick = () => {
-  haptic("light");
+haptic("light");
 // снять активность со всех
 modeButtons.forEach(b => b.classList.remove("active"));
 
@@ -159,36 +160,36 @@ if (btn) btn.classList.add("active");
 if (btn) moveIndicator(btn);
 }
 buttons.forEach(btn => {
-  btn.onclick = () => {
-    haptic("light");
+btn.onclick = () => {
+haptic("light");
 
-    // запоминаем, откуда пришли
-    lastScreenBeforeProfile = btn.dataset.screen;
-    lastNavBtnBeforeProfile = btn;
+// запоминаем, откуда пришли
+lastScreenBeforeProfile = btn.dataset.screen;
+lastNavBtnBeforeProfile = btn;
 
-    openScreen(btn.dataset.screen, btn);
-  };
+openScreen(btn.dataset.screen, btn);
+};
 });
 
 const profileBack = document.getElementById("profileBack");
 
 if (profileBack) {
-  profileBack.onclick = () => {
-    haptic("light");
+profileBack.onclick = () => {
+haptic("light");
 
-    openScreen(lastScreenBeforeProfile, lastNavBtnBeforeProfile);
+openScreen(lastScreenBeforeProfile, lastNavBtnBeforeProfile);
 
-    // nav показываем ТОЛЬКО если это не calc
-    if (lastScreenBeforeProfile === "calc") {
-      bottomNav.style.transform = "translateY(140%)";
-      bottomNav.style.opacity = "0";
-      bottomNav.style.pointerEvents = "none";
-    } else {
-      bottomNav.style.transform = "translateY(0)";
-      bottomNav.style.opacity = "1";
-      bottomNav.style.pointerEvents = "auto";
-    }
-  };
+// nav показываем ТОЛЬКО если это не calc
+if (lastScreenBeforeProfile === "calc") {
+bottomNav.style.transform = "translateY(140%)";
+bottomNav.style.opacity = "0";
+bottomNav.style.pointerEvents = "none";
+} else {
+bottomNav.style.transform = "translateY(0)";
+bottomNav.style.opacity = "1";
+bottomNav.style.pointerEvents = "auto";
+}
+};
 }
 
 /* ===== BOTTOM SHEET ===== */
@@ -202,77 +203,69 @@ sheetOverlay.style.display = "none";
 }
 
 function renderProtocolResult({ scenariosHTML, advice }) {
-  adviceCard.innerHTML = `
-    <div style="margin-bottom:12px">
-      <div style="font-size:14px;opacity:.7;margin-bottom:6px">
-        Возможные варианты:
-      </div>
-      ${scenariosHTML}
-    </div>
+adviceCard.innerHTML = `
+<div style="margin-bottom:12px">
+<div style="font-size:14px;opacity:.7;margin-bottom:6px">
+Возможные варианты:
+</div>
+${scenariosHTML}
+</div>
 
-    <div style="
-      margin-top:10px;
-      padding:14px;
-      border-radius:14px;
-      background:#111;
-      border:1px solid #333;
-      font-size:15px;
-      line-height:1.4
-    ">
-      ${advice.text}
-    </div>
-  `;
+<div style="
+margin-top:10px;
+padding:14px;
+border-radius:14px;
+background:#111;
+border:1px solid #333;
+font-size:15px;
+line-height:1.4
+">
+${advice.text}
+</div>
+`;
 
-  document.querySelectorAll(".scenario-card").forEach(card => {
+document.querySelectorAll(".scenario-card").forEach(card => {
 card.onclick = () => {
-  // снять всё
-  document
-    .querySelectorAll(".scenario-card")
-    .forEach(c => c.classList.remove("active", "flash"));
+document
+.querySelectorAll(".scenario-card")
+.forEach(c => c.classList.remove("active"));
 
-  // активная карточка
-  card.classList.add("active", "flash");
+card.classList.add("active");
 
-  selectedScenario = card.dataset.id;
+selectedScenario = card.dataset.id;
 
-  haptic("light");
+haptic("light");
 
-  // убрать flash
-  setTimeout(() => {
-    card.classList.remove("flash");
-  }, 300);
-
-  // ⚠️ запуск ПОСЛЕ визуального отклика
-  setTimeout(() => {
-    protocolFlow(selectedScenario);
-  }, 320);
+protocolFlow(selectedScenario);
 };
+});
+}
 
 /* ===== CALCULATE ===== */
 calculateBtn.onclick = () => {
-  haptic("medium");
+haptic("medium");
 
-  bottomNav.style.opacity = "0";
-  bottomNav.style.pointerEvents = "none";
-  bottomNav.style.transform = "translateY(140%)";
+bottomNav.style.opacity = "0";
+bottomNav.style.pointerEvents = "none";
+bottomNav.style.transform = "translateY(140%)";
 
-  const validIncome = validateRequired(incomeInput);
-  const validExpenses = validateRequired(expensesInput);
-  const validGoal = validateRequired(goalInput);
+const validIncome = validateRequired(incomeInput);
+const validExpenses = validateRequired(expensesInput);
+const validGoal = validateRequired(goalInput);
 
-  if (!validIncome || !validExpenses || !validGoal) return;
+if (!validIncome || !validExpenses || !validGoal) return;
 
-  const baseResult = ProtocolCore.calculateBase({
-  income: parseNumber(incomeInput.value),
-  expenses: parseNumber(expensesInput.value),
-  goal: parseNumber(goalInput.value),
-  saved: parseNumber(savedInput?.value || "0"),
-  mode: saveMode
+const baseResult = ProtocolCore.calculateBase({
+income: parseNumber(incomeInput.value),
+expenses: parseNumber(expensesInput.value),
+goal: parseNumber(goalInput.value),
+saved: parseNumber(savedInput?.value || "0"),
+mode: saveMode
 });
 
 if (!baseResult.ok) {
-  alert(baseResult.message);
-  return;
+alert(baseResult.message);
+return;
 }
 
 const advice = ProtocolCore.buildAdvice(baseResult);
@@ -284,61 +277,61 @@ const baseMonthly = lastCalc.monthlySave;
 const bufferRate = 0.1; // 10% в подушку
 
 const scenarios = [
-  {
-    id: "direct",
-    title: "Всё в цель",
-    toGoal: baseMonthly,
-    toBuffer: 0,
-    months: lastCalc.months,
-    risk: "Выше"
-  },
-  {
-    id: "buffer",
-    title: "С резервом",
-    toGoal: Math.round(baseMonthly * (1 - bufferRate)),
-    toBuffer: Math.round(baseMonthly * bufferRate),
-    months: Math.ceil(
-      lastCalc.effectiveGoal /
-      Math.round(baseMonthly * (1 - bufferRate))
-    ),
-    risk: "Ниже"
-  }
+{
+id: "direct",
+title: "Всё в цель",
+toGoal: baseMonthly,
+toBuffer: 0,
+months: lastCalc.months,
+risk: "Выше"
+},
+{
+id: "buffer",
+title: "С резервом",
+toGoal: Math.round(baseMonthly * (1 - bufferRate)),
+toBuffer: Math.round(baseMonthly * bufferRate),
+months: Math.ceil(
+lastCalc.effectiveGoal /
+Math.round(baseMonthly * (1 - bufferRate))
+),
+risk: "Ниже"
+}
 ];
 
 const scenariosHTML = scenarios.map(s => `
-  <div class="card scenario-card" data-id="${s.id}">
-    <b>${s.title}</b><br><br>
+<div class="card scenario-card" data-id="${s.id}">
+<b>${s.title}</b><br><br>
 
-    В цель: ${s.toGoal.toLocaleString()} ₽ / мес<br>
-    ${s.toBuffer ? `В резерв: ${s.toBuffer.toLocaleString()} ₽<br>` : ""}
-    Срок: ~${s.months} мес<br>
+В цель: ${s.toGoal.toLocaleString()} ₽ / мес<br>
+${s.toBuffer ? `В резерв: ${s.toBuffer.toLocaleString()} ₽<br>` : ""}
+Срок: ~${s.months} мес<br>
 
-    <span style="opacity:.6">Риск: ${s.risk}</span>
+<span style="opacity:.6">Риск: ${s.risk}</span>
 
-    ${
-      s.id === "buffer"
-        ? `
-        <div class="reserve-info">
-          <b>Резерв</b><br>
-          Это ваша подушка безопасности.  
-          Эти средства можно откладывать на отдельный накопительный
-          или инвестиционный счёт.<br><br>
-          Резерв защищает от непредвиденных расходов
-          и снижает риск срыва цели.
-        </div>
-        `
-        : ""
-    }
-  </div>
+${
+s.id === "buffer"
+? `
+<div class="reserve-info">
+<b>Резерв</b><br>
+Это ваша подушка безопасности.
+Эти средства можно откладывать на отдельный накопительный
+или инвестиционный счёт.<br><br>
+Резерв защищает от непредвиденных расходов
+и снижает риск срыва цели.
+</div>
+`
+: ""
+}
+</div>
 `).join("");
 
 renderProtocolResult({
-  scenariosHTML,
-  advice
+scenariosHTML,
+advice
 });
 
-isInitialized = true;              // разрешаем переходы
-openScreen("advice", null);        // показываем экран с карточками
+isInitialized = true; // разрешаем переходы
+openScreen("advice", null); // показываем экран с карточками
 
 // показать summary
 planSummary.style.display = "block";
@@ -347,28 +340,28 @@ planSummary.style.display = "block";
 summaryMonthly.innerText = lastCalc.monthlySave.toLocaleString();
 summaryMonths.innerText = lastCalc.months;
 summaryMode.innerText =
-  saveMode === "calm" ? "Спокойный"
-  : saveMode === "normal" ? "Умеренный"
-  : "Агрессивный";
+saveMode === "calm" ? "Спокойный"
+: saveMode === "normal" ? "Умеренный"
+: "Агрессивный";
 
 // спрятать форму
 document.querySelectorAll(
-  "#screen-calc label, #screen-calc .input-wrap, .mode-buttons, #calculate"
+"#screen-calc label, #screen-calc .input-wrap, .mode-buttons, #calculate"
 ).forEach(el => el.style.display = "none");
 
 };
 
 /* ===== EDIT PLAN ===== */
 editPlanBtn.onclick = () => {
-  haptic("light");
+haptic("light");
 
-  // показать форму обратно
-  document.querySelectorAll(
-    "#screen-calc label, #screen-calc .input-wrap, .mode-buttons, #calculate"
-  ).forEach(el => el.style.display = "");
+// показать форму обратно
+document.querySelectorAll(
+"#screen-calc label, #screen-calc .input-wrap, .mode-buttons, #calculate"
+).forEach(el => el.style.display = "");
 
-  // спрятать summary
-  planSummary.style.display = "none";
+// спрятать summary
+planSummary.style.display = "none";
 };
 
 /* ===== GRAPH ===== */
@@ -414,10 +407,10 @@ step();
 
 /* ===== STAGED FLOW ===== */
 function protocolFlow(mode) {
-    // возвращаем bottom nav после старта плана
-  bottomNav.style.opacity = "1";
-  bottomNav.style.pointerEvents = "auto";
-  bottomNav.style.transform = "translateY(0)";
+// возвращаем bottom nav после старта плана
+bottomNav.style.opacity = "1";
+bottomNav.style.pointerEvents = "auto";
+bottomNav.style.transform = "translateY(0)";
 chosenPlan = mode;
 isInitialized = true;
 lockTabs(false);
@@ -451,39 +444,39 @@ const advice = ProtocolCore.buildAdvice(lastCalc);
 
 adviceCard.innerHTML = `
 <div style="font-size:16px;font-weight:600">
-  План: ${plannedMonthly.toLocaleString()} ₽ / месяц
+План: ${plannedMonthly.toLocaleString()} ₽ / месяц
 </div>
 
 <div style="
-  margin-top:8px;
-  font-size:14px;
-  line-height:1.4;
-  opacity:0.75;
+margin-top:8px;
+font-size:14px;
+line-height:1.4;
+opacity:0.75;
 ">
-  ${explanation.replace(/\n/g, "<br>")}
+${explanation.replace(/\n/g, "<br>")}
 </div>
 
 <div style="
-  margin-top:10px;
-  padding:10px 12px;
-  border-radius:14px;
-  background:#111;
-  border:1px solid #222;
-  font-size:14px;
+margin-top:10px;
+padding:10px 12px;
+border-radius:14px;
+background:#111;
+border:1px solid #222;
+font-size:14px;
 ">
-  ${advice.text}
+${advice.text}
 </div>
 
 <canvas id="chart" width="360" height="260" style="margin:16px 0"></canvas>
 
 <div style="display:flex;gap:8px;align-items:center">
-  <input id="factInput" inputmode="numeric"
-    placeholder="Фактически отложено"
-    style="flex:1"/>
-  <button id="applyFact"
-    style="width:52px;height:52px;border-radius:50%">
-    ➜
-  </button>
+<input id="factInput" inputmode="numeric"
+placeholder="Фактически отложено"
+style="flex:1"/>
+<button id="applyFact"
+style="width:52px;height:52px;border-radius:50%">
+➜
+</button>
 </div>
 `;
 
@@ -537,54 +530,54 @@ openScreen("calc", buttons[0]);
 const profileBtn = document.getElementById("profileBtn");
 
 if (profileBtn) {
-  profileBtn.onclick = () => {
-    haptic("light");
+profileBtn.onclick = () => {
+haptic("light");
 
-    // закрываем клавиатуру
-    document.activeElement?.blur();
+// закрываем клавиатуру
+document.activeElement?.blur();
 
-    // показываем профиль
-    screens.forEach(s => s.classList.remove("active"));
-    document.getElementById("screen-profile").classList.add("active");
+// показываем профиль
+screens.forEach(s => s.classList.remove("active"));
+document.getElementById("screen-profile").classList.add("active");
 
-    // убираем активность навбара
-    buttons.forEach(b => b.classList.remove("active"));
+// убираем активность навбара
+buttons.forEach(b => b.classList.remove("active"));
 
-    // прячем нижний навбар (iOS-style)
-    bottomNav.style.transform = "translateY(140%)";
-    bottomNav.style.opacity = "0";
-    bottomNav.style.pointerEvents = "none";
-  };
+// прячем нижний навбар (iOS-style)
+bottomNav.style.transform = "translateY(140%)";
+bottomNav.style.opacity = "0";
+bottomNav.style.pointerEvents = "none";
+};
 }
 
 /* ===== INPUT HINT LOGIC ===== */
 document.querySelectorAll(".input-wrap input").forEach(input => {
-  const wrap = input.closest(".input-wrap");
+const wrap = input.closest(".input-wrap");
 
-  input.addEventListener("focus", () => {
-    wrap.classList.remove("error", "shake");
-    wrap.classList.add("show-hint"); // ← ВОТ ЭТОГО НЕ ХВАТАЛО
+input.addEventListener("focus", () => {
+wrap.classList.remove("error", "shake");
+wrap.classList.add("show-hint"); // ← ВОТ ЭТОГО НЕ ХВАТАЛО
 
-    if (input.dataset.placeholder) {
-      input.placeholder = input.dataset.placeholder;
-    }
-  });
+if (input.dataset.placeholder) {
+input.placeholder = input.dataset.placeholder;
+}
+});
 
-  input.addEventListener("input", () => {
-    wrap.classList.remove("error", "shake");
-    wrap.classList.remove("show-hint"); // ← прячем при вводе
-  });
+input.addEventListener("input", () => {
+wrap.classList.remove("error", "shake");
+wrap.classList.remove("show-hint"); // ← прячем при вводе
+});
 
-  input.addEventListener("blur", () => {
-    wrap.classList.remove("show-hint"); // ← прячем при уходе
-  });
+input.addEventListener("blur", () => {
+wrap.classList.remove("show-hint"); // ← прячем при уходе
+});
 });
 
 /* ===== MICRO UX: HAPTIC ===== */
 function haptic(type = "light") {
-  if (window.Telegram?.WebApp?.HapticFeedback) {
-    Telegram.WebApp.HapticFeedback.impactOccurred(type);
-  }
+if (window.Telegram?.WebApp?.HapticFeedback) {
+Telegram.WebApp.HapticFeedback.impactOccurred(type);
+}
 }
 /* ===== TELEGRAM USER AUTO FILL ===== */
 
@@ -598,58 +591,58 @@ const profileAvatar = document.querySelector(".profile-avatar");
 const profileName = document.querySelector(".profile-name");
 
 if (tgUser) {
-  const fullName =
-    tgUser.first_name + (tgUser.last_name ? " " + tgUser.last_name : "");
+const fullName =
+tgUser.first_name + (tgUser.last_name ? " " + tgUser.last_name : "");
 
-  // имя в профиле
-  if (profileName) {
-    profileName.innerText = fullName;
-  }
+// имя в профиле
+if (profileName) {
+profileName.innerText = fullName;
+}
 
-  // если есть фото
-  if (tgUser.photo_url) {
-    const img = `
-      <img src="${tgUser.photo_url}"
-        style="width:100%;height:100%;border-radius:50%;object-fit:cover;" />
-    `;
+// если есть фото
+if (tgUser.photo_url) {
+const img = `
+<img src="${tgUser.photo_url}"
+style="width:100%;height:100%;border-radius:50%;object-fit:cover;" />
+`;
 
-    // верхняя иконка
-    if (topAvatar) topAvatar.innerHTML = img;
+// верхняя иконка
+if (topAvatar) topAvatar.innerHTML = img;
 
-    // аватар в профиле
-    if (profileAvatar) profileAvatar.innerHTML = img;
-  }
+// аватар в профиле
+if (profileAvatar) profileAvatar.innerHTML = img;
+}
 }
 function validateRequired(input) {
-  const wrap = input.closest(".input-wrap");
-  const value = parseNumber(input.value || "0");
+const wrap = input.closest(".input-wrap");
+const value = parseNumber(input.value || "0");
 
-  if (!value) {
-    wrap.classList.add("error");
+if (!value) {
+wrap.classList.add("error");
 
-    // перезапуск shake
-    wrap.classList.remove("shake");
-    void wrap.offsetWidth; // force reflow (ВАЖНО)
-    wrap.classList.add("shake");
+// перезапуск shake
+wrap.classList.remove("shake");
+void wrap.offsetWidth; // force reflow (ВАЖНО)
+wrap.classList.add("shake");
 
-    // placeholder
-    if (!input.dataset.placeholder) {
-      input.dataset.placeholder = input.placeholder;
-    }
+// placeholder
+if (!input.dataset.placeholder) {
+input.dataset.placeholder = input.placeholder;
+}
 
-    input.value = "";
-    input.placeholder = "Обязательное поле";
+input.value = "";
+input.placeholder = "Обязательное поле";
 
-    haptic("error");
+haptic("error");
 
-    return false;
-  }
+return false;
+}
 
-  wrap.classList.remove("error", "shake");
+wrap.classList.remove("error", "shake");
 
-  if (input.dataset.placeholder) {
-    input.placeholder = input.dataset.placeholder;
-  }
+if (input.dataset.placeholder) {
+input.placeholder = input.dataset.placeholder;
+}
 
-  return true;
+return true;
 }
