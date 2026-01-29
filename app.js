@@ -377,12 +377,44 @@ ctx.lineTo(canvas.width - pad, canvas.height - pad);
 ctx.stroke();
 }
 function drawPlan() {
-ctx.strokeStyle = "#fff";
-ctx.lineWidth = 2;
-ctx.beginPath();
-ctx.moveTo(pad, canvas.height - pad);
-ctx.lineTo(canvas.width - pad, pad);
-ctx.stroke();
+  const startDate = new Date();
+
+  const points = buildPlanTimeline(
+    startDate,
+    plannedMonthly,
+    lastCalc.months
+  );
+
+  const maxValue = points[points.length - 1].value;
+
+  ctx.strokeStyle = "#fff";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+
+  points.forEach((p, i) => {
+    const x = pad + (i / (points.length - 1)) * w;
+    const y = canvas.height - pad - (p.value / maxValue) * h;
+
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  });
+
+  ctx.stroke();
+
+  // подписи дат (начало / середина / конец)
+  ctx.fillStyle = "#777";
+  ctx.font = "12px system-ui";
+
+  [0, Math.floor(points.length / 2), points.length - 1].forEach(i => {
+    const p = points[i];
+    const x = pad + (i / (points.length - 1)) * w;
+
+    ctx.fillText(
+      formatDate(p.date),
+      x - 22,
+      canvas.height - 10
+    );
+  });
 }
 function drawFact(progress) {
 ctx.setLineDash([6,6]);
@@ -404,6 +436,34 @@ current += (target - current) * 0.06;
 if (Math.abs(target - current) > 0.002) requestAnimationFrame(step);
 }
 step();
+}
+// ===== TIME HELPERS =====
+function addMonths(date, n) {
+  const d = new Date(date);
+  d.setMonth(d.getMonth() + n);
+  return d;
+}
+
+function buildPlanTimeline(startDate, monthlyAmount, months) {
+  const points = [];
+  let total = 0;
+
+  for (let i = 0; i <= months; i++) {
+    points.push({
+      date: addMonths(startDate, i),
+      value: total
+    });
+    total += monthlyAmount;
+  }
+
+  return points;
+}
+
+function formatDate(d) {
+  return d.toLocaleDateString("ru-RU", {
+    month: "short",
+    year: "numeric"
+  });
 }
 
 /* ===== STAGED FLOW ===== */
