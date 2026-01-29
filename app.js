@@ -656,24 +656,17 @@ function initChart() {
 
 function drawChart() {
   const rect = canvas.getBoundingClientRect();
-  
-  const w = canvas.width - pad * 2;
-  const h = canvas.height - pad * 2;
 
-  const startDate = new Date();
-  const months = lastCalc.months;
-  const monthly = plannedMonthly;
+  const w = rect.width - pad * 2;
+  const h = rect.height - pad * 2;
 
-  const points = buildPlanTimeline(startDate, monthly, months);
-  const maxValue = points[points.length - 1].value || 1;
-
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.clearRect(0, 0, rect.width, rect.height);
 
   ctx.strokeStyle = "#333";
   ctx.beginPath();
-  ctx.moveTo(pad, pad);
-  ctx.lineTo(pad, canvas.height - pad);
-  ctx.lineTo(canvas.width - pad, canvas.height - pad);
+ctx.moveTo(pad, pad);
+ctx.lineTo(pad, rect.height - pad);
+ctx.lineTo(rect.width - pad, rect.height - pad);
   ctx.stroke();
 
   ctx.strokeStyle = "#fff";
@@ -702,7 +695,7 @@ points.forEach((p, i) => {
   const x = pad + (i / (points.length - 1)) * w;
   const label = i === 0 ? "0" : `+${i}`;
 
-  ctx.fillText(label, x, canvas.height - 12);
+  ctx.fillText(label, x, rect.height - 18);
 });
 }
 
