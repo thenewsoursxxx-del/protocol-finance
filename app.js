@@ -668,7 +668,13 @@ function initChart() {
 }
 
 function drawChart() {
-  let lineColor = "#4ade80"; // зелёный по умолчанию
+  let lineColor = "#e5e7eb"; // светло-серый по умолчанию (нейтральный)
+
+if (typeof factRatio === "number") {
+  if (factRatio < 0.7) lineColor = "#ef4444";      // красный
+  else if (factRatio < 0.95) lineColor = "#facc15"; // жёлтый
+  else lineColor = "#4ade80";                       // зелёный
+}
 
 if (typeof factRatio === "number") {
   if (factRatio < 0.7) lineColor = "#ef4444"; // красный
@@ -732,6 +738,34 @@ if (factHistory.length > 0) {
 
   ctx.stroke();
   ctx.setLineDash([]); // сброс пунктира
+}
+
+// ===== ПРОГНОЗ (ЕСЛИ ПРОДОЛЖИШЬ ТАК ЖЕ) =====
+if (factHistory.length >= 2) {
+  const monthsPassed = factHistory.length;
+  const totalFact = factHistory.reduce((s, x) => s + x.value, 0);
+  const avgMonthly = totalFact / monthsPassed;
+
+  ctx.strokeStyle = "#a855f7"; // фиолетовый прогноз
+  ctx.lineWidth = 2;
+  ctx.setLineDash([2, 6]); // точечная линия
+
+  ctx.beginPath();
+
+  let forecastTotal = totalFact;
+
+  for (let i = monthsPassed; i < points.length; i++) {
+    forecastTotal += avgMonthly;
+
+    const x = pad + (i / (points.length - 1)) * (W - pad * 2);
+    const y = H - pad - (forecastTotal / maxValue) * (H - pad * 2);
+
+    if (i === monthsPassed) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+
+  ctx.stroke();
+  ctx.setLineDash([]);
 }
 
   // ПОДПИСИ X
