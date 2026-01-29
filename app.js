@@ -643,8 +643,8 @@ function initChart() {
   if (!canvas) return;
 
   const dpr = window.devicePixelRatio || 1;
-
   const rect = canvas.getBoundingClientRect();
+  
   canvas.width = rect.width * dpr;
   canvas.height = rect.height * dpr;
 
@@ -655,6 +655,8 @@ function initChart() {
 }
 
 function drawChart() {
+  const rect = canvas.getBoundingClientRect();
+  
   const w = canvas.width - pad * 2;
   const h = canvas.height - pad * 2;
 
