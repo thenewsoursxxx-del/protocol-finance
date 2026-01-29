@@ -328,9 +328,6 @@ const scenariosHTML = scenarios.map(s => `
 `).join("");
 
 renderProtocolResult({
-  // 👉 запускаем дефолтный сценарий
-selectedScenario = "direct";
-protocolFlow(selectedScenario);
   scenariosHTML,
   advice
 });
