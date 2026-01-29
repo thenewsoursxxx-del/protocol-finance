@@ -655,55 +655,55 @@ function initChart() {
 }
 
 function drawChart() {
+  const dpr = window.devicePixelRatio || 1;
+  const W = canvas.width / dpr;
+  const H = canvas.height / dpr;
+
   const startDate = new Date();
-const months = lastCalc.months;
-const monthly = plannedMonthly;
+  const months = lastCalc.months;
+  const monthly = plannedMonthly;
 
-const points = buildPlanTimeline(startDate, monthly, months);
-const maxValue = points[points.length - 1].value || 1;
-  const w = canvas.width / (window.devicePixelRatio || 1) - pad * 2;
-const h = canvas.height / (window.devicePixelRatio || 1) - pad * 2;
+  const points = buildPlanTimeline(startDate, monthly, months);
+  const maxValue = points[points.length - 1].value || 1;
 
-ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+  // ОСИ
   ctx.strokeStyle = "#333";
+  ctx.lineWidth = 1;
   ctx.beginPath();
-const H = canvas.height / (window.devicePixelRatio || 1);
-const W = canvas.width / (window.devicePixelRatio || 1);
-
-ctx.moveTo(pad, pad);
-ctx.lineTo(pad, H - pad);
-ctx.lineTo(W - pad, H - pad);
+  ctx.moveTo(pad, pad);
+  ctx.lineTo(pad, H - pad);
+  ctx.lineTo(W - pad, H - pad);
   ctx.stroke();
 
+  // ЛИНИЯ
   ctx.strokeStyle = "#fff";
   ctx.lineWidth = 2;
   ctx.beginPath();
 
   points.forEach((p, i) => {
-    const x = pad + (i / (points.length - 1)) * w;
-    const y = canvas.height - pad - (p.value / maxValue) * h;
+    const x = pad + (i / (points.length - 1)) * (W - pad * 2);
+    const y = H - pad - (p.value / maxValue) * (H - pad * 2);
     if (i === 0) ctx.moveTo(x, y);
     else ctx.lineTo(x, y);
   });
 
   ctx.stroke();
 
-ctx.fillStyle = "#9a9a9a";
-ctx.font = "13px -apple-system, BlinkMacSystemFont, system-ui";
-ctx.textAlign = "center";
-ctx.textBaseline = "top";
+  // ПОДПИСИ X
+  ctx.fillStyle = "#9a9a9a";
+  ctx.font = "13px -apple-system, BlinkMacSystemFont, system-ui";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "top";
 
   const step = Math.max(1, Math.floor(points.length / 4));
 
-points.forEach((p, i) => {
-  if (i % step !== 0 && i !== points.length - 1) return;
-
-  const x = pad + (i / (points.length - 1)) * w;
-  const label = i.toString();
-
-  ctx.fillText(label, x, rect.height - 18);
-});
+  points.forEach((_, i) => {
+    if (i % step !== 0 && i !== points.length - 1) return;
+    const x = pad + (i / (points.length - 1)) * (W - pad * 2);
+    ctx.fillText(i.toString(), x, H - pad + 6);
+  });
 }
 
 function addMonths(date, n) {
