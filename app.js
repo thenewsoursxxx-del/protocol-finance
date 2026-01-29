@@ -428,18 +428,23 @@ function animateFact(target) {
 let current = 1;
 function step() {
 ctx.clearRect(0,0,canvas.width,canvas.height);
-function drawMonthLabels(months) {
-  ctx.fillStyle = "#aaa";
-  ctx.font = "12px system-ui";
-  ctx.textAlign = "center";
+function animateFact(target) {
+  let current = 1;
 
-  const stepX = w / (months.length - 1);
+  function step() {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    drawAxes();
+    drawPlan();
+    drawMonthLabels(monthLabels);
+    drawFact(current);
 
-  months.forEach((m, i) => {
-    const x = pad + i * stepX;
-    const y = canvas.height - pad + 18;
-    ctx.fillText(m, x, y);
-  });
+    current += (target - current) * 0.06;
+    if (Math.abs(target - current) > 0.002) {
+      requestAnimationFrame(step);
+    }
+  }
+
+  step();
 }
 drawAxes();
 drawPlan();
@@ -577,20 +582,6 @@ const monthLabels = Array.from({ length: monthsCount }, (_, i) => {
   return d.toLocaleString("ru-RU", { month: "short", year: "2-digit" });
 });
 drawAxes();
-function drawMonthLabels(months) {
-  ctx.fillStyle = "#aaa";
-  ctx.font = "13px system-ui";
-  ctx.textAlign = "center";
-
-  const stepX = w / (months.length - 1);
-
-  months.forEach((m, i) => {
-    const x = pad + i * stepX;
-    const y = canvas.height - pad + 18;
-
-    ctx.fillText(m, x, y);
-  });
-}
 drawPlan();
 drawFact(1);
 
