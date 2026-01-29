@@ -224,21 +224,29 @@ function renderProtocolResult({ scenariosHTML, advice }) {
   `;
 
   document.querySelectorAll(".scenario-card").forEach(card => {
-    card.onclick = () => {
-      document
-        .querySelectorAll(".scenario-card")
-        .forEach(c => c.classList.remove("active"));
+card.onclick = () => {
+  // снять всё
+  document
+    .querySelectorAll(".scenario-card")
+    .forEach(c => c.classList.remove("active", "flash"));
 
-      card.classList.add("active");
+  // активная карточка
+  card.classList.add("active", "flash");
 
-      selectedScenario = card.dataset.id;
+  selectedScenario = card.dataset.id;
 
-      haptic("light");
+  haptic("light");
 
-      protocolFlow(selectedScenario);
-    };
-  });
-}
+  // убрать flash
+  setTimeout(() => {
+    card.classList.remove("flash");
+  }, 300);
+
+  // ⚠️ запуск ПОСЛЕ визуального отклика
+  setTimeout(() => {
+    protocolFlow(selectedScenario);
+  }, 320);
+};
 
 /* ===== CALCULATE ===== */
 calculateBtn.onclick = () => {
