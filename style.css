@@ -627,3 +627,10 @@ button:active {
   border-color: rgba(58,123,253,0.55);
   color: #fff;
 }
+
+.scenario-card.flash {
+  box-shadow:
+    0 0 0 2px #fff,
+    0 0 24px rgba(255,255,255,0.35);
+  transition: box-shadow .15s ease;
+}
