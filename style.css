@@ -627,3 +627,24 @@ rgba(58,123,253,0.06)
 border-color: rgba(58,123,253,0.55);
 color: #fff;
 }
+
+/* === SCENARIO TAP FEEDBACK (ABSOLUTELY SAFE) === */
+.scenario-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.scenario-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: rgba(255,255,255,0.35);
+  opacity: 0;
+  transition: opacity 0.12s ease;
+  pointer-events: none;
+}
+
+.scenario-card:active::after {
+  opacity: 1;
+}
