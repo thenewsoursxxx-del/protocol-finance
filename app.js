@@ -113,6 +113,7 @@ bottomNav.style.right = "20px";
 let lastCalc = {};
 let chosenPlan = null;
 let plannedMonthly = 0;
+let factHistory = [];
 let isInitialized = false;
 let saveMode = "calm";
 let selectedScenario = null;
