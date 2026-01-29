@@ -472,12 +472,9 @@ style="width:52px;height:52px;border-radius:50%">
 
 canvas = document.getElementById("chart");
 ctx = canvas.getContext("2d");
+initChart();
 w = canvas.width - pad * 2;
 h = canvas.height - pad * 2;
-const start = new Date();
-const monthsCount = lastCalc.months;
-
-const monthLabels = Array.from({ length: monthsCount }, (_, i) => {
   const d = new Date(start.getFullYear(), start.getMonth() + i, 1);
   return d.toLocaleString("ru-RU", { month: "short", year: "2-digit" });
 });
