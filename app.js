@@ -225,20 +225,21 @@ ${advice.text}
 
 document.querySelectorAll(".scenario-card").forEach(card => {
 card.onclick = () => {
-document
-.querySelectorAll(".scenario-card")
-.forEach(c => c.classList.remove("active"));
+  document
+    .querySelectorAll(".scenario-card")
+    .forEach(c => c.classList.remove("active"));
 
-card.classList.add("active");
+  card.classList.add("active");
+  selectedScenario = card.dataset.id;
+  haptic("light");
 
-selectedScenario = card.dataset.id;
-
-haptic("light");
-
-protocolFlow(selectedScenario);
+  // ⬇️ ДАЁМ БРАУЗЕРУ 1 КАДР ОТРИСОВАТЬ ВЫБОР
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      protocolFlow(selectedScenario);
+    });
+  });
 };
-});
-}
 
 /* ===== CALCULATE ===== */
 calculateBtn.onclick = () => {
