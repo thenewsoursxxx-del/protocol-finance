@@ -718,30 +718,35 @@ if (typeof factRatio === "number") {
   
 // ===== ЛИНИЯ ФАКТА =====
 if (factHistory.length > 0) {
-  ctx.strokeStyle = "rgba(96,165,250,0.9)"; // мягкий синий
-  ctx.lineWidth = 1.5;
-  ctx.setLineDash([]); // БЕЗ пунктира
+  ctx.strokeStyle = "rgba(96,165,250,0.9)"; // спокойный синий
+  ctx.lineWidth = 1.6;
+  ctx.setLineDash([]); // без пунктира
 
   ctx.beginPath();
 
+  let cumulative = 0;
+
   factHistory.forEach((f, i) => {
-    const progress = (i + 1) / (points.length - 1);
+    cumulative += f.value;
+
+    const progress = Math.max(
+      (i + 1) / (points.length - 1),
+      0.03 // 🔥 МИНИМАЛЬНЫЙ СДВИГ — линия появляется сразу
+    );
 
     const x = pad + progress * (W - pad * 2);
 
-    const value = factHistory
-      .slice(0, i + 1)
-      .reduce((s, x) => s + x.value, 0);
-
-    const jitter = (Math.random() - 0.5) * 1.5; // микро-живость
     const y =
       H -
       pad -
-      (value / maxValue) * (H - pad * 2) +
-      jitter;
+      (cumulative / maxValue) * (H - pad * 2);
 
-    if (i === 0) ctx.moveTo(x, y);
-    else ctx.lineTo(x, y);
+    if (i === 0) {
+      ctx.moveTo(pad, H - pad); // старт с нуля
+      ctx.lineTo(x, y);         // ← микро-линия уже в 1-й месяц
+    } else {
+      ctx.lineTo(x, y);
+    }
   });
 
   ctx.stroke();
