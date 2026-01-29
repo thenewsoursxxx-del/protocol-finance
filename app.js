@@ -113,6 +113,7 @@ bottomNav.style.right = "20px";
 let lastCalc = {};
 let chosenPlan = null;
 let plannedMonthly = 0;
+let factRatio = null;
 let factHistory = [];
 let isInitialized = false;
 let saveMode = "calm";
@@ -494,11 +495,11 @@ applyBtn.onclick = () => {
     value: fact
   });
 
-  factInput.value = "";
-  factInput.blur();
+  // 🔥 ВАЖНОЕ
+  factRatio = fact / plannedMonthly;
 
-  drawChart();   // обновляем график
-  runBrain();    // запускаем мозг
+  drawChart();
+  factInput.blur();
 };
 
 }, 6000);
@@ -666,6 +667,12 @@ function initChart() {
 }
 
 function drawChart() {
+  let lineColor = "#4ade80"; // зелёный по умолчанию
+
+if (typeof factRatio === "number") {
+  if (factRatio < 0.7) lineColor = "#ef4444"; // красный
+  else if (factRatio < 0.95) lineColor = "#facc15"; // жёлтый
+}
   const dpr = window.devicePixelRatio || 1;
   const W = canvas.width / dpr;
   const H = canvas.height / dpr;
@@ -689,7 +696,7 @@ function drawChart() {
   ctx.stroke();
 
   // ЛИНИЯ
-  ctx.strokeStyle = "#fff";
+  ctx.strokeStyle = lineColor;
   ctx.lineWidth = 2;
   ctx.beginPath();
 
