@@ -631,12 +631,6 @@ button:active {
 .scenario-card.flash {
   box-shadow:
     0 0 0 2px #fff,
-    0 0 24px rgba(255,255,255,0.35);
+    0 0 24px rgba(255,255,255,0.45);
   transition: box-shadow .15s ease;
-}
-
-.scenario-card.flash {
-  box-shadow:
-    0 0 0 2px #ffffff,
-    0 0 28px rgba(255,255,255,0.45);
 }
