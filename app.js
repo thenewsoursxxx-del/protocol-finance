@@ -766,32 +766,6 @@ if (factHistory.length > 0) {
   ctx.stroke();
 }
 
-// ===== ПРОГНОЗ (ЕСЛИ ПРОДОЛЖИШЬ ТАК ЖЕ) =====
-if (factHistory.length >= 2) {
-  const monthsPassed = factHistory.length;
-  const totalFact = factHistory.reduce((s, x) => s + x.value, 0);
-  const avgMonthly = totalFact / monthsPassed;
-
-  ctx.strokeStyle = "#a855f7"; // фиолетовый прогноз
-  ctx.lineWidth = 2;
-
-  ctx.beginPath();
-
-  let forecastTotal = totalFact;
-
-  for (let i = monthsPassed; i < points.length; i++) {
-    forecastTotal += avgMonthly;
-
-    const x = pad + (i / (points.length - 1)) * (W - pad * 2);
-    const y = H - pad - (forecastTotal / maxValue) * (H - pad * 2);
-
-    if (i === monthsPassed) ctx.moveTo(x, y);
-    else ctx.lineTo(x, y);
-  }
-
-  ctx.stroke();
-}
-
   // ПОДПИСИ X
   ctx.fillStyle = "#9a9a9a";
   ctx.font = "13px -apple-system, BlinkMacSystemFont, system-ui";
