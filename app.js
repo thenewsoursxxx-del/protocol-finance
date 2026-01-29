@@ -223,25 +223,33 @@ function renderProtocolResult({ scenariosHTML, advice }) {
     </div>
   `;
 
-  document.querySelectorAll(".scenario-card").forEach(card => {
-  card.onclick = () => {
-    document
-      .querySelectorAll(".scenario-card")
-      .forEach(c => {
-        c.classList.remove("active", "flash");
-      });
+document.querySelectorAll(".scenario-card").forEach(card => {
+    card.onclick = () => {
+      // 1️⃣ визуально снимаем активность
+      document
+        .querySelectorAll(".scenario-card")
+        .forEach(c => c.classList.remove("active", "flash"));
 
-    card.classList.add("active", "flash");
-    selectedScenario = card.dataset.id;
+      // 2️⃣ подсвечиваем выбранную
+      card.classList.add("active", "flash");
 
-    haptic("light");
+      // 3️⃣ сохраняем выбор
+      selectedScenario = card.dataset.id;
 
-    // 👇 визуальное подтверждение выбора
-    setTimeout(() => {
-      card.classList.remove("flash");
-    }, 350);
-  };
-});
+      haptic("light");
+
+      // 4️⃣ убираем flash
+      setTimeout(() => {
+        card.classList.remove("flash");
+      }, 300);
+
+      // 5️⃣ 🔥 ВАРИАНТ Б — запуск плана
+      setTimeout(() => {
+        protocolFlow(selectedScenario);
+      }, 350);
+    };
+  });
+}
 
 /* ===== CALCULATE ===== */
 calculateBtn.onclick = () => {
@@ -328,6 +336,9 @@ const scenariosHTML = scenarios.map(s => `
 `).join("");
 
 renderProtocolResult({
+  selectedScenario = "direct";   // выбран по умолчанию
+isInitialized = true;          // разрешаем навигацию
+openScreen("advice", null);    // просто показываем экран
   scenariosHTML,
   advice
 });
