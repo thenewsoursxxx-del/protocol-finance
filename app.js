@@ -383,7 +383,6 @@ function drawPlan() {
     startDate,
     plannedMonthly,
     lastCalc.months
-    drawMonthLabels(monthLabels);
   );
 
   const maxValue = points[points.length - 1].value;
@@ -401,6 +400,7 @@ function drawPlan() {
   });
 
   ctx.stroke();
+}
 
   // подписи дат (начало / середина / конец)
   ctx.fillStyle = "#777";
@@ -430,9 +430,34 @@ function animateFact(target) {
 let current = 1;
 function step() {
 ctx.clearRect(0,0,canvas.width,canvas.height);
+function drawMonthLabels(months) {
+  ctx.fillStyle = "#aaa";
+  ctx.font = "12px system-ui";
+  ctx.textAlign = "center";
+
+  const stepX = w / (months.length - 1);
+
+  months.forEach((m, i) => {
+    const x = pad + i * stepX;
+    const y = canvas.height - pad + 18;
+    ctx.fillText(m, x, y);
+  });
+}
 drawAxes();
 drawPlan();
 drawFact(current);
+const start = new Date();
+const monthsCount = lastCalc.months;
+
+const monthLabels = Array.from({ length: monthsCount + 1 }, (_, i) => {
+  const d = new Date(start.getFullYear(), start.getMonth() + i, 1);
+  return d.toLocaleString("ru-RU", {
+    month: "short",
+    year: "2-digit"
+  });
+});
+
+drawMonthLabels(monthLabels);
 current += (target - current) * 0.06;
 if (Math.abs(target - current) > 0.002) requestAnimationFrame(step);
 }
