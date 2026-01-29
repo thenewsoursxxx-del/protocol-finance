@@ -709,6 +709,30 @@ if (typeof factRatio === "number") {
   });
 
   ctx.stroke();
+  
+  // ===== ЛИНИЯ ФАКТА =====
+if (factHistory.length > 0) {
+  ctx.strokeStyle = "#60a5fa"; // синий факт
+  ctx.lineWidth = 2;
+  ctx.setLineDash([6, 4]); // пунктир
+
+  ctx.beginPath();
+
+  let factTotal = 0;
+
+  factHistory.forEach((item, i) => {
+    factTotal += item.value;
+
+    const x = pad + ((i + 1) / (points.length - 1)) * (W - pad * 2);
+    const y = H - pad - (factTotal / maxValue) * (H - pad * 2);
+
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  });
+
+  ctx.stroke();
+  ctx.setLineDash([]); // сброс пунктира
+}
 
   // ПОДПИСИ X
   ctx.fillStyle = "#9a9a9a";
