@@ -248,7 +248,9 @@ card.onclick = () => {
   }, 220);
 
   // запуск логики — БЕЗ ЗАДЕРЖЕК
+setTimeout(() => {
   protocolFlow(selectedScenario);
+}, 180);
 };
 
 /* ===== CALCULATE ===== */
