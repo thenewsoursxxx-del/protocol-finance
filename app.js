@@ -225,25 +225,15 @@ ${advice.text}
 
 document.querySelectorAll(".scenario-card").forEach(card => {
   card.onclick = () => {
-    // 1️⃣ убрать активность с других
     document
       .querySelectorAll(".scenario-card")
-      .forEach(c => c.classList.remove("active", "flash"));
+      .forEach(c => c.classList.remove("active"));
 
-    // 2️⃣ мгновенная визуальная вспышка
-    card.classList.add("active", "flash");
+    card.classList.add("active");
 
     selectedScenario = card.dataset.id;
 
     haptic("light");
-
-    // 3️⃣ убрать flash через мгновение
-    setTimeout(() => {
-      card.classList.remove("flash");
-    }, 180);
-
-    // 4️⃣ сразу запускаем текущую логику (НИЧЕГО НЕ МЕНЯЕМ)
-    protocolFlow(selectedScenario);
   };
 });
 
