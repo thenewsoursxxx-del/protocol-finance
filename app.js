@@ -690,6 +690,20 @@ if (typeof factRatio === "number") {
 
   const points = buildPlanTimeline(startDate, monthly, months);
   const maxValue = points[points.length - 1].value || 1;
+  
+  // ===== ФАКТИЧЕСКИЕ ТОЧКИ (ВСЕГДА С 0) =====
+const factPoints = [
+  { month: 0, value: 0 }
+];
+
+let acc = 0;
+factHistory.forEach((f, i) => {
+  acc += f.value;
+  factPoints.push({
+    month: i + 1,
+    value: acc
+  });
+});
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -715,6 +729,7 @@ if (typeof factRatio === "number") {
   });
 
   ctx.stroke();
+  ctx.setLineDash([]);
   
 // ===== ЛИНИЯ ФАКТА =====
 if (factHistory.length > 0) {
