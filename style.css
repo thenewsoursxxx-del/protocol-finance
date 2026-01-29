@@ -627,3 +627,11 @@ button:active {
   border-color: rgba(58,123,253,0.55);
   color: #fff;
 }
+
+/* === SCENARIO TAP FLASH === */
+.scenario-card.flash {
+  border-color: #fff !important;
+  box-shadow:
+    0 0 0 2px rgba(255,255,255,0.9),
+    0 0 18px rgba(255,255,255,0.35);
+}
