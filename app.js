@@ -486,9 +486,19 @@ e.target.value = formatNumber(e.target.value);
 });
 
 applyBtn.onclick = () => {
-const fact = parseNumber(factInput.value);
-if (!fact) return;
-factInput.blur();
+  const fact = parseNumber(factInput.value);
+  if (!fact) return;
+
+  factHistory.push({
+    month: factHistory.length + 1,
+    value: fact
+  });
+
+  factInput.value = "";
+  factInput.blur();
+
+  drawChart();   // обновляем график
+  runBrain();    // запускаем мозг
 };
 
 }, 6000);
@@ -728,4 +738,40 @@ function formatDate(d) {
     month: "short",
     year: "2-digit"
   });
+}
+
+function runBrain() {
+  const monthsPassed = factHistory.length;
+  if (!monthsPassed) return;
+
+  const planned = plannedMonthly * monthsPassed;
+  const actual = factHistory.reduce((s, x) => s + x.value, 0);
+
+  const diff = actual - planned;
+
+  let text = "";
+
+  if (diff >= 0) {
+    text = "Ты идёшь по плану или лучше. Всё под контролем.";
+  } else if (diff > -planned * 0.1) {
+    text = "Есть небольшое отставание. Пока не критично.";
+  } else {
+    text = "Ты заметно отстаёшь от плана. Стоит пересмотреть стратегию.";
+  }
+
+  showBrainMessage(text);
+}
+
+function showBrainMessage(text) {
+  const block = document.createElement("div");
+
+  block.style.marginTop = "12px";
+  block.style.padding = "12px";
+  block.style.borderRadius = "12px";
+  block.style.background = "#0e0e0e";
+  block.style.border = "1px solid #222";
+  block.style.fontSize = "14px";
+  block.innerText = text;
+
+  adviceCard.appendChild(block);
 }
