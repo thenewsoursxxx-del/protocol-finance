@@ -490,32 +490,21 @@ applyBtn.onclick = () => {
   const fact = parseNumber(factInput.value);
   if (!fact) return;
 
-  const now = new Date();
-  const monthKey = `${now.getFullYear()}-${now.getMonth()}`; // уникальный месяц
+  factHistory.push({
+    month: factHistory.length + 1,
+    value: fact
+  });
 
-  let monthEntry = factHistory.find(m => m.key === monthKey);
-
-  if (!monthEntry) {
-    // 🟢 новый месяц → новая точка
-    monthEntry = {
-      key: monthKey,
-      date: now,
-      total: 0
-    };
-    factHistory.push(monthEntry);
-  }
-
-  // ➕ добавляем сумму в текущий месяц
-  monthEntry.total += fact;
-  monthEntry.date = now; // обновляем дату последнего ввода
-
-  // коэффициент для цвета линии
-  factRatio = monthEntry.total / plannedMonthly;
+  // 🔥 ВАЖНОЕ
+  factRatio = fact / plannedMonthly;
 
   drawChart();
-  factInput.value = "";
+  runBrain();
   factInput.blur();
 };
+
+}, 6000);
+}
 
 /* ===== RESET ===== */
 resetBtn.onclick = () => confirmReset.style.display = "block";
@@ -678,48 +667,6 @@ function initChart() {
   drawChart();
 }
 
-canvas.addEventListener("click", e => {
-  const rect = canvas.getBoundingClientRect();
-  const x = e.clientX - rect.left;
-  const y = e.clientY - rect.top;
-
-  factHistory.forEach(m => {
-    if (!m.x) return;
-
-    const dx = x - m.x;
-    const dy = y - m.y;
-
-    if (Math.sqrt(dx * dx + dy * dy) < 10) {
-      showFactTooltip(m);
-    }
-  });
-});
-
-function showFactTooltip(m) {
-  const date = m.date.toLocaleDateString("ru-RU");
-  const sum = m.total.toLocaleString();
-
-  const block = document.createElement("div");
-  block.style.marginTop = "10px";
-  block.style.padding = "10px 12px";
-  block.style.borderRadius = "12px";
-  block.style.background = "#0e0e0e";
-  block.style.border = "1px solid #222";
-  block.style.fontSize = "14px";
-
-  block.innerHTML = `
-    <div style="opacity:.6">${date}</div>
-    <div style="margin-top:4px;font-weight:600">
-      Отложено: ${sum} ₽
-    </div>
-  `;
-
-  adviceCard.appendChild(block);
-
-  // авто-уборка
-  setTimeout(() => block.remove(), 4000);
-}
-
 function drawChart() {
   let lineColor = "#e5e7eb"; // светло-серый по умолчанию (нейтральный)
 
@@ -818,22 +765,6 @@ if (factHistory.length > 0) {
 
   ctx.stroke();
 }
-
-// ===== ТОЧКИ ФАКТА =====
-ctx.fillStyle = "#60a5fa";
-
-factHistory.forEach((m, index) => {
-  const x = pad + ((index + 1) / (points.length - 1)) * (W - pad * 2);
-  const y = H - pad - (m.total / maxValue) * (H - pad * 2);
-
-  ctx.beginPath();
-  ctx.arc(x, y, 4, 0, Math.PI * 2);
-  ctx.fill();
-
-  // сохраняем координаты для клика
-  m.x = x;
-  m.y = y;
-});
 
   // ПОДПИСИ X
   ctx.fillStyle = "#9a9a9a";
