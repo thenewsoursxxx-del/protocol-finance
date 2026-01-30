@@ -490,21 +490,32 @@ applyBtn.onclick = () => {
   const fact = parseNumber(factInput.value);
   if (!fact) return;
 
-  factHistory.push({
-    month: factHistory.length + 1,
-    value: fact
-  });
+  const now = new Date();
+  const monthKey = `${now.getFullYear()}-${now.getMonth()}`; // уникальный месяц
 
-  // 🔥 ВАЖНОЕ
-  factRatio = fact / plannedMonthly;
+  let monthEntry = factHistory.find(m => m.key === monthKey);
+
+  if (!monthEntry) {
+    // 🟢 новый месяц → новая точка
+    monthEntry = {
+      key: monthKey,
+      date: now,
+      total: 0
+    };
+    factHistory.push(monthEntry);
+  }
+
+  // ➕ добавляем сумму в текущий месяц
+  monthEntry.total += fact;
+  monthEntry.date = now; // обновляем дату последнего ввода
+
+  // коэффициент для цвета линии
+  factRatio = monthEntry.total / plannedMonthly;
 
   drawChart();
-  runBrain();
+  factInput.value = "";
   factInput.blur();
 };
-
-}, 6000);
-}
 
 /* ===== RESET ===== */
 resetBtn.onclick = () => confirmReset.style.display = "block";
