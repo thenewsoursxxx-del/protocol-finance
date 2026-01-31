@@ -669,8 +669,36 @@ ctx.scale(dpr, dpr);
 drawChart();
 }
 
-canvas.addEventListener("click", e => {
+canvas.addEventListener("pointerdown", e => {
+e.preventDefault();
+e.stopPropagation();
+
 if (!factPointHits.length) return;
+
+const rect = canvas.getBoundingClientRect();
+const scaleX = canvas.width / rect.width;
+const scaleY = canvas.height / rect.height;
+
+const x = (e.clientX - rect.left) * scaleX;
+const y = (e.clientY - rect.top) * scaleY;
+
+let hit = null;
+
+factPointHits.forEach(p => {
+const dx = x - p.x;
+const dy = y - p.y;
+if (Math.sqrt(dx * dx + dy * dy) <= p.radius) {
+hit = p;
+}
+});
+
+if (hit) {
+haptic("light");
+showTooltip(hit);
+} else {
+removeTooltip();
+}
+});
 
 const rect = canvas.getBoundingClientRect();
 const scaleX = canvas.width / rect.width;
