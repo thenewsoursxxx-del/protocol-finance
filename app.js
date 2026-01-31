@@ -115,7 +115,6 @@ let chosenPlan = null;
 let plannedMonthly = 0;
 let factRatio = null;
 let factHistory = [];
-let factDots = [];
 let isInitialized = false;
 let saveMode = "calm";
 let selectedScenario = null;
