@@ -115,6 +115,7 @@ let chosenPlan = null;
 let plannedMonthly = 0;
 let factRatio = null;
 let factHistory = [];
+let factDots = [];
 let isInitialized = false;
 let saveMode = "calm";
 let selectedScenario = null;
@@ -675,7 +676,7 @@ canvas.addEventListener("click", e => {
   const hit = factDots.find(p => {
     const dx = x - p.x;
     const dy = y - p.y;
-    return Math.sqrt(dx * dx + dy * dy) < 8;
+    return Math.sqrt(dx * dx + dy * dy) < 10;
   });
 
   if (hit) {
@@ -784,34 +785,37 @@ ctx.lineTo(x, y);
 ctx.stroke();
 }
 
-// ===== ТОЧКИ ФАКТА =====
+factDots = []; // ← очищаем перед перерисовкой
+
 if (factHistory.length > 0) {
-ctx.fillStyle = "#60a5fa";
+  ctx.fillStyle = "#60a5fa";
 
-let cumulative = 0;
+  let cumulative = 0;
 
-factHistory.forEach((f, i) => {
-cumulative += f.value;
+  factHistory.forEach((f, i) => {
+    cumulative += f.value;
 
-const progress = Math.max(
-(i + 1) / (points.length - 1),
-0.03
-);
+    const progress = Math.max(
+      (i + 1) / (points.length - 1),
+      0.03
+    );
 
-const x = pad + progress * (W - pad * 2);
-const y =
-H - pad -
-(cumulative / maxValue) * (H - pad * 2);
+    const x = pad + progress * (W - pad * 2);
+    const y =
+      H - pad -
+      (cumulative / maxValue) * (H - pad * 2);
 
-ctx.beginPath();
-ctx.arc(x, y, 3.5, 0, Math.PI * 2);
-ctx.fill();
-factDots.push({
-  x,
-  y,
-  data: f
-});
-});
+    ctx.beginPath();
+    ctx.arc(x, y, 4, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 🔥 ВОТ ГЛАВНОЕ
+    factDots.push({
+      x,
+      y,
+      data: f
+    });
+  });
 }
 
 // ПОДПИСИ X
