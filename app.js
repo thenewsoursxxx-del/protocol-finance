@@ -803,10 +803,10 @@ if (factHistory.length > 0) {
       (cumulative / maxValue) * (H - pad * 2);
 
     ctx.beginPath();
-    ctx.arc(x, y, 4, 0, Math.PI * 2);
+    ctx.arc(x, y, 3.5, 0, Math.PI * 2);
     ctx.fill();
 
-    // 🔥 СОХРАНЯЕМ КООРДИНАТЫ ДЛЯ КЛИКА
+    // 🔥 ВОТ ЭТОГО НЕ ХВАТАЛО
     f._x = x;
     f._y = y;
   });
