@@ -479,17 +479,6 @@ canvas = document.getElementById("chart");
 ctx = canvas.getContext("2d");
 initChart();
 
-// ТАП (телефон)
-canvas.addEventListener("touchstart", e => {
-const t = e.touches[0];
-handleCanvasTap(t.clientX, t.clientY);
-}, { passive: true });
-
-// КЛИК (компьютер)
-canvas.addEventListener("mousedown", e => {
-handleCanvasTap(e.clientX, e.clientY);
-});
-
 const factInput = document.getElementById("factInput");
 const applyBtn = document.getElementById("applyFact");
 
@@ -661,8 +650,6 @@ return true;
 
 let canvas, ctx;
 const pad = 40;
-let factPointHits = [];   // здесь будем хранить точки
-let activeTooltip = null; // текущая подсказка
 
 function initChart() {
 canvas = document.getElementById("chart");
@@ -679,62 +666,6 @@ ctx.scale(dpr, dpr);
 
 drawChart();
 }
-
-e.preventDefault();
-e.stopPropagation();
-
-if (!factPointHits.length) return;
-
-const rect = canvas.getBoundingClientRect();
-const scaleX = canvas.width / rect.width;
-const scaleY = canvas.height / rect.height;
-
-const x = (e.clientX - rect.left) * scaleX;
-const y = (e.clientY - rect.top) * scaleY;
-
-let hit = null;
-
-factPointHits.forEach(p => {
-const dx = x - p.x;
-const dy = y - p.y;
-if (Math.sqrt(dx * dx + dy * dy) <= p.radius) {
-hit = p;
-}
-});
-
-if (hit) {
-haptic("light");
-showTooltip(hit);
-} else {
-removeTooltip();
-}
-});
-
-const rect = canvas.getBoundingClientRect();
-const scaleX = canvas.width / rect.width;
-const scaleY = canvas.height / rect.height;
-
-// координаты клика в canvas-пространстве
-const x = (e.clientX - rect.left) * scaleX;
-const y = (e.clientY - rect.top) * scaleY;
-
-let hit = null;
-
-factPointHits.forEach(p => {
-const dx = x - p.x;
-const dy = y - p.y;
-if (Math.sqrt(dx * dx + dy * dy) <= p.radius) {
-hit = p;
-}
-});
-
-if (hit) {
-haptic("light");
-showTooltip(hit);
-} else {
-removeTooltip();
-}
-});
 
 function drawChart() {
 let lineColor = "#e5e7eb"; // светло-серый по умолчанию (нейтральный)
@@ -841,7 +772,6 @@ ctx.fillStyle = "#60a5fa";
 
 let cumulative = 0;
 
-factPointHits = [];
 factHistory.forEach((f, i) => {
 cumulative += f.value;
 
@@ -854,15 +784,6 @@ const x = pad + progress * (W - pad * 2);
 const y =
 H - pad -
 (cumulative / maxValue) * (H - pad * 2);
-
-factPointHits.push({
-x,
-y,
-radius: 8,
-value: f.value,
-total: cumulative,
-date: addMonths(new Date(), i + 1)
-});
 
 ctx.beginPath();
 ctx.arc(x, y, 3.5, 0, Math.PI * 2);
@@ -946,72 +867,4 @@ block.style.fontSize = "14px";
 block.innerText = text;
 
 adviceCard.appendChild(block);
-}
-
-function showTooltip(point) {
-removeTooltip();
-
-const tip = document.createElement("div");
-tip.style.position = "fixed";
-const rect = canvas.getBoundingClientRect();
-
-tip.style.left = rect.left + point.x + "px";
-tip.style.top = rect.top + point.y - 10 + "px";
-tip.style.transform = "translate(-50%, -100%)";
-
-tip.style.padding = "8px 10px";
-tip.style.borderRadius = "10px";
-tip.style.background = "#111";
-tip.style.border = "1px solid #333";
-tip.style.color = "#fff";
-tip.style.fontSize = "13px";
-tip.style.zIndex = "9999";
-
-tip.innerHTML = `
-<b>${point.value.toLocaleString()} ₽</b><br>
-<span style="opacity:.7">
-${point.date.toLocaleDateString("ru-RU", {
-month: "short",
-year: "numeric"
-})}
-</span>
-`;
-
-document.body.appendChild(tip);
-activeTooltip = tip;
-}
-
-function removeTooltip() {
-if (activeTooltip) {
-activeTooltip.remove();
-activeTooltip = null;
-}
-}
-
-function handleCanvasTap(clientX, clientY) {
-if (!factPointHits.length) return;
-
-const rect = canvas.getBoundingClientRect();
-const scaleX = canvas.width / rect.width;
-const scaleY = canvas.height / rect.height;
-
-const x = (clientX - rect.left) * scaleX;
-const y = (clientY - rect.top) * scaleY;
-
-let hit = null;
-
-factPointHits.forEach(p => {
-const dx = x - p.x;
-const dy = y - p.y;
-if (dx * dx + dy * dy <= p.radius * p.radius) {
-hit = p;
-}
-});
-
-if (hit) {
-haptic("light");
-showTooltip(hit);
-} else {
-removeTooltip();
-}
 }
