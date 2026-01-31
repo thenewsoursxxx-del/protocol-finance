@@ -650,6 +650,7 @@ return true;
 
 let canvas, ctx;
 const pad = 40;
+let factDots = [];
 
 function initChart() {
 canvas = document.getElementById("chart");
@@ -668,6 +669,7 @@ drawChart();
 }
 
 function drawChart() {
+    factDots = [];
 let lineColor = "#e5e7eb"; // светло-серый по умолчанию (нейтральный)
 
 if (typeof factRatio === "number") {
@@ -788,6 +790,11 @@ H - pad -
 ctx.beginPath();
 ctx.arc(x, y, 3.5, 0, Math.PI * 2);
 ctx.fill();
+factDots.push({
+  x,
+  y,
+  data: f
+});
 });
 }
 
