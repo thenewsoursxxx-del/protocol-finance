@@ -479,6 +479,17 @@ canvas = document.getElementById("chart");
 ctx = canvas.getContext("2d");
 initChart();
 
+// ТАП (телефон)
+canvas.addEventListener("touchstart", e => {
+const t = e.touches[0];
+handleCanvasTap(t.clientX, t.clientY);
+}, { passive: true });
+
+// КЛИК (компьютер)
+canvas.addEventListener("mousedown", e => {
+handleCanvasTap(e.clientX, e.clientY);
+});
+
 const factInput = document.getElementById("factInput");
 const applyBtn = document.getElementById("applyFact");
 
@@ -669,7 +680,6 @@ ctx.scale(dpr, dpr);
 drawChart();
 }
 
-canvas.addEventListener("pointerdown", e => {
 e.preventDefault();
 e.stopPropagation();
 
@@ -975,5 +985,33 @@ function removeTooltip() {
 if (activeTooltip) {
 activeTooltip.remove();
 activeTooltip = null;
+}
+}
+
+function handleCanvasTap(clientX, clientY) {
+if (!factPointHits.length) return;
+
+const rect = canvas.getBoundingClientRect();
+const scaleX = canvas.width / rect.width;
+const scaleY = canvas.height / rect.height;
+
+const x = (clientX - rect.left) * scaleX;
+const y = (clientY - rect.top) * scaleY;
+
+let hit = null;
+
+factPointHits.forEach(p => {
+const dx = x - p.x;
+const dy = y - p.y;
+if (dx * dx + dy * dy <= p.radius * p.radius) {
+hit = p;
+}
+});
+
+if (hit) {
+haptic("light");
+showTooltip(hit);
+} else {
+removeTooltip();
 }
 }
