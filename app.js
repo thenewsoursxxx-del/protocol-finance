@@ -145,6 +145,7 @@ btn.style.pointerEvents = lock ? "none" : "auto";
 });
 }
 lockTabs(true);
+calcLock.style.display = "none";
 moveIndicator(buttons[0]);
 
 /* ===== OPEN SCREEN ===== */
@@ -515,6 +516,7 @@ lastCalc = {};
 plannedMonthly = 0;
 
 calcLock.style.display = "none";
+confirmReset.style.display = "none";
 lockTabs(true);
 
 incomeInput.value = "";
@@ -648,7 +650,6 @@ return true;
 
 let canvas, ctx;
 const pad = 40;
-let factDots = [];
 
 function initChart() {
 canvas = document.getElementById("chart");
@@ -664,26 +665,9 @@ ctx = canvas.getContext("2d");
 ctx.scale(dpr, dpr);
 
 drawChart();
-
-canvas.addEventListener("click", e => {
-  const rect = canvas.getBoundingClientRect();
-  const x = e.clientX - rect.left;
-  const y = e.clientY - rect.top;
-
-  const hit = factDots.find(p => {
-    const dx = x - p.x;
-    const dy = y - p.y;
-    return Math.sqrt(dx * dx + dy * dy) < 10;
-  });
-
-  if (hit) {
-    showFactTooltip(hit.data);
-  }
-});
 }
 
 function drawChart() {
-    factDots = [];
 let lineColor = "#e5e7eb"; // светло-серый по умолчанию (нейтральный)
 
 if (typeof factRatio === "number") {
@@ -782,37 +766,29 @@ ctx.lineTo(x, y);
 ctx.stroke();
 }
 
-factDots = []; // ← очищаем перед перерисовкой
-
+// ===== ТОЧКИ ФАКТА =====
 if (factHistory.length > 0) {
-  ctx.fillStyle = "#60a5fa";
+ctx.fillStyle = "#60a5fa";
 
-  let cumulative = 0;
+let cumulative = 0;
 
-  factHistory.forEach((f, i) => {
-    cumulative += f.value;
+factHistory.forEach((f, i) => {
+cumulative += f.value;
 
-    const progress = Math.max(
-      (i + 1) / (points.length - 1),
-      0.03
-    );
+const progress = Math.max(
+(i + 1) / (points.length - 1),
+0.03
+);
 
-    const x = pad + progress * (W - pad * 2);
-    const y =
-      H - pad -
-      (cumulative / maxValue) * (H - pad * 2);
+const x = pad + progress * (W - pad * 2);
+const y =
+H - pad -
+(cumulative / maxValue) * (H - pad * 2);
 
-    ctx.beginPath();
-    ctx.arc(x, y, 4, 0, Math.PI * 2);
-    ctx.fill();
-
-    // 🔥 ВОТ ГЛАВНОЕ
-    factDots.push({
-      x,
-      y,
-      data: f
-    });
-  });
+ctx.beginPath();
+ctx.arc(x, y, 3.5, 0, Math.PI * 2);
+ctx.fill();
+});
 }
 
 // ПОДПИСИ X
