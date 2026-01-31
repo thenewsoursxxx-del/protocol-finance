@@ -667,6 +667,23 @@ ctx.scale(dpr, dpr);
 drawChart();
 }
 
+canvas.addEventListener("click", e => {
+  const rect = canvas.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+
+  const hit = factHistory.find(f => {
+    if (f._x == null) return false;
+    const dx = x - f._x;
+    const dy = y - f._y;
+    return Math.sqrt(dx * dx + dy * dy) < 8;
+  });
+
+  if (hit) {
+    showFactTooltip(hit);
+  }
+});
+
 function drawChart() {
 let lineColor = "#e5e7eb"; // светло-серый по умолчанию (нейтральный)
 
@@ -768,27 +785,31 @@ ctx.stroke();
 
 // ===== ТОЧКИ ФАКТА =====
 if (factHistory.length > 0) {
-ctx.fillStyle = "#60a5fa";
+  ctx.fillStyle = "#60a5fa";
 
-let cumulative = 0;
+  let cumulative = 0;
 
-factHistory.forEach((f, i) => {
-cumulative += f.value;
+  factHistory.forEach((f, i) => {
+    cumulative += f.value;
 
-const progress = Math.max(
-(i + 1) / (points.length - 1),
-0.03
-);
+    const progress = Math.max(
+      (i + 1) / (points.length - 1),
+      0.03
+    );
 
-const x = pad + progress * (W - pad * 2);
-const y =
-H - pad -
-(cumulative / maxValue) * (H - pad * 2);
+    const x = pad + progress * (W - pad * 2);
+    const y =
+      H - pad -
+      (cumulative / maxValue) * (H - pad * 2);
 
-ctx.beginPath();
-ctx.arc(x, y, 3.5, 0, Math.PI * 2);
-ctx.fill();
-});
+    ctx.beginPath();
+    ctx.arc(x, y, 4, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 🔥 СОХРАНЯЕМ КООРДИНАТЫ ДЛЯ КЛИКА
+    f._x = x;
+    f._y = y;
+  });
 }
 
 // ПОДПИСИ X
@@ -867,4 +888,32 @@ block.style.fontSize = "14px";
 block.innerText = text;
 
 adviceCard.appendChild(block);
+}
+
+function showFactTooltip(f) {
+  const old = adviceCard.querySelector(".fact-tooltip");
+  if (old) old.remove();
+
+  const block = document.createElement("div");
+  block.className = "fact-tooltip";
+
+  const date = new Date().toLocaleDateString("ru-RU");
+
+  block.style.marginTop = "10px";
+  block.style.padding = "10px 12px";
+  block.style.borderRadius = "12px";
+  block.style.background = "#0e0e0e";
+  block.style.border = "1px solid #222";
+  block.style.fontSize = "14px";
+
+  block.innerHTML = `
+    <div style="opacity:.6">${date}</div>
+    <div style="margin-top:4px;font-weight:600">
+      Отложено: ${f.value.toLocaleString()} ₽
+    </div>
+  `;
+
+  adviceCard.appendChild(block);
+
+  setTimeout(() => block.remove(), 4000);
 }
