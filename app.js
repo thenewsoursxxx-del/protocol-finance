@@ -145,7 +145,6 @@ btn.style.pointerEvents = lock ? "none" : "auto";
 });
 }
 lockTabs(true);
-calcLock.style.display = "none";
 moveIndicator(buttons[0]);
 
 /* ===== OPEN SCREEN ===== */
@@ -516,7 +515,6 @@ lastCalc = {};
 plannedMonthly = 0;
 
 calcLock.style.display = "none";
-confirmReset.style.display = "none";
 lockTabs(true);
 
 incomeInput.value = "";
