@@ -665,6 +665,23 @@ function initChart() {
   ctx.scale(dpr, dpr);
 
   drawChart();
+  
+  canvas.addEventListener("click", e => {
+  const rect = canvas.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+
+  const hit = factHistory.find(f => {
+    if (f._x == null) return false;
+    const dx = x - f._x;
+    const dy = y - f._y;
+    return Math.sqrt(dx * dx + dy * dy) < 8;
+  });
+
+  if (hit) {
+    showFactTooltip(hit);
+  }
+});
 }
 
 function drawChart() {
@@ -773,26 +790,27 @@ if (factHistory.length > 0) {
   let cumulative = 0;
 
   factHistory.forEach((f, i) => {
-  cumulative += f.value;
+    cumulative += f.value;
 
-  const progress = Math.max(
-    (i + 1) / (points.length - 1),
-    0.03
-  );
+    const progress = Math.max(
+      (i + 1) / (points.length - 1),
+      0.03
+    );
 
-  const x = pad + progress * (W - pad * 2);
-  const y =
-    H - pad -
-    (cumulative / maxValue) * (H - pad * 2);
+    const x = pad + progress * (W - pad * 2);
+    const y =
+      H - pad -
+      (cumulative / maxValue) * (H - pad * 2);
 
-  ctx.beginPath();
-  ctx.arc(x, y, 3.5, 0, Math.PI * 2);
-  ctx.fill();
+    ctx.beginPath();
+    ctx.arc(x, y, 3.5, 0, Math.PI * 2);
+    ctx.fill();
 
-  // сохраняем координаты точки
-  f._x = x;
-  f._y = y;
-});
+    // координаты для клика
+    f._x = x;
+    f._y = y;
+  });
+}
 
     const progress = Math.max(
       (i + 1) / (points.length - 1),
@@ -887,23 +905,6 @@ function showBrainMessage(text) {
 
   adviceCard.appendChild(block);
 }
-
-canvas?.addEventListener("click", e => {
-  const rect = canvas.getBoundingClientRect();
-  const x = e.clientX - rect.left;
-  const y = e.clientY - rect.top;
-
-  const hit = factHistory.find(f => {
-    if (f._x == null) return false;
-    const dx = x - f._x;
-    const dy = y - f._y;
-    return Math.sqrt(dx * dx + dy * dy) < 8;
-  });
-
-  if (hit) {
-    showFactTooltip(hit);
-  }
-});
 
 function showFactTooltip(f) {
   const old = adviceCard.querySelector(".fact-tooltip");
