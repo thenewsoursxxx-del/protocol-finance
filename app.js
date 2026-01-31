@@ -665,8 +665,30 @@ ctx = canvas.getContext("2d");
 ctx.scale(dpr, dpr);
 
 drawChart();
-canvas.addEventListener("click", () => {
-  alert("Клик по графику есть");
+
+canvas.addEventListener("click", e => {
+  const rect = canvas.getBoundingClientRect();
+
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+
+  const hit = factHistory.find(f => {
+    if (f._x == null) return false;
+
+    const dx = x - f._x;
+    const dy = y - f._y;
+
+    return Math.sqrt(dx * dx + dy * dy) < 10;
+  });
+
+  if (hit) {
+    alert(
+      "Дата: " + new Date().toLocaleDateString("ru-RU") +
+      "\nОтложено: " + hit.value.toLocaleString() + " ₽"
+    );
+  }
+});
+
 });
 }
 
