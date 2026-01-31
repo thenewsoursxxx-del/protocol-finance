@@ -766,6 +766,31 @@ if (factHistory.length > 0) {
   ctx.stroke();
 }
 
+// ===== ТОЧКИ ФАКТА =====
+if (factHistory.length > 0) {
+  ctx.fillStyle = "#60a5fa";
+
+  let cumulative = 0;
+
+  factHistory.forEach((f, i) => {
+    cumulative += f.value;
+
+    const progress = Math.max(
+      (i + 1) / (points.length - 1),
+      0.03
+    );
+
+    const x = pad + progress * (W - pad * 2);
+    const y =
+      H - pad -
+      (cumulative / maxValue) * (H - pad * 2);
+
+    ctx.beginPath();
+    ctx.arc(x, y, 3.5, 0, Math.PI * 2);
+    ctx.fill();
+  });
+}
+
   // ПОДПИСИ X
   ctx.fillStyle = "#9a9a9a";
   ctx.font = "13px -apple-system, BlinkMacSystemFont, system-ui";
