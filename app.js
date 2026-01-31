@@ -665,6 +665,9 @@ ctx = canvas.getContext("2d");
 ctx.scale(dpr, dpr);
 
 drawChart();
+canvas.addEventListener("click", () => {
+  alert("Клик по графику есть");
+});
 }
 
 canvas.addEventListener("click", e => {
