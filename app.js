@@ -650,6 +650,8 @@ return true;
 
 let canvas, ctx;
 const pad = 40;
+let factPointHits = [];   // здесь будем хранить точки
+let activeTooltip = null; // текущая подсказка
 
 function initChart() {
 canvas = document.getElementById("chart");
@@ -772,6 +774,7 @@ ctx.fillStyle = "#60a5fa";
 
 let cumulative = 0;
 
+factPointHits = [];
 factHistory.forEach((f, i) => {
 cumulative += f.value;
 
@@ -784,6 +787,15 @@ const x = pad + progress * (W - pad * 2);
 const y =
 H - pad -
 (cumulative / maxValue) * (H - pad * 2);
+
+factPointHits.push({
+x,
+y,
+radius: 8,
+value: f.value,
+total: cumulative,
+date: addMonths(new Date(), i + 1)
+});
 
 ctx.beginPath();
 ctx.arc(x, y, 3.5, 0, Math.PI * 2);
@@ -868,3 +880,67 @@ block.innerText = text;
 
 adviceCard.appendChild(block);
 }
+
+function showTooltip(point) {
+removeTooltip();
+
+const tip = document.createElement("div");
+tip.style.position = "fixed";
+tip.style.left = point.x + "px";
+tip.style.top = (point.y - 10) + "px";
+tip.style.transform = "translate(-50%, -100%)";
+
+tip.style.padding = "8px 10px";
+tip.style.borderRadius = "10px";
+tip.style.background = "#111";
+tip.style.border = "1px solid #333";
+tip.style.color = "#fff";
+tip.style.fontSize = "13px";
+tip.style.zIndex = "9999";
+
+tip.innerHTML = `
+<b>${point.value.toLocaleString()} ₽</b><br>
+<span style="opacity:.7">
+${point.date.toLocaleDateString("ru-RU", {
+month: "short",
+year: "numeric"
+})}
+</span>
+`;
+
+document.body.appendChild(tip);
+activeTooltip = tip;
+}
+
+function removeTooltip() {
+if (activeTooltip) {
+activeTooltip.remove();
+activeTooltip = null;
+}
+}
+
+canvas.addEventListener("click", e => {
+if (!factPointHits.length) return;
+
+const rect = canvas.getBoundingClientRect();
+
+const x = e.clientX - rect.left;
+const y = e.clientY - rect.top;
+
+let hit = null;
+
+factPointHits.forEach(p => {
+const dx = x - p.x;
+const dy = y - p.y;
+if (Math.sqrt(dx * dx + dy * dy) <= p.radius) {
+hit = p;
+}
+});
+
+if (hit) {
+haptic("light");
+showTooltip(hit);
+} else {
+removeTooltip();
+}
+});
