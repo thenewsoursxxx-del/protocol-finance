@@ -666,6 +666,22 @@ ctx = canvas.getContext("2d");
 ctx.scale(dpr, dpr);
 
 drawChart();
+
+canvas.addEventListener("click", e => {
+  const rect = canvas.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+
+  const hit = factDots.find(p => {
+    const dx = x - p.x;
+    const dy = y - p.y;
+    return Math.sqrt(dx * dx + dy * dy) < 8;
+  });
+
+  if (hit) {
+    showFactTooltip(hit.data);
+  }
+});
 }
 
 function drawChart() {
