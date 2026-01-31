@@ -301,9 +301,9 @@ risk: "Ниже"
 
 const scenariosHTML = scenarios.map(s => `
 <div class="card scenario-card" data-id="${s.id}">
-  <div style="color:#fff;font-weight:600;font-size:19px;margin-bottom:12px">
-    ${s.title}
-  </div>
+<div style="color:#fff;font-weight:600;font-size:19px;margin-bottom:12px">
+${s.title}
+</div>
 
 В цель: ${s.toGoal.toLocaleString()} ₽ / мес<br>
 ${s.toBuffer ? `В резерв: ${s.toBuffer.toLocaleString()} ₽<br>` : ""}
@@ -370,31 +370,31 @@ planSummary.style.display = "none";
 /* ===== TIME HELPERS ===== */
 
 function addMonths(date, n) {
-  const d = new Date(date);
-  d.setMonth(d.getMonth() + n);
-  return d;
+const d = new Date(date);
+d.setMonth(d.getMonth() + n);
+return d;
 }
 
 function buildPlanTimeline(startDate, monthlyAmount, months) {
-  const points = [];
-  let total = 0;
+const points = [];
+let total = 0;
 
-  for (let i = 0; i <= months; i++) {
-    points.push({
-      date: addMonths(startDate, i),
-      value: total
-    });
-    total += monthlyAmount;
-  }
+for (let i = 0; i <= months; i++) {
+points.push({
+date: addMonths(startDate, i),
+value: total
+});
+total += monthlyAmount;
+}
 
-  return points;
+return points;
 }
 
 function formatDate(d) {
-  return d.toLocaleDateString("ru-RU", {
-    month: "short",
-    year: "2-digit"
-  });
+return d.toLocaleDateString("ru-RU", {
+month: "short",
+year: "2-digit"
+});
 }
 
 /* ===== STAGED FLOW ===== */
@@ -460,8 +460,8 @@ ${advice.text}
 </div>
 
 <canvas
-  id="chart"
-  style="width:360px; height:260px; margin:16px 0;"
+id="chart"
+style="width:360px; height:260px; margin:16px 0;"
 ></canvas>
 
 <div style="display:flex;gap:8px;align-items:center">
@@ -487,20 +487,20 @@ e.target.value = formatNumber(e.target.value);
 });
 
 applyBtn.onclick = () => {
-  const fact = parseNumber(factInput.value);
-  if (!fact) return;
+const fact = parseNumber(factInput.value);
+if (!fact) return;
 
-  factHistory.push({
-    month: factHistory.length + 1,
-    value: fact
-  });
+factHistory.push({
+month: factHistory.length + 1,
+value: fact
+});
 
-  // 🔥 ВАЖНОЕ
-  factRatio = fact / plannedMonthly;
+// 🔥 ВАЖНОЕ
+factRatio = fact / plannedMonthly;
 
-  drawChart();
-  runBrain();
-  factInput.blur();
+drawChart();
+runBrain();
+factInput.blur();
 };
 
 }, 6000);
@@ -652,264 +652,219 @@ let canvas, ctx;
 const pad = 40;
 
 function initChart() {
-  canvas = document.getElementById("chart");
-  if (!canvas) return;
+canvas = document.getElementById("chart");
+if (!canvas) return;
 
-  const dpr = window.devicePixelRatio || 1;
-  const rect = canvas.getBoundingClientRect();
-  
-  canvas.width = rect.width * dpr;
-  canvas.height = rect.height * dpr;
+const dpr = window.devicePixelRatio || 1;
+const rect = canvas.getBoundingClientRect();
 
-  ctx = canvas.getContext("2d");
-  ctx.scale(dpr, dpr);
+canvas.width = rect.width * dpr;
+canvas.height = rect.height * dpr;
 
-  drawChart();
-  
-  canvas.addEventListener("click", e => {
-  const rect = canvas.getBoundingClientRect();
-  const x = e.clientX - rect.left;
-  const y = e.clientY - rect.top;
+ctx = canvas.getContext("2d");
+ctx.scale(dpr, dpr);
 
-  const hit = factHistory.find(f => {
-    if (f._x == null) return false;
-    const dx = x - f._x;
-    const dy = y - f._y;
-    return Math.sqrt(dx * dx + dy * dy) < 8;
-  });
-
-  if (hit) {
-    showFactTooltip(hit);
-  }
-});
+drawChart();
 }
 
 function drawChart() {
-  let lineColor = "#e5e7eb"; // светло-серый по умолчанию (нейтральный)
+let lineColor = "#e5e7eb"; // светло-серый по умолчанию (нейтральный)
 
 if (typeof factRatio === "number") {
-  if (factRatio < 0.7) lineColor = "#ef4444";      // красный
-  else if (factRatio < 0.95) lineColor = "#facc15"; // жёлтый
-  else lineColor = "#4ade80";                       // зелёный
+if (factRatio < 0.7) lineColor = "#ef4444"; // красный
+else if (factRatio < 0.95) lineColor = "#facc15"; // жёлтый
+else lineColor = "#4ade80"; // зелёный
 }
 
 if (typeof factRatio === "number") {
-  if (factRatio < 0.7) lineColor = "#ef4444"; // красный
-  else if (factRatio < 0.95) lineColor = "#facc15"; // жёлтый
+if (factRatio < 0.7) lineColor = "#ef4444"; // красный
+else if (factRatio < 0.95) lineColor = "#facc15"; // жёлтый
 }
-  const dpr = window.devicePixelRatio || 1;
-  const W = canvas.width / dpr;
-  const H = canvas.height / dpr;
+const dpr = window.devicePixelRatio || 1;
+const W = canvas.width / dpr;
+const H = canvas.height / dpr;
 
-  const startDate = new Date();
-  const months = lastCalc.months;
-  const monthly = plannedMonthly;
+const startDate = new Date();
+const months = lastCalc.months;
+const monthly = plannedMonthly;
 
-  const points = buildPlanTimeline(startDate, monthly, months);
-  const maxValue = points[points.length - 1].value || 1;
-  
-  // ===== ФАКТИЧЕСКИЕ ТОЧКИ (ВСЕГДА С 0) =====
+const points = buildPlanTimeline(startDate, monthly, months);
+const maxValue = points[points.length - 1].value || 1;
+
+// ===== ФАКТИЧЕСКИЕ ТОЧКИ (ВСЕГДА С 0) =====
 const factPoints = [
-  { month: 0, value: 0 }
+{ month: 0, value: 0 }
 ];
 
 let acc = 0;
 factHistory.forEach((f, i) => {
-  acc += f.value;
-  factPoints.push({
-    month: i + 1,
-    value: acc
-  });
+acc += f.value;
+factPoints.push({
+month: i + 1,
+value: acc
+});
 });
 
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // ОСИ
-  ctx.strokeStyle = "#333";
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(pad, pad);
-  ctx.lineTo(pad, H - pad);
-  ctx.lineTo(W - pad, H - pad);
-  ctx.stroke();
+// ОСИ
+ctx.strokeStyle = "#333";
+ctx.lineWidth = 1;
+ctx.beginPath();
+ctx.moveTo(pad, pad);
+ctx.lineTo(pad, H - pad);
+ctx.lineTo(W - pad, H - pad);
+ctx.stroke();
 
-  // ЛИНИЯ
-  ctx.strokeStyle = lineColor;
-  ctx.lineWidth = 2;
-  ctx.beginPath();
+// ЛИНИЯ
+ctx.strokeStyle = lineColor;
+ctx.lineWidth = 2;
+ctx.beginPath();
 
-  points.forEach((p, i) => {
-    const x = pad + (i / (points.length - 1)) * (W - pad * 2);
-    const y = H - pad - (p.value / maxValue) * (H - pad * 2);
-    if (i === 0) ctx.moveTo(x, y);
-    else ctx.lineTo(x, y);
-  });
+points.forEach((p, i) => {
+const x = pad + (i / (points.length - 1)) * (W - pad * 2);
+const y = H - pad - (p.value / maxValue) * (H - pad * 2);
+if (i === 0) ctx.moveTo(x, y);
+else ctx.lineTo(x, y);
+});
 
-  ctx.stroke();
-  ctx.setLineDash([]);
-  
+ctx.stroke();
+ctx.setLineDash([]);
+
 // ===== ЛИНИЯ ФАКТА =====
 if (factHistory.length > 0) {
-  ctx.strokeStyle = "rgba(96,165,250,0.9)"; // спокойный синий
-  ctx.lineWidth = 1.6;
+ctx.strokeStyle = "rgba(96,165,250,0.9)"; // спокойный синий
+ctx.lineWidth = 1.6;
 
-  ctx.beginPath();
+ctx.beginPath();
 
-  let cumulative = 0;
+let cumulative = 0;
 
-  factHistory.forEach((f, i) => {
-    cumulative += f.value;
+factHistory.forEach((f, i) => {
+cumulative += f.value;
 
-  ctx.stroke();
+const progress = Math.max(
+(i + 1) / (points.length - 1),
+0.03 // 🔥 МИНИМАЛЬНЫЙ СДВИГ — линия появляется сразу
+);
+
+const x = pad + progress * (W - pad * 2);
+
+const y =
+H -
+pad -
+(cumulative / maxValue) * (H - pad * 2);
+
+if (i === 0) {
+ctx.moveTo(pad, H - pad); // старт с нуля
+ctx.lineTo(x, y); // ← микро-линия уже в 1-й месяц
+} else {
+ctx.lineTo(x, y);
+}
+});
+
+ctx.stroke();
 }
 
 // ===== ТОЧКИ ФАКТА =====
 if (factHistory.length > 0) {
-  ctx.fillStyle = "#60a5fa";
+ctx.fillStyle = "#60a5fa";
 
-  let cumulative = 0;
+let cumulative = 0;
 
-  factHistory.forEach((f, i) => {
-    cumulative += f.value;
+factHistory.forEach((f, i) => {
+cumulative += f.value;
 
-    const progress = Math.max(
-      (i + 1) / (points.length - 1),
-      0.03
-    );
+const progress = Math.max(
+(i + 1) / (points.length - 1),
+0.03
+);
 
-    const x = pad + progress * (W - pad * 2);
-    const y =
-      H - pad -
-      (cumulative / maxValue) * (H - pad * 2);
+const x = pad + progress * (W - pad * 2);
+const y =
+H - pad -
+(cumulative / maxValue) * (H - pad * 2);
 
-    ctx.beginPath();
-    ctx.arc(x, y, 3.5, 0, Math.PI * 2);
-    ctx.fill();
-
-    // координаты для клика
-    f._x = x;
-    f._y = y;
-  });
+ctx.beginPath();
+ctx.arc(x, y, 3.5, 0, Math.PI * 2);
+ctx.fill();
+});
 }
 
-    const progress = Math.max(
-      (i + 1) / (points.length - 1),
-      0.03
-    );
+// ПОДПИСИ X
+ctx.fillStyle = "#9a9a9a";
+ctx.font = "13px -apple-system, BlinkMacSystemFont, system-ui";
+ctx.textAlign = "center";
+ctx.textBaseline = "top";
 
-    const x = pad + progress * (W - pad * 2);
-    const y =
-      H - pad -
-      (cumulative / maxValue) * (H - pad * 2);
+const step = Math.max(1, Math.floor(points.length / 4));
 
-    ctx.beginPath();
-    ctx.arc(x, y, 3.5, 0, Math.PI * 2);
-    ctx.fill();
-  });
-}
-
-  // ПОДПИСИ X
-  ctx.fillStyle = "#9a9a9a";
-  ctx.font = "13px -apple-system, BlinkMacSystemFont, system-ui";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "top";
-
-  const step = Math.max(1, Math.floor(points.length / 4));
-
-  points.forEach((_, i) => {
-    if (i % step !== 0 && i !== points.length - 1) return;
-    const x = pad + (i / (points.length - 1)) * (W - pad * 2);
-    ctx.fillText(i.toString(), x, H - pad + 6);
-  });
+points.forEach((_, i) => {
+if (i % step !== 0 && i !== points.length - 1) return;
+const x = pad + (i / (points.length - 1)) * (W - pad * 2);
+ctx.fillText(i.toString(), x, H - pad + 6);
+});
 }
 
 function addMonths(date, n) {
-  const d = new Date(date);
-  d.setMonth(d.getMonth() + n);
-  return d;
+const d = new Date(date);
+d.setMonth(d.getMonth() + n);
+return d;
 }
 
 function buildPlanTimeline(startDate, monthlyAmount, months) {
-  const points = [];
-  let total = 0;
-  for (let i = 0; i <= months; i++) {
-    points.push({ date: addMonths(startDate, i), value: total });
-    total += monthlyAmount;
-  }
-  return points;
+const points = [];
+let total = 0;
+for (let i = 0; i <= months; i++) {
+points.push({ date: addMonths(startDate, i), value: total });
+total += monthlyAmount;
+}
+return points;
 }
 
 function formatDate(d) {
-  return d.toLocaleDateString("ru-RU", {
-    month: "short",
-    year: "2-digit"
-  });
+return d.toLocaleDateString("ru-RU", {
+month: "short",
+year: "2-digit"
+});
 }
 
 function runBrain() {
-  const monthsPassed = factHistory.length;
-  if (!monthsPassed) return;
+const monthsPassed = factHistory.length;
+if (!monthsPassed) return;
 
-  const planned = plannedMonthly * monthsPassed;
-  const actual = factHistory.reduce((s, x) => s + x.value, 0);
+const planned = plannedMonthly * monthsPassed;
+const actual = factHistory.reduce((s, x) => s + x.value, 0);
 
-  const diff = actual - planned;
+const diff = actual - planned;
 
-  let text = "";
+let text = "";
 
-  if (diff >= 0) {
-    text = "Ты идёшь по плану или лучше. Всё под контролем.";
-  } else if (diff > -planned * 0.1) {
-    text = "Есть небольшое отставание. Пока не критично.";
-  } else {
-    text = "Ты заметно отстаёшь от плана. Стоит пересмотреть стратегию.";
-  }
+if (diff >= 0) {
+text = "Ты идёшь по плану или лучше. Всё под контролем.";
+} else if (diff > -planned * 0.1) {
+text = "Есть небольшое отставание. Пока не критично.";
+} else {
+text = "Ты заметно отстаёшь от плана. Стоит пересмотреть стратегию.";
+}
 
-  showBrainMessage(text);
+showBrainMessage(text);
 }
 
 function showBrainMessage(text) {
-  const old = adviceCard.querySelector(".brain-message");
-  if (old) old.remove();
+const old = adviceCard.querySelector(".brain-message");
+if (old) old.remove();
 
-  const block = document.createElement("div");
-  block.className = "brain-message";
+const block = document.createElement("div");
+block.className = "brain-message";
 
-  block.style.marginTop = "12px";
-  block.style.padding = "12px";
-  block.style.borderRadius = "12px";
-  block.style.background = "#0e0e0e";
-  block.style.border = "1px solid #222";
-  block.style.fontSize = "14px";
-  block.innerText = text;
+block.style.marginTop = "12px";
+block.style.padding = "12px";
+block.style.borderRadius = "12px";
+block.style.background = "#0e0e0e";
+block.style.border = "1px solid #222";
+block.style.fontSize = "14px";
+block.innerText = text;
 
-  adviceCard.appendChild(block);
-}
-
-function showFactTooltip(f) {
-  const old = adviceCard.querySelector(".fact-tooltip");
-  if (old) old.remove();
-
-  const block = document.createElement("div");
-  block.className = "fact-tooltip";
-
-  const date = new Date().toLocaleDateString("ru-RU");
-
-  block.style.marginTop = "10px";
-  block.style.padding = "10px 12px";
-  block.style.borderRadius = "12px";
-  block.style.background = "#0e0e0e";
-  block.style.border = "1px solid #222";
-  block.style.fontSize = "14px";
-
-  block.innerHTML = `
-    <div style="opacity:.6">${date}</div>
-    <div style="margin-top:4px;font-weight:600">
-      Отложено: ${f.value.toLocaleString()} ₽
-    </div>
-  `;
-
-  adviceCard.appendChild(block);
-
-  setTimeout(() => block.remove(), 4000);
+adviceCard.appendChild(block);
 }
