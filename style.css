@@ -641,3 +641,7 @@ color: #fff;
   color: #fff;
   margin-bottom: 12px;
 }
+
+canvas {
+touch-action: manipulation;
+}
