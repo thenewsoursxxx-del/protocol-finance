@@ -669,6 +669,35 @@ ctx.scale(dpr, dpr);
 drawChart();
 }
 
+canvas.addEventListener("click", e => {
+if (!factPointHits.length) return;
+
+const rect = canvas.getBoundingClientRect();
+const scaleX = canvas.width / rect.width;
+const scaleY = canvas.height / rect.height;
+
+// координаты клика в canvas-пространстве
+const x = (e.clientX - rect.left) * scaleX;
+const y = (e.clientY - rect.top) * scaleY;
+
+let hit = null;
+
+factPointHits.forEach(p => {
+const dx = x - p.x;
+const dy = y - p.y;
+if (Math.sqrt(dx * dx + dy * dy) <= p.radius) {
+hit = p;
+}
+});
+
+if (hit) {
+haptic("light");
+showTooltip(hit);
+} else {
+removeTooltip();
+}
+});
+
 function drawChart() {
 let lineColor = "#e5e7eb"; // светло-серый по умолчанию (нейтральный)
 
@@ -886,8 +915,10 @@ removeTooltip();
 
 const tip = document.createElement("div");
 tip.style.position = "fixed";
-tip.style.left = point.x + "px";
-tip.style.top = (point.y - 10) + "px";
+const rect = canvas.getBoundingClientRect();
+
+tip.style.left = rect.left + point.x + "px";
+tip.style.top = rect.top + point.y - 10 + "px";
 tip.style.transform = "translate(-50%, -100%)";
 
 tip.style.padding = "8px 10px";
@@ -918,29 +949,3 @@ activeTooltip.remove();
 activeTooltip = null;
 }
 }
-
-canvas.addEventListener("click", e => {
-if (!factPointHits.length) return;
-
-const rect = canvas.getBoundingClientRect();
-
-const x = e.clientX - rect.left;
-const y = e.clientY - rect.top;
-
-let hit = null;
-
-factPointHits.forEach(p => {
-const dx = x - p.x;
-const dy = y - p.y;
-if (Math.sqrt(dx * dx + dy * dy) <= p.radius) {
-hit = p;
-}
-});
-
-if (hit) {
-haptic("light");
-showTooltip(hit);
-} else {
-removeTooltip();
-}
-});
