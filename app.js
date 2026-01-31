@@ -760,26 +760,6 @@ if (factHistory.length > 0) {
   factHistory.forEach((f, i) => {
     cumulative += f.value;
 
-    const progress = Math.max(
-      (i + 1) / (points.length - 1),
-      0.03 // 🔥 МИНИМАЛЬНЫЙ СДВИГ — линия появляется сразу
-    );
-
-    const x = pad + progress * (W - pad * 2);
-
-    const y =
-      H -
-      pad -
-      (cumulative / maxValue) * (H - pad * 2);
-
-    if (i === 0) {
-      ctx.moveTo(pad, H - pad); // старт с нуля
-      ctx.lineTo(x, y);         // ← микро-линия уже в 1-й месяц
-    } else {
-      ctx.lineTo(x, y);
-    }
-  });
-
   ctx.stroke();
 }
 
