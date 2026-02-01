@@ -785,9 +785,6 @@ ctx.setLineDash([]);
 
 // ===== ЛИНИЯ ФАКТА =====
 if (factHistory.length > 0) {
-const factGradient = ctx.createLinearGradient(pad, 0, W - pad, 0);
-  factGradient.addColorStop(0, "#60a5fa"); // светло-синий
-  factGradient.addColorStop(1, "#2563eb"); // насыщенный синий
 
 const factGradient = getReserveGradient(ctx, pad, 0, W - pad, 0);
 ctx.strokeStyle = factGradient;
@@ -825,9 +822,6 @@ ctx.stroke();
 
 // ===== ТОЧКИ ФАКТА =====
 if (factHistory.length > 0) {
-const factGradient = ctx.createLinearGradient(pad, 0, W - pad, 0);
-  factGradient.addColorStop(0, "#60a5fa");
-  factGradient.addColorStop(1, "#2563eb");
 
 const factGradient = getReserveGradient(ctx, 0, 0, W, H);
 ctx.fillStyle = factGradient;
