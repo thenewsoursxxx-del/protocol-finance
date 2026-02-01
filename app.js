@@ -687,6 +687,31 @@ canvas.addEventListener("click", e => {
 function drawChart() {
 let lineColor = "#e5e7eb"; // светло-серый по умолчанию (нейтральный)
 
+// ===== ГРУППИРОВКА ФАКТА ПО МЕСЯЦАМ =====
+const groupedFacts = {};
+const startDate = new Date();
+
+factHistory.forEach((f, i) => {
+  // считаем месяц относительно старта
+  const d = new Date(startDate);
+  d.setMonth(d.getMonth() + i);
+
+  // ключ вида "2026-1"
+  const key = `${d.getFullYear()}-${d.getMonth()}`;
+
+  if (!groupedFacts[key]) {
+    groupedFacts[key] = {
+      total: 0,
+      date: d
+    };
+  }
+
+  groupedFacts[key].total += f.value;
+});
+
+// массив месяцев (каждый = 1 точка)
+const groupedArray = Object.values(groupedFacts);
+
 if (typeof factRatio === "number") {
 if (factRatio < 0.7) lineColor = "#ef4444"; // красный
 else if (factRatio < 0.95) lineColor = "#facc15"; // жёлтый
@@ -714,7 +739,7 @@ const factPoints = [
 ];
 
 let acc = 0;
-factHistory.forEach((f, i) => {
+groupedArray.forEach((f, i) => {
 acc += f.value;
 factPoints.push({
 month: i + 1,
@@ -758,7 +783,7 @@ ctx.beginPath();
 let cumulative = 0;
 
 factHistory.forEach((f, i) => {
-cumulative += f.value;
+cumulative += f.total;
 
 const progress = Math.max(
 (i + 1) / (points.length - 1),
