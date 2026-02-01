@@ -656,6 +656,13 @@ let canvas, ctx;
 const pad = 40;
 let factDots = [];
 let activeFactDot = null;
+function getReserveGradient(ctx, x1, y1, x2, y2) {
+  const g = ctx.createLinearGradient(x1, y1, x2, y2);
+  g.addColorStop(0, "#1e3a8a"); // глубокий тёмно-синий
+  g.addColorStop(0.5, "#2563eb"); // фирменный синий
+  g.addColorStop(1, "#60a5fa"); // мягкий светлый
+  return g;
+}
 
 function initChart() {
 canvas = document.getElementById("chart");
@@ -782,7 +789,8 @@ const factGradient = ctx.createLinearGradient(pad, 0, W - pad, 0);
   factGradient.addColorStop(0, "#60a5fa"); // светло-синий
   factGradient.addColorStop(1, "#2563eb"); // насыщенный синий
 
-  ctx.strokeStyle = factGradient;
+const factGradient = getReserveGradient(ctx, pad, 0, W - pad, 0);
+ctx.strokeStyle = factGradient;
 ctx.lineWidth = 1.6;
 
 ctx.beginPath();
@@ -821,7 +829,8 @@ const factGradient = ctx.createLinearGradient(pad, 0, W - pad, 0);
   factGradient.addColorStop(0, "#60a5fa");
   factGradient.addColorStop(1, "#2563eb");
 
-  ctx.fillStyle = factGradient;
+const factGradient = getReserveGradient(ctx, 0, 0, W, H);
+ctx.fillStyle = factGradient;
 
 let cumulative = 0;
 
@@ -846,7 +855,7 @@ ctx.fill();
 
 // 🔵 ОБВОДКА ТОЛЬКО ЕСЛИ ЭТО АКТИВНАЯ ТОЧКА
 if (activeFactDot && activeFactDot.x === x && activeFactDot.y === y) {
-ctx.strokeStyle = "#60a5fa";
+ctx.strokeStyle = "rgba(96,165,250,0.45)";
 ctx.lineWidth = 2;
 ctx.beginPath();
 ctx.arc(x, y, 7, 0, Math.PI * 2);
@@ -966,7 +975,7 @@ block.style.marginTop = "10px";
 block.style.padding = "10px 12px";
 block.style.borderRadius = "12px";
 block.style.background =
-  "linear-gradient(135deg, #1e3a8a, #2563eb)";
+  "linear-gradient(135deg, #1e3a8a, #2563eb, #60a5fa)";
 block.style.border = "1px solid rgba(255,255,255,.08)";
 block.style.color = "#fff";
 block.style.fontSize = "14px";
