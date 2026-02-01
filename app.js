@@ -495,8 +495,8 @@ now.setDate(1);
 now.setHours(0, 0, 0, 0);
 
 factHistory.push({
-  value: fact,
-  date: now
+value: fact,
+date: now
 });
 
 // 🔥 ВАЖНОЕ
@@ -655,14 +655,7 @@ return true;
 let canvas, ctx;
 const pad = 40;
 let factDots = [];
-function getFactGradient(ctx, x1, y1, x2, y2) {
-  const g = ctx.createLinearGradient(x1, y1, x2, y2);
-  g.addColorStop(0, "#60a5fa"); // светло-синий
-  g.addColorStop(1, "#2563eb"); // глубокий синий
-  return g;
-}
 let activeFactDot = null;
-let factGradient = null;
 
 function initChart() {
 canvas = document.getElementById("chart");
@@ -691,9 +684,9 @@ return Math.sqrt(dx * dx + dy * dy) < 10;
 });
 
 if (hit) {
-  activeFactDot = hit;
-  drawChart();
-  showFactTooltip(hit.data);
+activeFactDot = hit;
+drawChart();
+showFactTooltip(hit.data);
 }
 });
 }
@@ -704,18 +697,18 @@ const groupedFacts = {};
 const start = new Date();
 
 factHistory.forEach(f => {
-  const d = new Date(f.date);
+const d = new Date(f.date);
 
-  const key = `${d.getFullYear()}-${d.getMonth()}`;
+const key = `${d.getFullYear()}-${d.getMonth()}`;
 
-  if (!groupedFacts[key]) {
-    groupedFacts[key] = {
-      date: d,
-      total: 0
-    };
-  }
+if (!groupedFacts[key]) {
+groupedFacts[key] = {
+date: d,
+total: 0
+};
+}
 
-  groupedFacts[key].total += f.value;
+groupedFacts[key].total += f.value;
 });
 
 // массив месяцев (1 месяц = 1 точка)
@@ -750,11 +743,11 @@ const factPoints = [
 
 let acc = 0;
 groupedArray.forEach((f, i) => {
-  acc += f.total;
-  factPoints.push({
-    month: i + 1,
-    value: acc
-  });
+acc += f.total;
+factPoints.push({
+month: i + 1,
+value: acc
+});
 });
 
 ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -785,8 +778,7 @@ ctx.setLineDash([]);
 
 // ===== ЛИНИЯ ФАКТА =====
 if (factHistory.length > 0) {
-factGradient = getFactGradient(ctx, pad, 0, W - pad, 0);
-ctx.strokeStyle = factGradient;
+ctx.strokeStyle = "rgba(96,165,250,0.9)"; // спокойный синий
 ctx.lineWidth = 1.6;
 
 ctx.beginPath();
@@ -794,7 +786,7 @@ ctx.beginPath();
 let cumulative = 0;
 
 groupedArray.forEach((f, i) => {
-  cumulative += f.total;
+cumulative += f.total;
 
 const progress = Math.max(
 (i + 1) / (points.length - 1),
@@ -821,13 +813,13 @@ ctx.stroke();
 
 // ===== ТОЧКИ ФАКТА =====
 if (factHistory.length > 0) {
-ctx.fillStyle = factGradient;
+ctx.fillStyle = "#60a5fa";
 
 let cumulative = 0;
 
 factDots = [];
 groupedArray.forEach((f, i) => {
-  cumulative += f.total;
+cumulative += f.total;
 
 const progress = Math.max(
 (i + 1) / (points.length - 1),
@@ -843,34 +835,33 @@ H - pad -
 ctx.beginPath();
 ctx.arc(x, y, 3.5, 0, Math.PI * 2);
 ctx.fill();
-}
 
 // 🔵 ОБВОДКА ТОЛЬКО ЕСЛИ ЭТО АКТИВНАЯ ТОЧКА
 if (activeFactDot && activeFactDot.x === x && activeFactDot.y === y) {
-  ctx.strokeStyle = "#60a5fa";
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.arc(x, y, 7, 0, Math.PI * 2);
-  ctx.stroke();
+ctx.strokeStyle = "#60a5fa";
+ctx.lineWidth = 2;
+ctx.beginPath();
+ctx.arc(x, y, 7, 0, Math.PI * 2);
+ctx.stroke();
 }
 // 🔥 подсветка активной точки
 if (
-  activeFactDot &&
-  activeFactDot.x === x &&
-  activeFactDot.y === y
+activeFactDot &&
+activeFactDot.x === x &&
+activeFactDot.y === y
 ) {
-  ctx.beginPath();
-  ctx.arc(x, y, 8, 0, Math.PI * 2);
-  ctx.strokeStyle = "rgba(96,165,250,0.6)";
-  ctx.lineWidth = 2;
-  ctx.stroke();
+ctx.beginPath();
+ctx.arc(x, y, 8, 0, Math.PI * 2);
+ctx.strokeStyle = "rgba(96,165,250,0.6)";
+ctx.lineWidth = 2;
+ctx.stroke();
 }
 factDots.push({
 x,
 y,
 data: {
-  value: f.total,
-  date: f.date
+value: f.total,
+date: f.date
 }
 });
 });
@@ -966,10 +957,8 @@ const date = new Date().toLocaleDateString("ru-RU");
 block.style.marginTop = "10px";
 block.style.padding = "10px 12px";
 block.style.borderRadius = "12px";
-block.style.background =
-  "linear-gradient(135deg, #1e3a8a, #2563eb)";
-block.style.border = "1px solid rgba(255,255,255,.08)";
-block.style.color = "#fff";
+block.style.background = "#0e0e0e";
+block.style.border = "1px solid #222";
 block.style.fontSize = "14px";
 
 block.innerHTML = `
@@ -982,8 +971,8 @@ block.innerHTML = `
 adviceCard.appendChild(block);
 
 setTimeout(() => {
-  block.remove();
-  activeFactDot = null;
-  drawChart();
+block.remove();
+activeFactDot = null;
+drawChart();
 }, 4000);
 }
