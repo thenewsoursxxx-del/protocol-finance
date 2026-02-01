@@ -490,9 +490,13 @@ applyBtn.onclick = () => {
 const fact = parseNumber(factInput.value);
 if (!fact) return;
 
+const now = new Date();
+now.setDate(1);
+now.setHours(0, 0, 0, 0);
+
 factHistory.push({
   value: fact,
-  date: new Date()
+  date: now
 });
 
 // 🔥 ВАЖНОЕ
