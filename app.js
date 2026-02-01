@@ -655,6 +655,7 @@ return true;
 let canvas, ctx;
 const pad = 40;
 let factDots = [];
+let activeFactDot = null;
 
 function initChart() {
 canvas = document.getElementById("chart");
@@ -683,7 +684,9 @@ return Math.sqrt(dx * dx + dy * dy) < 10;
 });
 
 if (hit) {
-showFactTooltip(hit.data);
+  activeFactDot = hit;
+  drawChart();
+  showFactTooltip(hit.data);
 }
 });
 }
@@ -828,9 +831,23 @@ const y =
 H - pad -
 (cumulative / maxValue) * (H - pad * 2);
 
+// обычная точка
 ctx.beginPath();
 ctx.arc(x, y, 3.5, 0, Math.PI * 2);
 ctx.fill();
+
+// 🔥 подсветка активной точки
+if (
+  activeFactDot &&
+  activeFactDot.x === x &&
+  activeFactDot.y === y
+) {
+  ctx.beginPath();
+  ctx.arc(x, y, 8, 0, Math.PI * 2);
+  ctx.strokeStyle = "rgba(96,165,250,0.6)";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+}
 factDots.push({
 x,
 y,
