@@ -145,6 +145,7 @@ btn.style.pointerEvents = lock ? "none" : "auto";
 });
 }
 lockTabs(true);
+calcLock.style.display = "none";
 moveIndicator(buttons[0]);
 
 /* ===== OPEN SCREEN ===== */
@@ -514,6 +515,7 @@ isInitialized = false;
 lastCalc = {};
 plannedMonthly = 0;
 
+calcLock.style.display = "none";
 confirmReset.style.display = "none";
 lockTabs(true);
 
@@ -666,49 +668,24 @@ ctx.scale(dpr, dpr);
 drawChart();
 
 canvas.addEventListener("click", e => {
-  const rect = canvas.getBoundingClientRect();
-  const x = e.clientX - rect.left;
-  const y = e.clientY - rect.top;
+const rect = canvas.getBoundingClientRect();
+const x = e.clientX - rect.left;
+const y = e.clientY - rect.top;
 
-  const hit = factDots.find(p => {
-    const dx = x - p.x;
-    const dy = y - p.y;
-    return Math.sqrt(dx * dx + dy * dy) < 10;
-  });
+const hit = factDots.find(p => {
+const dx = x - p.x;
+const dy = y - p.y;
+return Math.sqrt(dx * dx + dy * dy) < 10;
+});
 
-  if (hit) {
-    showFactTooltip(hit.data);
-  }
+if (hit) {
+showFactTooltip(hit.data);
+}
 });
 }
 
 function drawChart() {
 let lineColor = "#e5e7eb"; // светло-серый по умолчанию (нейтральный)
-
-// ===== ГРУППИРОВКА ФАКТА ПО МЕСЯЦАМ =====
-const groupedFacts = {};
-const startDate = new Date();
-
-factHistory.forEach((f, i) => {
-  // считаем месяц относительно старта
-  const d = new Date(startDate);
-  d.setMonth(d.getMonth() + i);
-
-  // ключ вида "2026-1"
-  const key = `${d.getFullYear()}-${d.getMonth()}`;
-
-  if (!groupedFacts[key]) {
-    groupedFacts[key] = {
-      total: 0,
-      date: d
-    };
-  }
-
-  groupedFacts[key].total += f.value;
-});
-
-// массив месяцев (каждый = 1 точка)
-const groupedArray = Object.values(groupedFacts);
 
 if (typeof factRatio === "number") {
 if (factRatio < 0.7) lineColor = "#ef4444"; // красный
@@ -724,6 +701,7 @@ const dpr = window.devicePixelRatio || 1;
 const W = canvas.width / dpr;
 const H = canvas.height / dpr;
 
+const startDate = new Date();
 const months = lastCalc.months;
 const monthly = plannedMonthly;
 
@@ -736,7 +714,7 @@ const factPoints = [
 ];
 
 let acc = 0;
-groupedArray.forEach((f, i) => {
+factHistory.forEach((f, i) => {
 acc += f.value;
 factPoints.push({
 month: i + 1,
@@ -779,8 +757,8 @@ ctx.beginPath();
 
 let cumulative = 0;
 
-groupedArray.forEach((f, i) => {
-  cumulative += f.total;
+factHistory.forEach((f, i) => {
+cumulative += f.value;
 
 const progress = Math.max(
 (i + 1) / (points.length - 1),
@@ -809,31 +787,30 @@ ctx.stroke();
 if (factHistory.length > 0) {
 ctx.fillStyle = "#60a5fa";
 
-factDots = [];
 let cumulative = 0;
 
-groupedArray.forEach((f, i) => {
-  cumulative += f.total;
+factDots = [];
+factHistory.forEach((f, i) => {
+cumulative += f.value;
 
-  const progress = Math.max(
-    (i + 1) / (points.length - 1),
-    0.03
-  );
+const progress = Math.max(
+(i + 1) / (points.length - 1),
+0.03
+);
 
-  const x = pad + progress * (W - pad * 2);
-  const y =
-    H - pad -
-    (cumulative / maxValue) * (H - pad * 2);
+const x = pad + progress * (W - pad * 2);
+const y =
+H - pad -
+(cumulative / maxValue) * (H - pad * 2);
 
-  ctx.beginPath();
-  ctx.arc(x, y, 4, 0, Math.PI * 2);
-  ctx.fill();
-
-  factDots.push({
-    x,
-    y,
-    data: f // ← ВАЖНО: тут total + date
-  });
+ctx.beginPath();
+ctx.arc(x, y, 3.5, 0, Math.PI * 2);
+ctx.fill();
+factDots.push({
+x,
+y,
+data: f
+});
 });
 }
 
@@ -916,29 +893,29 @@ adviceCard.appendChild(block);
 }
 
 function showFactTooltip(f) {
-  const old = adviceCard.querySelector(".fact-tooltip");
-  if (old) old.remove();
+const old = adviceCard.querySelector(".fact-tooltip");
+if (old) old.remove();
 
-  const block = document.createElement("div");
-  block.className = "fact-tooltip";
+const block = document.createElement("div");
+block.className = "fact-tooltip";
 
-  const date = new Date().toLocaleDateString("ru-RU");
+const date = new Date().toLocaleDateString("ru-RU");
 
-  block.style.marginTop = "10px";
-  block.style.padding = "10px 12px";
-  block.style.borderRadius = "12px";
-  block.style.background = "#0e0e0e";
-  block.style.border = "1px solid #222";
-  block.style.fontSize = "14px";
+block.style.marginTop = "10px";
+block.style.padding = "10px 12px";
+block.style.borderRadius = "12px";
+block.style.background = "#0e0e0e";
+block.style.border = "1px solid #222";
+block.style.fontSize = "14px";
 
-  block.innerHTML = `
-    <div style="opacity:.6">${date}</div>
-    <div style="margin-top:4px;font-weight:600">
-      Отложено: ${f.value.toLocaleString()} ₽
-    </div>
-  `;
+block.innerHTML = `
+<div style="opacity:.6">${date}</div>
+<div style="margin-top:4px;font-weight:600">
+Отложено: ${f.value.toLocaleString()} ₽
+</div>
+`;
 
-  adviceCard.appendChild(block);
+adviceCard.appendChild(block);
 
-  setTimeout(() => block.remove(), 4000);
+setTimeout(() => block.remove(), 4000);
 }
