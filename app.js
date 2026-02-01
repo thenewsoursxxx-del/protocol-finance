@@ -685,6 +685,28 @@ showFactTooltip(hit.data);
 }
 
 function drawChart() {
+// ===== GROUP FACTS BY MONTH (SAFE) =====
+const groupedFacts = {};
+const start = new Date();
+
+factHistory.forEach((f, i) => {
+  const d = new Date(start);
+  d.setMonth(d.getMonth() + i);
+
+  const key = `${d.getFullYear()}-${d.getMonth()}`;
+
+  if (!groupedFacts[key]) {
+    groupedFacts[key] = {
+      date: d,
+      total: 0
+    };
+  }
+
+  groupedFacts[key].total += f.value;
+});
+
+// массив месяцев (1 месяц = 1 точка)
+const groupedArray = Object.values(groupedFacts);
 let lineColor = "#e5e7eb"; // светло-серый по умолчанию (нейтральный)
 
 if (typeof factRatio === "number") {
