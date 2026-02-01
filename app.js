@@ -778,9 +778,7 @@ ctx.setLineDash([]);
 
 // ===== ЛИНИЯ ФАКТА =====
 if (factHistory.length > 0) {
-
-const factGradient = getReserveGradient(ctx, pad, 0, W - pad, 0);
-ctx.strokeStyle = factGradient;
+ctx.strokeStyle = "rgba(96,165,250,0.9)"; // спокойный синий
 ctx.lineWidth = 1.6;
 
 ctx.beginPath();
@@ -815,9 +813,7 @@ ctx.stroke();
 
 // ===== ТОЧКИ ФАКТА =====
 if (factHistory.length > 0) {
-
-const factGradient = getReserveGradient(ctx, 0, 0, W, H);
-ctx.fillStyle = factGradient;
+ctx.fillStyle = "#60a5fa";
 
 let cumulative = 0;
 
@@ -842,7 +838,7 @@ ctx.fill();
 
 // 🔵 ОБВОДКА ТОЛЬКО ЕСЛИ ЭТО АКТИВНАЯ ТОЧКА
 if (activeFactDot && activeFactDot.x === x && activeFactDot.y === y) {
-ctx.strokeStyle = "rgba(96,165,250,0.45)";
+ctx.strokeStyle = "#60a5fa";
 ctx.lineWidth = 2;
 ctx.beginPath();
 ctx.arc(x, y, 7, 0, Math.PI * 2);
@@ -961,10 +957,8 @@ const date = new Date().toLocaleDateString("ru-RU");
 block.style.marginTop = "10px";
 block.style.padding = "10px 12px";
 block.style.borderRadius = "12px";
-block.style.background =
-  "linear-gradient(135deg, #1e3a8a, #2563eb, #60a5fa)";
-block.style.border = "1px solid rgba(255,255,255,.08)";
-block.style.color = "#fff";
+block.style.background = "#0e0e0e";
+block.style.border = "1px solid #222";
 block.style.fontSize = "14px";
 
 block.innerHTML = `
