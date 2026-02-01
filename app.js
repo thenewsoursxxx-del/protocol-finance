@@ -656,13 +656,6 @@ let canvas, ctx;
 const pad = 40;
 let factDots = [];
 let activeFactDot = null;
-function getReserveGradient(ctx, x1, y1, x2, y2) {
-  const g = ctx.createLinearGradient(x1, y1, x2, y2);
-  g.addColorStop(0, "#1e3a8a"); // глубокий тёмно-синий
-  g.addColorStop(0.5, "#2563eb"); // фирменный синий
-  g.addColorStop(1, "#60a5fa"); // мягкий светлый
-  return g;
-}
 
 function initChart() {
 canvas = document.getElementById("chart");
