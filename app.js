@@ -836,6 +836,14 @@ ctx.beginPath();
 ctx.arc(x, y, 3.5, 0, Math.PI * 2);
 ctx.fill();
 
+// 🔵 ОБВОДКА ТОЛЬКО ЕСЛИ ЭТО АКТИВНАЯ ТОЧКА
+if (activeFactDot && activeFactDot.x === x && activeFactDot.y === y) {
+  ctx.strokeStyle = "#60a5fa";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(x, y, 7, 0, Math.PI * 2);
+  ctx.stroke();
+}
 // 🔥 подсветка активной точки
 if (
   activeFactDot &&
