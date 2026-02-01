@@ -736,12 +736,12 @@ const factPoints = [
 ];
 
 let acc = 0;
-factHistory.forEach((f, i) => {
-acc += f.value;
-factPoints.push({
-month: i + 1,
-value: acc
-});
+groupedArray.forEach((f, i) => {
+  acc += f.total;
+  factPoints.push({
+    month: i + 1,
+    value: acc
+  });
 });
 
 ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -779,8 +779,8 @@ ctx.beginPath();
 
 let cumulative = 0;
 
-factHistory.forEach((f, i) => {
-cumulative += f.value;
+groupedArray.forEach((f, i) => {
+  cumulative += f.total;
 
 const progress = Math.max(
 (i + 1) / (points.length - 1),
@@ -812,8 +812,8 @@ ctx.fillStyle = "#60a5fa";
 let cumulative = 0;
 
 factDots = [];
-factHistory.forEach((f, i) => {
-cumulative += f.value;
+groupedArray.forEach((f, i) => {
+  cumulative += f.total;
 
 const progress = Math.max(
 (i + 1) / (points.length - 1),
@@ -831,7 +831,10 @@ ctx.fill();
 factDots.push({
 x,
 y,
-data: f
+data: {
+  value: f.total,
+  date: f.date
+}
 });
 });
 }
