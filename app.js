@@ -491,8 +491,8 @@ const fact = parseNumber(factInput.value);
 if (!fact) return;
 
 factHistory.push({
-month: factHistory.length + 1,
-value: fact
+  value: fact,
+  date: new Date()
 });
 
 // 🔥 ВАЖНОЕ
@@ -689,9 +689,8 @@ function drawChart() {
 const groupedFacts = {};
 const start = new Date();
 
-factHistory.forEach((f, i) => {
-  const d = new Date(start);
-  d.setMonth(d.getMonth() + i);
+factHistory.forEach(f => {
+  const d = new Date(f.date);
 
   const key = `${d.getFullYear()}-${d.getMonth()}`;
 
