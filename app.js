@@ -691,13 +691,6 @@ if (hit) {
 });
 }
 
-document.addEventListener("click", e => {
-  if (!e.target.closest("canvas")) {
-    activeFactDot = null;
-    drawChart();
-  }
-});
-
 function drawChart() {
 // ===== GROUP FACTS BY MONTH (SAFE) =====
 const groupedFacts = {};
