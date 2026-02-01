@@ -655,6 +655,12 @@ return true;
 let canvas, ctx;
 const pad = 40;
 let factDots = [];
+function getFactGradient(ctx, x1, y1, x2, y2) {
+  const g = ctx.createLinearGradient(x1, y1, x2, y2);
+  g.addColorStop(0, "#60a5fa"); // светло-синий
+  g.addColorStop(1, "#2563eb"); // глубокий синий
+  return g;
+}
 let activeFactDot = null;
 
 function initChart() {
@@ -778,7 +784,8 @@ ctx.setLineDash([]);
 
 // ===== ЛИНИЯ ФАКТА =====
 if (factHistory.length > 0) {
-ctx.strokeStyle = "rgba(96,165,250,0.9)"; // спокойный синий
+const factGradient = getFactGradient(ctx, pad, 0, W - pad, 0);
+ctx.strokeStyle = factGradient;
 ctx.lineWidth = 1.6;
 
 ctx.beginPath();
@@ -813,7 +820,7 @@ ctx.stroke();
 
 // ===== ТОЧКИ ФАКТА =====
 if (factHistory.length > 0) {
-ctx.fillStyle = "#60a5fa";
+ctx.fillStyle = factGradient;
 
 let cumulative = 0;
 
@@ -835,6 +842,12 @@ H - pad -
 ctx.beginPath();
 ctx.arc(x, y, 3.5, 0, Math.PI * 2);
 ctx.fill();
+
+if (activeFactDot === i) {
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = factGradient;
+  ctx.stroke();
+}
 
 // 🔵 ОБВОДКА ТОЛЬКО ЕСЛИ ЭТО АКТИВНАЯ ТОЧКА
 if (activeFactDot && activeFactDot.x === x && activeFactDot.y === y) {
@@ -957,8 +970,10 @@ const date = new Date().toLocaleDateString("ru-RU");
 block.style.marginTop = "10px";
 block.style.padding = "10px 12px";
 block.style.borderRadius = "12px";
-block.style.background = "#0e0e0e";
-block.style.border = "1px solid #222";
+block.style.background =
+  "linear-gradient(135deg, #1e3a8a, #2563eb)";
+block.style.border = "1px solid rgba(255,255,255,.08)";
+block.style.color = "#fff";
 block.style.fontSize = "14px";
 
 block.innerHTML = `
