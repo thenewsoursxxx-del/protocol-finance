@@ -782,8 +782,8 @@ ctx.beginPath();
 
 let cumulative = 0;
 
-factHistory.forEach((f, i) => {
-cumulative += f.total;
+groupedArray.forEach((f, i) => {
+  cumulative += f.total;
 
 const progress = Math.max(
 (i + 1) / (points.length - 1),
@@ -812,30 +812,31 @@ ctx.stroke();
 if (factHistory.length > 0) {
 ctx.fillStyle = "#60a5fa";
 
+factDots = [];
 let cumulative = 0;
 
-factDots = [];
-factHistory.forEach((f, i) => {
-cumulative += f.value;
+groupedArray.forEach((f, i) => {
+  cumulative += f.total;
 
-const progress = Math.max(
-(i + 1) / (points.length - 1),
-0.03
-);
+  const progress = Math.max(
+    (i + 1) / (points.length - 1),
+    0.03
+  );
 
-const x = pad + progress * (W - pad * 2);
-const y =
-H - pad -
-(cumulative / maxValue) * (H - pad * 2);
+  const x = pad + progress * (W - pad * 2);
+  const y =
+    H - pad -
+    (cumulative / maxValue) * (H - pad * 2);
 
-ctx.beginPath();
-ctx.arc(x, y, 3.5, 0, Math.PI * 2);
-ctx.fill();
-factDots.push({
-  x,
-  y,
-  data: f
-});
+  ctx.beginPath();
+  ctx.arc(x, y, 4, 0, Math.PI * 2);
+  ctx.fill();
+
+  factDots.push({
+    x,
+    y,
+    data: f // ← ВАЖНО: тут total + date
+  });
 });
 }
 
