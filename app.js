@@ -726,7 +726,6 @@ const dpr = window.devicePixelRatio || 1;
 const W = canvas.width / dpr;
 const H = canvas.height / dpr;
 
-const startDate = new Date();
 const months = lastCalc.months;
 const monthly = plannedMonthly;
 
