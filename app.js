@@ -650,6 +650,7 @@ return true;
 
 let canvas, ctx;
 const pad = 40;
+let factDots = [];
 
 function initChart() {
 canvas = document.getElementById("chart");
@@ -665,6 +666,22 @@ ctx = canvas.getContext("2d");
 ctx.scale(dpr, dpr);
 
 drawChart();
+
+canvas.addEventListener("click", e => {
+  const rect = canvas.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+
+  const hit = factDots.find(p => {
+    const dx = x - p.x;
+    const dy = y - p.y;
+    return Math.sqrt(dx * dx + dy * dy) < 10;
+  });
+
+  if (hit) {
+    showFactTooltip(hit.data);
+  }
+});
 }
 
 function drawChart() {
@@ -772,6 +789,7 @@ ctx.fillStyle = "#60a5fa";
 
 let cumulative = 0;
 
+factDots = [];
 factHistory.forEach((f, i) => {
 cumulative += f.value;
 
@@ -788,6 +806,11 @@ H - pad -
 ctx.beginPath();
 ctx.arc(x, y, 3.5, 0, Math.PI * 2);
 ctx.fill();
+factDots.push({
+  x,
+  y,
+  data: f
+});
 });
 }
 
@@ -867,4 +890,32 @@ block.style.fontSize = "14px";
 block.innerText = text;
 
 adviceCard.appendChild(block);
+}
+
+function showFactTooltip(f) {
+  const old = adviceCard.querySelector(".fact-tooltip");
+  if (old) old.remove();
+
+  const block = document.createElement("div");
+  block.className = "fact-tooltip";
+
+  const date = new Date().toLocaleDateString("ru-RU");
+
+  block.style.marginTop = "10px";
+  block.style.padding = "10px 12px";
+  block.style.borderRadius = "12px";
+  block.style.background = "#0e0e0e";
+  block.style.border = "1px solid #222";
+  block.style.fontSize = "14px";
+
+  block.innerHTML = `
+    <div style="opacity:.6">${date}</div>
+    <div style="margin-top:4px;font-weight:600">
+      Отложено: ${f.value.toLocaleString()} ₽
+    </div>
+  `;
+
+  adviceCard.appendChild(block);
+
+  setTimeout(() => block.remove(), 4000);
 }
