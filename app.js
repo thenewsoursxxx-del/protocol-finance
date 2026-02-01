@@ -662,6 +662,7 @@ function getFactGradient(ctx, x1, y1, x2, y2) {
   return g;
 }
 let activeFactDot = null;
+let factGradient = null;
 
 function initChart() {
 canvas = document.getElementById("chart");
@@ -784,7 +785,7 @@ ctx.setLineDash([]);
 
 // ===== ЛИНИЯ ФАКТА =====
 if (factHistory.length > 0) {
-const factGradient = getFactGradient(ctx, pad, 0, W - pad, 0);
+factGradient = getFactGradient(ctx, pad, 0, W - pad, 0);
 ctx.strokeStyle = factGradient;
 ctx.lineWidth = 1.6;
 
@@ -842,11 +843,6 @@ H - pad -
 ctx.beginPath();
 ctx.arc(x, y, 3.5, 0, Math.PI * 2);
 ctx.fill();
-
-if (activeFactDot === i) {
-  ctx.lineWidth = 2;
-  ctx.strokeStyle = factGradient;
-  ctx.stroke();
 }
 
 // 🔵 ОБВОДКА ТОЛЬКО ЕСЛИ ЭТО АКТИВНАЯ ТОЧКА
