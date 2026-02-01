@@ -962,5 +962,9 @@ block.innerHTML = `
 
 adviceCard.appendChild(block);
 
-setTimeout(() => block.remove(), 4000);
+setTimeout(() => {
+  block.remove();
+  activeFactDot = null;
+  drawChart();
+}, 4000);
 }
