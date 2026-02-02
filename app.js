@@ -866,26 +866,6 @@ if (activeFactDot && activeFactDot.x === x && activeFactDot.y === y) {
   ctx.stroke();
 }
 
-// 🔵 ОБВОДКА ТОЛЬКО ЕСЛИ ЭТО АКТИВНАЯ ТОЧКА
-if (activeFactDot && activeFactDot.x === x && activeFactDot.y === y) {
-ctx.strokeStyle = "#60a5fa";
-ctx.lineWidth = 2;
-ctx.beginPath();
-ctx.arc(x, y, 7, 0, Math.PI * 2);
-ctx.stroke();
-}
-// 🔥 подсветка активной точки
-if (
-activeFactDot &&
-activeFactDot.x === x &&
-activeFactDot.y === y
-) {
-ctx.beginPath();
-ctx.arc(x, y, 8, 0, Math.PI * 2);
-ctx.strokeStyle = "rgba(96,165,250,0.6)";
-ctx.lineWidth = 2;
-ctx.stroke();
-}
 factDots.push({
 x,
 y,
