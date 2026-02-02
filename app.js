@@ -823,7 +823,11 @@ ctx.stroke();
 
 // ===== ТОЧКИ ФАКТА =====
 if (factHistory.length > 0) {
-const factGradient = getFactGradient(ctx, W);
+const factGradient = ctx.createLinearGradient(pad, 0, W - pad, 0);
+factGradient.addColorStop(0, "#1e3a8a");
+factGradient.addColorStop(0.5, "#2563eb");
+factGradient.addColorStop(1, "#60a5fa");
+
 ctx.fillStyle = factGradient;
 
 let cumulative = 0;
