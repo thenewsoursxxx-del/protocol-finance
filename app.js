@@ -658,9 +658,9 @@ let factDots = [];
 let activeFactDot = null;
 function getReserveGradient(ctx, x1, y1, x2, y2) {
   const g = ctx.createLinearGradient(x1, y1, x2, y2);
-  g.addColorStop(0, "#1e3a8a");   // глубокий синий
-  g.addColorStop(0.5, "#2563eb"); // фирменный
-  g.addColorStop(1, "#60a5fa");   // мягкий светлый
+g.addColorStop(0, "#0ea5e9");   // яркий голубой
+g.addColorStop(0.5, "#2563eb"); // насыщенный синий
+g.addColorStop(1, "#1e40af");   // глубокий тёмный
   return g;
 }
 function initChart() {
