@@ -802,10 +802,11 @@ const progress = Math.max(
 
 const x = pad + progress * (W - pad * 2);
 
-const y =
-H -
-pad -
-(cumulative / maxValue) * (H - pad * 2);
+const rawY =
+  H - pad -
+  (cumulative / maxValue) * (H - pad * 2);
+
+const y = Math.max(pad + 2, rawY);
 
 if (i === 0) {
 ctx.moveTo(pad, H - pad); // старт с нуля
