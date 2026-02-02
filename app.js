@@ -740,7 +740,13 @@ const months = lastCalc.months;
 const monthly = plannedMonthly;
 
 const points = buildPlanTimeline(startDate, monthly, months);
-const maxValue = points[points.length - 1].value || 1;
+const planMax = points[points.length - 1].value || 1;
+
+const factMax = factHistory.length
+  ? factHistory.reduce((s, f) => s + f.value, 0)
+  : 0;
+
+const maxValue = Math.max(planMax, factMax) * 1.05; // +5% воздуха
 
 // ===== ФАКТИЧЕСКИЕ ТОЧКИ (ВСЕГДА С 0) =====
 const factPoints = [
