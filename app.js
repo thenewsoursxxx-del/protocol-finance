@@ -851,6 +851,21 @@ ctx.beginPath();
 ctx.arc(x, y, 3.5, 0, Math.PI * 2);
 ctx.fill();
 
+// 🌟 ВНЕШНЕЕ СВЕТЯЩЕЕСЯ КОЛЬЦО ДЛЯ АКТИВНОЙ ТОЧКИ
+if (activeFactDot && activeFactDot.x === x && activeFactDot.y === y) {
+  ctx.beginPath();
+  ctx.arc(x, y, 8, 0, Math.PI * 2);
+  ctx.strokeStyle = "rgba(96,165,250,0.45)";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.arc(x, y, 12, 0, Math.PI * 2);
+  ctx.strokeStyle = "rgba(96,165,250,0.18)";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+}
+
 // 🔵 ОБВОДКА ТОЛЬКО ЕСЛИ ЭТО АКТИВНАЯ ТОЧКА
 if (activeFactDot && activeFactDot.x === x && activeFactDot.y === y) {
 ctx.strokeStyle = "#60a5fa";
