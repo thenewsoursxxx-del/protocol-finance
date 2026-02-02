@@ -823,7 +823,8 @@ ctx.stroke();
 
 // ===== ТОЧКИ ФАКТА =====
 if (factHistory.length > 0) {
-ctx.fillStyle = "#60a5fa";
+const factGradient = getFactGradient(ctx, W);
+ctx.fillStyle = factGradient;
 
 let cumulative = 0;
 
