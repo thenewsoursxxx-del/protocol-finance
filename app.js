@@ -657,6 +657,14 @@ const pad = 40;
 let factDots = [];
 let activeFactDot = null;
 
+function getFactGradient(ctx, W) {
+  const g = ctx.createLinearGradient(0, 0, W, 0);
+  g.addColorStop(0, "#1e3a8a");   // тёмный как у резерва
+  g.addColorStop(0.5, "#2563eb"); // фирменный синий
+  g.addColorStop(1, "#60a5fa");   // мягкий светлый
+  return g;
+}
+
 function initChart() {
 canvas = document.getElementById("chart");
 if (!canvas) return;
@@ -778,7 +786,9 @@ ctx.setLineDash([]);
 
 // ===== ЛИНИЯ ФАКТА =====
 if (factHistory.length > 0) {
-ctx.strokeStyle = "rgba(96,165,250,0.9)"; // спокойный синий
+const factGradient = getFactGradient(ctx, W);
+ctx.strokeStyle = factGradient;
+ctx.lineWidth = 1.6;
 ctx.lineWidth = 1.6;
 
 ctx.beginPath();
