@@ -970,14 +970,7 @@ block.style.borderRadius = "12px";
 block.style.background =
   "linear-gradient(180deg, #0f172a 0%, #020617 100%)";
 
-block.style.border = "1.5px solid transparent";
-block.style.borderImage = `
-  repeating-linear-gradient(
-    90deg,
-    rgba(96,165,250,0.55) 0 6px,
-    transparent 6px 12px
-  ) 1
-`;
+block.style.border = "1.5px dashed rgba(96,165,250,0.55)";
 
 block.style.boxShadow = `
   inset 0 0 0 1px rgba(30,58,138,0.25),
