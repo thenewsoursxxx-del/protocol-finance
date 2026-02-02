@@ -51,13 +51,13 @@ const modeButtons = document.querySelectorAll(".mode-btn");
 modeButtons.forEach(btn => {
 btn.onclick = () => {
 haptic("light");
-// снять активность со всех
+// ÑÐ½ÑÑÑ Ð°ÐºÑÐ¸Ð²Ð½Ð¾ÑÑÑ ÑÐ¾ Ð²ÑÐµÑ
 modeButtons.forEach(b => b.classList.remove("active"));
 
-// активировать текущую
+// Ð°ÐºÑÐ¸Ð²Ð¸ÑÐ¾Ð²Ð°ÑÑ ÑÐµÐºÑÑÑÑ
 btn.classList.add("active");
 
-// сохранить режим
+// ÑÐ¾ÑÑÐ°Ð½Ð¸ÑÑ ÑÐµÐ¶Ð¸Ð¼
 selectedMode = btn.dataset.mode;
 saveMode = btn.dataset.mode;
 };
@@ -83,7 +83,7 @@ const screens = document.querySelectorAll(".screen");
 const buttons = document.querySelectorAll(".nav-btn");
 const indicator = document.querySelector(".nav-indicator");
 const bottomNav = document.querySelector(".bottom-nav");
-// ❌ скрываем bottom-nav при старте (экран расчёта)
+// â ÑÐºÑÑÐ²Ð°ÐµÐ¼ bottom-nav Ð¿ÑÐ¸ ÑÑÐ°ÑÑÐµ (ÑÐºÑÐ°Ð½ ÑÐ°ÑÑÑÑÐ°)
 bottomNav.style.opacity = "0";
 bottomNav.style.pointerEvents = "none";
 bottomNav.style.transform = "translateY(140%)";
@@ -164,7 +164,7 @@ buttons.forEach(btn => {
 btn.onclick = () => {
 haptic("light");
 
-// запоминаем, откуда пришли
+// Ð·Ð°Ð¿Ð¾Ð¼Ð¸Ð½Ð°ÐµÐ¼, Ð¾ÑÐºÑÐ´Ð° Ð¿ÑÐ¸ÑÐ»Ð¸
 lastScreenBeforeProfile = btn.dataset.screen;
 lastNavBtnBeforeProfile = btn;
 
@@ -180,7 +180,7 @@ haptic("light");
 
 openScreen(lastScreenBeforeProfile, lastNavBtnBeforeProfile);
 
-// nav показываем ТОЛЬКО если это не calc
+// nav Ð¿Ð¾ÐºÐ°Ð·ÑÐ²Ð°ÐµÐ¼ Ð¢ÐÐÐ¬ÐÐ ÐµÑÐ»Ð¸ ÑÑÐ¾ Ð½Ðµ calc
 if (lastScreenBeforeProfile === "calc") {
 bottomNav.style.transform = "translateY(140%)";
 bottomNav.style.opacity = "0";
@@ -207,7 +207,7 @@ function renderProtocolResult({ scenariosHTML, advice }) {
 adviceCard.innerHTML = `
 <div style="margin-bottom:12px">
 <div style="font-size:14px;opacity:.7;margin-bottom:6px">
-Возможные варианты:
+ÐÐ¾Ð·Ð¼Ð¾Ð¶Ð½ÑÐµ Ð²Ð°ÑÐ¸Ð°Ð½ÑÑ:
 </div>
 ${scenariosHTML}
 </div>
@@ -275,27 +275,27 @@ lastCalc = baseResult;
 
 // ===== BUILD 2 SCENARIOS (DIRECT vs BUFFER) =====
 const baseMonthly = lastCalc.monthlySave;
-const bufferRate = 0.1; // 10% в подушку
+const bufferRate = 0.1; // 10% Ð² Ð¿Ð¾Ð´ÑÑÐºÑ
 
 const scenarios = [
 {
 id: "direct",
-title: "Всё в цель",
+title: "ÐÑÑ Ð² ÑÐµÐ»Ñ",
 toGoal: baseMonthly,
 toBuffer: 0,
 months: lastCalc.months,
-risk: "Выше"
+risk: "ÐÑÑÐµ"
 },
 {
 id: "buffer",
-title: "С резервом",
+title: "Ð¡ ÑÐµÐ·ÐµÑÐ²Ð¾Ð¼",
 toGoal: Math.round(baseMonthly * (1 - bufferRate)),
 toBuffer: Math.round(baseMonthly * bufferRate),
 months: Math.ceil(
 lastCalc.effectiveGoal /
 Math.round(baseMonthly * (1 - bufferRate))
 ),
-risk: "Ниже"
+risk: "ÐÐ¸Ð¶Ðµ"
 }
 ];
 
@@ -305,22 +305,22 @@ const scenariosHTML = scenarios.map(s => `
 ${s.title}
 </div>
 
-В цель: ${s.toGoal.toLocaleString()} ₽ / мес<br>
-${s.toBuffer ? `В резерв: ${s.toBuffer.toLocaleString()} ₽<br>` : ""}
-Срок: ~${s.months} мес<br>
+Ð ÑÐµÐ»Ñ: ${s.toGoal.toLocaleString()} â½ / Ð¼ÐµÑ<br>
+${s.toBuffer ? `Ð ÑÐµÐ·ÐµÑÐ²: ${s.toBuffer.toLocaleString()} â½<br>` : ""}
+Ð¡ÑÐ¾Ðº: ~${s.months} Ð¼ÐµÑ<br>
 
-<span style="opacity:.6">Риск: ${s.risk}</span>
+<span style="opacity:.6">Ð Ð¸ÑÐº: ${s.risk}</span>
 
 ${
 s.id === "buffer"
 ? `
 <div class="reserve-info">
-<b>Резерв</b><br>
-Это ваша подушка безопасности.
-Эти средства можно откладывать на отдельный накопительный
-или инвестиционный счёт.<br><br>
-Резерв защищает от непредвиденных расходов
-и снижает риск срыва цели.
+<b>Ð ÐµÐ·ÐµÑÐ²</b><br>
+Ð­ÑÐ¾ Ð²Ð°ÑÐ° Ð¿Ð¾Ð´ÑÑÐºÐ° Ð±ÐµÐ·Ð¾Ð¿Ð°ÑÐ½Ð¾ÑÑÐ¸.
+Ð­ÑÐ¸ ÑÑÐµÐ´ÑÑÐ²Ð° Ð¼Ð¾Ð¶Ð½Ð¾ Ð¾ÑÐºÐ»Ð°Ð´ÑÐ²Ð°ÑÑ Ð½Ð° Ð¾ÑÐ´ÐµÐ»ÑÐ½ÑÐ¹ Ð½Ð°ÐºÐ¾Ð¿Ð¸ÑÐµÐ»ÑÐ½ÑÐ¹
+Ð¸Ð»Ð¸ Ð¸Ð½Ð²ÐµÑÑÐ¸ÑÐ¸Ð¾Ð½Ð½ÑÐ¹ ÑÑÑÑ.<br><br>
+Ð ÐµÐ·ÐµÑÐ² Ð·Ð°ÑÐ¸ÑÐ°ÐµÑ Ð¾Ñ Ð½ÐµÐ¿ÑÐµÐ´Ð²Ð¸Ð´ÐµÐ½Ð½ÑÑ ÑÐ°ÑÑÐ¾Ð´Ð¾Ð²
+Ð¸ ÑÐ½Ð¸Ð¶Ð°ÐµÑ ÑÐ¸ÑÐº ÑÑÑÐ²Ð° ÑÐµÐ»Ð¸.
 </div>
 `
 : ""
@@ -333,21 +333,21 @@ scenariosHTML,
 advice
 });
 
-isInitialized = true; // разрешаем переходы
-openScreen("advice", null); // показываем экран с карточками
+isInitialized = true; // ÑÐ°Ð·ÑÐµÑÐ°ÐµÐ¼ Ð¿ÐµÑÐµÑÐ¾Ð´Ñ
+openScreen("advice", null); // Ð¿Ð¾ÐºÐ°Ð·ÑÐ²Ð°ÐµÐ¼ ÑÐºÑÐ°Ð½ Ñ ÐºÐ°ÑÑÐ¾ÑÐºÐ°Ð¼Ð¸
 
-// показать summary
+// Ð¿Ð¾ÐºÐ°Ð·Ð°ÑÑ summary
 planSummary.style.display = "block";
 
-// заполнить данные
+// Ð·Ð°Ð¿Ð¾Ð»Ð½Ð¸ÑÑ Ð´Ð°Ð½Ð½ÑÐµ
 summaryMonthly.innerText = lastCalc.monthlySave.toLocaleString();
 summaryMonths.innerText = lastCalc.months;
 summaryMode.innerText =
-saveMode === "calm" ? "Спокойный"
-: saveMode === "normal" ? "Умеренный"
-: "Агрессивный";
+saveMode === "calm" ? "Ð¡Ð¿Ð¾ÐºÐ¾Ð¹Ð½ÑÐ¹"
+: saveMode === "normal" ? "Ð£Ð¼ÐµÑÐµÐ½Ð½ÑÐ¹"
+: "ÐÐ³ÑÐµÑÑÐ¸Ð²Ð½ÑÐ¹";
 
-// спрятать форму
+// ÑÐ¿ÑÑÑÐ°ÑÑ ÑÐ¾ÑÐ¼Ñ
 document.querySelectorAll(
 "#screen-calc label, #screen-calc .input-wrap, .mode-buttons, #calculate"
 ).forEach(el => el.style.display = "none");
@@ -358,12 +358,12 @@ document.querySelectorAll(
 editPlanBtn.onclick = () => {
 haptic("light");
 
-// показать форму обратно
+// Ð¿Ð¾ÐºÐ°Ð·Ð°ÑÑ ÑÐ¾ÑÐ¼Ñ Ð¾Ð±ÑÐ°ÑÐ½Ð¾
 document.querySelectorAll(
 "#screen-calc label, #screen-calc .input-wrap, .mode-buttons, #calculate"
 ).forEach(el => el.style.display = "");
 
-// спрятать summary
+// ÑÐ¿ÑÑÑÐ°ÑÑ summary
 planSummary.style.display = "none";
 };
 
@@ -399,7 +399,7 @@ year: "2-digit"
 
 /* ===== STAGED FLOW ===== */
 function protocolFlow(mode) {
-// возвращаем bottom nav после старта плана
+// Ð²Ð¾Ð·Ð²ÑÐ°ÑÐ°ÐµÐ¼ bottom nav Ð¿Ð¾ÑÐ»Ðµ ÑÑÐ°ÑÑÐ° Ð¿Ð»Ð°Ð½Ð°
 bottomNav.style.opacity = "1";
 bottomNav.style.pointerEvents = "auto";
 bottomNav.style.transform = "translateY(0)";
@@ -415,17 +415,17 @@ plannedMonthly = lastCalc.monthlySave;
 
 if (mode === "buffer") plannedMonthly = Math.round(plannedMonthly * 0.9);
 
-adviceCard.innerText = "Protocol анализирует данные…";
+adviceCard.innerText = "Protocol Ð°Ð½Ð°Ð»Ð¸Ð·Ð¸ÑÑÐµÑ Ð´Ð°Ð½Ð½ÑÐµâ¦";
 
 setTimeout(() => {
 adviceCard.innerText =
 mode === "buffer"
-? "Часть средств будет направляться в резерв."
-: "Все средства идут напрямую в цель.";
+? "Ð§Ð°ÑÑÑ ÑÑÐµÐ´ÑÑÐ² Ð±ÑÐ´ÐµÑ Ð½Ð°Ð¿ÑÐ°Ð²Ð»ÑÑÑÑÑ Ð² ÑÐµÐ·ÐµÑÐ²."
+: "ÐÑÐµ ÑÑÐµÐ´ÑÑÐ²Ð° Ð¸Ð´ÑÑ Ð½Ð°Ð¿ÑÑÐ¼ÑÑ Ð² ÑÐµÐ»Ñ.";
 }, 2000);
 
 setTimeout(() => {
-adviceCard.innerText = "Готово.";
+adviceCard.innerText = "ÐÐ¾ÑÐ¾Ð²Ð¾.";
 }, 4000);
 
 setTimeout(() => {
@@ -436,7 +436,7 @@ const advice = ProtocolCore.buildAdvice(lastCalc);
 
 adviceCard.innerHTML = `
 <div style="font-size:16px;font-weight:600">
-План: ${plannedMonthly.toLocaleString()} ₽ / месяц
+ÐÐ»Ð°Ð½: ${plannedMonthly.toLocaleString()} â½ / Ð¼ÐµÑÑÑ
 </div>
 
 <div style="
@@ -466,11 +466,11 @@ style="width:360px; height:260px; margin:16px 0;"
 
 <div style="display:flex;gap:8px;align-items:center">
 <input id="factInput" inputmode="numeric"
-placeholder="Фактически отложено"
+placeholder="Ð¤Ð°ÐºÑÐ¸ÑÐµÑÐºÐ¸ Ð¾ÑÐ»Ð¾Ð¶ÐµÐ½Ð¾"
 style="flex:1"/>
 <button id="applyFact"
 style="width:52px;height:52px;border-radius:50%">
-➜
+â
 </button>
 </div>
 `;
@@ -499,7 +499,7 @@ value: fact,
 date: now
 });
 
-// 🔥 ВАЖНОЕ
+// ð¥ ÐÐÐÐÐÐ
 factRatio = fact / plannedMonthly;
 
 drawChart();
@@ -537,17 +537,17 @@ if (profileBtn) {
 profileBtn.onclick = () => {
 haptic("light");
 
-// закрываем клавиатуру
+// Ð·Ð°ÐºÑÑÐ²Ð°ÐµÐ¼ ÐºÐ»Ð°Ð²Ð¸Ð°ÑÑÑÑ
 document.activeElement?.blur();
 
-// показываем профиль
+// Ð¿Ð¾ÐºÐ°Ð·ÑÐ²Ð°ÐµÐ¼ Ð¿ÑÐ¾ÑÐ¸Ð»Ñ
 screens.forEach(s => s.classList.remove("active"));
 document.getElementById("screen-profile").classList.add("active");
 
-// убираем активность навбара
+// ÑÐ±Ð¸ÑÐ°ÐµÐ¼ Ð°ÐºÑÐ¸Ð²Ð½Ð¾ÑÑÑ Ð½Ð°Ð²Ð±Ð°ÑÐ°
 buttons.forEach(b => b.classList.remove("active"));
 
-// прячем нижний навбар (iOS-style)
+// Ð¿ÑÑÑÐµÐ¼ Ð½Ð¸Ð¶Ð½Ð¸Ð¹ Ð½Ð°Ð²Ð±Ð°Ñ (iOS-style)
 bottomNav.style.transform = "translateY(140%)";
 bottomNav.style.opacity = "0";
 bottomNav.style.pointerEvents = "none";
@@ -560,7 +560,7 @@ const wrap = input.closest(".input-wrap");
 
 input.addEventListener("focus", () => {
 wrap.classList.remove("error", "shake");
-wrap.classList.add("show-hint"); // ← ВОТ ЭТОГО НЕ ХВАТАЛО
+wrap.classList.add("show-hint"); // â ÐÐÐ¢ Ð­Ð¢ÐÐÐ ÐÐ Ð¥ÐÐÐ¢ÐÐÐ
 
 if (input.dataset.placeholder) {
 input.placeholder = input.dataset.placeholder;
@@ -569,11 +569,11 @@ input.placeholder = input.dataset.placeholder;
 
 input.addEventListener("input", () => {
 wrap.classList.remove("error", "shake");
-wrap.classList.remove("show-hint"); // ← прячем при вводе
+wrap.classList.remove("show-hint"); // â Ð¿ÑÑÑÐµÐ¼ Ð¿ÑÐ¸ Ð²Ð²Ð¾Ð´Ðµ
 });
 
 input.addEventListener("blur", () => {
-wrap.classList.remove("show-hint"); // ← прячем при уходе
+wrap.classList.remove("show-hint"); // â Ð¿ÑÑÑÐµÐ¼ Ð¿ÑÐ¸ ÑÑÐ¾Ð´Ðµ
 });
 });
 
@@ -587,10 +587,10 @@ Telegram.WebApp.HapticFeedback.impactOccurred(type);
 
 const tgUser = Telegram.WebApp.initDataUnsafe?.user;
 
-// верхняя иконка
+// Ð²ÐµÑÑÐ½ÑÑ Ð¸ÐºÐ¾Ð½ÐºÐ°
 const topAvatar = document.querySelector("#profileBtn .avatar");
 
-// профиль
+// Ð¿ÑÐ¾ÑÐ¸Ð»Ñ
 const profileAvatar = document.querySelector(".profile-avatar");
 const profileName = document.querySelector(".profile-name");
 
@@ -598,22 +598,22 @@ if (tgUser) {
 const fullName =
 tgUser.first_name + (tgUser.last_name ? " " + tgUser.last_name : "");
 
-// имя в профиле
+// Ð¸Ð¼Ñ Ð² Ð¿ÑÐ¾ÑÐ¸Ð»Ðµ
 if (profileName) {
 profileName.innerText = fullName;
 }
 
-// если есть фото
+// ÐµÑÐ»Ð¸ ÐµÑÑÑ ÑÐ¾ÑÐ¾
 if (tgUser.photo_url) {
 const img = `
 <img src="${tgUser.photo_url}"
 style="width:100%;height:100%;border-radius:50%;object-fit:cover;" />
 `;
 
-// верхняя иконка
+// Ð²ÐµÑÑÐ½ÑÑ Ð¸ÐºÐ¾Ð½ÐºÐ°
 if (topAvatar) topAvatar.innerHTML = img;
 
-// аватар в профиле
+// Ð°Ð²Ð°ÑÐ°Ñ Ð² Ð¿ÑÐ¾ÑÐ¸Ð»Ðµ
 if (profileAvatar) profileAvatar.innerHTML = img;
 }
 }
@@ -624,9 +624,9 @@ const value = parseNumber(input.value || "0");
 if (!value) {
 wrap.classList.add("error");
 
-// перезапуск shake
+// Ð¿ÐµÑÐµÐ·Ð°Ð¿ÑÑÐº shake
 wrap.classList.remove("shake");
-void wrap.offsetWidth; // force reflow (ВАЖНО)
+void wrap.offsetWidth; // force reflow (ÐÐÐÐÐ)
 wrap.classList.add("shake");
 
 // placeholder
@@ -635,7 +635,7 @@ input.dataset.placeholder = input.placeholder;
 }
 
 input.value = "";
-input.placeholder = "Обязательное поле";
+input.placeholder = "ÐÐ±ÑÐ·Ð°ÑÐµÐ»ÑÐ½Ð¾Ðµ Ð¿Ð¾Ð»Ðµ";
 
 haptic("error");
 
@@ -656,13 +656,7 @@ let canvas, ctx;
 const pad = 40;
 let factDots = [];
 let activeFactDot = null;
-function getReserveGradient(ctx, x1, y1, x2, y2) {
-  const g = ctx.createLinearGradient(x1, y1, x2, y2);
-g.addColorStop(0, "#0ea5e9");   // яркий голубой
-g.addColorStop(0.5, "#2563eb"); // насыщенный синий
-g.addColorStop(1, "#1e40af");   // глубокий тёмный
-  return g;
-}
+
 function initChart() {
 canvas = document.getElementById("chart");
 if (!canvas) return;
@@ -717,19 +711,19 @@ total: 0
 groupedFacts[key].total += f.value;
 });
 
-// массив месяцев (1 месяц = 1 точка)
+// Ð¼Ð°ÑÑÐ¸Ð² Ð¼ÐµÑÑÑÐµÐ² (1 Ð¼ÐµÑÑÑ = 1 ÑÐ¾ÑÐºÐ°)
 const groupedArray = Object.values(groupedFacts);
-let lineColor = "#e5e7eb"; // светло-серый по умолчанию (нейтральный)
+let lineColor = "#e5e7eb"; // ÑÐ²ÐµÑÐ»Ð¾-ÑÐµÑÑÐ¹ Ð¿Ð¾ ÑÐ¼Ð¾Ð»ÑÐ°Ð½Ð¸Ñ (Ð½ÐµÐ¹ÑÑÐ°Ð»ÑÐ½ÑÐ¹)
 
 if (typeof factRatio === "number") {
-if (factRatio < 0.7) lineColor = "#ef4444"; // красный
-else if (factRatio < 0.95) lineColor = "#facc15"; // жёлтый
-else lineColor = "#4ade80"; // зелёный
+if (factRatio < 0.7) lineColor = "#ef4444"; // ÐºÑÐ°ÑÐ½ÑÐ¹
+else if (factRatio < 0.95) lineColor = "#facc15"; // Ð¶ÑÐ»ÑÑÐ¹
+else lineColor = "#4ade80"; // Ð·ÐµÐ»ÑÐ½ÑÐ¹
 }
 
 if (typeof factRatio === "number") {
-if (factRatio < 0.7) lineColor = "#ef4444"; // красный
-else if (factRatio < 0.95) lineColor = "#facc15"; // жёлтый
+if (factRatio < 0.7) lineColor = "#ef4444"; // ÐºÑÐ°ÑÐ½ÑÐ¹
+else if (factRatio < 0.95) lineColor = "#facc15"; // Ð¶ÑÐ»ÑÑÐ¹
 }
 const dpr = window.devicePixelRatio || 1;
 const W = canvas.width / dpr;
@@ -740,15 +734,9 @@ const months = lastCalc.months;
 const monthly = plannedMonthly;
 
 const points = buildPlanTimeline(startDate, monthly, months);
-const planMax = points[points.length - 1].value || 1;
+const maxValue = points[points.length - 1].value || 1;
 
-const factMax = factHistory.length
-  ? factHistory.reduce((s, f) => s + f.value, 0)
-  : 0;
-
-const maxValue = Math.max(planMax, factMax) * 1.05; // +5% воздуха
-
-// ===== ФАКТИЧЕСКИЕ ТОЧКИ (ВСЕГДА С 0) =====
+// ===== Ð¤ÐÐÐ¢ÐÐ§ÐÐ¡ÐÐÐ Ð¢ÐÐ§ÐÐ (ÐÐ¡ÐÐÐÐ Ð¡ 0) =====
 const factPoints = [
 { month: 0, value: 0 }
 ];
@@ -764,7 +752,7 @@ value: acc
 
 ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-// ОСИ
+// ÐÐ¡Ð
 ctx.strokeStyle = "#333";
 ctx.lineWidth = 1;
 ctx.beginPath();
@@ -773,7 +761,7 @@ ctx.lineTo(pad, H - pad);
 ctx.lineTo(W - pad, H - pad);
 ctx.stroke();
 
-// ЛИНИЯ
+// ÐÐÐÐÐ¯
 ctx.strokeStyle = lineColor;
 ctx.lineWidth = 2;
 ctx.beginPath();
@@ -788,10 +776,9 @@ else ctx.lineTo(x, y);
 ctx.stroke();
 ctx.setLineDash([]);
 
-// ===== ЛИНИЯ ФАКТА =====
+// ===== ÐÐÐÐÐ¯ Ð¤ÐÐÐ¢Ð =====
 if (factHistory.length > 0) {
-const factGradient = ctx.createLinearGradient(0, H - pad, 0, pad);
-ctx.strokeStyle = factGradient;
+ctx.strokeStyle = "rgba(96,165,250,0.9)"; // ÑÐ¿Ð¾ÐºÐ¾Ð¹Ð½ÑÐ¹ ÑÐ¸Ð½Ð¸Ð¹
 ctx.lineWidth = 1.6;
 
 ctx.beginPath();
@@ -803,20 +790,19 @@ cumulative += f.total;
 
 const progress = Math.max(
 (i + 1) / (points.length - 1),
-0.03 // 🔥 МИНИМАЛЬНЫЙ СДВИГ — линия появляется сразу
+0.03 // ð¥ ÐÐÐÐÐÐÐÐ¬ÐÐ«Ð Ð¡ÐÐÐÐ â Ð»Ð¸Ð½Ð¸Ñ Ð¿Ð¾ÑÐ²Ð»ÑÐµÑÑÑ ÑÑÐ°Ð·Ñ
 );
 
 const x = pad + progress * (W - pad * 2);
 
-const rawY =
-  H - pad -
-  (cumulative / maxValue) * (H - pad * 2);
-
-const y = Math.max(pad + 2, rawY);
+const y =
+H -
+pad -
+(cumulative / maxValue) * (H - pad * 2);
 
 if (i === 0) {
-ctx.moveTo(pad, H - pad); // старт с нуля
-ctx.lineTo(x, y); // ← микро-линия уже в 1-й месяц
+ctx.moveTo(pad, H - pad); // ÑÑÐ°ÑÑ Ñ Ð½ÑÐ»Ñ
+ctx.lineTo(x, y); // â Ð¼Ð¸ÐºÑÐ¾-Ð»Ð¸Ð½Ð¸Ñ ÑÐ¶Ðµ Ð² 1-Ð¹ Ð¼ÐµÑÑÑ
 } else {
 ctx.lineTo(x, y);
 }
@@ -825,7 +811,7 @@ ctx.lineTo(x, y);
 ctx.stroke();
 }
 
-// ===== ТОЧКИ ФАКТА =====
+// ===== Ð¢ÐÐ§ÐÐ Ð¤ÐÐÐ¢Ð =====
 if (factHistory.length > 0) {
 ctx.fillStyle = "#60a5fa";
 
@@ -845,12 +831,12 @@ const y =
 H - pad -
 (cumulative / maxValue) * (H - pad * 2);
 
-// обычная точка
+// Ð¾Ð±ÑÑÐ½Ð°Ñ ÑÐ¾ÑÐºÐ°
 ctx.beginPath();
 ctx.arc(x, y, 3.5, 0, Math.PI * 2);
 ctx.fill();
 
-// 🔵 ОБВОДКА ТОЛЬКО ЕСЛИ ЭТО АКТИВНАЯ ТОЧКА
+// ðµ ÐÐÐÐÐÐÐ Ð¢ÐÐÐ¬ÐÐ ÐÐ¡ÐÐ Ð­Ð¢Ð ÐÐÐ¢ÐÐÐÐÐ¯ Ð¢ÐÐ§ÐÐ
 if (activeFactDot && activeFactDot.x === x && activeFactDot.y === y) {
 ctx.strokeStyle = "#60a5fa";
 ctx.lineWidth = 2;
@@ -858,7 +844,7 @@ ctx.beginPath();
 ctx.arc(x, y, 7, 0, Math.PI * 2);
 ctx.stroke();
 }
-// 🔥 подсветка активной точки
+// ð¥ Ð¿Ð¾Ð´ÑÐ²ÐµÑÐºÐ° Ð°ÐºÑÐ¸Ð²Ð½Ð¾Ð¹ ÑÐ¾ÑÐºÐ¸
 if (
 activeFactDot &&
 activeFactDot.x === x &&
@@ -881,7 +867,7 @@ date: f.date
 });
 }
 
-// ПОДПИСИ X
+// ÐÐÐÐÐÐ¡Ð X
 ctx.fillStyle = "#9a9a9a";
 ctx.font = "13px -apple-system, BlinkMacSystemFont, system-ui";
 ctx.textAlign = "center";
@@ -931,11 +917,11 @@ const diff = actual - planned;
 let text = "";
 
 if (diff >= 0) {
-text = "Ты идёшь по плану или лучше. Всё под контролем.";
+text = "Ð¢Ñ Ð¸Ð´ÑÑÑ Ð¿Ð¾ Ð¿Ð»Ð°Ð½Ñ Ð¸Ð»Ð¸ Ð»ÑÑÑÐµ. ÐÑÑ Ð¿Ð¾Ð´ ÐºÐ¾Ð½ÑÑÐ¾Ð»ÐµÐ¼.";
 } else if (diff > -planned * 0.1) {
-text = "Есть небольшое отставание. Пока не критично.";
+text = "ÐÑÑÑ Ð½ÐµÐ±Ð¾Ð»ÑÑÐ¾Ðµ Ð¾ÑÑÑÐ°Ð²Ð°Ð½Ð¸Ðµ. ÐÐ¾ÐºÐ° Ð½Ðµ ÐºÑÐ¸ÑÐ¸ÑÐ½Ð¾.";
 } else {
-text = "Ты заметно отстаёшь от плана. Стоит пересмотреть стратегию.";
+text = "Ð¢Ñ Ð·Ð°Ð¼ÐµÑÐ½Ð¾ Ð¾ÑÑÑÐ°ÑÑÑ Ð¾Ñ Ð¿Ð»Ð°Ð½Ð°. Ð¡ÑÐ¾Ð¸Ñ Ð¿ÐµÑÐµÑÐ¼Ð¾ÑÑÐµÑÑ ÑÑÑÐ°ÑÐµÐ³Ð¸Ñ.";
 }
 
 showBrainMessage(text);
@@ -978,7 +964,7 @@ block.style.fontSize = "14px";
 block.innerHTML = `
 <div style="opacity:.6">${date}</div>
 <div style="margin-top:4px;font-weight:600">
-Отложено: ${f.value.toLocaleString()} ₽
+ÐÑÐ»Ð¾Ð¶ÐµÐ½Ð¾: ${f.value.toLocaleString()} â½
 </div>
 `;
 
