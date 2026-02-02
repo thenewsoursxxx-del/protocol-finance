@@ -967,9 +967,17 @@ const date = new Date().toLocaleDateString("ru-RU");
 block.style.marginTop = "10px";
 block.style.padding = "10px 12px";
 block.style.borderRadius = "12px";
-block.style.background = "#0e0e0e";
-block.style.border = "1px solid #222";
+block.style.background =
+  "linear-gradient(180deg, #0f172a 0%, #020617 100%)";
+
+block.style.border = "1.5px dashed rgba(96,165,250,0.55)";
+block.style.boxShadow = `
+  inset 0 0 0 1px rgba(30,58,138,0.25),
+  0 0 18px rgba(37,99,235,0.15)
+`;
+block.style.color = "#e5e7eb";
 block.style.fontSize = "14px";
+block.style.backdropFilter = "blur(6px)";
 
 block.innerHTML = `
 <div style="opacity:.6">${date}</div>
