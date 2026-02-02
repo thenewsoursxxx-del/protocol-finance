@@ -784,7 +784,8 @@ ctx.setLineDash([]);
 
 // ===== ЛИНИЯ ФАКТА =====
 if (factHistory.length > 0) {
-ctx.strokeStyle = "rgba(96,165,250,0.9)"; // спокойный синий
+const factGradient = getReserveGradient(ctx, pad, 0, W - pad, 0);
+ctx.strokeStyle = factGradient;
 ctx.lineWidth = 1.6;
 
 ctx.beginPath();
