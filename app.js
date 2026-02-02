@@ -784,7 +784,7 @@ ctx.setLineDash([]);
 
 // ===== ЛИНИЯ ФАКТА =====
 if (factHistory.length > 0) {
-const factGradient = getReserveGradient(ctx, pad, 0, W - pad, 0);
+const factGradient = ctx.createLinearGradient(0, H - pad, 0, pad);
 ctx.strokeStyle = factGradient;
 ctx.lineWidth = 1.6;
 
