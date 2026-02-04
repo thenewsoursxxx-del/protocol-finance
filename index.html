@@ -115,12 +115,16 @@ viewport-fit=cover" />
 <div id="adviceCard" class="card"></div>
 </div>
 
-<div class="screen" id="screen-progress"><h2>Прогресс</h2></div>
+<div class="screen" id="screen-progress">
+  <h2 id="historyTitle">История счёта</h2>
+
+  <div id="historyList"></div>
+</div>
 <div class="screen" id="screen-accounts">
   <h2>Счета</h2>
 
   <!-- ОСНОВНОЙ СЧЁТ -->
-<div class="account-block">
+<div class="account-block" data-account="main">
   <div class="card">
     <div style="font-size:17px;font-weight:600">Основной счёт</div>
     <div style="opacity:.6;font-size:14px;margin-top:4px">Накоплено</div>
@@ -139,7 +143,7 @@ viewport-fit=cover" />
 
 
 <!-- РЕЗЕРВ (ИСПРАВЛЕНО) -->
-<div class="account-block reserve reserve-ui">
+<div class="account-block reserve" data-account="reserve">
   <div class="account-card">
     <div class="account-title">Резерв</div>
     <div class="account-sub">Подушка безопасности</div>
