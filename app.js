@@ -211,6 +211,14 @@ buttons.forEach(btn => {
 });
 
 const profileBack = document.getElementById("profileBack");
+const historyBack = document.getElementById("historyBack");
+
+if (historyBack) {
+  historyBack.onclick = () => {
+    haptic("light");
+    openScreen("accounts", buttons[2]); // вкладка "Счета"
+  };
+}
 
 if (profileBack) {
 profileBack.onclick = () => {
