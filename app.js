@@ -590,11 +590,25 @@ const now = new Date();
 now.setDate(1);
 now.setHours(0, 0, 0, 0);
 
-factHistory.push({
-  value: fact,
-  date: now,
-  to: chosenPlan === "buffer" ? "reserve" : "main"
-});
+if (chosenPlan === "buffer") {
+  factHistory.push({
+    value: toMain,
+    date: now,
+    to: "main"
+  });
+
+  factHistory.push({
+    value: toReserve,
+    date: now,
+    to: "reserve"
+  });
+} else {
+  factHistory.push({
+    value: fact,
+    date: now,
+    to: "main"
+  });
+}
 
 // 🔥 ВАЖНОЕ
 factRatio = fact / plannedMonthly;
@@ -1112,28 +1126,6 @@ const progressScreen = document.getElementById("screen-progress");
 
 const historyTitle = document.getElementById("historyTitle");
 const historyList = document.getElementById("historyList");
-
-document.querySelectorAll(".account-block").forEach(block => {
-  block.addEventListener("click", () => {
-    const type = block.dataset.account;
-
-    // заголовок
-    historyTitle.textContent =
-      type === "main"
-        ? "История: Основной счёт"
-        : "История: Резерв";
-
-    // временная заглушка истории
-    historyList.innerHTML = `
-      <div class="card">+ 10 000 ₽</div>
-      <div class="card">+ 5 000 ₽</div>
-      <div class="card">+ 3 000 ₽</div>
-    `;
-
-    // переключаем экран
-    switchScreen("progress");
-  });
-});
 
 document.getElementById("historyBack").addEventListener("click", () => {
   switchScreen("accounts");
