@@ -115,6 +115,10 @@ let chosenPlan = null;
 let plannedMonthly = 0;
 let factRatio = null;
 let factHistory = [];
+let accountsState = {
+  main: 0,
+  reserve: 0
+};
 let isInitialized = false;
 let saveMode = "calm";
 let selectedScenario = null;
@@ -128,27 +132,25 @@ function renderAccounts() {
 
   accountsList.innerHTML = "";
 
-  // ОСНОВНОЙ СЧЕТ (ВСЕГДА)
+  // ОСНОВНОЙ СЧЕТ
   accountsList.innerHTML += `
     <div class="account-card">
       <div class="account-title">Основной счёт</div>
-      <div class="account-sub">Накопление цели</div>
+      <div class="account-sub">Накоплено</div>
       <div class="account-amount">
-        ${plannedMonthly.toLocaleString()} ₽ / мес
+        ${accountsState.main.toLocaleString()} ₽
       </div>
     </div>
   `;
 
-  // ЕСЛИ РЕЖИМ С РЕЗЕРВОМ — ДОБАВЛЯЕМ ВТОРОЙ СЧЕТ
+  // РЕЗЕРВ
   if (chosenPlan === "buffer") {
-    const reserveAmount = Math.round(plannedMonthly * 0.1);
-
     accountsList.innerHTML += `
       <div class="account-card reserve">
         <div class="account-title">Резерв</div>
         <div class="account-sub">Подушка безопасности</div>
         <div class="account-amount">
-          ${reserveAmount.toLocaleString()} ₽ / мес
+          ${accountsState.reserve.toLocaleString()} ₽
         </div>
       </div>
     `;
@@ -533,11 +535,23 @@ value: fact,
 date: now
 });
 
+// ===== ОБНОВЛЯЕМ БАЛАНСЫ =====
+if (chosenPlan === "buffer") {
+  const reservePart = Math.round(fact * 0.1);
+  const mainPart = fact - reservePart;
+
+  accountsState.main += mainPart;
+  accountsState.reserve += reservePart;
+} else {
+  accountsState.main += fact;
+}
+
 // 🔥 ВАЖНОЕ
 factRatio = fact / plannedMonthly;
 
 drawChart();
 runBrain();
+renderAccounts();
 factInput.blur();
 };
 
