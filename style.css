@@ -94,17 +94,6 @@ color: rgba(255,255,255,0.85);
 color: #fff;
 }
 
-.reserve-info {
-background: linear-gradient(
-180deg,
-rgba(58,123,253,0.06),
-rgba(255,255,255,0.02)
-);
-border: 1px dashed rgba(58,123,253,0.25);
-color: rgba(230,238,255,0.9);
-font-size: 14px;
-}
-
 /* ===== NAV ===== */
 .bottom-nav {
 position: fixed; /* ← ТОЛЬКО fixed */
@@ -599,16 +588,6 @@ rgba(0,0,0,0) 70%
 );
 }
 
-.scenario-card.active .reserve-info {
-background: linear-gradient(
-180deg,
-rgba(58,123,253,0.22),
-rgba(58,123,253,0.06)
-);
-border-color: rgba(58,123,253,0.55);
-color: #fff;
-}
-
 .scenario-card > b {
   color: #ffffff !important;
   opacity: 1 !important;
@@ -723,77 +702,6 @@ color: #fff;
 
 .account-hint {
   max-width: 92%;
-}
-
-/* ===== SCENARIO RESERVE — LIKE ACCOUNT RESERVE ===== */
-.scenario-card .reserve-info {
-  margin-top: 14px;
-
-  background: linear-gradient(
-    180deg,
-    rgba(58,123,253,0.18),
-    rgba(58,123,253,0.06)
-  );
-
-  border: 1px dashed rgba(58,123,253,0.55);
-  border-radius: 18px;
-
-  padding: 14px 16px;
-
-  color: #e6eeff;
-  font-size: 14px;
-  line-height: 1.45;
-
-  box-shadow:
-    0 0 0 1px rgba(58,123,253,0.25),
-    0 14px 40px rgba(58,123,253,0.25);
-}
-
-.scenario-card .reserve-info b {
-  display: block;
-  font-size: 16px;
-  font-weight: 600;
-  color: #ffffff;
-  margin-bottom: 6px;
-}
-
-.scenario-card.active .reserve-info {
-  box-shadow:
-    0 0 0 1px rgba(58,123,253,0.45),
-    0 20px 55px rgba(58,123,253,0.45);
-}
-
-  box-shadow:
-    0 0 0 1px rgba(58,123,253,0.35),
-    0 18px 50px rgba(58,123,253,0.35);
-
-  color: #e6eeff;
-}
-
-/* === RESERVE INFO = SAME STYLE AS RESERVE ACCOUNT === */
-.scenario-card .reserve-info {
-  margin-top: 14px;
-
-  background: linear-gradient(
-    180deg,
-    rgba(58,123,253,0.22),
-    rgba(58,123,253,0.08)
-  );
-
-  border: 1.5px solid rgba(58,123,253,0.65);
-  border-radius: 18px;
-
-  padding: 14px 16px;
-
-  color: #e6eeff;
-
-  box-shadow:
-    0 0 0 1px rgba(58,123,253,0.35),
-    0 14px 40px rgba(58,123,253,0.35);
-}
-
-.scenario-card .reserve-info {
-  border-style: solid;
 }
 
 /* ===============================
