@@ -832,3 +832,34 @@ color: #fff;
 
   color: #e6eeff !important;
 }
+
+/* === SCENARIO: RESERVE = SAME AS ACCOUNT RESERVE === */
+.scenario-card[data-id="buffer"] {
+  background: linear-gradient(
+    180deg,
+    rgba(58,123,253,0.22),
+    rgba(58,123,253,0.08)
+  );
+
+  border: 1.5px solid rgba(58,123,253,0.65);
+  border-radius: 22px;
+
+  box-shadow:
+    0 0 0 1px rgba(58,123,253,0.35),
+    0 18px 50px rgba(58,123,253,0.35);
+
+  color: #e6eeff;
+}
+
+/* текст внутри — белый */
+.scenario-card[data-id="buffer"] * {
+  color: #e6eeff;
+}
+
+/* убираем старый пунктир у сценария */
+.scenario-card[data-id="buffer"] .reserve-info {
+  border: none;
+  background: transparent;
+  padding: 0;
+  margin-top: 12px;
+}
