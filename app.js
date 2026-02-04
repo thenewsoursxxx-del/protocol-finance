@@ -552,6 +552,7 @@ factRatio = fact / plannedMonthly;
 
 drawChart();
 runBrain();
+renderAccountsUI();
 factInput.blur();
 };
 
@@ -1042,4 +1043,17 @@ block.remove();
 activeFactDot = null;
 drawChart();
 }, 4000);
+}
+
+function renderAccountsUI() {
+  const mainEl = document.getElementById("mainAmount");
+  const reserveEl = document.getElementById("reserveAmount");
+
+  if (mainEl) {
+    mainEl.innerText = accounts.main.toLocaleString();
+  }
+
+  if (reserveEl) {
+    reserveEl.innerText = accounts.reserve.toLocaleString();
+  }
 }
