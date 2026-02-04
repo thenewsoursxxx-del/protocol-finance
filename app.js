@@ -121,8 +121,39 @@ let selectedScenario = null;
 let lastScreenBeforeProfile = "calc";
 let lastNavBtnBeforeProfile = buttons[0];
 
-/* ===== PACE SELECT ===== */
+const accountsList = document.getElementById("accountsList");
 
+function renderAccounts() {
+  if (!accountsList) return;
+
+  accountsList.innerHTML = "";
+
+  // ОСНОВНОЙ СЧЕТ (ВСЕГДА)
+  accountsList.innerHTML += `
+    <div class="account-card">
+      <div class="account-title">Основной счёт</div>
+      <div class="account-sub">Накопление цели</div>
+      <div class="account-amount">
+        ${plannedMonthly.toLocaleString()} ₽ / мес
+      </div>
+    </div>
+  `;
+
+  // ЕСЛИ РЕЖИМ С РЕЗЕРВОМ — ДОБАВЛЯЕМ ВТОРОЙ СЧЕТ
+  if (chosenPlan === "buffer") {
+    const reserveAmount = Math.round(plannedMonthly * 0.1);
+
+    accountsList.innerHTML += `
+      <div class="account-card reserve">
+        <div class="account-title">Резерв</div>
+        <div class="account-sub">Подушка безопасности</div>
+        <div class="account-amount">
+          ${reserveAmount.toLocaleString()} ₽ / мес
+        </div>
+      </div>
+    `;
+  }
+}
 
 /* ===== INPUT FORMAT ===== */
 [incomeInput, expensesInput, goalInput, savedInput].forEach(input => {
