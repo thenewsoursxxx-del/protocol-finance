@@ -14,10 +14,10 @@ const ProtocolCore = (() => {
       };
     }
 
-    let pace = 0.5;
+    let pace = 0.6;
     if (mode === "calm") pace = 0.4;
-    if (mode === "normal") pace = 0.5;
-    if (mode === "aggressive") pace = 0.6;
+    if (mode === "normal") pace = 0.6;
+    if (mode === "aggressive") pace = 0.8;
 
     const effectiveGoal = Math.max(goal - saved, 0);
     const monthlySave = Math.round(free * pace);
