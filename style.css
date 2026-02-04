@@ -770,3 +770,18 @@ rgba(0,0,0,0) 70%
   font-size: 22px;
   font-weight: 600;
 }
+
+.back-btn {
+  background: transparent;
+  border: none;
+  padding: 6px 10px;
+
+  font-size: 22px;
+  color: #fff;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  cursor: pointer;
+}
