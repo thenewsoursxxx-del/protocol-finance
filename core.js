@@ -85,7 +85,7 @@ function buildScenarios({ income, expenses, goal, saved = 0 }) {
       advice.push("Цель долгосрочная — подумайте, готовы ли вы ждать так долго.");
     }
 
-    if (baseResult.pace >= 0.6) {
+    if (baseResult.pace >= 0.8) {
       advice.push("Агрессивный режим требует дисциплины и стабильного дохода.");
     }
 
