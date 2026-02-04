@@ -782,3 +782,35 @@ color: #fff;
     0 0 0 1px rgba(58,123,253,0.45),
     0 20px 55px rgba(58,123,253,0.45);
 }
+
+/* ===== UNIVERSAL RESERVE UI (ACCOUNT + SCENARIO) ===== */
+.reserve-ui {
+  background: linear-gradient(
+    180deg,
+    rgba(30,58,138,0.9),
+    rgba(2,6,23,0.95)
+  );
+
+  border: 1.5px solid rgba(96,165,250,0.75);
+  border-radius: 20px;
+
+  box-shadow:
+    inset 0 0 0 1px rgba(30,58,138,0.45),
+    0 20px 60px rgba(37,99,235,0.45);
+
+  color: #e6eeff;
+}
+
+/* заголовок */
+.reserve-ui b,
+.reserve-ui .reserve-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+/* текст */
+.reserve-ui {
+  font-size: 14px;
+  line-height: 1.5;
+}
