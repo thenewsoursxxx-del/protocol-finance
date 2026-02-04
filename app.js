@@ -120,6 +120,10 @@ let saveMode = "calm";
 let selectedScenario = null;
 let lastScreenBeforeProfile = "calc";
 let lastNavBtnBeforeProfile = buttons[0];
+let accounts = {
+  main: 0,
+  reserve: 0
+};
 
 const accountsList = document.getElementById("accountsList");
 
@@ -523,6 +527,16 @@ e.target.value = formatNumber(e.target.value);
 applyBtn.onclick = () => {
 const fact = parseNumber(factInput.value);
 if (!fact) return;
+
+if (chosenPlan === "buffer") {
+  const toReserve = Math.round(fact * 0.1);
+  const toMain = fact - toReserve;
+
+  accounts.main += toMain;
+  accounts.reserve += toReserve;
+} else {
+  accounts.main += fact;
+}
 
 const now = new Date();
 now.setDate(1);
