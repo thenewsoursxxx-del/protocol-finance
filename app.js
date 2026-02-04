@@ -192,15 +192,18 @@ if (btn) btn.classList.add("active");
 if (btn) moveIndicator(btn);
 }
 buttons.forEach(btn => {
-btn.onclick = () => {
-haptic("light");
+  btn.onclick = () => {
+    haptic("light");
 
-// запоминаем, откуда пришли
-lastScreenBeforeProfile = btn.dataset.screen;
-lastNavBtnBeforeProfile = btn;
+    lastScreenBeforeProfile = btn.dataset.screen;
+    lastNavBtnBeforeProfile = btn;
 
-openScreen(btn.dataset.screen, btn);
-};
+    openScreen(btn.dataset.screen, btn);
+
+    if (btn.dataset.screen === "accounts") {
+      renderAccounts();
+    }
+  };
 });
 
 const profileBack = document.getElementById("profileBack");
