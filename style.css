@@ -641,3 +641,45 @@ color: #fff;
   color: #fff;
   margin-bottom: 12px;
 }
+
+.account-card {
+  border-radius: 22px;
+  padding: 18px;
+  margin-bottom: 14px;
+
+  background: linear-gradient(
+    180deg,
+    rgba(255,255,255,0.04),
+    rgba(255,255,255,0.02)
+  );
+
+  border: 1px solid rgba(255,255,255,0.12);
+}
+
+.account-title {
+  font-size: 17px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.account-sub {
+  font-size: 13px;
+  opacity: .6;
+}
+
+.account-amount {
+  margin-top: 10px;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+/* РЕЗЕРВ */
+.account-card.reserve {
+  background: linear-gradient(
+    180deg,
+    rgba(58,123,253,0.18),
+    rgba(58,123,253,0.06)
+  );
+
+  border: 1px dashed rgba(58,123,253,0.45);
+}
