@@ -764,3 +764,30 @@ rgba(0,0,0,0) 70%
   color: #fff;
   border: none;
 }
+
+/* ===== FACT TOOLTIP = RESERVE STYLE ===== */
+
+.fact-tooltip.reserve-ui {
+  margin-top: 10px;
+  padding: 12px 14px;
+
+  border-radius: 18px;
+
+  background: linear-gradient(
+    180deg,
+    rgba(58,123,253,0.18),
+    rgba(58,123,253,0.06)
+  );
+
+  border: 1.5px dashed rgba(58,123,253,0.65);
+
+  box-shadow:
+    0 0 0 1px rgba(58,123,253,0.35),
+    0 18px 50px rgba(58,123,253,0.35);
+
+  color: #e6eeff;
+  font-size: 14px;
+  line-height: 1.45;
+
+  backdrop-filter: blur(6px);
+}
