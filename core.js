@@ -38,35 +38,35 @@ const ProtocolCore = (() => {
   /**
    * 2. Сценарии (ВЫБОР, НЕ ПРИКАЗ)
    */
-  function buildScenarios({ income, expenses, goal, saved = 0 }) {
-    const modes = [
-      { mode: "calm", title: "Спокойный", pace: 0.4 },
-      { mode: "normal", title: "Сбалансированный", pace: 0.5 },
-      { mode: "aggressive", title: "Быстрый", pace: 0.6 }
-    ];
+function buildScenarios({ income, expenses, goal, saved = 0 }) {
+  const modes = [
+    { mode: "calm", title: "Спокойный", pace: 0.4 },
+    { mode: "normal", title: "Умеренный", pace: 0.6 },
+    { mode: "aggressive", title: "Агрессивный", pace: 0.8 } // или 0.9
+  ];
 
-    return modes.map(m => {
-      const free = income - expenses;
-      const monthlySave = Math.round(free * m.pace);
-      const effectiveGoal = Math.max(goal - saved, 0);
-      const months = monthlySave > 0
-        ? Math.ceil(effectiveGoal / monthlySave)
-        : Infinity;
+  return modes.map(m => {
+    const free = income - expenses;
+    const monthlySave = Math.round(free * m.pace);
+    const effectiveGoal = Math.max(goal - saved, 0);
+    const months = monthlySave > 0
+      ? Math.ceil(effectiveGoal / monthlySave)
+      : Infinity;
 
-      return {
-        mode: m.mode,
-        title: m.title,
-        monthlySave,
-        months,
-        risk:
-          m.pace >= 0.6
-            ? "Высокая нагрузка"
-            : m.pace <= 0.4
-            ? "Минимальный риск"
-            : "Баланс"
-      };
-    });
-  }
+    return {
+      mode: m.mode,
+      title: m.title,
+      monthlySave,
+      months,
+      risk:
+        m.pace >= 0.8
+          ? "Очень высокая нагрузка"
+          : m.pace >= 0.6
+          ? "Повышенная нагрузка"
+          : "Минимальный риск"
+    };
+  });
+}
 
   /**
    * 3. Рекомендации
