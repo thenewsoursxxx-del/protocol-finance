@@ -231,6 +231,54 @@ bottomNav.style.pointerEvents = "auto";
 };
 }
 
+document.querySelectorAll(".account-block").forEach(block => {
+  block.onclick = () => {
+    const type = block.dataset.account;
+    openAccountHistory(type);
+  };
+});
+
+function openAccountHistory(type) {
+  const title = document.getElementById("historyTitle");
+  const list = document.getElementById("historyList");
+
+  title.innerText =
+    type === "reserve"
+      ? "История резерва"
+      : "История основного счёта";
+
+  list.innerHTML = "";
+
+  const filtered = factHistory.filter(f =>
+    type === "reserve"
+      ? f.to === "reserve"
+      : f.to === "main"
+  );
+
+  if (filtered.length === 0) {
+    list.innerHTML = `
+      <div class="card" style="opacity:.6;font-size:14px">
+        Операций пока нет
+      </div>
+    `;
+  } else {
+    filtered.forEach(f => {
+      list.innerHTML += `
+        <div class="card">
+          <div style="font-size:15px;font-weight:600">
+            +${f.value.toLocaleString()} ₽
+          </div>
+          <div style="font-size:13px;opacity:.6;margin-top:4px">
+            ${new Date(f.date).toLocaleDateString("ru-RU")}
+          </div>
+        </div>
+      `;
+    });
+  }
+
+  openScreen("progress", null);
+}
+
 /* ===== BOTTOM SHEET ===== */
 function openSheet() {
 sheetOverlay.style.display = "block";
@@ -543,8 +591,9 @@ now.setDate(1);
 now.setHours(0, 0, 0, 0);
 
 factHistory.push({
-value: fact,
-date: now
+  value: fact,
+  date: now,
+  to: chosenPlan === "buffer" ? "reserve" : "main"
 });
 
 // 🔥 ВАЖНОЕ
