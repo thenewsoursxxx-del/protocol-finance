@@ -767,3 +767,44 @@ color: #fff;
 .account-block .account-card.reserve + .account-hint {
   border-top: 1px dashed rgba(58,123,253,0.45);
 }
+
+.account-block {
+  border-radius: 22px;
+  overflow: hidden;
+  margin-bottom: 18px;
+
+  background: linear-gradient(
+    180deg,
+    rgba(255,255,255,0.04),
+    rgba(255,255,255,0.015)
+  );
+
+  border: 1px solid rgba(255,255,255,0.12);
+}
+
+.account-block.reserve {
+  background: linear-gradient(
+    180deg,
+    rgba(58,123,253,0.18),
+    rgba(58,123,253,0.06)
+  );
+
+  border: 1px dashed rgba(58,123,253,0.45);
+}
+
+.account-block .account-card {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  margin-bottom: 0;
+}
+
+.account-block .account-hint {
+  margin-top: 0;
+  border-radius: 0;
+  border-top: 1px dashed rgba(255,255,255,0.15);
+}
+
+.account-block.reserve .account-hint {
+  border-top: 1px dashed rgba(58,123,253,0.45);
+}
