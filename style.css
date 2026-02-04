@@ -683,3 +683,22 @@ color: #fff;
 
   border: 1px dashed rgba(58,123,253,0.45);
 }
+
+.account-hint {
+  margin-top: 10px;
+  padding: 12px 14px;
+  border-radius: 16px;
+
+  background: linear-gradient(
+    180deg,
+    rgba(58,123,253,0.10),
+    rgba(58,123,253,0.03)
+  );
+
+  border: 1px dashed rgba(58,123,253,0.35);
+
+  font-size: 13px;
+  line-height: 1.4;
+  color: #e6eeff;
+  opacity: 0.85;
+}

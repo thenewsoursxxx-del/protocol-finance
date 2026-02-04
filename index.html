@@ -118,8 +118,34 @@ viewport-fit=cover" />
 <div class="screen" id="screen-progress"><h2>Прогресс</h2></div>
 <div class="screen" id="screen-accounts">
   <h2>Счета</h2>
-  <div id="accountsList"></div>
+
+  <!-- ОСНОВНОЙ СЧЁТ -->
+  <div class="card">
+    <div style="font-size:17px;font-weight:600">Основной счёт</div>
+    <div style="opacity:.6;font-size:14px;margin-top:4px">Накоплено</div>
+    <div style="margin-top:8px;font-size:22px;font-weight:600">0 ₽</div>
+  </div>
+
+  <div class="account-hint">
+    Этот счёт отражает ваши накопления по плану Protocol.
+    Это может быть банковский или инвестиционный счёт
+    либо наличные — главное, чтобы сумма соответствовала расчётам.
+  </div>
+
+  <!-- РЕЗЕРВ -->
+  <div class="card reserve-info" style="margin-top:18px">
+    <div style="font-size:17px;font-weight:600">Резерв</div>
+    <div style="opacity:.6;font-size:14px;margin-top:4px">Подушка безопасности</div>
+    <div style="margin-top:8px;font-size:22px;font-weight:600">0 ₽</div>
+  </div>
+
+  <div class="account-hint">
+    Резерв — это средства для экстренных ситуаций.
+    Эти деньги не участвуют в достижении цели
+    и используются только при необходимости.
+  </div>
 </div>
+
 <div class="screen" id="screen-goals"><h2>Цели</h2></div>
 <div class="screen" id="screen-ai">
 <h2>AI ассистент</h2>
