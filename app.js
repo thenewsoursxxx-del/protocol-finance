@@ -1106,3 +1106,35 @@ function renderAccountsUI() {
     reserveEl.innerText = accounts.reserve.toLocaleString();
   }
 }
+
+const accountsScreen = document.getElementById("screen-accounts");
+const progressScreen = document.getElementById("screen-progress");
+
+const historyTitle = document.getElementById("historyTitle");
+const historyList = document.getElementById("historyList");
+
+document.querySelectorAll(".account-block").forEach(block => {
+  block.addEventListener("click", () => {
+    const type = block.dataset.account;
+
+    // заголовок
+    historyTitle.textContent =
+      type === "main"
+        ? "История: Основной счёт"
+        : "История: Резерв";
+
+    // временная заглушка истории
+    historyList.innerHTML = `
+      <div class="card">+ 10 000 ₽</div>
+      <div class="card">+ 5 000 ₽</div>
+      <div class="card">+ 3 000 ₽</div>
+    `;
+
+    // переключаем экран
+    switchScreen("progress");
+  });
+});
+
+document.getElementById("historyBack").addEventListener("click", () => {
+  switchScreen("accounts");
+});
