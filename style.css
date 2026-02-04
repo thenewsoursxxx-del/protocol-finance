@@ -673,10 +673,6 @@ color: #fff;
   font-weight: 600;
 }
 
-.account-block .account-card.reserve + .account-hint {
-  border-top: 1px dashed rgba(58,123,253,0.45);
-}
-
 .account-block {
   border-radius: 22px;
   overflow: hidden;
