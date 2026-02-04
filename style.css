@@ -741,36 +741,6 @@ rgba(0,0,0,0) 70%
   margin-bottom: 6px;
 }
 
-/* ===== HISTORY SCREEN HEADER ===== */
-
-.history-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 20px;
-}
-
-.history-back {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: #111;
-  border: 1px solid #333;
-  color: #fff;
-  font-size: 20px;
-  line-height: 1;
-  padding: 0;
-}
-
-.history-back:active {
-  transform: scale(0.92);
-}
-
-.history-title {
-  font-size: 22px;
-  font-weight: 600;
-}
-
 .back-btn {
   background: transparent;
   border: none;
