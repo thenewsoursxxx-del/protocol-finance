@@ -673,32 +673,6 @@ color: #fff;
   font-weight: 600;
 }
 
-/* РЕЗЕРВ */
-.account-card.reserve {
-  background: linear-gradient(
-    180deg,
-    rgba(58,123,253,0.18),
-    rgba(58,123,253,0.06)
-  );
-
-  border: 1px dashed rgba(58,123,253,0.45);
-}
-
-  border: 1px dashed rgba(58,123,253,0.45);
-
-  font-size: 13px;
-  line-height: 1.4;
-  color: #e6eeff;
-}
-
-/* убираем внешнюю рамку у карточки */
-.account-block .account-card {
-  border: none;
-  margin-bottom: 0;
-  border-radius: 0;
-  background: transparent;
-}
-
 .account-block .account-card.reserve + .account-hint {
   border-top: 1px dashed rgba(58,123,253,0.45);
 }
