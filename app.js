@@ -352,7 +352,7 @@ ${s.toBuffer ? `В резерв: ${s.toBuffer.toLocaleString()} ₽<br>` : ""}
 ${
 s.id === "buffer"
 ? `
-<div class="reserve-info">
+<div class="reserve-info reserve-ui">
 <b>Резерв</b><br>
 Это ваша подушка безопасности.
 Эти средства можно откладывать на отдельный накопительный
