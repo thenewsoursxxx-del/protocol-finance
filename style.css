@@ -713,3 +713,31 @@ color: #fff;
 .account-block.reserve .account-hint {
   border-top: 1px dashed rgba(58,123,253,0.45);
 }
+
+/* ===== ACCOUNT HINT TYPOGRAPHY FIX ===== */
+.account-hint {
+  font-size: 14px;          /* меньше базового */
+  line-height: 1.55;        /* читаемо на iOS */
+  letter-spacing: 0.1px;
+
+  padding: 14px 18px;       /* больше воздуха */
+  color: rgba(230,230,230,0.85);
+
+  text-wrap: pretty;        /* если поддерживается */
+  word-break: normal;
+  hyphens: auto;
+}
+
+/* нейтральная подсказка (основной счёт) */
+.account-hint.neutral {
+  color: rgba(255,255,255,0.75);
+}
+
+/* резерв — можно чуть ярче */
+.account-block.reserve .account-hint {
+  color: #e6eeff;
+}
+
+.account-hint {
+  max-width: 92%;
+}
