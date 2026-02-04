@@ -694,7 +694,10 @@ color: #fff;
     rgba(58,123,253,0.06)
   );
 
-  border: 1px dashed rgba(58,123,253,0.45);
+  border: 1px solid rgba(58,123,253,0.65);
+  box-shadow:
+    0 0 0 1px rgba(58,123,253,0.35),
+    0 18px 50px rgba(58,123,253,0.25);
 }
 
 .account-block .account-card {
