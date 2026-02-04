@@ -744,3 +744,41 @@ color: #fff;
 .account-hint {
   max-width: 92%;
 }
+
+/* ===== SCENARIO RESERVE — LIKE ACCOUNT RESERVE ===== */
+.scenario-card .reserve-info {
+  margin-top: 14px;
+
+  background: linear-gradient(
+    180deg,
+    rgba(58,123,253,0.18),
+    rgba(58,123,253,0.06)
+  );
+
+  border: 1px dashed rgba(58,123,253,0.55);
+  border-radius: 18px;
+
+  padding: 14px 16px;
+
+  color: #e6eeff;
+  font-size: 14px;
+  line-height: 1.45;
+
+  box-shadow:
+    0 0 0 1px rgba(58,123,253,0.25),
+    0 14px 40px rgba(58,123,253,0.25);
+}
+
+.scenario-card .reserve-info b {
+  display: block;
+  font-size: 16px;
+  font-weight: 600;
+  color: #ffffff;
+  margin-bottom: 6px;
+}
+
+.scenario-card.active .reserve-info {
+  box-shadow:
+    0 0 0 1px rgba(58,123,253,0.45),
+    0 20px 55px rgba(58,123,253,0.45);
+}
