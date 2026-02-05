@@ -1,3 +1,4 @@
+alert("JS FILE LOADED");
 const tg = window.Telegram?.WebApp;
 tg?.expand();
 
