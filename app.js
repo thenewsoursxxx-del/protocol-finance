@@ -629,19 +629,6 @@ applyBtn.addEventListener("click", e => {
   now.setDate(1);
   now.setHours(0, 0, 0, 0);
 
-  if (chosenPlan === "buffer") {
-    factHistory.push({ value: fact * 0.9, date: now, to: "main" });
-    factHistory.push({ value: fact * 0.1, date: now, to: "reserve" });
-  } else {
-    factHistory.push({ value: fact, date: now, to: "main" });
-  }
-
-  factRatio = fact / plannedMonthly;
-
-  drawChart();
-  runBrain();
-  renderAccountsUI();
-  factInput.blur();
 });
 
 if (chosenPlan === "buffer") {
