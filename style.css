@@ -764,36 +764,3 @@ rgba(0,0,0,0) 70%
   color: #fff;
   border: none;
 }
-
-/* === SAFE FIX: reserve block must NOT block clicks === */
-.reserve-info {
-  pointer-events: none;
-}
-
-/* но карточка сценария должна принимать клик */
-.scenario-card {
-  pointer-events: auto;
-}
-
-#chart {
-  pointer-events: none;
-}
-
-.screen {
-  pointer-events: none;
-}
-
-.screen.active {
-  pointer-events: auto;
-}
-
-.reserve-info {
-  pointer-events: auto !important;
-  position: relative;
-  z-index: 1;
-}
-
-#applyFact {
-  position: relative;
-  z-index: 10;
-}
