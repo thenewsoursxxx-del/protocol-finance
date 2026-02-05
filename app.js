@@ -1,6 +1,6 @@
 const tg = window.Telegram?.WebApp;
 tg?.expand();
-
+е
 if (window.Telegram?.WebApp) {
 Telegram.WebApp.ready();
 Telegram.WebApp.expand();
