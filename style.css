@@ -778,3 +778,7 @@ rgba(0,0,0,0) 70%
   position: relative;
   z-index: 9999;
 }
+
+* {
+  pointer-events: auto !important;
+}
