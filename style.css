@@ -764,3 +764,12 @@ rgba(0,0,0,0) 70%
   color: #fff;
   border: none;
 }
+
+#adviceCard {
+  position: relative;
+  z-index: 1;
+}
+
+#chart {
+  pointer-events: none;
+}
