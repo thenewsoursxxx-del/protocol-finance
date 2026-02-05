@@ -10,7 +10,7 @@ document.addEventListener("click", e => {
   if (
     e.target.closest("input") ||
     e.target.closest("textarea") ||
-    e.target.closest("button") ||   // ← КЛЮЧ
+    e.target.closest("button") ||      // ← 🔥 КРИТИЧНО
     e.target.closest(".mode-btn") ||
     e.target.closest(".nav-btn") ||
     e.target.closest("#profileBtn")
@@ -18,9 +18,7 @@ document.addEventListener("click", e => {
     return;
   }
 
-  if (document.activeElement?.tagName === "INPUT") {
-    document.activeElement.blur();
-  }
+  document.activeElement?.blur();
 });
 
 /* ===== FORMAT ===== */
