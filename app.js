@@ -589,6 +589,10 @@ initChart();
 
 const factInput = document.getElementById("factInput");
 const applyBtn = document.getElementById("applyFact");
+applyBtn.style.pointerEvents = "auto";
+applyBtn.style.position = "relative";
+applyBtn.style.zIndex = "9999";
+applyBtn.style.background = "red";
 applyBtn.onclick = () => {
   alert("CLICK");
 };
