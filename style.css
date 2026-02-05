@@ -764,3 +764,16 @@ rgba(0,0,0,0) 70%
   color: #fff;
   border: none;
 }
+
+#screen-advice {
+  padding-bottom: 140px;
+}
+
+.bottom-nav {
+  z-index: 20;
+}
+
+#screen-advice {
+  position: relative;
+  z-index: 5;
+}
