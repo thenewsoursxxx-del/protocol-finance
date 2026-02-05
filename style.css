@@ -795,3 +795,8 @@ rgba(0,0,0,0) 70%
 .reserve-ui {
   pointer-events: none;
 }
+
+#applyFact {
+  position: relative;
+  z-index: 20;
+}
