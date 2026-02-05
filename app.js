@@ -590,7 +590,7 @@ initChart();
 const factInput = document.getElementById("factInput");
 const applyBtn = document.getElementById("applyFact");
 applyBtn.onclick = () => {
-  alert("НАЖАЛОСЬ");
+  alert("КНОПКА ЖИВА");
 };
 
 factInput.addEventListener("input", e => {
