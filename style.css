@@ -764,3 +764,21 @@ rgba(0,0,0,0) 70%
   color: #fff;
   border: none;
 }
+
+/* === FIX: allow clicking apply button === */
+
+.card {
+  position: relative;
+}
+
+#applyFact {
+  position: relative;
+  z-index: 50;
+}
+
+/* блоки-подсказки не должны ловить клики */
+.reserve-info,
+.fact-tooltip,
+.scenario-card {
+  pointer-events: none;
+}
