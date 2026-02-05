@@ -588,6 +588,8 @@ initChart();
 
 const factInput = document.getElementById("factInput");
 const applyBtn = document.getElementById("applyFact");
+applyBtn.style.position = "relative";
+applyBtn.style.zIndex = "10";
 
 factInput.addEventListener("input", e => {
 e.target.value = formatNumber(e.target.value);
