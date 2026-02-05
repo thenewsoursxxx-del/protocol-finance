@@ -1159,3 +1159,15 @@ document.getElementById("historyBack").addEventListener("click", () => {
 document.addEventListener("click", () => {
   console.log("DOCUMENT CLICK");
 }, true);
+
+document.addEventListener(
+  "touchstart",
+  e => {
+    const t = e.touches[0];
+    const el = document.elementFromPoint(t.clientX, t.clientY);
+
+    console.log("TOUCH ELEMENT:", el);
+    alert("TOUCH: " + (el ? el.tagName + "." + el.className : "null"));
+  },
+  { capture: true, passive: false }
+);
