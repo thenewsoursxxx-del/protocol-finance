@@ -1114,17 +1114,17 @@ document.addEventListener(
   { capture: true, passive: false }
 );
 
-document.addEventListener("click", e => {
+document.addEventListener("click", function (e) {
   const btn = e.target.closest("#applyFact");
   if (!btn) return;
 
-  alert("APPLY FACT CLICK"); // ← ВРЕМЕННО
+  alert("APPLY FACT CLICK"); // ← ТЕСТ
 
   const factInput = document.getElementById("factInput");
   if (!factInput) return;
 
   const fact = parseNumber(factInput.value);
-  if (!fact) return;
+  if (!fact || !plannedMonthly) return;
 
   if (chosenPlan === "buffer") {
     const toReserve = Math.round(fact * 0.1);
