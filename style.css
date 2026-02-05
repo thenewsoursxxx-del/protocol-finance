@@ -789,3 +789,9 @@ rgba(0,0,0,0) 70%
 
   backdrop-filter: blur(6px);
 }
+
+.fact-tooltip,
+.reserve-info,
+.reserve-ui {
+  pointer-events: none;
+}
