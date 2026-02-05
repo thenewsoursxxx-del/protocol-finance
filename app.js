@@ -1143,5 +1143,5 @@ const historyTitle = document.getElementById("historyTitle");
 const historyList = document.getElementById("historyList");
 
 document.getElementById("historyBack").addEventListener("click", () => {
-  switchScreen("accounts");
+  openScreen("accounts", buttons[2]);
 });
