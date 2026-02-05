@@ -772,8 +772,8 @@ rgba(0,0,0,0) 70%
 }
 
 #applyFact {
-  position: relative;
-  z-index: 50;
+  pointer-events: auto;
+  touch-action: manipulation;
 }
 
 /* блоки-подсказки не должны ловить клики */
