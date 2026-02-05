@@ -594,55 +594,42 @@ factInput.addEventListener("input", e => {
 e.target.value = formatNumber(e.target.value);
 });
 
-applyBtn.onclick = () => {
-const fact = parseNumber(factInput.value);
-if (!fact) return;
+applyBtn.addEventListener("pointerdown", e => {
+  e.preventDefault();
+  e.stopPropagation();
+  e.stopImmediatePropagation();
 
-if (chosenPlan === "buffer") {
-  const toReserve = Math.round(fact * 0.1);
-  const toMain = fact - toReserve;
+  const fact = parseNumber(factInput.value);
+  if (!fact) return;
 
-  accounts.main += toMain;
-  accounts.reserve += toReserve;
-} else {
-  accounts.main += fact;
-}
+  if (chosenPlan === "buffer") {
+    const toReserve = Math.round(fact * 0.1);
+    const toMain = fact - toReserve;
 
-const now = new Date();
-now.setDate(1);
-now.setHours(0, 0, 0, 0);
+    accounts.main += toMain;
+    accounts.reserve += toReserve;
+  } else {
+    accounts.main += fact;
+  }
 
-if (chosenPlan === "buffer") {
-  factHistory.push({
-    value: toMain,
-    date: now,
-    to: "main"
-  });
+  const now = new Date();
+  now.setDate(1);
+  now.setHours(0, 0, 0, 0);
 
-  factHistory.push({
-    value: toReserve,
-    date: now,
-    to: "reserve"
-  });
-} else {
-  factHistory.push({
-    value: fact,
-    date: now,
-    to: "main"
-  });
-}
+  if (chosenPlan === "buffer") {
+    factHistory.push({ value: toMain, date: now, to: "main" });
+    factHistory.push({ value: Math.round(fact * 0.1), date: now, to: "reserve" });
+  } else {
+    factHistory.push({ value: fact, date: now, to: "main" });
+  }
 
-// 🔥 ВАЖНОЕ
-factRatio = fact / plannedMonthly;
+  factRatio = fact / plannedMonthly;
 
-drawChart();
-runBrain();
-renderAccountsUI();
-factInput.blur();
-};
-
-}, 6000);
-}
+  drawChart();
+  runBrain();
+  renderAccountsUI();
+  factInput.blur();
+});
 
 /* ===== RESET ===== */
 resetBtn.onclick = () => confirmReset.style.display = "block";
