@@ -332,20 +332,19 @@ ${advice.text}
 </div>
 `;
 
-document.querySelectorAll(".scenario-card").forEach(card => {
-card.onclick = () => {
-document
-.querySelectorAll(".scenario-card")
-.forEach(c => c.classList.remove("active"));
+adviceCard.addEventListener("click", e => {
+  const card = e.target.closest(".scenario-card");
+  if (!card) return;
 
-card.classList.add("active");
+  document
+    .querySelectorAll(".scenario-card")
+    .forEach(c => c.classList.remove("active"));
 
-selectedScenario = card.dataset.id;
+  card.classList.add("active");
 
-haptic("light");
-
-protocolFlow(selectedScenario);
-};
+  selectedScenario = card.dataset.id;
+  haptic("light");
+  protocolFlow(selectedScenario);
 });
 }
 
