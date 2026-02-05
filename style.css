@@ -778,3 +778,11 @@ rgba(0,0,0,0) 70%
 #chart {
   pointer-events: none;
 }
+
+.screen {
+  pointer-events: none;
+}
+
+.screen.active {
+  pointer-events: auto;
+}
