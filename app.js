@@ -595,7 +595,10 @@ e.target.value = formatNumber(e.target.value);
 
 applyBtn.onclick = () => {
 const fact = parseNumber(factInput.value);
-if (!fact) return;
+if (!fact || !plannedMonthly || plannedMonthly <= 0) {
+  console.warn("INVALID STATE", { fact, plannedMonthly, chosenPlan });
+  return;
+}
 
 if (chosenPlan === "buffer") {
   const toReserve = Math.round(fact * 0.1);
