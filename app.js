@@ -594,9 +594,7 @@ applyBtn.style.pointerEvents = "auto";
 applyBtn.style.position = "relative";
 applyBtn.style.zIndex = "9999";
 applyBtn.style.background = "red";
-applyBtn.onclick = () => {
-  alert("CLICK");
-};
+
 applyBtn.addEventListener("click", e => {
   e.stopPropagation(); // ⛔️ не даём дойти до document.click
 });
@@ -605,12 +603,46 @@ factInput.addEventListener("input", e => {
 e.target.value = formatNumber(e.target.value);
 });
 
-applyBtn.onclick = () => {
-const fact = parseNumber(factInput.value);
-if (!fact || !plannedMonthly || plannedMonthly <= 0) {
-  console.warn("INVALID STATE", { fact, plannedMonthly, chosenPlan });
-  return;
-}
+applyBtn.addEventListener("click", e => {
+  e.preventDefault();
+  e.stopPropagation();
+
+  alert("CLICK"); // ← ПРОВЕРКА
+
+  const fact = parseNumber(factInput.value);
+  if (!fact || !plannedMonthly || plannedMonthly <= 0) {
+    console.warn("INVALID STATE", { fact, plannedMonthly, chosenPlan });
+    return;
+  }
+
+  if (chosenPlan === "buffer") {
+    const toReserve = Math.round(fact * 0.1);
+    const toMain = fact - toReserve;
+
+    accounts.main += toMain;
+    accounts.reserve += toReserve;
+  } else {
+    accounts.main += fact;
+  }
+
+  const now = new Date();
+  now.setDate(1);
+  now.setHours(0, 0, 0, 0);
+
+  if (chosenPlan === "buffer") {
+    factHistory.push({ value: fact * 0.9, date: now, to: "main" });
+    factHistory.push({ value: fact * 0.1, date: now, to: "reserve" });
+  } else {
+    factHistory.push({ value: fact, date: now, to: "main" });
+  }
+
+  factRatio = fact / plannedMonthly;
+
+  drawChart();
+  runBrain();
+  renderAccountsUI();
+  factInput.blur();
+});
 
 if (chosenPlan === "buffer") {
   const toReserve = Math.round(fact * 0.1);
