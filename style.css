@@ -774,3 +774,7 @@ rgba(0,0,0,0) 70%
 .scenario-card {
   pointer-events: auto;
 }
+
+#chart {
+  pointer-events: none;
+}
