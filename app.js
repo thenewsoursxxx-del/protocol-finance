@@ -631,6 +631,9 @@ applyBtn.addEventListener("pointerdown", e => {
   factInput.blur();
 });
 
+}); 
+}
+
 /* ===== RESET ===== */
 resetBtn.onclick = () => confirmReset.style.display = "block";
 confirmNo.onclick = () => confirmReset.style.display = "none";
