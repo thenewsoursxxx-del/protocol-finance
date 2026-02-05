@@ -594,50 +594,46 @@ e.target.value = formatNumber(e.target.value);
 });
 
 applyBtn.onclick = () => {
-const fact = parseNumber(factInput.value);
-if (!fact) return;
+  const fact = parseNumber(factInput.value);
+  if (!fact) return;
 
-if (chosenPlan === "buffer") {
-  const toReserve = Math.round(fact * 0.1);
-  const toMain = fact - toReserve;
+  let toMain = fact;
+  let toReserve = 0;
+
+  if (chosenPlan === "buffer") {
+    toReserve = Math.round(fact * 0.1);
+    toMain = fact - toReserve;
+
+    accounts.reserve += toReserve;
+  }
 
   accounts.main += toMain;
-  accounts.reserve += toReserve;
-} else {
-  accounts.main += fact;
-}
 
-const now = new Date();
-now.setDate(1);
-now.setHours(0, 0, 0, 0);
+  const now = new Date();
+  now.setDate(1);
+  now.setHours(0, 0, 0, 0);
 
-if (chosenPlan === "buffer") {
   factHistory.push({
     value: toMain,
     date: now,
     to: "main"
   });
 
-  factHistory.push({
-    value: toReserve,
-    date: now,
-    to: "reserve"
-  });
-} else {
-  factHistory.push({
-    value: fact,
-    date: now,
-    to: "main"
-  });
-}
+  if (toReserve > 0) {
+    factHistory.push({
+      value: toReserve,
+      date: now,
+      to: "reserve"
+    });
+  }
 
-// 🔥 ВАЖНОЕ
-factRatio = fact / plannedMonthly;
+  factRatio = fact / plannedMonthly;
 
-drawChart();
-runBrain();
-renderAccountsUI();
-factInput.blur();
+  drawChart();
+  runBrain();
+  renderAccountsUI();
+  factInput.value = "";
+  factInput.blur();
 };
 
 }, 6000);
