@@ -522,6 +522,10 @@ loader.classList.remove("hidden");
 plannedMonthly = lastCalc.monthlySave;
 
 if (mode === "buffer") plannedMonthly = Math.round(plannedMonthly * 0.9);
+// 🔒 защита от нуля (ОБЯЗАТЕЛЬНО)
+if (!plannedMonthly || plannedMonthly <= 0) {
+  plannedMonthly = 1;
+}
 
 adviceCard.innerText = "Protocol анализирует данные…";
 
@@ -601,6 +605,7 @@ e.target.value = formatNumber(e.target.value);
 });
 
 applyBtn.onclick = () => {
+  if (!plannedMonthly || plannedMonthly <= 0) return;
 const fact = parseNumber(factInput.value);
 if (!fact) return;
 
