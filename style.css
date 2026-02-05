@@ -773,10 +773,16 @@ rgba(0,0,0,0) 70%
 
 #applyFact {
   pointer-events: auto;
+  position: relative;
+  z-index: 20;
   touch-action: manipulation;
 }
 
 /* блоки-подсказки не должны ловить клики */
 .fact-tooltip {
+  pointer-events: none;
+}
+
+#chart {
   pointer-events: none;
 }
