@@ -1155,3 +1155,7 @@ const historyList = document.getElementById("historyList");
 document.getElementById("historyBack").addEventListener("click", () => {
   switchScreen("accounts");
 });
+
+document.addEventListener("click", () => {
+  console.log("DOCUMENT CLICK");
+}, true);
