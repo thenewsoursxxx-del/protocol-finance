@@ -7,18 +7,17 @@ Telegram.WebApp.expand();
 }
 
 document.addEventListener("click", e => {
-  if (
-    e.target.closest("input") ||
-    e.target.closest("textarea") ||
-    e.target.closest("button") || // ← 🔥 ВОТ ЭТО
-    e.target.closest(".mode-btn") ||
-    e.target.closest(".nav-btn") ||
-    e.target.closest("#profileBtn")
-  ) {
-    return;
-  }
+if (
+e.target.closest("input") ||
+e.target.closest("textarea") ||
+e.target.closest(".mode-btn") ||
+e.target.closest(".nav-btn") ||
+e.target.closest("#profileBtn")
+) {
+return;
+}
 
-  document.activeElement?.blur();
+document.activeElement?.blur();
 });
 
 /* ===== FORMAT ===== */
@@ -522,10 +521,6 @@ loader.classList.remove("hidden");
 plannedMonthly = lastCalc.monthlySave;
 
 if (mode === "buffer") plannedMonthly = Math.round(plannedMonthly * 0.9);
-// 🔒 защита от нуля (ОБЯЗАТЕЛЬНО)
-if (!plannedMonthly || plannedMonthly <= 0) {
-  plannedMonthly = 1;
-}
 
 adviceCard.innerText = "Protocol анализирует данные…";
 
@@ -581,13 +576,7 @@ style="width:360px; height:260px; margin:16px 0;"
 placeholder="Фактически отложено"
 style="flex:1"/>
 <button id="applyFact"
-style="
-  width:52px;
-  height:52px;
-  border-radius:50%;
-  position: relative;
-  z-index: 5;
-">
+style="width:52px;height:52px;border-radius:50%">
 ➜
 </button>
 </div>
@@ -605,7 +594,6 @@ e.target.value = formatNumber(e.target.value);
 });
 
 applyBtn.onclick = () => {
-  if (!plannedMonthly || plannedMonthly <= 0) return;
 const fact = parseNumber(factInput.value);
 if (!fact) return;
 
@@ -1101,28 +1089,44 @@ adviceCard.appendChild(block);
 }
 
 function showFactTooltip(f) {
-  const old = adviceCard.querySelector(".fact-tooltip");
-  if (old) old.remove();
+const old = adviceCard.querySelector(".fact-tooltip");
+if (old) old.remove();
 
-  const block = document.createElement("div");
-  block.className = "fact-tooltip reserve-ui";
+const block = document.createElement("div");
+block.className = "fact-tooltip";
 
-  const date = new Date().toLocaleDateString("ru-RU");
+const date = new Date().toLocaleDateString("ru-RU");
 
-  block.innerHTML = `
-    <div style="opacity:.6">${date}</div>
-    <div style="margin-top:4px;font-weight:600">
-      Отложено: ${f.value.toLocaleString()} ₽
-    </div>
-  `;
+block.style.marginTop = "10px";
+block.style.padding = "10px 12px";
+block.style.borderRadius = "12px";
+block.style.background =
+  "linear-gradient(180deg, #0f172a 0%, #020617 100%)";
 
-  adviceCard.appendChild(block);
+block.style.border = "1.5px dashed rgba(96,165,250,0.55)";
 
-  setTimeout(() => {
-    block.remove();
-    activeFactDot = null;
-    drawChart();
-  }, 4000);
+block.style.boxShadow = `
+  inset 0 0 0 1px rgba(30,58,138,0.25),
+  0 0 18px rgba(37,99,235,0.15)
+`;
+block.style.color = "#e5e7eb";
+block.style.fontSize = "14px";
+block.style.backdropFilter = "blur(6px)";
+
+block.innerHTML = `
+<div style="opacity:.6">${date}</div>
+<div style="margin-top:4px;font-weight:600">
+Отложено: ${f.value.toLocaleString()} ₽
+</div>
+`;
+
+adviceCard.appendChild(block);
+
+setTimeout(() => {
+block.remove();
+activeFactDot = null;
+drawChart();
+}, 4000);
 }
 
 function renderAccountsUI() {
