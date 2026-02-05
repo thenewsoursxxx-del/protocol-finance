@@ -589,6 +589,9 @@ initChart();
 
 const factInput = document.getElementById("factInput");
 const applyBtn = document.getElementById("applyFact");
+applyBtn.addEventListener("click", e => {
+  e.stopPropagation(); // ⛔️ не даём дойти до document.click
+});
 
 factInput.addEventListener("input", e => {
 e.target.value = formatNumber(e.target.value);
