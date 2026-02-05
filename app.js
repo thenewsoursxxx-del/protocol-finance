@@ -7,18 +7,17 @@ Telegram.WebApp.expand();
 }
 
 document.addEventListener("click", e => {
-  if (
-    e.target.closest("input") ||
-    e.target.closest("textarea") ||
-    e.target.closest(".mode-btn") ||
-    e.target.closest(".nav-btn") ||
-    e.target.closest("#profileBtn") ||
-    e.target.closest("#applyFact")   // ← ВАЖНО
-  ) {
-    return;
-  }
+if (
+e.target.closest("input") ||
+e.target.closest("textarea") ||
+e.target.closest(".mode-btn") ||
+e.target.closest(".nav-btn") ||
+e.target.closest("#profileBtn")
+) {
+return;
+}
 
-  document.activeElement?.blur();
+document.activeElement?.blur();
 });
 
 /* ===== FORMAT ===== */
@@ -181,6 +180,7 @@ btn.style.pointerEvents = lock ? "none" : "auto";
 });
 }
 lockTabs(true);
+calcLock.style.display = "none";
 moveIndicator(buttons[0]);
 
 /* ===== OPEN SCREEN ===== */
@@ -587,6 +587,61 @@ ctx = canvas.getContext("2d");
 initChart();
 
 const factInput = document.getElementById("factInput");
+const applyBtn = document.getElementById("applyFact");
+
+factInput.addEventListener("input", e => {
+e.target.value = formatNumber(e.target.value);
+});
+
+applyBtn.onclick = () => {
+const fact = parseNumber(factInput.value);
+if (!fact) return;
+
+if (chosenPlan === "buffer") {
+  const toReserve = Math.round(fact * 0.1);
+  const toMain = fact - toReserve;
+
+  accounts.main += toMain;
+  accounts.reserve += toReserve;
+} else {
+  accounts.main += fact;
+}
+
+const now = new Date();
+now.setDate(1);
+now.setHours(0, 0, 0, 0);
+
+if (chosenPlan === "buffer") {
+  factHistory.push({
+    value: toMain,
+    date: now,
+    to: "main"
+  });
+
+  factHistory.push({
+    value: toReserve,
+    date: now,
+    to: "reserve"
+  });
+} else {
+  factHistory.push({
+    value: fact,
+    date: now,
+    to: "main"
+  });
+}
+
+// 🔥 ВАЖНОЕ
+factRatio = fact / plannedMonthly;
+
+drawChart();
+runBrain();
+renderAccountsUI();
+factInput.blur();
+};
+
+}, 6000);
+}
 
 /* ===== RESET ===== */
 resetBtn.onclick = () => confirmReset.style.display = "block";
@@ -597,6 +652,7 @@ isInitialized = false;
 lastCalc = {};
 plannedMonthly = 0;
 
+calcLock.style.display = "none";
 confirmReset.style.display = "none";
 lockTabs(true);
 
@@ -1094,53 +1150,4 @@ const historyList = document.getElementById("historyList");
 
 document.getElementById("historyBack").addEventListener("click", () => {
   switchScreen("accounts");
-});
-
-document.addEventListener("click", () => {
-  console.log("DOCUMENT CLICK");
-}, true);
-
-document.addEventListener(
-  "touchstart",
-  e => {
-    const t = e.touches[0];
-    const el = document.elementFromPoint(t.clientX, t.clientY);
-
-    console.log("TOUCH ELEMENT:", el);
-    alert("TOUCH: " + (el ? el.tagName + "." + el.className : "null"));
-  },
-  { capture: true, passive: false }
-);
-
-document.addEventListener("click", function (e) {
-  const btn = e.target.closest("#applyFact");
-  if (!btn) return;
-
-  alert("APPLY FACT CLICK"); // ← ТЕСТ
-
-  const factInput = document.getElementById("factInput");
-  if (!factInput) return;
-
-  const fact = parseNumber(factInput.value);
-  if (!fact || !plannedMonthly) return;
-
-  if (chosenPlan === "buffer") {
-    const toReserve = Math.round(fact * 0.1);
-    const toMain = fact - toReserve;
-
-    accounts.main += toMain;
-    accounts.reserve += toReserve;
-
-    factHistory.push({ value: toMain, date: new Date(), to: "main" });
-    factHistory.push({ value: toReserve, date: new Date(), to: "reserve" });
-  } else {
-    accounts.main += fact;
-    factHistory.push({ value: fact, date: new Date(), to: "main" });
-  }
-
-  factRatio = fact / plannedMonthly;
-
-  drawChart();
-  runBrain();
-  renderAccountsUI();
 });
