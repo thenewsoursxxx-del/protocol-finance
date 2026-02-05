@@ -591,6 +591,9 @@ initChart();
 
 const factInput = document.getElementById("factInput");
 const applyBtn = document.getElementById("applyFact");
+applyBtn.onclick = () => {
+  alert("CLICK");
+};
 applyBtn.addEventListener("click", e => {
   e.stopPropagation(); // ⛔️ не даём дойти до document.click
 });
