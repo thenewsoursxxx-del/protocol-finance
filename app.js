@@ -577,7 +577,13 @@ style="width:360px; height:260px; margin:16px 0;"
 placeholder="Фактически отложено"
 style="flex:1"/>
 <button id="applyFact"
-style="width:52px;height:52px;border-radius:50%">
+style="
+  width:52px;
+  height:52px;
+  border-radius:50%;
+  position: relative;
+  z-index: 5;
+">
 ➜
 </button>
 </div>
