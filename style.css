@@ -777,8 +777,6 @@ rgba(0,0,0,0) 70%
 }
 
 /* блоки-подсказки не должны ловить клики */
-.reserve-info,
-.fact-tooltip,
-.scenario-card {
+.fact-tooltip {
   pointer-events: none;
 }
