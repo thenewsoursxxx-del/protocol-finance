@@ -7,18 +7,17 @@ Telegram.WebApp.expand();
 }
 
 document.addEventListener("click", e => {
-  if (
-    e.target.closest("input") ||
-    e.target.closest("textarea") ||
-    e.target.closest(".mode-btn") ||
-    e.target.closest(".nav-btn") ||
-    e.target.closest("#profileBtn") ||
-    e.target.closest("#applyFact")   // 🔥 ВАЖНО
-  ) {
-    return;
-  }
+if (
+e.target.closest("input") ||
+e.target.closest("textarea") ||
+e.target.closest(".mode-btn") ||
+e.target.closest(".nav-btn") ||
+e.target.closest("#profileBtn")
+) {
+return;
+}
 
-  document.activeElement?.blur();
+document.activeElement?.blur();
 });
 
 /* ===== FORMAT ===== */
@@ -589,16 +588,12 @@ initChart();
 
 const factInput = document.getElementById("factInput");
 const applyBtn = document.getElementById("applyFact");
-applyBtn.style.position = "relative";
-applyBtn.style.zIndex = "10";
 
 factInput.addEventListener("input", e => {
 e.target.value = formatNumber(e.target.value);
 });
 
-applyBtn.addEventListener("click", e => {
-  e.preventDefault();
-  e.stopPropagation()
+applyBtn.onclick = () => {
 const fact = parseNumber(factInput.value);
 if (!fact) return;
 
