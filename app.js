@@ -603,7 +603,6 @@ applyBtn.onclick = () => {
   if (chosenPlan === "buffer") {
     toReserve = Math.round(fact * 0.1);
     toMain = fact - toReserve;
-
     accounts.reserve += toReserve;
   }
 
@@ -628,7 +627,6 @@ applyBtn.onclick = () => {
   }
 
   factRatio = fact / plannedMonthly;
-
   drawChart();
   runBrain();
   renderAccountsUI();
