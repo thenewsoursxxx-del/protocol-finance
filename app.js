@@ -10,7 +10,7 @@ document.addEventListener("click", e => {
   if (
     e.target.closest("input") ||
     e.target.closest("textarea") ||
-    e.target.closest("button") ||   // ← ВОТ ЭТО
+    e.target.closest("button") ||   // ← ВАЖНО
     e.target.closest(".mode-btn") ||
     e.target.closest(".nav-btn") ||
     e.target.closest("#profileBtn")
@@ -590,7 +590,7 @@ initChart();
 const factInput = document.getElementById("factInput");
 const applyBtn = document.getElementById("applyFact");
 applyBtn.onclick = () => {
-  alert("КНОПКА РЕАЛЬНО НАЖИМАЕТСЯ");
+  alert("НАЖАЛОСЬ");
 };
 
 factInput.addEventListener("input", e => {
