@@ -786,3 +786,14 @@ rgba(0,0,0,0) 70%
 .screen.active {
   pointer-events: auto;
 }
+
+.reserve-info {
+  pointer-events: auto !important;
+  position: relative;
+  z-index: 1;
+}
+
+#applyFact {
+  position: relative;
+  z-index: 10;
+}
