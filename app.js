@@ -10,10 +10,10 @@ document.addEventListener("click", e => {
   if (
     e.target.closest("input") ||
     e.target.closest("textarea") ||
-    e.target.closest("button") ||      // ← ВАЖНО
     e.target.closest(".mode-btn") ||
     e.target.closest(".nav-btn") ||
-    e.target.closest("#profileBtn")
+    e.target.closest("#profileBtn") ||
+    e.target.closest("#applyFact")   // ← ВАЖНО
   ) {
     return;
   }
