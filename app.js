@@ -506,6 +506,7 @@ year: "2-digit"
 
 /* ===== STAGED FLOW ===== */
 function protocolFlow(mode) {
+  closeSheet();
 // возвращаем bottom nav после старта плана
 bottomNav.style.opacity = "1";
 bottomNav.style.pointerEvents = "auto";
