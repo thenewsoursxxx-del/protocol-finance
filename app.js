@@ -8,14 +8,13 @@ Telegram.WebApp.expand();
 
 document.addEventListener("click", e => {
 if (
-  e.target.closest("input") ||
-  e.target.closest("textarea") ||
-  e.target.closest("button") ||   // ← 🔥 ВОТ ЭТО
-  e.target.closest(".mode-btn") ||
-  e.target.closest(".nav-btn") ||
-  e.target.closest("#profileBtn")
+e.target.closest("input") ||
+e.target.closest("textarea") ||
+e.target.closest(".mode-btn") ||
+e.target.closest(".nav-btn") ||
+e.target.closest("#profileBtn")
 ) {
-  return;
+return;
 }
 
 document.activeElement?.blur();
@@ -594,44 +593,54 @@ factInput.addEventListener("input", e => {
 e.target.value = formatNumber(e.target.value);
 });
 
-applyBtn.addEventListener("pointerdown", e => {
-  e.preventDefault();
-  e.stopPropagation();
-  e.stopImmediatePropagation();
+applyBtn.onclick = () => {
+const fact = parseNumber(factInput.value);
+if (!fact) return;
 
-  const fact = parseNumber(factInput.value);
-  if (!fact) return;
+if (chosenPlan === "buffer") {
+  const toReserve = Math.round(fact * 0.1);
+  const toMain = fact - toReserve;
 
-  if (chosenPlan === "buffer") {
-    const toReserve = Math.round(fact * 0.1);
-    const toMain = fact - toReserve;
+  accounts.main += toMain;
+  accounts.reserve += toReserve;
+} else {
+  accounts.main += fact;
+}
 
-    accounts.main += toMain;
-    accounts.reserve += toReserve;
-  } else {
-    accounts.main += fact;
-  }
+const now = new Date();
+now.setDate(1);
+now.setHours(0, 0, 0, 0);
 
-  const now = new Date();
-  now.setDate(1);
-  now.setHours(0, 0, 0, 0);
+if (chosenPlan === "buffer") {
+  factHistory.push({
+    value: toMain,
+    date: now,
+    to: "main"
+  });
 
-  if (chosenPlan === "buffer") {
-    factHistory.push({ value: toMain, date: now, to: "main" });
-    factHistory.push({ value: Math.round(fact * 0.1), date: now, to: "reserve" });
-  } else {
-    factHistory.push({ value: fact, date: now, to: "main" });
-  }
+  factHistory.push({
+    value: toReserve,
+    date: now,
+    to: "reserve"
+  });
+} else {
+  factHistory.push({
+    value: fact,
+    date: now,
+    to: "main"
+  });
+}
 
-  factRatio = fact / plannedMonthly;
+// 🔥 ВАЖНОЕ
+factRatio = fact / plannedMonthly;
 
-  drawChart();
-  runBrain();
-  renderAccountsUI();
-  factInput.blur();
-});
+drawChart();
+runBrain();
+renderAccountsUI();
+factInput.blur();
+};
 
-}); 
+}, 6000);
 }
 
 /* ===== RESET ===== */
