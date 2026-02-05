@@ -614,64 +614,6 @@ applyBtn.addEventListener("click", e => {
     console.warn("INVALID STATE", { fact, plannedMonthly, chosenPlan });
     return;
   }
-
-  if (chosenPlan === "buffer") {
-    const toReserve = Math.round(fact * 0.1);
-    const toMain = fact - toReserve;
-
-    accounts.main += toMain;
-    accounts.reserve += toReserve;
-  } else {
-    accounts.main += fact;
-  }
-
-  const now = new Date();
-  now.setDate(1);
-  now.setHours(0, 0, 0, 0);
-
-});
-
-if (chosenPlan === "buffer") {
-  const toReserve = Math.round(fact * 0.1);
-  const toMain = fact - toReserve;
-
-  accounts.main += toMain;
-  accounts.reserve += toReserve;
-} else {
-  accounts.main += fact;
-}
-
-const now = new Date();
-now.setDate(1);
-now.setHours(0, 0, 0, 0);
-
-if (chosenPlan === "buffer") {
-  factHistory.push({
-    value: toMain,
-    date: now,
-    to: "main"
-  });
-
-  factHistory.push({
-    value: toReserve,
-    date: now,
-    to: "reserve"
-  });
-} else {
-  factHistory.push({
-    value: fact,
-    date: now,
-    to: "main"
-  });
-}
-
-// 🔥 ВАЖНОЕ
-factRatio = fact / plannedMonthly;
-
-drawChart();
-runBrain();
-renderAccountsUI();
-factInput.blur();
 };
 
 }, 6000);
