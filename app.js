@@ -6,19 +6,18 @@ Telegram.WebApp.ready();
 Telegram.WebApp.expand();
 }
 
-document.addEventListener("pointerdown", e => {
-  if (
-    e.target.closest("input") ||
-    e.target.closest("textarea") ||
-    e.target.closest("button") ||
-    e.target.closest(".mode-btn") ||
-    e.target.closest(".nav-btn") ||
-    e.target.closest("#profileBtn")
-  ) {
-    return;
-  }
+document.addEventListener("click", e => {
+if (
+e.target.closest("input") ||
+e.target.closest("textarea") ||
+e.target.closest(".mode-btn") ||
+e.target.closest(".nav-btn") ||
+e.target.closest("#profileBtn")
+) {
+return;
+}
 
-  document.activeElement?.blur();
+document.activeElement?.blur();
 });
 
 /* ===== FORMAT ===== */
@@ -594,53 +593,55 @@ factInput.addEventListener("input", e => {
 e.target.value = formatNumber(e.target.value);
 });
 
-applyBtn.addEventListener(
-  "pointerdown",
-  e => {
-    e.preventDefault();
-    e.stopImmediatePropagation(); // ⛔️ КРИТИЧНО
+applyBtn.onclick = () => {
+const fact = parseNumber(factInput.value);
+if (!fact) return;
 
-    alert("НАЖАЛОСЬ"); // тест
+if (chosenPlan === "buffer") {
+  const toReserve = Math.round(fact * 0.1);
+  const toMain = fact - toReserve;
 
-    const fact = parseNumber(factInput.value);
-    if (!fact) return;
+  accounts.main += toMain;
+  accounts.reserve += toReserve;
+} else {
+  accounts.main += fact;
+}
 
-    if (chosenPlan === "buffer") {
-      const toReserve = Math.round(fact * 0.1);
-      const toMain = fact - toReserve;
+const now = new Date();
+now.setDate(1);
+now.setHours(0, 0, 0, 0);
 
-      accounts.main += toMain;
-      accounts.reserve += toReserve;
+if (chosenPlan === "buffer") {
+  factHistory.push({
+    value: toMain,
+    date: now,
+    to: "main"
+  });
 
-      factHistory.push({
-        value: toMain,
-        date: new Date(),
-        to: "main"
-      });
+  factHistory.push({
+    value: toReserve,
+    date: now,
+    to: "reserve"
+  });
+} else {
+  factHistory.push({
+    value: fact,
+    date: now,
+    to: "main"
+  });
+}
 
-      factHistory.push({
-        value: toReserve,
-        date: new Date(),
-        to: "reserve"
-      });
-    } else {
-      accounts.main += fact;
-      factHistory.push({
-        value: fact,
-        date: new Date(),
-        to: "main"
-      });
-    }
+// 🔥 ВАЖНОЕ
+factRatio = fact / plannedMonthly;
 
-    factRatio = fact / plannedMonthly;
+drawChart();
+runBrain();
+renderAccountsUI();
+factInput.blur();
+};
 
-    drawChart();
-    runBrain();
-    renderAccountsUI();
-    factInput.blur();
-  },
-  true // ⚠️ CAPTURE
-);
+}, 6000);
+}
 
 /* ===== RESET ===== */
 resetBtn.onclick = () => confirmReset.style.display = "block";
