@@ -764,25 +764,3 @@ rgba(0,0,0,0) 70%
   color: #fff;
   border: none;
 }
-
-/* === FIX: allow clicking apply button === */
-
-.card {
-  position: relative;
-}
-
-#applyFact {
-  pointer-events: auto;
-  position: relative;
-  z-index: 20;
-  touch-action: manipulation;
-}
-
-/* блоки-подсказки не должны ловить клики */
-.fact-tooltip {
-  pointer-events: none;
-}
-
-#chart {
-  pointer-events: none;
-}

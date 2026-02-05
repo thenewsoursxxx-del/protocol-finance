@@ -7,19 +7,17 @@ Telegram.WebApp.expand();
 }
 
 document.addEventListener("click", e => {
-  if (
-    e.target.closest("input") ||
-    e.target.closest("textarea") ||
-    e.target.closest(".mode-btn") ||
-    e.target.closest(".nav-btn") ||
-    e.target.closest("#profileBtn") ||
-    e.target.closest("#applyFact") ||   // 🔥 ВАЖНО
-    e.target.closest("#factInput")      // 🔥 ВАЖНО
-  ) {
-    return;
-  }
+if (
+e.target.closest("input") ||
+e.target.closest("textarea") ||
+e.target.closest(".mode-btn") ||
+e.target.closest(".nav-btn") ||
+e.target.closest("#profileBtn")
+) {
+return;
+}
 
-  document.activeElement?.blur();
+document.activeElement?.blur();
 });
 
 /* ===== FORMAT ===== */
@@ -334,19 +332,20 @@ ${advice.text}
 </div>
 `;
 
-adviceCard.addEventListener("click", e => {
-  const card = e.target.closest(".scenario-card");
-  if (!card) return;
+document.querySelectorAll(".scenario-card").forEach(card => {
+card.onclick = () => {
+document
+.querySelectorAll(".scenario-card")
+.forEach(c => c.classList.remove("active"));
 
-  document
-    .querySelectorAll(".scenario-card")
-    .forEach(c => c.classList.remove("active"));
+card.classList.add("active");
 
-  card.classList.add("active");
+selectedScenario = card.dataset.id;
 
-  selectedScenario = card.dataset.id;
-  haptic("light");
-  protocolFlow(selectedScenario);
+haptic("light");
+
+protocolFlow(selectedScenario);
+};
 });
 }
 
@@ -507,7 +506,6 @@ year: "2-digit"
 
 /* ===== STAGED FLOW ===== */
 function protocolFlow(mode) {
-  closeSheet();
 // возвращаем bottom nav после старта плана
 bottomNav.style.opacity = "1";
 bottomNav.style.pointerEvents = "auto";
@@ -591,47 +589,58 @@ initChart();
 const factInput = document.getElementById("factInput");
 const applyBtn = document.getElementById("applyFact");
 
-/* 🔥 iOS FIX: bind click AFTER layout */
-setTimeout(() => {
-  applyBtn.addEventListener("click", () => {
-    const fact = parseNumber(factInput.value);
-    if (!fact) return;
+factInput.addEventListener("input", e => {
+e.target.value = formatNumber(e.target.value);
+});
 
-    if (chosenPlan === "buffer") {
-      const toReserve = Math.round(fact * 0.1);
-      const toMain = fact - toReserve;
+applyBtn.onclick = () => {
+const fact = parseNumber(factInput.value);
+if (!fact) return;
 
-      accounts.main += toMain;
-      accounts.reserve += toReserve;
+if (chosenPlan === "buffer") {
+  const toReserve = Math.round(fact * 0.1);
+  const toMain = fact - toReserve;
 
-      factHistory.push({
-        value: toMain,
-        date: new Date(),
-        to: "main"
-      });
+  accounts.main += toMain;
+  accounts.reserve += toReserve;
+} else {
+  accounts.main += fact;
+}
 
-      factHistory.push({
-        value: toReserve,
-        date: new Date(),
-        to: "reserve"
-      });
-    } else {
-      accounts.main += fact;
-      factHistory.push({
-        value: fact,
-        date: new Date(),
-        to: "main"
-      });
-    }
+const now = new Date();
+now.setDate(1);
+now.setHours(0, 0, 0, 0);
 
-    factRatio = fact / plannedMonthly;
-
-    drawChart();
-    runBrain();
-    renderAccountsUI();
-    factInput.blur();
+if (chosenPlan === "buffer") {
+  factHistory.push({
+    value: toMain,
+    date: now,
+    to: "main"
   });
-}, 0);
+
+  factHistory.push({
+    value: toReserve,
+    date: now,
+    to: "reserve"
+  });
+} else {
+  factHistory.push({
+    value: fact,
+    date: now,
+    to: "main"
+  });
+}
+
+// 🔥 ВАЖНОЕ
+factRatio = fact / plannedMonthly;
+
+drawChart();
+runBrain();
+renderAccountsUI();
+factInput.blur();
+};
+
+}, 6000);
 }
 
 /* ===== RESET ===== */
