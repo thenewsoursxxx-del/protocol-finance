@@ -589,6 +589,9 @@ initChart();
 
 const factInput = document.getElementById("factInput");
 const applyBtn = document.getElementById("applyFact");
+applyBtn.onclick = () => {
+  alert("КНОПКА РЕАЛЬНО НАЖИМАЕТСЯ");
+};
 
 factInput.addEventListener("input", e => {
 e.target.value = formatNumber(e.target.value);
