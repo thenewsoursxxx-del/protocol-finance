@@ -7,13 +7,19 @@ Telegram.WebApp.expand();
 }
 
 document.addEventListener("click", e => {
-  // кликаем ТОЛЬКО по пустому месту экрана
   if (
-    e.target === document.body ||
-    e.target === document.documentElement ||
-    e.target.classList.contains("screen")
+    e.target.closest("input") ||
+    e.target.closest("textarea") ||
+    e.target.closest("button") ||   // ← КЛЮЧ
+    e.target.closest(".mode-btn") ||
+    e.target.closest(".nav-btn") ||
+    e.target.closest("#profileBtn")
   ) {
-    document.activeElement?.blur();
+    return;
+  }
+
+  if (document.activeElement?.tagName === "INPUT") {
+    document.activeElement.blur();
   }
 });
 
