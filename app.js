@@ -1,6 +1,6 @@
 const tg = window.Telegram?.WebApp;
 tg?.expand();
-е
+
 if (window.Telegram?.WebApp) {
 Telegram.WebApp.ready();
 Telegram.WebApp.expand();
@@ -509,7 +509,7 @@ year: "2-digit"
 function protocolFlow(mode) {
 // возвращаем bottom nav после старта плана
 bottomNav.style.opacity = "1";
-bottomNav.style.pointerEvents = "auto";
+bottomNav.style.pointerEvents = "none";
 bottomNav.style.transform = "translateY(0)";
 chosenPlan = mode;
 isInitialized = true;
@@ -517,6 +517,7 @@ lockTabs(false);
 
 
 openScreen("advice", buttons[1]);
+bottomNav.style.pointerEvents = "none";
 loader.classList.remove("hidden");
 
 plannedMonthly = lastCalc.monthlySave;
