@@ -797,13 +797,12 @@ rgba(0,0,0,0) 70%
   font-size: 14px;
   line-height: 1.5;
 
+  backdrop-filter: blur(8px);
+
   box-shadow:
     inset 0 0 0 1px rgba(255,255,255,0.08),
     0 0 0 1px rgba(58,123,253,0.28),
     0 18px 45px rgba(58,123,253,0.45);
-}
-
-  backdrop-filter: blur(8px);
 
   animation: tooltip-pop 0.22s ease;
 }
