@@ -1083,12 +1083,14 @@ function showFactTooltip(f) {
   const block = document.createElement("div");
   block.className = "fact-tooltip";
 
-block.innerHTML = `
-  <div class="fact-date">${date}</div>
-  <div class="fact-value">
-    Отложено: ${f.value.toLocaleString()} ₽
-  </div>
-`;
+  const date = new Date(f.date).toLocaleDateString("ru-RU");
+
+  block.innerHTML = `
+    <div class="fact-date">${date}</div>
+    <div class="fact-value">
+      Отложено: ${f.value.toLocaleString()} ₽
+    </div>
+  `;
 
   adviceCard.appendChild(block);
 
