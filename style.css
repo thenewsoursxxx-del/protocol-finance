@@ -777,3 +777,54 @@ rgba(0,0,0,0) 70%
   position: relative;
   z-index: 5;
 }
+
+/* ===== FACT POINT TOOLTIP (SAME AS BLUE BLOCKS) ===== */
+.fact-tooltip {
+  margin-top: 12px;
+
+  background: linear-gradient(
+    180deg,
+    rgba(58,123,253,0.22),
+    rgba(58,123,253,0.08)
+  );
+
+  border: 1.5px dashed rgba(58,123,253,0.65);
+  border-radius: 18px;
+
+  padding: 14px 16px;
+
+  color: #e6eeff;
+  font-size: 14px;
+  line-height: 1.5;
+
+  box-shadow:
+    0 0 0 1px rgba(58,123,253,0.35),
+    0 18px 45px rgba(58,123,253,0.35);
+
+  backdrop-filter: blur(6px);
+  animation: tooltip-pop 0.22s ease;
+}
+
+.fact-tooltip .fact-date {
+  font-size: 12px;
+  opacity: 0.65;
+  margin-bottom: 4px;
+}
+
+.fact-tooltip .fact-value {
+  font-size: 16px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+/* микро-анимация */
+@keyframes tooltip-pop {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
