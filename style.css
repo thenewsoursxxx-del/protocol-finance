@@ -589,244 +589,191 @@ rgba(0,0,0,0) 70%
 }
 
 .scenario-card > b {
-  color: #ffffff !important;
-  opacity: 1 !important;
-  font-weight: 600;
+color: #ffffff !important;
+opacity: 1 !important;
+font-weight: 600;
 }
 
 .scenario-title {
-  font-size: 19px;
-  font-weight: 600;
-  color: #fff;
-  margin-bottom: 12px;
+font-size: 19px;
+font-weight: 600;
+color: #fff;
+margin-bottom: 12px;
 }
 
 .account-card {
-  border-radius: 22px;
-  padding: 18px;
-  margin-bottom: 14px;
+border-radius: 22px;
+padding: 18px;
+margin-bottom: 14px;
 
-  background: linear-gradient(
-    180deg,
-    rgba(255,255,255,0.04),
-    rgba(255,255,255,0.02)
-  );
+background: linear-gradient(
+180deg,
+rgba(255,255,255,0.04),
+rgba(255,255,255,0.02)
+);
 
-  border: 1px solid rgba(255,255,255,0.12);
+border: 1px solid rgba(255,255,255,0.12);
 }
 
 .account-title {
-  font-size: 17px;
-  font-weight: 600;
-  margin-bottom: 6px;
+font-size: 17px;
+font-weight: 600;
+margin-bottom: 6px;
 }
 
 .account-sub {
-  font-size: 13px;
-  opacity: .6;
+font-size: 13px;
+opacity: .6;
 }
 
 .account-amount {
-  margin-top: 10px;
-  font-size: 20px;
-  font-weight: 600;
+margin-top: 10px;
+font-size: 20px;
+font-weight: 600;
 }
 
 .account-block {
-  border-radius: 22px;
-  overflow: hidden;
-  margin-bottom: 18px;
+border-radius: 22px;
+overflow: hidden;
+margin-bottom: 18px;
 
-  background: linear-gradient(
-    180deg,
-    rgba(255,255,255,0.04),
-    rgba(255,255,255,0.015)
-  );
+background: linear-gradient(
+180deg,
+rgba(255,255,255,0.04),
+rgba(255,255,255,0.015)
+);
 
-  border: 1px solid rgba(255,255,255,0.12);
+border: 1px solid rgba(255,255,255,0.12);
 }
 
 .account-block.reserve {
-  background: linear-gradient(
-    180deg,
-    rgba(58,123,253,0.18),
-    rgba(58,123,253,0.06)
-  );
+background: linear-gradient(
+180deg,
+rgba(58,123,253,0.18),
+rgba(58,123,253,0.06)
+);
 
-  border: 1px solid rgba(58,123,253,0.65);
-  box-shadow:
-    0 0 0 1px rgba(58,123,253,0.35),
-    0 18px 50px rgba(58,123,253,0.25);
+border: 1px solid rgba(58,123,253,0.65);
+box-shadow:
+0 0 0 1px rgba(58,123,253,0.35),
+0 18px 50px rgba(58,123,253,0.25);
 }
 
 .account-block .account-card {
-  background: transparent;
-  border: none;
-  border-radius: 0;
-  margin-bottom: 0;
+background: transparent;
+border: none;
+border-radius: 0;
+margin-bottom: 0;
 }
 
 .account-block .account-hint {
-  margin-top: 0;
-  border-radius: 0;
-  border-top: 1px dashed rgba(255,255,255,0.15);
+margin-top: 0;
+border-radius: 0;
+border-top: 1px dashed rgba(255,255,255,0.15);
 }
 
 .account-block.reserve .account-hint {
-  border-top: 1px dashed rgba(58,123,253,0.45);
+border-top: 1px dashed rgba(58,123,253,0.45);
 }
 
 /* ===== ACCOUNT HINT TYPOGRAPHY FIX ===== */
 .account-hint {
-  font-size: 14px;          /* меньше базового */
-  line-height: 1.55;        /* читаемо на iOS */
-  letter-spacing: 0.1px;
+font-size: 14px; /* меньше базового */
+line-height: 1.55; /* читаемо на iOS */
+letter-spacing: 0.1px;
 
-  padding: 14px 18px;       /* больше воздуха */
-  color: rgba(230,230,230,0.85);
+padding: 14px 18px; /* больше воздуха */
+color: rgba(230,230,230,0.85);
 
-  text-wrap: pretty;        /* если поддерживается */
-  word-break: normal;
-  hyphens: auto;
+text-wrap: pretty; /* если поддерживается */
+word-break: normal;
+hyphens: auto;
 }
 
 /* нейтральная подсказка (основной счёт) */
 .account-hint.neutral {
-  color: rgba(255,255,255,0.75);
+color: rgba(255,255,255,0.75);
 }
 
 /* резерв — можно чуть ярче */
 .account-block.reserve .account-hint {
-  color: #e6eeff;
+color: #e6eeff;
 }
 
 .account-hint {
-  max-width: 92%;
+max-width: 92%;
 }
 
 /* ===============================
-   SCENARIO RESERVE (ONLY INNER BLOCK)
-   SAME VISUAL AS ACCOUNT RESERVE
+SCENARIO RESERVE (ONLY INNER BLOCK)
+SAME VISUAL AS ACCOUNT RESERVE
 ================================ */
 
 .scenario-card .reserve-info {
-  margin-top: 14px;
+margin-top: 14px;
 
-  background: linear-gradient(
-    180deg,
-    rgba(58,123,253,0.18),
-    rgba(58,123,253,0.06)
-  );
+background: linear-gradient(
+180deg,
+rgba(58,123,253,0.18),
+rgba(58,123,253,0.06)
+);
 
-  border: 1.5px solid rgba(58,123,253,0.65);
-  border-radius: 18px;
+border: 1.5px solid rgba(58,123,253,0.65);
+border-radius: 18px;
 
-  padding: 14px 16px;
+padding: 14px 16px;
 
-  color: #e6eeff;
-  font-size: 14px;
-  line-height: 1.5;
+color: #e6eeff;
+font-size: 14px;
+line-height: 1.5;
 
-  box-shadow:
-    0 0 0 1px rgba(58,123,253,0.35),
-    0 18px 50px rgba(58,123,253,0.35);
+box-shadow:
+0 0 0 1px rgba(58,123,253,0.35),
+0 18px 50px rgba(58,123,253,0.35);
 }
 
 /* Заголовок "Резерв" внутри */
 .scenario-card .reserve-info b {
-  display: block;
-  font-size: 16px;
-  font-weight: 600;
-  color: #ffffff;
-  margin-bottom: 6px;
+display: block;
+font-size: 16px;
+font-weight: 600;
+color: #ffffff;
+margin-bottom: 6px;
 }
 
 .back-btn {
-  background: transparent;
-  border: none;
-  padding: 6px 10px;
+background: transparent;
+border: none;
+padding: 6px 10px;
 
-  font-size: 22px;
-  color: #fff;
+font-size: 22px;
+color: #fff;
 
-  display: flex;
-  align-items: center;
-  justify-content: center;
+display: flex;
+align-items: center;
+justify-content: center;
 
-  cursor: pointer;
+cursor: pointer;
 }
 
 #historyBack {
-  width: auto;
-  padding: 6px 10px;
-  font-size: 22px;
-  background: transparent;
-  color: #fff;
-  border: none;
+width: auto;
+padding: 6px 10px;
+font-size: 22px;
+background: transparent;
+color: #fff;
+border: none;
 }
 
 #screen-advice {
-  padding-bottom: 140px;
+padding-bottom: 140px;
 }
 
 .bottom-nav {
-  z-index: 20;
+z-index: 20;
 }
 
 #screen-advice {
-  position: relative;
-  z-index: 5;
-}
-
-/* ===== FACT POINT TOOLTIP (SAME AS BLUE BLOCKS) ===== */
-.fact-tooltip {
-  margin-top: 12px;
-
-  background: linear-gradient(
-    180deg,
-    rgba(58,123,253,0.26),
-    rgba(58,123,253,0.10)
-  );
-
-  border-radius: 20px;
-  border: 1px solid rgba(58,123,253,0.45);
-
-  padding: 14px 18px;
-
-  color: #e6eeff;
-  font-size: 14px;
-  line-height: 1.5;
-
-  backdrop-filter: blur(8px);
-
-  box-shadow:
-    inset 0 0 0 1px rgba(255,255,255,0.08),
-    0 0 0 1px rgba(58,123,253,0.28),
-    0 18px 45px rgba(58,123,253,0.45);
-
-  animation: tooltip-pop 0.22s ease;
-}
-
-.fact-tooltip .fact-date {
-  font-size: 12px;
-  opacity: 0.65;
-  margin-bottom: 4px;
-}
-
-.fact-tooltip .fact-value {
-  font-size: 16px;
-  font-weight: 600;
-  color: #ffffff;
-}
-
-/* микро-анимация */
-@keyframes tooltip-pop {
-  from {
-    opacity: 0;
-    transform: translateY(6px) scale(0.96);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
+position: relative;
+z-index: 5;
 }
