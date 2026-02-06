@@ -1043,25 +1043,38 @@ year: "2-digit"
 }
 
 function runBrain() {
-const monthsPassed = factHistory.length;
-if (!monthsPassed) return;
+  if (!factHistory.length) return;
 
-const planned = plannedMonthly * monthsPassed;
-const actual = factHistory.reduce((s, x) => s + x.value, 0);
+  // группируем факты по месяцам
+  const grouped = {};
 
-const diff = actual - planned;
+  factHistory.forEach(f => {
+    const d = new Date(f.date);
+    const key = `${d.getFullYear()}-${d.getMonth()}`;
 
-let text = "";
+    if (!grouped[key]) grouped[key] = 0;
+    grouped[key] += f.value;
+  });
 
-if (diff >= 0) {
-text = "Ты идёшь по плану или лучше. Всё под контролем.";
-} else if (diff > -planned * 0.1) {
-text = "Есть небольшое отставание. Пока не критично.";
-} else {
-text = "Ты заметно отстаёшь от плана. Стоит пересмотреть стратегию.";
-}
+  const monthsPassed = Object.keys(grouped).length;
 
-showBrainMessage(text);
+  const actual = Object.values(grouped)
+    .reduce((s, v) => s + v, 0);
+
+  const planned = plannedMonthly * monthsPassed;
+  const diff = actual - planned;
+
+  let text = "";
+
+  if (diff >= 0) {
+    text = "Ты идёшь по плану или лучше. Всё под контролем.";
+  } else if (diff > -planned * 0.1) {
+    text = "Есть небольшое отставание. Пока не критично.";
+  } else {
+    text = "Ты заметно отстаёшь от плана. Стоит пересмотреть стратегию.";
+  }
+
+  showBrainMessage(text);
 }
 
 function showBrainMessage(text) {
