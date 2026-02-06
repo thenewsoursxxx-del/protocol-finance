@@ -1071,12 +1071,6 @@ if (old) old.remove();
 const block = document.createElement("div");
 block.className = "brain-message";
 
-block.style.marginTop = "12px";
-block.style.padding = "12px";
-block.style.borderRadius = "12px";
-block.style.background = "#0e0e0e";
-block.style.border = "1px solid #222";
-block.style.fontSize = "14px";
 block.innerText = text;
 
 adviceCard.appendChild(block);
@@ -1089,14 +1083,12 @@ function showFactTooltip(f) {
   const block = document.createElement("div");
   block.className = "fact-tooltip";
 
-  block.innerHTML = `
-    <div class="fact-date">
-      ${new Date(f.date).toLocaleDateString("ru-RU")}
-    </div>
-    <div class="fact-value">
-      Отложено: ${f.value.toLocaleString()} ₽
-    </div>
-  `;
+block.innerHTML = `
+  <div class="fact-date">${date}</div>
+  <div class="fact-value">
+    Отложено: ${f.value.toLocaleString()} ₽
+  </div>
+`;
 
   adviceCard.appendChild(block);
 
