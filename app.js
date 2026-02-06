@@ -121,42 +121,42 @@ let selectedScenario = null;
 let lastScreenBeforeProfile = "calc";
 let lastNavBtnBeforeProfile = buttons[0];
 let accounts = {
-  main: 0,
-  reserve: 0
+main: 0,
+reserve: 0
 };
 
 const accountsList = document.getElementById("accountsList");
 
 function renderAccounts() {
-  if (!accountsList) return;
+if (!accountsList) return;
 
-  accountsList.innerHTML = "";
+accountsList.innerHTML = "";
 
-  // ОСНОВНОЙ СЧЕТ (ВСЕГДА)
-  accountsList.innerHTML += `
-    <div class="account-card">
-      <div class="account-title">Основной счёт</div>
-      <div class="account-sub">Накопление цели</div>
-      <div class="account-amount">
-        ${plannedMonthly.toLocaleString()} ₽ / мес
-      </div>
-    </div>
-  `;
+// ОСНОВНОЙ СЧЕТ (ВСЕГДА)
+accountsList.innerHTML += `
+<div class="account-card">
+<div class="account-title">Основной счёт</div>
+<div class="account-sub">Накопление цели</div>
+<div class="account-amount">
+${plannedMonthly.toLocaleString()} ₽ / мес
+</div>
+</div>
+`;
 
-  // ЕСЛИ РЕЖИМ С РЕЗЕРВОМ — ДОБАВЛЯЕМ ВТОРОЙ СЧЕТ
-  if (chosenPlan === "buffer") {
-    const reserveAmount = Math.round(plannedMonthly * 0.1);
+// ЕСЛИ РЕЖИМ С РЕЗЕРВОМ — ДОБАВЛЯЕМ ВТОРОЙ СЧЕТ
+if (chosenPlan === "buffer") {
+const reserveAmount = Math.round(plannedMonthly * 0.1);
 
-    accountsList.innerHTML += `
-      <div class="account-card reserve">
-        <div class="account-title">Резерв</div>
-        <div class="account-sub">Подушка безопасности</div>
-        <div class="account-amount">
-          ${reserveAmount.toLocaleString()} ₽ / мес
-        </div>
-      </div>
-    `;
-  }
+accountsList.innerHTML += `
+<div class="account-card reserve">
+<div class="account-title">Резерв</div>
+<div class="account-sub">Подушка безопасности</div>
+<div class="account-amount">
+${reserveAmount.toLocaleString()} ₽ / мес
+</div>
+</div>
+`;
+}
 }
 
 /* ===== INPUT FORMAT ===== */
@@ -196,41 +196,41 @@ if (btn) btn.classList.add("active");
 if (btn) moveIndicator(btn);
 }
 buttons.forEach(btn => {
-  btn.onclick = () => {
-    haptic("light");
+btn.onclick = () => {
+haptic("light");
 
-    lastScreenBeforeProfile = btn.dataset.screen;
-    lastNavBtnBeforeProfile = btn;
+lastScreenBeforeProfile = btn.dataset.screen;
+lastNavBtnBeforeProfile = btn;
 
-    openScreen(btn.dataset.screen, btn);
+openScreen(btn.dataset.screen, btn);
 
-    if (btn.dataset.screen === "accounts") {
-      renderAccounts();
-      
-      if (btn.dataset.screen === "accounts") {
-  renderAccounts();
+if (btn.dataset.screen === "accounts") {
+renderAccounts();
 
-  const reserveBlock = document.querySelector(
-    '.account-block[data-account="reserve"]'
-  );
+if (btn.dataset.screen === "accounts") {
+renderAccounts();
 
-  if (reserveBlock) {
-    reserveBlock.style.display =
-      chosenPlan === "buffer" ? "block" : "none";
-  }
+const reserveBlock = document.querySelector(
+'.account-block[data-account="reserve"]'
+);
+
+if (reserveBlock) {
+reserveBlock.style.display =
+chosenPlan === "buffer" ? "block" : "none";
 }
-    }
-  };
+}
+}
+};
 });
 
 const profileBack = document.getElementById("profileBack");
 const historyBack = document.getElementById("historyBack");
 
 if (historyBack) {
-  historyBack.onclick = () => {
-    haptic("light");
-    openScreen("accounts", buttons[2]); // вкладка "Счета"
-  };
+historyBack.onclick = () => {
+haptic("light");
+openScreen("accounts", buttons[2]); // вкладка "Счета"
+};
 }
 
 if (profileBack) {
@@ -253,51 +253,51 @@ bottomNav.style.pointerEvents = "auto";
 }
 
 document.querySelectorAll(".account-block").forEach(block => {
-  block.onclick = () => {
-    const type = block.dataset.account;
-    openAccountHistory(type);
-  };
+block.onclick = () => {
+const type = block.dataset.account;
+openAccountHistory(type);
+};
 });
 
 function openAccountHistory(type) {
-  const title = document.getElementById("historyTitle");
-  const list = document.getElementById("historyList");
+const title = document.getElementById("historyTitle");
+const list = document.getElementById("historyList");
 
-  title.innerText =
-    type === "reserve"
-      ? "История резерва"
-      : "История основного счёта";
+title.innerText =
+type === "reserve"
+? "История резерва"
+: "История основного счёта";
 
-  list.innerHTML = "";
+list.innerHTML = "";
 
-  const filtered = factHistory.filter(f =>
-    type === "reserve"
-      ? f.to === "reserve"
-      : f.to === "main"
-  );
+const filtered = factHistory.filter(f =>
+type === "reserve"
+? f.to === "reserve"
+: f.to === "main"
+);
 
-  if (filtered.length === 0) {
-    list.innerHTML = `
-      <div class="card" style="opacity:.6;font-size:14px">
-        Операций пока нет
-      </div>
-    `;
-  } else {
-    filtered.forEach(f => {
-      list.innerHTML += `
-        <div class="card">
-          <div style="font-size:15px;font-weight:600">
-            +${f.value.toLocaleString()} ₽
-          </div>
-          <div style="font-size:13px;opacity:.6;margin-top:4px">
-            ${new Date(f.date).toLocaleDateString("ru-RU")}
-          </div>
-        </div>
-      `;
-    });
-  }
+if (filtered.length === 0) {
+list.innerHTML = `
+<div class="card" style="opacity:.6;font-size:14px">
+Операций пока нет
+</div>
+`;
+} else {
+filtered.forEach(f => {
+list.innerHTML += `
+<div class="card">
+<div style="font-size:15px;font-weight:600">
++${f.value.toLocaleString()} ₽
+</div>
+<div style="font-size:13px;opacity:.6;margin-top:4px">
+${new Date(f.date).toLocaleDateString("ru-RU")}
+</div>
+</div>
+`;
+});
+}
 
-  openScreen("progress", null);
+openScreen("progress", null);
 }
 
 /* ===== BOTTOM SHEET ===== */
@@ -594,44 +594,44 @@ e.target.value = formatNumber(e.target.value);
 });
 
 applyBtn.onclick = () => {
-  const fact = parseNumber(factInput.value);
-  if (!fact) return;
+const fact = parseNumber(factInput.value);
+if (!fact) return;
 
-  let toMain = fact;
-  let toReserve = 0;
+let toMain = fact;
+let toReserve = 0;
 
-  if (chosenPlan === "buffer") {
-    toReserve = Math.round(fact * 0.1);
-    toMain = fact - toReserve;
-    accounts.reserve += toReserve;
-  }
+if (chosenPlan === "buffer") {
+toReserve = Math.round(fact * 0.1);
+toMain = fact - toReserve;
+accounts.reserve += toReserve;
+}
 
-  accounts.main += toMain;
+accounts.main += toMain;
 
-  const now = new Date();
-  now.setDate(1);
-  now.setHours(0, 0, 0, 0);
+const now = new Date();
+now.setDate(1);
+now.setHours(0, 0, 0, 0);
 
-  factHistory.push({
-    value: toMain,
-    date: now,
-    to: "main"
-  });
+factHistory.push({
+value: toMain,
+date: now,
+to: "main"
+});
 
-  if (toReserve > 0) {
-    factHistory.push({
-      value: toReserve,
-      date: now,
-      to: "reserve"
-    });
-  }
+if (toReserve > 0) {
+factHistory.push({
+value: toReserve,
+date: now,
+to: "reserve"
+});
+}
 
-  factRatio = fact / plannedMonthly;
-  drawChart();
-  runBrain();
-  renderAccountsUI();
-  factInput.value = "";
-  factInput.blur();
+factRatio = fact / plannedMonthly;
+drawChart();
+runBrain();
+renderAccountsUI();
+factInput.value = "";
+factInput.blur();
 };
 
 }, 6000);
@@ -785,11 +785,11 @@ let factDots = [];
 let activeFactDot = null;
 
 function getFactGradient(ctx, W) {
-  const g = ctx.createLinearGradient(0, 0, W, 0);
-  g.addColorStop(0, "#1e3a8a");   // тёмный как у резерва
-  g.addColorStop(0.5, "#2563eb"); // фирменный синий
-  g.addColorStop(1, "#60a5fa");   // мягкий светлый
-  return g;
+const g = ctx.createLinearGradient(0, 0, W, 0);
+g.addColorStop(0, "#1e3a8a"); // тёмный как у резерва
+g.addColorStop(0.5, "#2563eb"); // фирменный синий
+g.addColorStop(1, "#60a5fa"); // мягкий светлый
+return g;
 }
 
 function initChart() {
@@ -980,17 +980,17 @@ ctx.fill();
 
 // 🌟 ВНЕШНЕЕ СВЕТЯЩЕЕСЯ КОЛЬЦО ДЛЯ АКТИВНОЙ ТОЧКИ
 if (activeFactDot && activeFactDot.x === x && activeFactDot.y === y) {
-  ctx.beginPath();
-  ctx.arc(x, y, 8, 0, Math.PI * 2);
-  ctx.strokeStyle = "rgba(96,165,250,0.45)";
-  ctx.lineWidth = 2;
-  ctx.stroke();
+ctx.beginPath();
+ctx.arc(x, y, 8, 0, Math.PI * 2);
+ctx.strokeStyle = "rgba(96,165,250,0.45)";
+ctx.lineWidth = 2;
+ctx.stroke();
 
-  ctx.beginPath();
-  ctx.arc(x, y, 12, 0, Math.PI * 2);
-  ctx.strokeStyle = "rgba(96,165,250,0.18)";
-  ctx.lineWidth = 2;
-  ctx.stroke();
+ctx.beginPath();
+ctx.arc(x, y, 12, 0, Math.PI * 2);
+ctx.strokeStyle = "rgba(96,165,250,0.18)";
+ctx.lineWidth = 2;
+ctx.stroke();
 }
 
 factDots.push({
@@ -1071,47 +1071,69 @@ if (old) old.remove();
 const block = document.createElement("div");
 block.className = "brain-message";
 
+block.style.marginTop = "12px";
+block.style.padding = "12px";
+block.style.borderRadius = "12px";
+block.style.background = "#0e0e0e";
+block.style.border = "1px solid #222";
+block.style.fontSize = "14px";
 block.innerText = text;
 
 adviceCard.appendChild(block);
 }
 
 function showFactTooltip(f) {
-  const old = adviceCard.querySelector(".fact-tooltip");
-  if (old) old.remove();
+const old = adviceCard.querySelector(".fact-tooltip");
+if (old) old.remove();
 
-  const block = document.createElement("div");
-  block.className = "fact-tooltip";
+const block = document.createElement("div");
+block.className = "fact-tooltip";
 
-  const date = new Date(f.date).toLocaleDateString("ru-RU");
+const date = new Date().toLocaleDateString("ru-RU");
 
-  block.innerHTML = `
-    <div class="fact-date">${date}</div>
-    <div class="fact-value">
-      Отложено: ${f.value.toLocaleString()} ₽
-    </div>
-  `;
+block.style.marginTop = "10px";
+block.style.padding = "10px 12px";
+block.style.borderRadius = "12px";
+block.style.background =
+"linear-gradient(180deg, #0f172a 0%, #020617 100%)";
 
-  adviceCard.appendChild(block);
+block.style.border = "1.5px dashed rgba(96,165,250,0.55)";
 
-  setTimeout(() => {
-    block.remove();
-    activeFactDot = null;
-    drawChart();
-  }, 4000);
+block.style.boxShadow = `
+inset 0 0 0 1px rgba(30,58,138,0.25),
+0 0 18px rgba(37,99,235,0.15)
+`;
+block.style.color = "#e5e7eb";
+block.style.fontSize = "14px";
+block.style.backdropFilter = "blur(6px)";
+
+block.innerHTML = `
+<div style="opacity:.6">${date}</div>
+<div style="margin-top:4px;font-weight:600">
+Отложено: ${f.value.toLocaleString()} ₽
+</div>
+`;
+
+adviceCard.appendChild(block);
+
+setTimeout(() => {
+block.remove();
+activeFactDot = null;
+drawChart();
+}, 4000);
 }
 
 function renderAccountsUI() {
-  const mainEl = document.getElementById("mainAmount");
-  const reserveEl = document.getElementById("reserveAmount");
+const mainEl = document.getElementById("mainAmount");
+const reserveEl = document.getElementById("reserveAmount");
 
-  if (mainEl) {
-    mainEl.innerText = accounts.main.toLocaleString();
-  }
+if (mainEl) {
+mainEl.innerText = accounts.main.toLocaleString();
+}
 
-  if (reserveEl) {
-    reserveEl.innerText = accounts.reserve.toLocaleString();
-  }
+if (reserveEl) {
+reserveEl.innerText = accounts.reserve.toLocaleString();
+}
 }
 
 const accountsScreen = document.getElementById("screen-accounts");
@@ -1121,5 +1143,5 @@ const historyTitle = document.getElementById("historyTitle");
 const historyList = document.getElementById("historyList");
 
 document.getElementById("historyBack").addEventListener("click", () => {
-  openScreen("accounts", buttons[2]);
+openScreen("accounts", buttons[2]);
 });
