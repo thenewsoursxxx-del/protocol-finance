@@ -1,3 +1,4 @@
+console.log("CONFETTI:", window.confetti);
 const tg = window.Telegram?.WebApp;
 tg?.expand();
 
