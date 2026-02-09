@@ -204,6 +204,10 @@ lastNavBtnBeforeProfile = btn;
 
 openScreen(btn.dataset.screen, btn);
 
+if (btn.dataset.screen === "goals") {
+  renderGoals();
+}
+
 if (btn.dataset.screen === "accounts") {
 renderAccounts();
 
@@ -630,6 +634,7 @@ factRatio = fact / plannedMonthly;
 drawChart();
 runBrain();
 renderAccountsUI();
+renderGoals();
 factInput.value = "";
 factInput.blur();
 };
@@ -1135,6 +1140,29 @@ mainEl.innerText = accounts.main.toLocaleString();
 if (reserveEl) {
 reserveEl.innerText = accounts.reserve.toLocaleString();
 }
+}
+
+function renderGoals() {
+  if (!lastCalc.ok) return;
+
+  const saved = accounts.main;
+  const total = parseNumber(goalInput.value || "0");
+  const percent = total ? Math.min(100, Math.round(saved / total * 100)) : 0;
+
+  document.getElementById("goalTotal").innerText = total.toLocaleString();
+  document.getElementById("goalSaved").innerText = saved.toLocaleString();
+  document.getElementById("goalPercent").innerText = percent;
+  document.getElementById("goalProgressBar").style.width = percent + "%";
+
+  const verdict = document.getElementById("goalVerdict");
+
+  if (percent >= 100) {
+    verdict.innerText = "Цель достигнута. Protocol фиксирует успех.";
+  } else if (percent >= 70) {
+    verdict.innerText = "Цель близка к завершению. Темп хороший.";
+  } else {
+    verdict.innerText = "Цель в процессе. Стабильность важнее скорости.";
+  }
 }
 
 const accountsScreen = document.getElementById("screen-accounts");
