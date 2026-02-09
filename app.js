@@ -599,60 +599,62 @@ e.target.value = formatNumber(e.target.value);
 });
 
 applyBtn.onclick = () => {
-const fact = parseNumber(factInput.value);
-if (!fact) return;
+  const fact = parseNumber(factInput.value);
+  if (!fact) return;
 
-let toMain = fact;
-let toReserve = 0;
+  let toMain = fact;
+  let toReserve = 0;
 
-if (chosenPlan === "buffer") {
-toReserve = Math.round(fact * 0.1);
-toMain = fact - toReserve;
-accounts.reserve += toReserve;
-}
+  if (chosenPlan === "buffer") {
+    toReserve = Math.round(fact * 0.1);
+    toMain = fact - toReserve;
+    accounts.reserve += toReserve;
+  }
 
-accounts.main += toMain;
+  // 1️⃣ ОБНОВЛЯЕМ СОСТОЯНИЕ
+  accounts.main += toMain;
 
-const goalTotal = parseNumber(goalInput.value || "0");
+  const now = new Date();
+  now.setDate(1);
+  now.setHours(0, 0, 0, 0);
 
-if (
-  !goalCompleted &&
-  goalTotal > 0 &&
-  accounts.main >= goalTotal
-) {
-  goalCompleted = true;
-  fireCelebration();
-}
+  factHistory.push({
+    value: toMain,
+    date: now,
+    to: "main"
+  });
 
-const now = new Date();
-now.setDate(1);
-now.setHours(0, 0, 0, 0);
+  if (toReserve > 0) {
+    factHistory.push({
+      value: toReserve,
+      date: now,
+      to: "reserve"
+    });
+  }
 
-factHistory.push({
-value: toMain,
-date: now,
-to: "main"
-});
+  // 2️⃣ ОБНОВЛЯЕМ ВЕСЬ UI
+  factRatio = fact / plannedMonthly;
+  drawChart();
+  runBrain();
+  renderAccountsUI();
+  renderGoals();
 
-if (toReserve > 0) {
-factHistory.push({
-value: toReserve,
-date: now,
-to: "reserve"
-});
-}
+  // 3️⃣ ТОЛЬКО ТЕПЕРЬ ПРОВЕРЯЕМ ЦЕЛЬ
+  const goalTotal = parseNumber(goalInput.value || "0");
 
-factRatio = fact / plannedMonthly;
-drawChart();
-runBrain();
-renderAccountsUI();
-renderGoals();
-factInput.value = "";
-factInput.blur();
+  if (
+    !goalCompleted &&
+    goalTotal > 0 &&
+    accounts.main >= goalTotal
+  ) {
+    goalCompleted = true;
+    fireCelebration();
+  }
+
+  // 4️⃣ ЗАЧИСТКА
+  factInput.value = "";
+  factInput.blur();
 };
-
-}, 6000);
-}
 
 /* ===== RESET ===== */
 resetBtn.onclick = () => confirmReset.style.display = "block";
