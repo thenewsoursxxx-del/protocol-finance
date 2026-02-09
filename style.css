@@ -96,23 +96,32 @@ color: #fff;
 
 /* ===== NAV ===== */
 .bottom-nav {
-position: fixed; /* ← ТОЛЬКО fixed */
-bottom: 26px;
-left: 20px;
-right: 20px;
+  position: fixed;
+  bottom: 26px;
+  left: 20px;
+  right: 20px;
 
-height: 82px;
-display: flex;
-align-items: center;
+  height: 82px;
+  display: flex;
+  align-items: center;
 
-background: rgba(0,0,0,.9);
-backdrop-filter: blur(18px);
-border-radius: 999px;
-border: 1px solid #222;
+  /* 👇 ВАЖНО */
+  background: rgba(15, 15, 18, 0.55);
+  backdrop-filter: blur(22px) saturate(140%);
+  -webkit-backdrop-filter: blur(22px) saturate(140%);
 
-padding: 0px; /* под размер индикатора */
-gap: 0;
+  border-radius: 999px;
+
+  /* стеклянная окантовка */
+  border: 1px solid rgba(255,255,255,0.08);
+
+  /* мягкая тень */
+  box-shadow:
+    0 8px 30px rgba(0,0,0,0.45);
+
+  z-index: 20;
 }
+
 .nav-indicator {
 position: absolute;
 left: 0;
