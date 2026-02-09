@@ -1230,24 +1230,26 @@ function fireCelebration() {
   };
 
   (function frame() {
-    confetti({
-      ...base,
-      particleCount: 4,
-      angle: 60,
-      origin: { x: 0 }
-    });
+  confetti({
+    particleCount: 6,
+    angle: 60,
+    spread: 70,
+    origin: { x: 0 },
+    colors: PROTOCOL_COLORS
+  });
 
-    confetti({
-      ...base,
-      particleCount: 4,
-      angle: 120,
-      origin: { x: 1 }
-    });
+  confetti({
+    particleCount: 6,
+    angle: 120,
+    spread: 70,
+    origin: { x: 1 },
+    colors: PROTOCOL_COLORS
+  });
 
-    if (Date.now() < end) {
-      requestAnimationFrame(frame);
-    }
-  })();
+  if (Date.now() < end) {
+    requestAnimationFrame(frame);
+  }
+})();
 
   showGoalCompleteMessage();
 }
