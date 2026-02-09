@@ -652,7 +652,6 @@ const goalTotal = parseNumber(goalInput.value || "0");
   ) {
     goalCompleted = true;
     setTimeout(fireCelebration, 120);
-    setTimeout(showGoalCats, 600);
   }
 
 factInput.value = "";
@@ -1253,13 +1252,6 @@ function fireCelebration() {
 })();
 
   showGoalCompleteMessage();
-}
-
-function showGoalCats() {
-  const cats = document.getElementById("goalCats");
-  if (!cats) return;
-
-  cats.classList.add("show");
 }
 
 let confettiInstance = null;
