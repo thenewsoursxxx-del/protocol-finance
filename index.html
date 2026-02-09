@@ -15,17 +15,6 @@ viewport-fit=cover" />
 
 <link rel="stylesheet" href="style.css?v=11000">
 </head>
-<canvas
-  id="confetti-canvas"
-  style="
-    position: fixed;
-    inset: 0;
-    width: 100vw;
-    height: 100vh;
-    pointer-events: none;
-    z-index: 999999;
-  ">
-</canvas>
 <body>
   
   <!-- ===== TOP PROFILE (OUTSIDE APP) ===== -->
@@ -323,6 +312,18 @@ viewport-fit=cover" />
 </div>
 </div>
 </div>
+
+<canvas
+  id="confetti-canvas"
+  style="
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 999999;
+  ">
+</canvas>
 
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 <script src="core.js"></script>
