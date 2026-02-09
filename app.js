@@ -1,4 +1,3 @@
-console.log("CONFETTI CHECK:", typeof confetti);
 const tg = window.Telegram?.WebApp;
 tg?.expand();
 
@@ -1205,31 +1204,37 @@ function renderGoals() {
 function fireCelebration() {
   haptic("success");
 
-  const myConfetti = confetti.create(null, {
+  // создаём canvas поверх всего
+  const canvas = document.createElement("canvas");
+  canvas.style.position = "fixed";
+  canvas.style.inset = "0";
+  canvas.style.pointerEvents = "none";
+  canvas.style.zIndex = "9999";
+  document.body.appendChild(canvas);
+
+  const myConfetti = confetti.create(canvas, {
     resize: true,
     useWorker: true
   });
 
-  myConfetti({
-    particleCount: 120,
-    spread: 80,
-    origin: { y: 0.6 },
-    colors: ["#3a7bfd", "#60a5fa", "#ffffff"]
-  });
+  const duration = 2000;
+  const end = Date.now() + duration;
+
+  (function frame() {
+    myConfetti({
+      particleCount: 8,
+      spread: 70,
+      startVelocity: 32,
+      origin: { x: Math.random(), y: 0.6 },
+      colors: ["#3a7bfd", "#60a5fa", "#93c5fd", "#ffffff"]
+    });
+
+    if (Date.now() < end) {
+      requestAnimationFrame(frame);
+    } else {
+      canvas.remove();
+    }
+  })();
 
   showGoalCompleteMessage();
-}
-
-function showGoalCompleteMessage() {
-  const block = document.createElement("div");
-
-  block.className = "protocol-verdict";
-  block.style.marginTop = "16px";
-
-  block.innerHTML = `
-    Цель достигнута.<br>
-    Protocol фиксирует завершение.
-  `;
-
-  adviceCard.appendChild(block);
 }
