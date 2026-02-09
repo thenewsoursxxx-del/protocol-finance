@@ -1203,31 +1203,19 @@ function renderGoals() {
 }
 
 function fireCelebration() {
-  // лёгкий системный отклик
   haptic("success");
 
-  const duration = 2200;
-  const end = Date.now() + duration;
+  const myConfetti = confetti.create(null, {
+    resize: true,
+    useWorker: true
+  });
 
-  (function frame() {
-    confetti({
-      particleCount: 6,
-      angle: 60,
-      spread: 70,
-      origin: { x: 0 }
-    });
-
-    confetti({
-      particleCount: 6,
-      angle: 120,
-      spread: 70,
-      origin: { x: 1 }
-    });
-
-    if (Date.now() < end) {
-      requestAnimationFrame(frame);
-    }
-  })();
+  myConfetti({
+    particleCount: 120,
+    spread: 80,
+    origin: { y: 0.6 },
+    colors: ["#3a7bfd", "#60a5fa", "#ffffff"]
+  });
 
   showGoalCompleteMessage();
 }
