@@ -645,7 +645,7 @@ const goalTotal = parseNumber(goalInput.value || "0");
     accounts.main >= goalTotal
   ) {
     goalCompleted = true;
-    fireCelebration();
+    setTimeout(fireCelebration, 120);
   }
 
 factInput.value = "";
