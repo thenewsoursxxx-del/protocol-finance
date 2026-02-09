@@ -1114,9 +1114,13 @@ block.innerHTML = `
 adviceCard.appendChild(block);
 
 setTimeout(() => {
-block.remove();
-activeFactDot = null;
-drawChart();
+  block.classList.add("hide");
+
+  setTimeout(() => {
+    block.remove();
+    activeFactDot = null;
+    drawChart();
+  }, 280); // ← совпадает с CSS transition
 }, 4000);
 }
 
