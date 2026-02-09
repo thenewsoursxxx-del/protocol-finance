@@ -1203,39 +1203,50 @@ function renderGoals() {
 }
 
 function fireCelebration() {
+  if (!confettiInstance) {
+    console.warn("confettiInstance not ready");
+    return;
+  }
+
   haptic("success");
-
-  // создаём canvas поверх всего
-  const canvas = document.createElement("canvas");
-  canvas.style.position = "fixed";
-  canvas.style.inset = "0";
-  canvas.style.pointerEvents = "none";
-  canvas.style.zIndex = "9999";
-  document.body.appendChild(canvas);
-
-  const myConfetti = confetti.create(canvas, {
-    resize: true,
-    useWorker: true
-  });
 
   const duration = 2000;
   const end = Date.now() + duration;
 
   (function frame() {
-    myConfetti({
+    confettiInstance({
       particleCount: 8,
       spread: 70,
-      startVelocity: 32,
-      origin: { x: Math.random(), y: 0.6 },
-      colors: ["#3a7bfd", "#60a5fa", "#93c5fd", "#ffffff"]
+      startVelocity: 35,
+      origin: { x: 0.1, y: 0.9 }
+    });
+
+    confettiInstance({
+      particleCount: 8,
+      spread: 70,
+      startVelocity: 35,
+      origin: { x: 0.9, y: 0.9 }
     });
 
     if (Date.now() < end) {
       requestAnimationFrame(frame);
-    } else {
-      canvas.remove();
     }
   })();
 
   showGoalCompleteMessage();
 }
+
+let confettiInstance = null;
+
+function initConfetti() {
+  const canvas = document.getElementById("confetti-canvas");
+  if (!canvas || !window.confetti) return;
+
+  confettiInstance = window.confetti.create(canvas, {
+    resize: true,
+    useWorker: true
+  });
+}
+
+// сразу инициализируем
+initConfetti();
