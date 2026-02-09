@@ -1202,7 +1202,6 @@ function renderGoals() {
 }
 
 function fireCelebration() {
-  alert("FIRE");
   // лёгкий системный отклик
   haptic("success");
 
