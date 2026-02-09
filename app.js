@@ -1208,7 +1208,7 @@ function fireCelebration() {
     return;
   }
 
-  haptic("success");
+  haptic("heavy");
 
   const duration = 2000;
   const end = Date.now() + duration;
