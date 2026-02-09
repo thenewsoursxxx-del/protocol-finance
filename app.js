@@ -1,3 +1,4 @@
+console.log("CONFETTI CHECK:", typeof confetti);
 const tg = window.Telegram?.WebApp;
 tg?.expand();
 
