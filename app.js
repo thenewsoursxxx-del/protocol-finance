@@ -1,4 +1,3 @@
-console.log("CONFETTI:", window.confetti);
 const tg = window.Telegram?.WebApp;
 tg?.expand();
 
@@ -109,6 +108,13 @@ bottomNav.style.position = "fixed";
 bottomNav.style.bottom = "26px";
 bottomNav.style.left = "20px";
 bottomNav.style.right = "20px";
+
+const PROTOCOL_COLORS = [
+  "#3a7bfd", // основной синий
+  "#60a5fa", // светлый
+  "#1e3a8a", // тёмный
+  "#ffffff"  // акцент
+];
 
 /* ===== STATE ===== */
 let lastCalc = {};
@@ -1203,29 +1209,39 @@ function renderGoals() {
 }
 
 function fireCelebration() {
-  if (!confettiInstance) {
-    console.warn("confettiInstance not ready");
-    return;
-  }
+  // haptic — аккуратно
+  Telegram.WebApp.HapticFeedback.notificationOccurred("success");
 
-  haptic("heavy");
-
-  const duration = 2000;
+  const duration = 2600;
   const end = Date.now() + duration;
 
+  const base = {
+    spread: 60,
+    ticks: 140,
+    gravity: 0.9,
+    decay: 0.92,
+    startVelocity: 28,
+    colors: [
+      "#3a7bfd",
+      "#60a5fa",
+      "#1e3a8a",
+      "#ffffff"
+    ]
+  };
+
   (function frame() {
-    confettiInstance({
-      particleCount: 8,
-      spread: 70,
-      startVelocity: 35,
-      origin: { x: 0.1, y: 0.9 }
+    confetti({
+      ...base,
+      particleCount: 4,
+      angle: 60,
+      origin: { x: 0 }
     });
 
-    confettiInstance({
-      particleCount: 8,
-      spread: 70,
-      startVelocity: 35,
-      origin: { x: 0.9, y: 0.9 }
+    confetti({
+      ...base,
+      particleCount: 4,
+      angle: 120,
+      origin: { x: 1 }
     });
 
     if (Date.now() < end) {
