@@ -656,6 +656,9 @@ applyBtn.onclick = () => {
   factInput.blur();
 };
 
+}, 6000);
+}
+
 /* ===== RESET ===== */
 resetBtn.onclick = () => confirmReset.style.display = "block";
 confirmNo.onclick = () => confirmReset.style.display = "none";
