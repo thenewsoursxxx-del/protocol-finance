@@ -168,7 +168,38 @@ viewport-fit=cover" />
 </div>
 </div>
 
-<div class="screen" id="screen-goals"><h2>Цели</h2></div>
+<div class="screen" id="screen-goals">
+  <h2>Цели</h2>
+
+  <div class="card" id="activeGoalCard">
+    <div style="font-size:14px;opacity:.6">Активная цель</div>
+
+    <div style="font-size:20px;font-weight:600;margin-top:6px">
+      <span id="goalTitle">Основная цель</span>
+    </div>
+
+    <div style="margin-top:10px;font-size:14px;opacity:.7">
+      Цель: <b><span id="goalTotal">—</span> ₽</b><br>
+      Накоплено: <b><span id="goalSaved">—</span> ₽</b>
+    </div>
+
+    <div style="margin-top:12px">
+      <div style="height:6px;border-radius:6px;background:#222;overflow:hidden">
+        <div id="goalProgressBar"
+             style="height:100%;width:0%;background:#3a7bfd">
+        </div>
+      </div>
+      <div style="margin-top:6px;font-size:13px;opacity:.6">
+        <span id="goalPercent">0</span>%
+      </div>
+    </div>
+  </div>
+
+  <div class="protocol-verdict" id="goalVerdict">
+    Protocol анализирует цель…
+  </div>
+</div>
+
 <div class="screen" id="screen-ai">
 <h2>AI ассистент</h2>
 </div>
