@@ -636,6 +636,17 @@ drawChart();
 runBrain();
 renderAccountsUI();
 renderGoals();
+const goalTotal = parseNumber(goalInput.value || "0");
+
+  if (
+    !goalCompleted &&
+    goalTotal > 0 &&
+    accounts.main >= goalTotal
+  ) {
+    goalCompleted = true;
+    fireCelebration();
+  }
+
 factInput.value = "";
 factInput.blur();
 };
