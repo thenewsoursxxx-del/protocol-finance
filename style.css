@@ -846,3 +846,18 @@ z-index: 5;
     opacity 0.28s ease,
     transform 0.28s ease;
 }
+
+.protocol-verdict {
+  animation: verdict-pop 0.35s ease;
+}
+
+@keyframes verdict-pop {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
