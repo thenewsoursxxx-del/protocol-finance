@@ -116,6 +116,7 @@ let plannedMonthly = 0;
 let factRatio = null;
 let factHistory = [];
 let isInitialized = false;
+let goalCompleted = false;
 let saveMode = "calm";
 let selectedScenario = null;
 let lastScreenBeforeProfile = "calc";
@@ -611,6 +612,17 @@ accounts.reserve += toReserve;
 }
 
 accounts.main += toMain;
+
+const goalTotal = parseNumber(goalInput.value || "0");
+
+if (
+  !goalCompleted &&
+  goalTotal > 0 &&
+  accounts.main >= goalTotal
+) {
+  goalCompleted = true;
+  fireCelebration();
+}
 
 const now = new Date();
 now.setDate(1);
@@ -1187,4 +1199,48 @@ function renderGoals() {
   } else {
     reserveCard.style.display = "none";
   }
+}
+
+function fireCelebration() {
+  // лёгкий системный отклик
+  haptic("success");
+
+  const duration = 2200;
+  const end = Date.now() + duration;
+
+  (function frame() {
+    confetti({
+      particleCount: 6,
+      angle: 60,
+      spread: 70,
+      origin: { x: 0 }
+    });
+
+    confetti({
+      particleCount: 6,
+      angle: 120,
+      spread: 70,
+      origin: { x: 1 }
+    });
+
+    if (Date.now() < end) {
+      requestAnimationFrame(frame);
+    }
+  })();
+
+  showGoalCompleteMessage();
+}
+
+function showGoalCompleteMessage() {
+  const block = document.createElement("div");
+
+  block.className = "protocol-verdict";
+  block.style.marginTop = "16px";
+
+  block.innerHTML = `
+    Цель достигнута.<br>
+    Protocol фиксирует завершение.
+  `;
+
+  adviceCard.appendChild(block);
 }
