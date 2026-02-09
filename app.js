@@ -1145,32 +1145,46 @@ reserveEl.innerText = accounts.reserve.toLocaleString();
 function renderGoals() {
   if (!lastCalc.ok) return;
 
+  // ===== ОСНОВНАЯ ЦЕЛЬ =====
   const saved = accounts.main;
   const total = parseNumber(goalInput.value || "0");
-  const percent = total ? Math.min(100, Math.round(saved / total * 100)) : 0;
 
-  document.getElementById("goalTotal").innerText = total.toLocaleString();
-  document.getElementById("goalSaved").innerText = saved.toLocaleString();
+  const percent = total
+    ? Math.min(100, Math.round((saved / total) * 100))
+    : 0;
+
+  document.getElementById("goalTotal").innerText =
+    total.toLocaleString();
+
+  document.getElementById("goalSaved").innerText =
+    saved.toLocaleString();
+
   document.getElementById("goalPercent").innerText = percent;
-  document.getElementById("goalProgressBar").style.width = percent + "%";
+
+  document.getElementById("goalProgressBar").style.width =
+    percent + "%";
 
   const verdict = document.getElementById("goalVerdict");
 
   if (percent >= 100) {
-    verdict.innerText = "Цель достигнута. Protocol фиксирует успех.";
+    verdict.innerText =
+      "Цель достигнута. Protocol фиксирует успех.";
   } else if (percent >= 70) {
-    verdict.innerText = "Цель близка к завершению. Темп хороший.";
+    verdict.innerText =
+      "Цель близка к завершению. Темп хороший.";
   } else {
-    verdict.innerText = "Цель в процессе. Стабильность важнее скорости.";
+    verdict.innerText =
+      "Цель в процессе. Стабильность важнее скорости.";
+  }
+
+  // ===== РЕЗЕРВ =====
+  const reserveCard = document.getElementById("goalReserveCard");
+
+  if (chosenPlan === "buffer") {
+    reserveCard.style.display = "block";
+    document.getElementById("goalReserveAmount").innerText =
+      accounts.reserve.toLocaleString();
+  } else {
+    reserveCard.style.display = "none";
   }
 }
-
-const accountsScreen = document.getElementById("screen-accounts");
-const progressScreen = document.getElementById("screen-progress");
-
-const historyTitle = document.getElementById("historyTitle");
-const historyList = document.getElementById("historyList");
-
-document.getElementById("historyBack").addEventListener("click", () => {
-openScreen("accounts", buttons[2]);
-});
