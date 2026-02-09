@@ -599,61 +599,45 @@ e.target.value = formatNumber(e.target.value);
 });
 
 applyBtn.onclick = () => {
-  const fact = parseNumber(factInput.value);
-  if (!fact) return;
+const fact = parseNumber(factInput.value);
+if (!fact) return;
 
-  let toMain = fact;
-  let toReserve = 0;
+let toMain = fact;
+let toReserve = 0;
 
-  if (chosenPlan === "buffer") {
-    toReserve = Math.round(fact * 0.1);
-    toMain = fact - toReserve;
-    accounts.reserve += toReserve;
-  }
+if (chosenPlan === "buffer") {
+toReserve = Math.round(fact * 0.1);
+toMain = fact - toReserve;
+accounts.reserve += toReserve;
+}
 
-  // 1️⃣ ОБНОВЛЯЕМ СОСТОЯНИЕ
-  accounts.main += toMain;
+accounts.main += toMain;
 
-  const now = new Date();
-  now.setDate(1);
-  now.setHours(0, 0, 0, 0);
+const now = new Date();
+now.setDate(1);
+now.setHours(0, 0, 0, 0);
 
-  factHistory.push({
-    value: toMain,
-    date: now,
-    to: "main"
-  });
+factHistory.push({
+value: toMain,
+date: now,
+to: "main"
+});
 
-  if (toReserve > 0) {
-    factHistory.push({
-      value: toReserve,
-      date: now,
-      to: "reserve"
-    });
-  }
+if (toReserve > 0) {
+factHistory.push({
+value: toReserve,
+date: now,
+to: "reserve"
+});
+}
 
-  // 2️⃣ ОБНОВЛЯЕМ ВЕСЬ UI
-  factRatio = fact / plannedMonthly;
-  drawChart();
-  runBrain();
-  renderAccountsUI();
-  renderGoals();
-
-  // 3️⃣ ТОЛЬКО ТЕПЕРЬ ПРОВЕРЯЕМ ЦЕЛЬ
-  const goalTotal = parseNumber(goalInput.value || "0");
-
-  if (
-    !goalCompleted &&
-    goalTotal > 0 &&
-    accounts.main >= goalTotal
-  ) {
-    goalCompleted = true;
-    fireCelebration();
-  }
-
-  // 4️⃣ ЗАЧИСТКА
-  factInput.value = "";
-  factInput.blur();
+factRatio = fact / plannedMonthly;
+drawChart();
+runBrain();
+renderAccountsUI();
+renderGoals();
+factInput.value = "";
+factInput.blur();
 };
 
 }, 6000);
