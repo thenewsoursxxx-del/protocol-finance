@@ -15,6 +15,24 @@ viewport-fit=cover" />
 
 <link rel="stylesheet" href="style.css?v=11000">
 </head>
+<!-- ===== GOAL EDITOR SHEET ===== -->
+<div id="goalEditorOverlay" class="sheet-overlay"></div>
+
+<div id="goalEditorSheet" class="sheet goal-editor">
+  <h2>Редактирование цели</h2>
+
+  <div class="input-wrap">
+    <label>Название цели</label>
+    <input id="goalEditTitle" placeholder="Например: Квартира" />
+  </div>
+
+  <div class="input-wrap">
+    <label>Сумма цели</label>
+    <input id="goalEditAmount" inputmode="numeric" placeholder="300.000" />
+  </div>
+
+  <button id="goalEditSave">Готово</button>
+</div>
 <body>
   
   <!-- ===== TOP PROFILE (OUTSIDE APP) ===== -->
