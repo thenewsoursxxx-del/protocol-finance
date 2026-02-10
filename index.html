@@ -347,6 +347,45 @@ viewport-fit=cover" />
   ">
 </canvas>
 
+<!-- ===== GOAL EDITOR ===== -->
+<div id="goalEditorOverlay" style="
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.55);
+  z-index:30;
+"></div>
+
+<div
+  id="goalEditorSheet"
+  style="
+    position:fixed;
+    left:0;
+    right:0;
+    bottom:-100%;
+    background:#000;
+    border-top-left-radius:28px;
+    border-top-right-radius:28px;
+    padding:24px;
+    z-index:31;
+    transition:bottom .35s cubic-bezier(.4,0,.2,1);
+  "
+>
+  <h2 style="margin-bottom:18px">Редактирование цели</h2>
+
+  <div class="input-wrap">
+    <label>Название цели</label>
+    <input id="goalEditTitle" placeholder="Например: Квартира" />
+  </div>
+
+  <div class="input-wrap">
+    <label>Сумма цели</label>
+    <input id="goalEditAmount" inputmode="numeric" placeholder="300.000" />
+  </div>
+
+  <button id="goalEditSave">Готово</button>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 <script src="core.js"></script>
 <script src="app.js?v=11000"></script>
