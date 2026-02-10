@@ -33,6 +33,13 @@ return Number(v.replace(/\./g, ""));
 const incomeInput = document.getElementById("income");
 const expensesInput = document.getElementById("expenses");
 const goalInput = document.getElementById("goal");
+const editGoalBtn = document.getElementById("editGoalBtn");
+const goalEditorSheet = document.getElementById("goalEditorSheet");
+const goalEditorOverlay = document.getElementById("goalEditorOverlay");
+
+const goalEditTitle = document.getElementById("goalEditTitle");
+const goalEditAmount = document.getElementById("goalEditAmount");
+const goalEditSave = document.getElementById("goalEditSave");
 const savedInput = document.getElementById("saved");
 const calculateBtn = document.getElementById("calculate");
 
@@ -1293,3 +1300,40 @@ if (editGoalBtn) {
     renderGoals();
   };
 }
+
+if (editGoalBtn) {
+  editGoalBtn.onclick = () => {
+    haptic("light");
+
+    goalEditTitle.value = goalMeta.title;
+    goalEditAmount.value = goalInput.value;
+
+    goalEditorOverlay.style.display = "block";
+    goalEditorSheet.style.bottom = "0";
+  };
+}
+
+goalEditorOverlay.onclick = () => {
+  goalEditorSheet.style.bottom = "-100%";
+  goalEditorOverlay.style.display = "none";
+};
+
+goalEditSave.onclick = () => {
+  haptic("medium");
+
+  const newTitle = goalEditTitle.value.trim();
+  const newAmount = parseNumber(goalEditAmount.value || "0");
+
+  if (!newTitle || !newAmount) {
+    haptic("error");
+    return;
+  }
+
+  goalMeta.title = newTitle;
+  goalInput.value = formatNumber(String(newAmount));
+
+  goalEditorSheet.style.bottom = "-100%";
+  goalEditorOverlay.style.display = "none";
+
+  renderGoals();
+};
