@@ -176,9 +176,13 @@ viewport-fit=cover" />
   <div class="card" id="activeGoalCard">
     <div style="font-size:14px;opacity:.6">Активная цель</div>
 
-    <div style="font-size:20px;font-weight:600;margin-top:6px">
-      <span id="goalTitle">Основная цель</span>
-    </div>
+    <div class="goal-title-row">
+  <span id="goalTitle">Основная цель</span>
+
+  <button id="editGoalBtn" class="goal-edit-btn" aria-label="Редактировать цель">
+    ✏️
+  </button>
+</div>
 
     <div style="margin-top:10px;font-size:14px;opacity:.7">
       Цель: <b><span id="goalTotal">—</span> ₽</b><br>
