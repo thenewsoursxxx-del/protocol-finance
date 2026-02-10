@@ -243,9 +243,7 @@ renderGoals();
 
 if (btn.dataset.screen === "accounts") {
 renderAccounts();
-
-if (btn.dataset.screen === "accounts") {
-renderAccounts();
+syncReserveAccountVisibility();
 
 const reserveBlock = document.querySelector(
 '.account-block[data-account="reserve"]'
@@ -545,6 +543,7 @@ year: "2-digit"
 /* ===== STAGED FLOW ===== */
 function protocolFlow(mode) {
 chosenPlan = mode;
+syncReserveAccountVisibility();
 isInitialized = true;
 lockTabs(false);
 
@@ -1233,6 +1232,17 @@ summaryMonths.innerText = newMonths;
 
 // перерисовываем график
 drawChart();
+}
+
+function syncReserveAccountVisibility() {
+  const reserveBlock = document.querySelector(
+    '.account-block[data-account="reserve"]'
+  );
+
+  if (!reserveBlock) return;
+
+  reserveBlock.style.display =
+    chosenPlan === "buffer" ? "block" : "none";
 }
 
 // ===== ОСНОВНАЯ ЦЕЛЬ =====
