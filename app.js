@@ -564,17 +564,21 @@ const explanation = ProtocolCore.explain(lastCalc);
 const advice = ProtocolCore.buildAdvice(lastCalc);
 
 adviceCard.innerHTML = `
-<div style="font-size:16px;font-weight:600">
-План: ${plannedMonthly.toLocaleString()} ₽ / месяц
-</div>
+<div id="planHeader">
+  <div
+    id="planMonthly"
+    style="font-size:16px;font-weight:600"
+  ></div>
 
-<div style="
-margin-top:8px;
-font-size:14px;
-line-height:1.4;
-opacity:0.75;
-">
-${explanation.replace(/\n/g, "<br>")}
+  <div
+    id="planExplanation"
+    style="
+      margin-top:8px;
+      font-size:14px;
+      line-height:1.4;
+      opacity:0.75;
+    "
+  ></div>
 </div>
 
 <div style="
@@ -607,6 +611,7 @@ style="width:52px;height:52px;border-radius:50%">
 canvas = document.getElementById("chart");
 ctx = canvas.getContext("2d");
 initChart();
+updatePlanHeader();
 
 const factInput = document.getElementById("factInput");
 const applyBtn = document.getElementById("applyFact");
@@ -1329,6 +1334,8 @@ goalEditSave.onclick = () => {
 
   // 5️⃣ пересчитываем UI
   renderGoals();
+  updatePlanHeader();
+drawChart();
 recalcPlanAfterGoalChange();
 pulseGoalCard();
 };
@@ -1389,4 +1396,20 @@ function recalcPlanAfterGoalChange() {
 
 if (newGoal > lastCalc.effectiveGoal + accounts.main) {
   showBrainMessage("Цель увеличена — план автоматически пересчитан.");
+}
+
+function updatePlanHeader() {
+  if (!lastCalc.ok) return;
+
+  const monthlyEl = document.getElementById("planMonthly");
+  const explainEl = document.getElementById("planExplanation");
+
+  if (!monthlyEl || !explainEl) return;
+
+  monthlyEl.innerText =
+    `План: ${plannedMonthly.toLocaleString()} ₽ / месяц`;
+
+  explainEl.innerHTML = ProtocolCore
+    .explain(lastCalc)
+    .replace(/\n/g, "<br>");
 }
