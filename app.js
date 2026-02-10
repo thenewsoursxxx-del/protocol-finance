@@ -1312,15 +1312,49 @@ goalEditSave.onclick = () => {
     return;
   }
 
+  // 1️⃣ обновляем мету цели
   goalMeta.title = newTitle;
+
+  // 2️⃣ обновляем ТОЛЬКО цель (не трогаем accounts)
   goalInput.value = formatNumber(String(newAmount));
 
+  // 3️⃣ если цель стала меньше накопленного — считаем её выполненной
+  if (accounts.main >= newAmount) {
+    goalCompleted = true;
+  }
+
+  // 4️⃣ закрываем редактор
   goalEditorSheet.style.bottom = "-100%";
   goalEditorOverlay.style.display = "none";
 
+  // 5️⃣ пересчитываем UI
   renderGoals();
+  pulseGoalCard();
 };
 
 goalEditAmount.addEventListener("input", e => {
   e.target.value = formatNumber(e.target.value);
 });
+
+function pulseGoalCard() {
+  const card = document.getElementById("activeGoalCard");
+  if (!card) return;
+
+  card.classList.add("pulse");
+  setTimeout(() => card.classList.remove("pulse"), 400);
+}
+
+let goalPulseTimeout = null;
+
+function pulseGoalCard() {
+  const card = document.getElementById("activeGoalCard");
+  if (!card) return;
+
+  card.classList.remove("pulse");
+  clearTimeout(goalPulseTimeout);
+
+  card.classList.add("pulse");
+  goalPulseTimeout = setTimeout(() => {
+    card.classList.remove("pulse");
+  }, 400);
+}
