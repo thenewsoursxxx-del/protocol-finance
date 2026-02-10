@@ -939,6 +939,31 @@ value: acc
 
 ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+// ===== GRID =====
+const gridX = 4; // вертикальные деления (месяцы)
+const gridY = 5; // горизонтальные деления (деньги)
+
+ctx.strokeStyle = "rgba(255,255,255,0.06)";
+ctx.lineWidth = 1;
+
+// горизонтальная сетка
+for (let i = 1; i < gridY; i++) {
+  const y = pad + (i / gridY) * (H - pad * 2);
+  ctx.beginPath();
+  ctx.moveTo(pad, y);
+  ctx.lineTo(W - pad, y);
+  ctx.stroke();
+}
+
+// вертикальная сетка
+for (let i = 1; i < gridX; i++) {
+  const x = pad + (i / gridX) * (W - pad * 2);
+  ctx.beginPath();
+  ctx.moveTo(x, pad);
+  ctx.lineTo(x, H - pad);
+  ctx.stroke();
+}
+
 // ОСИ
 ctx.strokeStyle = "#333";
 ctx.lineWidth = 1;
