@@ -244,15 +244,6 @@ renderGoals();
 if (btn.dataset.screen === "accounts") {
 renderAccounts();
 
-
-const reserveBlock = document.querySelector(
-'.account-block[data-account="reserve"]'
-);
-
-if (reserveBlock) {
-reserveBlock.style.display =
-chosenPlan === "buffer" ? "block" : "none";
-}
 }
 }
 };
