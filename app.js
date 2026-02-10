@@ -244,6 +244,17 @@ renderGoals();
 if (btn.dataset.screen === "accounts") {
 renderAccounts();
 
+if (btn.dataset.screen === "accounts") {
+renderAccounts();
+
+const reserveBlock = document.querySelector(
+'.account-block[data-account="reserve"]'
+);
+
+if (reserveBlock) {
+reserveBlock.style.display =
+chosenPlan === "buffer" ? "block" : "none";
+}
 }
 }
 };
@@ -277,6 +288,13 @@ bottomNav.style.pointerEvents = "auto";
 }
 };
 }
+
+document.querySelectorAll(".account-block").forEach(block => {
+block.onclick = () => {
+const type = block.dataset.account;
+openAccountHistory(type);
+};
+});
 
 function openAccountHistory(type) {
 const title = document.getElementById("historyTitle");
@@ -364,7 +382,6 @@ selectedScenario = card.dataset.id;
 haptic("light");
 
 protocolFlow(selectedScenario);
-renderAccounts();
 };
 });
 }
@@ -495,6 +512,36 @@ document.querySelectorAll(
 planSummary.style.display = "none";
 };
 
+/* ===== TIME HELPERS ===== */
+
+function addMonths(date, n) {
+const d = new Date(date);
+d.setMonth(d.getMonth() + n);
+return d;
+}
+
+function buildPlanTimeline(startDate, monthlyAmount, months) {
+const points = [];
+let total = 0;
+
+for (let i = 0; i <= months; i++) {
+points.push({
+date: addMonths(startDate, i),
+value: total
+});
+total += monthlyAmount;
+}
+
+return points;
+}
+
+function formatDate(d) {
+return d.toLocaleDateString("ru-RU", {
+month: "short",
+year: "2-digit"
+});
+}
+
 /* ===== STAGED FLOW ===== */
 function protocolFlow(mode) {
 chosenPlan = mode;
@@ -623,7 +670,6 @@ factRatio = fact / plannedMonthly;
 drawChart();
 runBrain();
 renderAccountsUI();
-renderAccounts();
 renderGoals();
 const goalTotal = parseNumber(goalInput.value || "0");
 
@@ -893,31 +939,6 @@ value: acc
 
 ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-// ===== GRID =====
-const gridX = 4; // вертикальные деления (месяцы)
-const gridY = 5; // горизонтальные деления (деньги)
-
-ctx.strokeStyle = "rgba(255,255,255,0.06)";
-ctx.lineWidth = 1;
-
-// горизонтальная сетка
-for (let i = 1; i < gridY; i++) {
-  const y = pad + (i / gridY) * (H - pad * 2);
-  ctx.beginPath();
-  ctx.moveTo(pad, y);
-  ctx.lineTo(W - pad, y);
-  ctx.stroke();
-}
-
-// вертикальная сетка
-for (let i = 1; i < gridX; i++) {
-  const x = pad + (i / gridX) * (W - pad * 2);
-  ctx.beginPath();
-  ctx.moveTo(x, pad);
-  ctx.lineTo(x, H - pad);
-  ctx.stroke();
-}
-
 // ОСИ
 ctx.strokeStyle = "#333";
 ctx.lineWidth = 1;
@@ -1176,6 +1197,20 @@ if (titleEl) {
 titleEl.innerText = goalMeta.title;
 }
 
+function recalcPlanAfterGoalChange() {
+const newGoal = parseNumber(goalInput.value || "0");
+if (!newGoal || !plannedMonthly) return;
+
+const remaining = Math.max(0, newGoal - accounts.main);
+const newMonths = Math.ceil(remaining / plannedMonthly);
+
+// обновляем текст над графиком
+summaryMonths.innerText = newMonths;
+
+// перерисовываем график
+drawChart();
+}
+
 // ===== ОСНОВНАЯ ЦЕЛЬ =====
 const saved = accounts.main;
 const total = parseNumber(goalInput.value || "0");
@@ -1262,6 +1297,8 @@ if (Date.now() < end) {
 requestAnimationFrame(frame);
 }
 })();
+
+showGoalCompleteMessage();
 }
 
 let confettiInstance = null;
@@ -1330,6 +1367,7 @@ recalcPlanAfterGoalChange();
 renderGoals();
 updatePlanHeader();
 drawChart();
+recalcPlanAfterGoalChange();
 pulseGoalCard();
 };
 
@@ -1346,7 +1384,15 @@ clearTimeout(goalEditHintTimeout);
 goalEditHintTimeout = setTimeout(() => {
 handleGoalEditHint(ratio);
 }, 420);
-})
+});
+
+function pulseGoalCard() {
+const card = document.getElementById("activeGoalCard");
+if (!card) return;
+
+card.classList.add("pulse");
+setTimeout(() => card.classList.remove("pulse"), 400);
+}
 
 let goalPulseTimeout = null;
 
@@ -1388,6 +1434,10 @@ plannedMonthly = Math.round(plannedMonthly * 0.9);
 
 // пересобираем график
 drawChart();
+}
+
+if (newGoal > lastCalc.effectiveGoal + accounts.main) {
+showBrainMessage("Цель увеличена — план автоматически пересчитан.");
 }
 
 function updatePlanHeader() {
