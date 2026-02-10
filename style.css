@@ -1034,3 +1034,19 @@ z-index: 5;
   transform: scale(0.96);
   background: rgba(255,255,255,0.1);
 }
+
+/* ===== RESERVE ACCOUNT APPEAR ===== */
+.account-block.reserve {
+  opacity: 0;
+  transform: translateY(10px);
+  transition:
+    opacity 0.35s ease,
+    transform 0.35s ease;
+  pointer-events: none;
+}
+
+.account-block.reserve.show {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
