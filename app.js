@@ -143,6 +143,9 @@ let goalMeta = {
   title: "Основная цель"
 };
 
+let goalEditBaseValue = null;
+let goalEditHintTimeout = null;
+
 const accountsList = document.getElementById("accountsList");
 
 function renderAccounts() {
@@ -1295,6 +1298,7 @@ if (editGoalBtn) {
 
     goalEditTitle.value = goalMeta.title;
     goalEditAmount.value = goalInput.value;
+    goalEditBaseValue = parseNumber(goalInput.value || "0");
 
     goalEditorOverlay.style.display = "block";
     goalEditorSheet.style.bottom = "0";
@@ -1342,6 +1346,17 @@ pulseGoalCard();
 
 goalEditAmount.addEventListener("input", e => {
   e.target.value = formatNumber(e.target.value);
+
+  const newValue = parseNumber(e.target.value || "0");
+  if (!goalEditBaseValue || !newValue) return;
+
+  const ratio = newValue / goalEditBaseValue;
+
+  clearTimeout(goalEditHintTimeout);
+
+  goalEditHintTimeout = setTimeout(() => {
+    handleGoalEditHint(ratio);
+  }, 420);
 });
 
 function pulseGoalCard() {
@@ -1412,4 +1427,23 @@ function updatePlanHeader() {
   explainEl.innerHTML = ProtocolCore
     .explain(lastCalc)
     .replace(/\n/g, "<br>");
+}
+
+function handleGoalEditHint(ratio) {
+  if (ratio < 1.2) return;
+
+  let text = "";
+
+  if (ratio >= 3) {
+    text =
+      "Цель увеличена более чем в 3 раза. План существенно удлинится — убедитесь, что это осознанное решение.";
+  } else if (ratio >= 2) {
+    text =
+      "Цель увеличена в 2 раза. Protocol пересчитает срок и нагрузку.";
+  } else {
+    text =
+      "Цель заметно увеличена. Срок достижения изменится.";
+  }
+
+  showBrainMessage(text);
 }
