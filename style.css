@@ -837,7 +837,7 @@ z-index: 5;
 .goal-title-row {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   margin-top: 6px;
 }
 
