@@ -1329,7 +1329,8 @@ goalEditSave.onclick = () => {
 
   // 5️⃣ пересчитываем UI
   renderGoals();
-  pulseGoalCard();
+recalcPlanAfterGoalChange();
+pulseGoalCard();
 };
 
 goalEditAmount.addEventListener("input", e => {
@@ -1357,4 +1358,35 @@ function pulseGoalCard() {
   goalPulseTimeout = setTimeout(() => {
     card.classList.remove("pulse");
   }, 400);
+}
+
+function recalcPlanAfterGoalChange() {
+  if (!lastCalc.ok) return;
+
+  const newGoal = parseNumber(goalInput.value || "0");
+  if (!newGoal) return;
+
+  const baseResult = ProtocolCore.calculateBase({
+    income: parseNumber(incomeInput.value),
+    expenses: parseNumber(expensesInput.value),
+    goal: newGoal,
+    saved: accounts.main,
+    mode: saveMode
+  });
+
+  if (!baseResult.ok) return;
+
+  lastCalc = baseResult;
+
+  plannedMonthly = baseResult.monthlySave;
+  if (chosenPlan === "buffer") {
+    plannedMonthly = Math.round(plannedMonthly * 0.9);
+  }
+
+  // пересобираем график
+  drawChart();
+}
+
+if (newGoal > lastCalc.effectiveGoal + accounts.main) {
+  showBrainMessage("Цель увеличена — план автоматически пересчитан.");
 }
