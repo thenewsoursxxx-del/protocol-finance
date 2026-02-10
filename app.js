@@ -278,13 +278,6 @@ bottomNav.style.pointerEvents = "auto";
 };
 }
 
-document.querySelectorAll(".account-block").forEach(block => {
-block.onclick = () => {
-const type = block.dataset.account;
-openAccountHistory(type);
-};
-});
-
 function openAccountHistory(type) {
 const title = document.getElementById("historyTitle");
 const list = document.getElementById("historyList");
@@ -501,36 +494,6 @@ document.querySelectorAll(
 // спрятать summary
 planSummary.style.display = "none";
 };
-
-/* ===== TIME HELPERS ===== */
-
-function addMonths(date, n) {
-const d = new Date(date);
-d.setMonth(d.getMonth() + n);
-return d;
-}
-
-function buildPlanTimeline(startDate, monthlyAmount, months) {
-const points = [];
-let total = 0;
-
-for (let i = 0; i <= months; i++) {
-points.push({
-date: addMonths(startDate, i),
-value: total
-});
-total += monthlyAmount;
-}
-
-return points;
-}
-
-function formatDate(d) {
-return d.toLocaleDateString("ru-RU", {
-month: "short",
-year: "2-digit"
-});
-}
 
 /* ===== STAGED FLOW ===== */
 function protocolFlow(mode) {
@@ -1213,20 +1176,6 @@ if (titleEl) {
 titleEl.innerText = goalMeta.title;
 }
 
-function recalcPlanAfterGoalChange() {
-const newGoal = parseNumber(goalInput.value || "0");
-if (!newGoal || !plannedMonthly) return;
-
-const remaining = Math.max(0, newGoal - accounts.main);
-const newMonths = Math.ceil(remaining / plannedMonthly);
-
-// обновляем текст над графиком
-summaryMonths.innerText = newMonths;
-
-// перерисовываем график
-drawChart();
-}
-
 // ===== ОСНОВНАЯ ЦЕЛЬ =====
 const saved = accounts.main;
 const total = parseNumber(goalInput.value || "0");
@@ -1400,15 +1349,7 @@ clearTimeout(goalEditHintTimeout);
 goalEditHintTimeout = setTimeout(() => {
 handleGoalEditHint(ratio);
 }, 420);
-});
-
-function pulseGoalCard() {
-const card = document.getElementById("activeGoalCard");
-if (!card) return;
-
-card.classList.add("pulse");
-setTimeout(() => card.classList.remove("pulse"), 400);
-}
+})
 
 let goalPulseTimeout = null;
 
@@ -1450,10 +1391,6 @@ plannedMonthly = Math.round(plannedMonthly * 0.9);
 
 // пересобираем график
 drawChart();
-}
-
-if (newGoal > lastCalc.effectiveGoal + accounts.main) {
-showBrainMessage("Цель увеличена — план автоматически пересчитан.");
 }
 
 function updatePlanHeader() {
