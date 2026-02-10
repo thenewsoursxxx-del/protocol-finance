@@ -910,3 +910,17 @@ z-index: 5;
 
   transition: bottom 0.35s cubic-bezier(.4,0,.2,1);
 }
+
+.goal-edit-btn svg {
+  width: 16px;
+  height: 16px;
+  stroke: #fff;
+  fill: none;
+  stroke-width: 2;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.goal-edit-btn:active svg {
+  transform: scale(0.9);
+  opacity: 0.75;
+}
