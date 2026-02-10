@@ -192,6 +192,17 @@ e.target.selectionEnd = p + (a - b);
 });
 });
 
+function hideBottomNav() {
+  bottomNav.style.transform = "translateY(140%)";
+  bottomNav.style.opacity = "0";
+  bottomNav.style.pointerEvents = "none";
+}
+
+function showBottomNav() {
+  bottomNav.style.transform = "translateY(0)";
+  bottomNav.style.opacity = "1";
+  bottomNav.style.pointerEvents = "auto";
+}
 
 /* ===== TAB LOCK ===== */
 function lockTabs(lock) {
@@ -378,6 +389,7 @@ protocolFlow(selectedScenario);
 /* ===== CALCULATE ===== */
 calculateBtn.onclick = () => {
 haptic("medium");
+hideBottomNav();
 
 bottomNav.style.opacity = "0";
 bottomNav.style.pointerEvents = "none";
@@ -532,10 +544,6 @@ year: "2-digit"
 
 /* ===== STAGED FLOW ===== */
 function protocolFlow(mode) {
-// возвращаем bottom nav после старта плана
-bottomNav.style.opacity = "1";
-bottomNav.style.pointerEvents = "auto";
-bottomNav.style.transform = "translateY(0)";
 chosenPlan = mode;
 isInitialized = true;
 lockTabs(false);
@@ -615,6 +623,7 @@ style="width:52px;height:52px;border-radius:50%">
 canvas = document.getElementById("chart");
 ctx = canvas.getContext("2d");
 initChart();
+showBottomNav();
 updatePlanHeader();
 
 const factInput = document.getElementById("factInput");
