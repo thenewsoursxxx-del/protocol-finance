@@ -242,19 +242,23 @@ if (btn.dataset.screen === "goals") {
 }
 
 if (btn.dataset.screen === "accounts") {
-renderAccounts();
+  renderAccounts();
 
-if (btn.dataset.screen === "accounts") {
-renderAccounts();
+  const reserveBlock = document.querySelector(
+    '.account-block[data-account="reserve"]'
+  );
 
-const reserveBlock = document.querySelector(
-'.account-block[data-account="reserve"]'
-);
+  if (!reserveBlock) return;
 
-if (reserveBlock) {
-reserveBlock.style.display =
-chosenPlan === "buffer" ? "block" : "none";
+  if (chosenPlan === "buffer") {
+    requestAnimationFrame(() => {
+      reserveBlock.classList.add("show");
+    });
+  } else {
+    reserveBlock.classList.remove("show");
+  }
 }
+
 }
 }
 };
