@@ -1188,6 +1188,20 @@ if (titleEl) {
   titleEl.innerText = goalMeta.title;
 }
 
+function recalcPlanAfterGoalChange() {
+  const newGoal = parseNumber(goalInput.value || "0");
+  if (!newGoal || !plannedMonthly) return;
+
+  const remaining = Math.max(0, newGoal - accounts.main);
+  const newMonths = Math.ceil(remaining / plannedMonthly);
+
+  // обновляем текст над графиком
+  summaryMonths.innerText = newMonths;
+
+  // перерисовываем график
+  drawChart();
+}
+
   // ===== ОСНОВНАЯ ЦЕЛЬ =====
   const saved = accounts.main;
   const total = parseNumber(goalInput.value || "0");
@@ -1340,6 +1354,7 @@ goalEditSave.onclick = () => {
   goalEditHint.classList.remove("show");
 
   // 5️⃣ пересчитываем UI
+recalcPlanAfterGoalChange();
   renderGoals();
   updatePlanHeader();
 drawChart();
