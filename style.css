@@ -937,6 +937,8 @@ z-index: 5;
 
 .goal-edit-hint {
   margin-top: 10px;
+  margin-bottom: 22px; /* ← ВОТ ГЛАВНОЕ */
+
   padding: 12px 14px;
 
   border-radius: 14px;
