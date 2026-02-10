@@ -36,6 +36,7 @@ const goalInput = document.getElementById("goal");
 const editGoalBtn = document.getElementById("editGoalBtn");
 const goalEditorSheet = document.getElementById("goalEditorSheet");
 const goalEditorOverlay = document.getElementById("goalEditorOverlay");
+const goalEditHint = document.getElementById("goalEditHint");
 
 const goalEditTitle = document.getElementById("goalEditTitle");
 const goalEditAmount = document.getElementById("goalEditAmount");
@@ -1308,6 +1309,7 @@ if (editGoalBtn) {
 goalEditorOverlay.onclick = () => {
   goalEditorSheet.style.bottom = "-100%";
   goalEditorOverlay.style.display = "none";
+  goalEditHint.classList.remove("show");
 };
 
 goalEditSave.onclick = () => {
@@ -1335,6 +1337,7 @@ goalEditSave.onclick = () => {
   // 4️⃣ закрываем редактор
   goalEditorSheet.style.bottom = "-100%";
   goalEditorOverlay.style.display = "none";
+  goalEditHint.classList.remove("show");
 
   // 5️⃣ пересчитываем UI
   renderGoals();
@@ -1430,20 +1433,26 @@ function updatePlanHeader() {
 }
 
 function handleGoalEditHint(ratio) {
-  if (ratio < 1.2) return;
+  if (!goalEditHint) return;
+
+  if (ratio < 1.2) {
+    goalEditHint.classList.remove("show");
+    return;
+  }
 
   let text = "";
 
   if (ratio >= 3) {
     text =
-      "Цель увеличена более чем в 3 раза. План существенно удлинится — убедитесь, что это осознанное решение.";
+      "Цель увеличена более чем в 3 раза. План станет значительно длиннее — убедитесь, что это осознанное решение.";
   } else if (ratio >= 2) {
     text =
-      "Цель увеличена в 2 раза. Protocol пересчитает срок и нагрузку.";
+      "Цель увеличена в 2 раза. Срок и нагрузка изменятся.";
   } else {
     text =
-      "Цель заметно увеличена. Срок достижения изменится.";
+      "Цель заметно увеличена. Protocol пересчитает план.";
   }
 
-  showBrainMessage(text);
+  goalEditHint.innerText = text;
+  goalEditHint.classList.add("show");
 }
