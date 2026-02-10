@@ -1284,23 +1284,6 @@ function initConfetti() {
 // сразу инициализируем
 initConfetti();
 
-const editGoalBtn = document.getElementById("editGoalBtn");
-
-if (editGoalBtn) {
-  editGoalBtn.onclick = () => {
-    haptic("light");
-
-    const current = goalMeta.title;
-    const next = prompt("Название цели", current);
-
-    if (!next || !next.trim()) return;
-
-    goalMeta.title = next.trim();
-
-    renderGoals();
-  };
-}
-
 if (editGoalBtn) {
   editGoalBtn.onclick = () => {
     haptic("light");
@@ -1337,3 +1320,7 @@ goalEditSave.onclick = () => {
 
   renderGoals();
 };
+
+goalEditAmount.addEventListener("input", e => {
+  e.target.value = formatNumber(e.target.value);
+});
