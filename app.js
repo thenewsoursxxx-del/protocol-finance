@@ -118,10 +118,10 @@ bottomNav.style.left = "20px";
 bottomNav.style.right = "20px";
 
 const PROTOCOL_COLORS = [
-  "#3a7bfd", // основной синий
-  "#60a5fa", // светлый
-  "#1e3a8a", // тёмный
-  "#ffffff"  // акцент
+"#3a7bfd", // основной синий
+"#60a5fa", // светлый
+"#1e3a8a", // тёмный
+"#ffffff" // акцент
 ];
 
 /* ===== STATE ===== */
@@ -141,7 +141,7 @@ main: 0,
 reserve: 0
 };
 let goalMeta = {
-  title: "Основная цель"
+title: "Основная цель"
 };
 
 let goalEditBaseValue = null;
@@ -193,15 +193,15 @@ e.target.selectionEnd = p + (a - b);
 });
 
 function hideBottomNav() {
-  bottomNav.style.transform = "translateY(140%)";
-  bottomNav.style.opacity = "0";
-  bottomNav.style.pointerEvents = "none";
+bottomNav.style.transform = "translateY(140%)";
+bottomNav.style.opacity = "0";
+bottomNav.style.pointerEvents = "none";
 }
 
 function showBottomNav() {
-  bottomNav.style.transform = "translateY(0)";
-  bottomNav.style.opacity = "1";
-  bottomNav.style.pointerEvents = "auto";
+bottomNav.style.transform = "translateY(0)";
+bottomNav.style.opacity = "1";
+bottomNav.style.pointerEvents = "auto";
 }
 
 /* ===== TAB LOCK ===== */
@@ -238,27 +238,23 @@ lastNavBtnBeforeProfile = btn;
 openScreen(btn.dataset.screen, btn);
 
 if (btn.dataset.screen === "goals") {
-  renderGoals();
+renderGoals();
 }
 
 if (btn.dataset.screen === "accounts") {
-  renderAccounts();
+renderAccounts();
 
-  const reserveBlock = document.querySelector(
-    '.account-block[data-account="reserve"]'
-  );
+if (btn.dataset.screen === "accounts") {
+renderAccounts();
 
-  if (!reserveBlock) return;
+const reserveBlock = document.querySelector(
+'.account-block[data-account="reserve"]'
+);
 
-  if (chosenPlan === "buffer") {
-    requestAnimationFrame(() => {
-      reserveBlock.classList.add("show");
-    });
-  } else {
-    reserveBlock.classList.remove("show");
-  }
+if (reserveBlock) {
+reserveBlock.style.display =
+chosenPlan === "buffer" ? "block" : "none";
 }
-
 }
 }
 };
@@ -581,20 +577,20 @@ const advice = ProtocolCore.buildAdvice(lastCalc);
 
 adviceCard.innerHTML = `
 <div id="planHeader">
-  <div
-    id="planMonthly"
-    style="font-size:16px;font-weight:600"
-  ></div>
+<div
+id="planMonthly"
+style="font-size:16px;font-weight:600"
+></div>
 
-  <div
-    id="planExplanation"
-    style="
-      margin-top:8px;
-      font-size:14px;
-      line-height:1.4;
-      opacity:0.75;
-    "
-  ></div>
+<div
+id="planExplanation"
+style="
+margin-top:8px;
+font-size:14px;
+line-height:1.4;
+opacity:0.75;
+"
+></div>
 </div>
 
 <div style="
@@ -677,14 +673,14 @@ renderAccountsUI();
 renderGoals();
 const goalTotal = parseNumber(goalInput.value || "0");
 
-  if (
-    !goalCompleted &&
-    goalTotal > 0 &&
-    accounts.main >= goalTotal
-  ) {
-    goalCompleted = true;
-    setTimeout(fireCelebration, 120);
-  }
+if (
+!goalCompleted &&
+goalTotal > 0 &&
+accounts.main >= goalTotal
+) {
+goalCompleted = true;
+setTimeout(fireCelebration, 120);
+}
 
 factInput.value = "";
 factInput.blur();
@@ -1099,38 +1095,38 @@ year: "2-digit"
 }
 
 function runBrain() {
-  if (!factHistory.length) return;
+if (!factHistory.length) return;
 
-  // группируем факты по месяцам
-  const grouped = {};
+// группируем факты по месяцам
+const grouped = {};
 
-  factHistory.forEach(f => {
-    const d = new Date(f.date);
-    const key = `${d.getFullYear()}-${d.getMonth()}`;
+factHistory.forEach(f => {
+const d = new Date(f.date);
+const key = `${d.getFullYear()}-${d.getMonth()}`;
 
-    if (!grouped[key]) grouped[key] = 0;
-    grouped[key] += f.value;
-  });
+if (!grouped[key]) grouped[key] = 0;
+grouped[key] += f.value;
+});
 
-  const monthsPassed = Object.keys(grouped).length;
+const monthsPassed = Object.keys(grouped).length;
 
-  const actual = Object.values(grouped)
-    .reduce((s, v) => s + v, 0);
+const actual = Object.values(grouped)
+.reduce((s, v) => s + v, 0);
 
-  const planned = plannedMonthly * monthsPassed;
-  const diff = actual - planned;
+const planned = plannedMonthly * monthsPassed;
+const diff = actual - planned;
 
-  let text = "";
+let text = "";
 
-  if (diff >= 0) {
-    text = "Ты идёшь по плану или лучше. Всё под контролем.";
-  } else if (diff > -planned * 0.1) {
-    text = "Есть небольшое отставание. Пока не критично.";
-  } else {
-    text = "Ты заметно отстаёшь от плана. Стоит пересмотреть стратегию.";
-  }
+if (diff >= 0) {
+text = "Ты идёшь по плану или лучше. Всё под контролем.";
+} else if (diff > -planned * 0.1) {
+text = "Есть небольшое отставание. Пока не критично.";
+} else {
+text = "Ты заметно отстаёшь от плана. Стоит пересмотреть стратегию.";
+}
 
-  showBrainMessage(text);
+showBrainMessage(text);
 }
 
 function showBrainMessage(text) {
@@ -1161,22 +1157,22 @@ block.className = "fact-tooltip";
 const date = new Date().toLocaleDateString("ru-RU");
 
 block.innerHTML = `
-  <div class="fact-date">${date}</div>
-  <div class="fact-value">
-    Отложено: ${f.value.toLocaleString()} ₽
-  </div>
+<div class="fact-date">${date}</div>
+<div class="fact-value">
+Отложено: ${f.value.toLocaleString()} ₽
+</div>
 `;
 
 adviceCard.appendChild(block);
 
 setTimeout(() => {
-  block.classList.add("hide");
+block.classList.add("hide");
 
-  setTimeout(() => {
-    block.remove();
-    activeFactDot = null;
-    drawChart();
-  }, 280); // ← совпадает с CSS transition
+setTimeout(() => {
+block.remove();
+activeFactDot = null;
+drawChart();
+}, 280); // ← совпадает с CSS transition
 }, 4000);
 }
 
@@ -1194,293 +1190,293 @@ reserveEl.innerText = accounts.reserve.toLocaleString();
 }
 
 function renderGoals() {
-  if (!lastCalc.ok) return;
-  
-  const titleEl = document.getElementById("goalTitle");
+if (!lastCalc.ok) return;
+
+const titleEl = document.getElementById("goalTitle");
 if (titleEl) {
-  titleEl.innerText = goalMeta.title;
+titleEl.innerText = goalMeta.title;
 }
 
 function recalcPlanAfterGoalChange() {
-  const newGoal = parseNumber(goalInput.value || "0");
-  if (!newGoal || !plannedMonthly) return;
+const newGoal = parseNumber(goalInput.value || "0");
+if (!newGoal || !plannedMonthly) return;
 
-  const remaining = Math.max(0, newGoal - accounts.main);
-  const newMonths = Math.ceil(remaining / plannedMonthly);
+const remaining = Math.max(0, newGoal - accounts.main);
+const newMonths = Math.ceil(remaining / plannedMonthly);
 
-  // обновляем текст над графиком
-  summaryMonths.innerText = newMonths;
+// обновляем текст над графиком
+summaryMonths.innerText = newMonths;
 
-  // перерисовываем график
-  drawChart();
+// перерисовываем график
+drawChart();
 }
 
-  // ===== ОСНОВНАЯ ЦЕЛЬ =====
-  const saved = accounts.main;
-  const total = parseNumber(goalInput.value || "0");
+// ===== ОСНОВНАЯ ЦЕЛЬ =====
+const saved = accounts.main;
+const total = parseNumber(goalInput.value || "0");
 
-  const percent = total
-    ? Math.min(100, Math.round((saved / total) * 100))
-    : 0;
+const percent = total
+? Math.min(100, Math.round((saved / total) * 100))
+: 0;
 
-  document.getElementById("goalTotal").innerText =
-    total.toLocaleString();
+document.getElementById("goalTotal").innerText =
+total.toLocaleString();
 
-  document.getElementById("goalSaved").innerText =
-    saved.toLocaleString();
+document.getElementById("goalSaved").innerText =
+saved.toLocaleString();
 
-  document.getElementById("goalPercent").innerText = percent;
+document.getElementById("goalPercent").innerText = percent;
 
-  document.getElementById("goalProgressBar").style.width =
-    percent + "%";
+document.getElementById("goalProgressBar").style.width =
+percent + "%";
 
-  const verdict = document.getElementById("goalVerdict");
+const verdict = document.getElementById("goalVerdict");
 
-  if (percent >= 100) {
-    verdict.innerText =
-      "Цель достигнута. Protocol фиксирует успех.";
-  } else if (percent >= 70) {
-    verdict.innerText =
-      "Цель близка к завершению. Темп хороший.";
-  } else {
-    verdict.innerText =
-      "Цель в процессе. Стабильность важнее скорости.";
-  }
+if (percent >= 100) {
+verdict.innerText =
+"Цель достигнута. Protocol фиксирует успех.";
+} else if (percent >= 70) {
+verdict.innerText =
+"Цель близка к завершению. Темп хороший.";
+} else {
+verdict.innerText =
+"Цель в процессе. Стабильность важнее скорости.";
+}
 
-  // ===== РЕЗЕРВ =====
-  const reserveCard = document.getElementById("goalReserveCard");
+// ===== РЕЗЕРВ =====
+const reserveCard = document.getElementById("goalReserveCard");
 
-  if (chosenPlan === "buffer") {
-    reserveCard.style.display = "block";
-    document.getElementById("goalReserveAmount").innerText =
-      accounts.reserve.toLocaleString();
-  } else {
-    reserveCard.style.display = "none";
-  }
+if (chosenPlan === "buffer") {
+reserveCard.style.display = "block";
+document.getElementById("goalReserveAmount").innerText =
+accounts.reserve.toLocaleString();
+} else {
+reserveCard.style.display = "none";
+}
 }
 
 function fireCelebration() {
-  // haptic — аккуратно
-  Telegram.WebApp.HapticFeedback.notificationOccurred("success");
+// haptic — аккуратно
+Telegram.WebApp.HapticFeedback.notificationOccurred("success");
 
-  const duration = 2600;
-  const end = Date.now() + duration;
+const duration = 2600;
+const end = Date.now() + duration;
 
-  const base = {
-    spread: 60,
-    ticks: 140,
-    gravity: 0.9,
-    decay: 0.92,
-    startVelocity: 28,
-    colors: [
-      "#3a7bfd",
-      "#60a5fa",
-      "#1e3a8a",
-      "#ffffff"
-    ]
-  };
+const base = {
+spread: 60,
+ticks: 140,
+gravity: 0.9,
+decay: 0.92,
+startVelocity: 28,
+colors: [
+"#3a7bfd",
+"#60a5fa",
+"#1e3a8a",
+"#ffffff"
+]
+};
 
-  (function frame() {
-  confetti({
-    particleCount: 6,
-    angle: 60,
-    spread: 70,
-    origin: { x: 0 },
-    colors: PROTOCOL_COLORS
-  });
+(function frame() {
+confetti({
+particleCount: 6,
+angle: 60,
+spread: 70,
+origin: { x: 0 },
+colors: PROTOCOL_COLORS
+});
 
-  confetti({
-    particleCount: 6,
-    angle: 120,
-    spread: 70,
-    origin: { x: 1 },
-    colors: PROTOCOL_COLORS
-  });
+confetti({
+particleCount: 6,
+angle: 120,
+spread: 70,
+origin: { x: 1 },
+colors: PROTOCOL_COLORS
+});
 
-  if (Date.now() < end) {
-    requestAnimationFrame(frame);
-  }
+if (Date.now() < end) {
+requestAnimationFrame(frame);
+}
 })();
 
-  showGoalCompleteMessage();
+showGoalCompleteMessage();
 }
 
 let confettiInstance = null;
 
 function initConfetti() {
-  const canvas = document.getElementById("confetti-canvas");
-  if (!canvas || !window.confetti) return;
+const canvas = document.getElementById("confetti-canvas");
+if (!canvas || !window.confetti) return;
 
-  confettiInstance = window.confetti.create(canvas, {
-    resize: true,
-    useWorker: true
-  });
+confettiInstance = window.confetti.create(canvas, {
+resize: true,
+useWorker: true
+});
 }
 
 // сразу инициализируем
 initConfetti();
 
 if (editGoalBtn) {
-  editGoalBtn.onclick = () => {
-    haptic("light");
+editGoalBtn.onclick = () => {
+haptic("light");
 
-    goalEditTitle.value = goalMeta.title;
-    goalEditAmount.value = goalInput.value;
-    goalEditBaseValue = parseNumber(goalInput.value || "0");
+goalEditTitle.value = goalMeta.title;
+goalEditAmount.value = goalInput.value;
+goalEditBaseValue = parseNumber(goalInput.value || "0");
 
-    goalEditorOverlay.style.display = "block";
-    goalEditorSheet.style.bottom = "0";
-  };
+goalEditorOverlay.style.display = "block";
+goalEditorSheet.style.bottom = "0";
+};
 }
 
 goalEditorOverlay.onclick = () => {
-  goalEditorSheet.style.bottom = "-100%";
-  goalEditorOverlay.style.display = "none";
-  goalEditHint.classList.remove("show");
+goalEditorSheet.style.bottom = "-100%";
+goalEditorOverlay.style.display = "none";
+goalEditHint.classList.remove("show");
 };
 
 goalEditSave.onclick = () => {
-  haptic("medium");
+haptic("medium");
 
-  const newTitle = goalEditTitle.value.trim();
-  const newAmount = parseNumber(goalEditAmount.value || "0");
+const newTitle = goalEditTitle.value.trim();
+const newAmount = parseNumber(goalEditAmount.value || "0");
 
-  if (!newTitle || !newAmount) {
-    haptic("error");
-    return;
-  }
+if (!newTitle || !newAmount) {
+haptic("error");
+return;
+}
 
-  // 1️⃣ обновляем мету цели
-  goalMeta.title = newTitle;
+// 1️⃣ обновляем мету цели
+goalMeta.title = newTitle;
 
-  // 2️⃣ обновляем ТОЛЬКО цель (не трогаем accounts)
-  goalInput.value = formatNumber(String(newAmount));
+// 2️⃣ обновляем ТОЛЬКО цель (не трогаем accounts)
+goalInput.value = formatNumber(String(newAmount));
 
-  // 3️⃣ если цель стала меньше накопленного — считаем её выполненной
-  if (accounts.main >= newAmount) {
-    goalCompleted = true;
-  }
+// 3️⃣ если цель стала меньше накопленного — считаем её выполненной
+if (accounts.main >= newAmount) {
+goalCompleted = true;
+}
 
-  // 4️⃣ закрываем редактор
-  goalEditorSheet.style.bottom = "-100%";
-  goalEditorOverlay.style.display = "none";
-  goalEditHint.classList.remove("show");
+// 4️⃣ закрываем редактор
+goalEditorSheet.style.bottom = "-100%";
+goalEditorOverlay.style.display = "none";
+goalEditHint.classList.remove("show");
 
-  // 5️⃣ пересчитываем UI
+// 5️⃣ пересчитываем UI
 recalcPlanAfterGoalChange();
-  renderGoals();
-  updatePlanHeader();
+renderGoals();
+updatePlanHeader();
 drawChart();
 recalcPlanAfterGoalChange();
 pulseGoalCard();
 };
 
 goalEditAmount.addEventListener("input", e => {
-  e.target.value = formatNumber(e.target.value);
+e.target.value = formatNumber(e.target.value);
 
-  const newValue = parseNumber(e.target.value || "0");
-  if (!goalEditBaseValue || !newValue) return;
+const newValue = parseNumber(e.target.value || "0");
+if (!goalEditBaseValue || !newValue) return;
 
-  const ratio = newValue / goalEditBaseValue;
+const ratio = newValue / goalEditBaseValue;
 
-  clearTimeout(goalEditHintTimeout);
+clearTimeout(goalEditHintTimeout);
 
-  goalEditHintTimeout = setTimeout(() => {
-    handleGoalEditHint(ratio);
-  }, 420);
+goalEditHintTimeout = setTimeout(() => {
+handleGoalEditHint(ratio);
+}, 420);
 });
 
 function pulseGoalCard() {
-  const card = document.getElementById("activeGoalCard");
-  if (!card) return;
+const card = document.getElementById("activeGoalCard");
+if (!card) return;
 
-  card.classList.add("pulse");
-  setTimeout(() => card.classList.remove("pulse"), 400);
+card.classList.add("pulse");
+setTimeout(() => card.classList.remove("pulse"), 400);
 }
 
 let goalPulseTimeout = null;
 
 function pulseGoalCard() {
-  const card = document.getElementById("activeGoalCard");
-  if (!card) return;
+const card = document.getElementById("activeGoalCard");
+if (!card) return;
 
-  card.classList.remove("pulse");
-  clearTimeout(goalPulseTimeout);
+card.classList.remove("pulse");
+clearTimeout(goalPulseTimeout);
 
-  card.classList.add("pulse");
-  goalPulseTimeout = setTimeout(() => {
-    card.classList.remove("pulse");
-  }, 400);
+card.classList.add("pulse");
+goalPulseTimeout = setTimeout(() => {
+card.classList.remove("pulse");
+}, 400);
 }
 
 function recalcPlanAfterGoalChange() {
-  if (!lastCalc.ok) return;
+if (!lastCalc.ok) return;
 
-  const newGoal = parseNumber(goalInput.value || "0");
-  if (!newGoal) return;
+const newGoal = parseNumber(goalInput.value || "0");
+if (!newGoal) return;
 
-  const baseResult = ProtocolCore.calculateBase({
-    income: parseNumber(incomeInput.value),
-    expenses: parseNumber(expensesInput.value),
-    goal: newGoal,
-    saved: accounts.main,
-    mode: saveMode
-  });
+const baseResult = ProtocolCore.calculateBase({
+income: parseNumber(incomeInput.value),
+expenses: parseNumber(expensesInput.value),
+goal: newGoal,
+saved: accounts.main,
+mode: saveMode
+});
 
-  if (!baseResult.ok) return;
+if (!baseResult.ok) return;
 
-  lastCalc = baseResult;
+lastCalc = baseResult;
 
-  plannedMonthly = baseResult.monthlySave;
-  if (chosenPlan === "buffer") {
-    plannedMonthly = Math.round(plannedMonthly * 0.9);
-  }
+plannedMonthly = baseResult.monthlySave;
+if (chosenPlan === "buffer") {
+plannedMonthly = Math.round(plannedMonthly * 0.9);
+}
 
-  // пересобираем график
-  drawChart();
+// пересобираем график
+drawChart();
 }
 
 if (newGoal > lastCalc.effectiveGoal + accounts.main) {
-  showBrainMessage("Цель увеличена — план автоматически пересчитан.");
+showBrainMessage("Цель увеличена — план автоматически пересчитан.");
 }
 
 function updatePlanHeader() {
-  if (!lastCalc.ok) return;
+if (!lastCalc.ok) return;
 
-  const monthlyEl = document.getElementById("planMonthly");
-  const explainEl = document.getElementById("planExplanation");
+const monthlyEl = document.getElementById("planMonthly");
+const explainEl = document.getElementById("planExplanation");
 
-  if (!monthlyEl || !explainEl) return;
+if (!monthlyEl || !explainEl) return;
 
-  monthlyEl.innerText =
-    `План: ${plannedMonthly.toLocaleString()} ₽ / месяц`;
+monthlyEl.innerText =
+`План: ${plannedMonthly.toLocaleString()} ₽ / месяц`;
 
-  explainEl.innerHTML = ProtocolCore
-    .explain(lastCalc)
-    .replace(/\n/g, "<br>");
+explainEl.innerHTML = ProtocolCore
+.explain(lastCalc)
+.replace(/\n/g, "<br>");
 }
 
 function handleGoalEditHint(ratio) {
-  if (!goalEditHint) return;
+if (!goalEditHint) return;
 
-  if (ratio < 1.2) {
-    goalEditHint.classList.remove("show");
-    return;
-  }
+if (ratio < 1.2) {
+goalEditHint.classList.remove("show");
+return;
+}
 
-  let text = "";
+let text = "";
 
-  if (ratio >= 3) {
-    text =
-      "Цель увеличена более чем в 3 раза. План станет значительно длиннее — убедитесь, что это осознанное решение.";
-  } else if (ratio >= 2) {
-    text =
-      "Цель увеличена в 2 раза. Срок и нагрузка изменятся.";
-  } else {
-    text =
-      "Цель заметно увеличена. Protocol пересчитает план.";
-  }
+if (ratio >= 3) {
+text =
+"Цель увеличена более чем в 3 раза. План станет значительно длиннее — убедитесь, что это осознанное решение.";
+} else if (ratio >= 2) {
+text =
+"Цель увеличена в 2 раза. Срок и нагрузка изменятся.";
+} else {
+text =
+"Цель заметно увеличена. Protocol пересчитает план.";
+}
 
-  goalEditHint.innerText = text;
-  goalEditHint.classList.add("show");
+goalEditHint.innerText = text;
+goalEditHint.classList.add("show");
 }
