@@ -884,6 +884,28 @@ z-index: 5;
   opacity: 0.8;
 }
 
+.goal-edit-btn:hover {
+  background: rgba(255,255,255,0.08);
+}
+
+.goal-edit-btn:active {
+  transform: scale(0.9);
+  box-shadow:
+    0 4px 10px rgba(0,0,0,0.35) inset;
+  opacity: 0.85;
+}
+
+.goal-edit-btn:active svg {
+  transform: scale(0.92);
+}
+
+.goal-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 /* ===== GOAL EDITOR SHEET ===== */
 .goal-editor {
   padding-bottom: 28px;
