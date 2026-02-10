@@ -132,6 +132,9 @@ let accounts = {
 main: 0,
 reserve: 0
 };
+let goalMeta = {
+  title: "Основная цель"
+};
 
 const accountsList = document.getElementById("accountsList");
 
@@ -1163,6 +1166,11 @@ reserveEl.innerText = accounts.reserve.toLocaleString();
 
 function renderGoals() {
   if (!lastCalc.ok) return;
+  
+  const titleEl = document.getElementById("goalTitle");
+if (titleEl) {
+  titleEl.innerText = goalMeta.title;
+}
 
   // ===== ОСНОВНАЯ ЦЕЛЬ =====
   const saved = accounts.main;
@@ -1268,3 +1276,20 @@ function initConfetti() {
 
 // сразу инициализируем
 initConfetti();
+
+const editGoalBtn = document.getElementById("editGoalBtn");
+
+if (editGoalBtn) {
+  editGoalBtn.onclick = () => {
+    haptic("light");
+
+    const current = goalMeta.title;
+    const next = prompt("Название цели", current);
+
+    if (!next || !next.trim()) return;
+
+    goalMeta.title = next.trim();
+
+    renderGoals();
+  };
+}
