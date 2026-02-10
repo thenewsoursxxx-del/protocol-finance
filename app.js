@@ -1197,20 +1197,6 @@ if (titleEl) {
 titleEl.innerText = goalMeta.title;
 }
 
-function recalcPlanAfterGoalChange() {
-const newGoal = parseNumber(goalInput.value || "0");
-if (!newGoal || !plannedMonthly) return;
-
-const remaining = Math.max(0, newGoal - accounts.main);
-const newMonths = Math.ceil(remaining / plannedMonthly);
-
-// обновляем текст над графиком
-summaryMonths.innerText = newMonths;
-
-// перерисовываем график
-drawChart();
-}
-
 // ===== ОСНОВНАЯ ЦЕЛЬ =====
 const saved = accounts.main;
 const total = parseNumber(goalInput.value || "0");
@@ -1336,39 +1322,30 @@ goalEditHint.classList.remove("show");
 };
 
 goalEditSave.onclick = () => {
-haptic("medium");
+  haptic("medium");
 
-const newTitle = goalEditTitle.value.trim();
-const newAmount = parseNumber(goalEditAmount.value || "0");
+  const newTitle = goalEditTitle.value.trim();
+  const newAmount = parseNumber(goalEditAmount.value || "0");
 
-if (!newTitle || !newAmount) {
-haptic("error");
-return;
-}
+  if (!newTitle || !newAmount) {
+    haptic("error");
+    return;
+  }
 
-// 1️⃣ обновляем мету цели
-goalMeta.title = newTitle;
+  goalMeta.title = newTitle;
+  goalInput.value = formatNumber(String(newAmount));
 
-// 2️⃣ обновляем ТОЛЬКО цель (не трогаем accounts)
-goalInput.value = formatNumber(String(newAmount));
+  if (accounts.main >= newAmount) {
+    goalCompleted = true;
+  }
 
-// 3️⃣ если цель стала меньше накопленного — считаем её выполненной
-if (accounts.main >= newAmount) {
-goalCompleted = true;
-}
+  goalEditorSheet.style.bottom = "-100%";
+  goalEditorOverlay.style.display = "none";
+  goalEditHint.classList.remove("show");
 
-// 4️⃣ закрываем редактор
-goalEditorSheet.style.bottom = "-100%";
-goalEditorOverlay.style.display = "none";
-goalEditHint.classList.remove("show");
-
-// 5️⃣ пересчитываем UI
-recalcPlanAfterGoalChange();
-renderGoals();
-updatePlanHeader();
-drawChart();
-recalcPlanAfterGoalChange();
-pulseGoalCard();
+  recalcPlanAfterGoalChange();
+  renderGoals();
+  pulseGoalCard();
 };
 
 goalEditAmount.addEventListener("input", e => {
@@ -1432,12 +1409,13 @@ if (chosenPlan === "buffer") {
 plannedMonthly = Math.round(plannedMonthly * 0.9);
 }
 
-// пересобираем график
+updatePlanHeader();
 drawChart();
-}
-
-if (newGoal > lastCalc.effectiveGoal + accounts.main) {
-showBrainMessage("Цель увеличена — план автоматически пересчитан.");
+if (newGoal > prevGoal + accounts.main) {
+    showBrainMessage(
+      "Цель увеличена — Protocol автоматически пересчитал план."
+    );
+  }
 }
 
 function updatePlanHeader() {
