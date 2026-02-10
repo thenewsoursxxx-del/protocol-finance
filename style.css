@@ -904,3 +904,38 @@ z-index: 5;
   transform: scale(0.9);
   opacity: 0.8;
 }
+
+/* ===== GOAL EDITOR SHEET ===== */
+.goal-editor {
+  padding-bottom: 28px;
+}
+
+.goal-editor h2 {
+  font-size: 22px;
+  font-weight: 600;
+  margin-bottom: 18px;
+}
+
+.sheet-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  z-index: 30;
+}
+
+.sheet.goal-editor {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: -100%;
+
+  background: #000;
+  border-top-left-radius: 28px;
+  border-top-right-radius: 28px;
+
+  padding: 24px;
+  z-index: 31;
+
+  transition: bottom 0.35s cubic-bezier(.4,0,.2,1);
+}
