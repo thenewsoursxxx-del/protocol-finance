@@ -934,3 +934,30 @@ z-index: 5;
 #activeGoalCard.pulse {
   animation: goal-pulse 0.4s ease;
 }
+
+.goal-edit-hint {
+  margin-top: 10px;
+  padding: 12px 14px;
+
+  border-radius: 14px;
+  border: 1px solid rgba(58,123,253,0.5);
+
+  background: linear-gradient(
+    180deg,
+    rgba(58,123,253,0.22),
+    rgba(58,123,253,0.08)
+  );
+
+  color: #e6eeff;
+  font-size: 14px;
+  line-height: 1.45;
+
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity .25s ease, transform .25s ease;
+}
+
+.goal-edit-hint.show {
+  opacity: 1;
+  transform: translateY(0);
+}
