@@ -1262,8 +1262,6 @@ if (Date.now() < end) {
 requestAnimationFrame(frame);
 }
 })();
-
-showGoalCompleteMessage();
 }
 
 let confettiInstance = null;
@@ -1332,7 +1330,6 @@ recalcPlanAfterGoalChange();
 renderGoals();
 updatePlanHeader();
 drawChart();
-recalcPlanAfterGoalChange();
 pulseGoalCard();
 };
 
