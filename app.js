@@ -860,7 +860,11 @@ const points = buildPlanTimeline(startDate, monthly, months);
 const plannedMax = points[points.length - 1].value;
 const factTotal = factHistory.reduce((s, f) => s + f.value, 0);
 
-const maxValue = Math.max(plannedMax, accounts.main + factTotal, 1);
+const plannedMax = points[points.length - 1].value;
+const factTotal = factHistory.reduce((s, f) => s + f.value, 0);
+
+const minValue = accounts.main;
+const maxValue = Math.max(plannedMax, accounts.main + factTotal, minValue + 1);
 
 let acc = 0;
 groupedArray.forEach((f, i) => {
@@ -913,7 +917,10 @@ ctx.beginPath();
 
 points.forEach((p, i) => {
 const x = pad + (i / (points.length - 1)) * (W - pad * 2);
-const y = H - pad - (p.value / maxValue) * (H - pad * 2);
+const y =
+H -
+pad -
+((cumulative + accounts.main - minValue) / (maxValue - minValue)) * (H - pad * 2);
 if (i === 0) ctx.moveTo(x, y);
 else ctx.lineTo(x, y);
 });
@@ -985,7 +992,7 @@ const progress = Math.max(
 const x = pad + progress * (W - pad * 2);
 const y =
 H - pad -
-(cumulative / maxValue) * (H - pad * 2);
+((cumulative + accounts.main - minValue) / (maxValue - minValue)) * (H - pad * 2);
 
 // обычная точка
 ctx.beginPath();
