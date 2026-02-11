@@ -481,6 +481,18 @@ chosenPlan = mode;
 const initialSaved = parseNumber(savedInput?.value || "0");
 accounts.main = initialSaved;
 accounts.reserve = 0;
+// если есть уже накопленные средства — считаем это фактом
+if (initialSaved > 0) {
+  const now = new Date();
+  now.setDate(1);
+  now.setHours(0, 0, 0, 0);
+
+  factHistory = [{
+    value: initialSaved,
+    date: now,
+    to: "main"
+  }];
+}
 isInitialized = true;
 renderAccountsUI();
 lockTabs(false);
