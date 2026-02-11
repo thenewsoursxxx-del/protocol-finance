@@ -857,7 +857,10 @@ const months = lastCalc.months;
 const monthly = plannedMonthly;
 
 const points = buildPlanTimeline(startDate, monthly, months);
-const maxValue = points[points.length - 1].value || 1;
+const plannedMax = points[points.length - 1].value;
+const actualMax = accounts.main;
+
+const maxValue = Math.max(plannedMax, actualMax, 1);
 
 // ===== ФАКТИЧЕСКИЕ ТОЧКИ (ВСЕГДА С 0) =====
 const factPoints = [
@@ -950,7 +953,11 @@ pad -
 (cumulative / maxValue) * (H - pad * 2);
 
 if (i === 0) {
-ctx.moveTo(pad, H - pad); // старт с нуля
+const startY =
+H - pad -
+(accounts.main / maxValue) * (H - pad * 2);
+
+ctx.moveTo(pad, startY);
 ctx.lineTo(x, y); // ← микро-линия уже в 1-й месяц
 } else {
 ctx.lineTo(x, y);
@@ -1039,11 +1046,18 @@ return d;
 
 function buildPlanTimeline(startDate, monthlyAmount, months) {
 const points = [];
-let total = 0;
+
+// 🔥 стартуем от текущего баланса
+let total = accounts.main;
+
 for (let i = 0; i <= months; i++) {
-points.push({ date: addMonths(startDate, i), value: total });
+points.push({
+date: addMonths(startDate, i),
+value: total
+});
 total += monthlyAmount;
 }
+
 return points;
 }
 
