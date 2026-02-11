@@ -843,11 +843,6 @@ if (factRatio < 0.7) lineColor = "#ef4444"; // красный
 else if (factRatio < 0.95) lineColor = "#facc15"; // жёлтый
 else lineColor = "#4ade80"; // зелёный
 }
-
-if (typeof factRatio === "number") {
-if (factRatio < 0.7) lineColor = "#ef4444"; // красный
-else if (factRatio < 0.95) lineColor = "#facc15"; // жёлтый
-}
 const dpr = window.devicePixelRatio || 1;
 const W = canvas.width / dpr;
 const H = canvas.height / dpr;
@@ -863,15 +858,6 @@ const factTotal = factHistory.reduce((s, f) => s + f.value, 0);
 
 const minValue = accounts.main;
 const maxValue = Math.max(plannedMax, accounts.main + factTotal, minValue + 1);
-
-let acc = 0;
-groupedArray.forEach((f, i) => {
-acc += f.total;
-factPoints.push({
-month: i + 1,
-value: acc
-});
-});
 
 ctx.clearRect(0, 0, canvas.width, canvas.height);
 // ===== GRID =====
@@ -950,7 +936,7 @@ const x = pad + progress * (W - pad * 2);
 const y =
 H -
 pad -
-(cumulative / maxValue) * (H - pad * 2);
+((cumulative + accounts.main - minValue) / (maxValue - minValue)) * (H - pad * 2);
 
 if (i === 0) {
 const startY =
