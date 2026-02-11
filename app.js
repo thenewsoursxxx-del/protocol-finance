@@ -1364,7 +1364,9 @@ function animateFactLine() {
 
   if (!plannedMonthly || !lastCalc.months) return;
 
-  const total = factHistory.reduce((s, f) => s + f.value, 0);
+  const total = factHistory
+  .filter(f => f.to === "main")
+  .reduce((s, f) => s + f.value, 0);
 
   const planMax = plannedMonthly * lastCalc.months;
 
