@@ -991,9 +991,11 @@ const progress = Math.max(
 );
 
 const x = pad + progress * (W - pad * 2);
+
 const y =
-H - pad -
-cumulative
+  H - pad -
+  (cumulative / maxValue) *
+  (H - pad * 2);
 
 // обычная точка
 ctx.beginPath();
