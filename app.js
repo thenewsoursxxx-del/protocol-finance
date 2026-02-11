@@ -936,7 +936,7 @@ ctx.setLineDash([]);
 
 
 // ===== ЛИНИЯ ФАКТА =====
-if (factHistory.length > 0 || accounts.main > 0) {
+if (factHistory.length > 0) {
 
   const factGradient = getFactGradient(ctx, W);
   ctx.strokeStyle = factGradient;
@@ -944,6 +944,9 @@ if (factHistory.length > 0 || accounts.main > 0) {
   ctx.beginPath();
 
   let cumulative = 0;
+
+  // старт строго с нуля
+  ctx.moveTo(pad, H - pad);
 
   groupedArray.forEach((f, i) => {
 
@@ -958,23 +961,10 @@ if (factHistory.length > 0 || accounts.main > 0) {
 
     const y =
       H - pad -
-      ((cumulative - minValue) /
-        (maxValue - minValue)) *
-        (H - pad * 2);
-
-    if (i === 0) {
-
-      const startY =
-        H - pad -
-        ctx.moveTo(pad, H - pad);
-          (maxValue - minValue)) *
-          (H - pad * 2);
-
-      ctx.moveTo(pad, startY);
-    }
+      (cumulative / maxValue) *
+      (H - pad * 2);
 
     ctx.lineTo(x, y);
-
   });
 
   ctx.stroke();
@@ -1003,7 +993,7 @@ const progress = Math.max(
 const x = pad + progress * (W - pad * 2);
 const y =
 H - pad -
-((cumulative + accounts.main - minValue) / (maxValue - minValue)) * (H - pad * 2);
+cumulative
 
 // обычная точка
 ctx.beginPath();
