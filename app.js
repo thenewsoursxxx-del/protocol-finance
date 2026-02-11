@@ -797,22 +797,29 @@ return g;
 }
 
 function initChart() {
+  const wrap = document.querySelector(".chart-wrap");
+
   bgCanvas = document.getElementById("chartBg");
   factCanvas = document.getElementById("chartFact");
 
   const dpr = window.devicePixelRatio || 1;
-  const rect = bgCanvas.getBoundingClientRect();
+
+  const width = wrap.clientWidth;
+  const height = wrap.clientHeight;
 
   [bgCanvas, factCanvas].forEach(c => {
-    c.width = rect.width * dpr;
-    c.height = rect.height * dpr;
+    c.style.width = width + "px";
+    c.style.height = height + "px";
+
+    c.width = width * dpr;
+    c.height = height * dpr;
   });
 
   bgCtx = bgCanvas.getContext("2d");
   factCtx = factCanvas.getContext("2d");
 
-  bgCtx.scale(dpr, dpr);
-  factCtx.scale(dpr, dpr);
+  bgCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  factCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
   drawStaticLayer();
 }
