@@ -1323,17 +1323,17 @@ function drawPlanLine() {
   const points = buildPlanTimeline(new Date(), plannedMonthly, lastCalc.months);
   const maxValue = points[points.length - 1].value;
 
-  let planColor = "#ffffff"; // базовый — белый
+  let planColor = "#ffffff";
 
-const total = factHistory.reduce((s, f) => s + f.value, 0);
-const monthsPassed = factHistory.length;
-const plannedSoFar = plannedMonthly * monthsPassed;
+if (factHistory.length > 0) {
+  const total = factHistory.reduce((s, f) => s + f.value, 0);
+  const monthsPassed = factHistory.length;
+  const plannedSoFar = plannedMonthly * monthsPassed;
 
-if (monthsPassed > 0) {
   if (total >= plannedSoFar) {
-    planColor = "#4ade80"; // зелёный — всё ок
+    planColor = "#4ade80";
   } else {
-    planColor = "#ef4444"; // красный — отставание
+    planColor = "#ef4444";
   }
 }
 
@@ -1394,10 +1394,22 @@ function drawFactLayer(progress, total, maxValue) {
 
   factCtx.clearRect(0, 0, factCanvas.width, factCanvas.height);
 
-  const x = pad + progress * (W - pad * 2);
+  const monthsTotal = lastCalc.months;
+
+  // сколько месяцев прошло
+  const monthsPassed = Math.max(1, factHistory.length);
+
+  const x =
+    pad +
+    (monthsPassed / monthsTotal) *
+      (W - pad * 2) *
+      progress;
+
   const y =
     H - pad -
-    (total * progress / maxValue) * (H - pad * 2);
+    (total / maxValue) *
+      (H - pad * 2) *
+      progress;
 
   lastFactPoint = { x, y };
 
