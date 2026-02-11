@@ -501,6 +501,9 @@ year: "2-digit"
 /* ===== STAGED FLOW ===== */
 function protocolFlow(mode) {
 chosenPlan = mode;
+
+renderAccountsUI();
+
 isInitialized = true;
 lockTabs(false);
 
