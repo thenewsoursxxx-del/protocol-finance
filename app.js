@@ -479,7 +479,7 @@ function protocolFlow(mode) {
 chosenPlan = mode;
 // 🔥 СИНХРОНИЗАЦИЯ С УЖЕ НАКОПЛЕННЫМ
 const initialSaved = parseNumber(savedInput?.value || "0");
-accounts.main = initialSaved;
+accounts.main = 0;
 accounts.reserve = 0;
 // если есть уже накопленные средства — считаем это фактом
 if (initialSaved > 0) {
@@ -571,6 +571,7 @@ style="width:52px;height:52px;border-radius:50%">
 canvas = document.getElementById("chart");
 ctx = canvas.getContext("2d");
 initChart();
+animateFactLine();
 showBottomNav();
 updatePlanHeader();
 
@@ -783,6 +784,8 @@ let canvas, ctx;
 const pad = 40;
 let factDots = [];
 let activeFactDot = null;
+let factAnimationProgress = 1;
+let isFactAnimating = false;
 
 function getFactGradient(ctx, W) {
 const g = ctx.createLinearGradient(0, 0, W, 0);
@@ -868,7 +871,7 @@ const points = buildPlanTimeline(startDate, monthly, months);
 const plannedMax = points[points.length - 1].value;
 const factTotal = factHistory.reduce((s, f) => s + f.value, 0);
 
-const minValue = accounts.main;
+const minValue = 0;
 const maxValue = Math.max(plannedMax, accounts.main + factTotal, minValue + 1);
 
 ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -924,7 +927,7 @@ else ctx.lineTo(x, y);
 ctx.stroke();
 ctx.setLineDash([]);
 
-// ===== ЛИНИЯ ФАКТА =====
+
 // ===== ЛИНИЯ ФАКТА =====
 if (factHistory.length > 0 || accounts.main > 0) {
 
@@ -937,7 +940,7 @@ if (factHistory.length > 0 || accounts.main > 0) {
 
   groupedArray.forEach((f, i) => {
 
-    cumulative += f.total;
+    cumulative += f.total * factAnimationProgress;
 
     const progress = Math.max(
       (i + 1) / (points.length - 1),
@@ -971,7 +974,7 @@ if (factHistory.length > 0 || accounts.main > 0) {
 }
 
 // ===== ТОЧКИ ФАКТА =====
-if (factHistory.length > 0) {
+if (factHistory.length > 0 && factAnimationProgress > 0.95) {
 const factGradient = ctx.createLinearGradient(pad, 0, W - pad, 0);
 factGradient.addColorStop(0, "#1e3a8a");
 factGradient.addColorStop(0.5, "#2563eb");
@@ -1470,4 +1473,32 @@ text =
 
 goalEditHint.innerText = text;
 goalEditHint.classList.add("show");
+}
+
+function animateFactLine() {
+  if (!factHistory.length) return;
+
+  factAnimationProgress = 0;
+  isFactAnimating = true;
+
+  const duration = 800; // мс
+  const start = performance.now();
+
+  function frame(now) {
+    const elapsed = now - start;
+    const progress = Math.min(elapsed / duration, 1);
+
+    // easeOutCubic
+    factAnimationProgress = 1 - Math.pow(1 - progress, 3);
+
+    drawChart();
+
+    if (progress < 1) {
+      requestAnimationFrame(frame);
+    } else {
+      isFactAnimating = false;
+    }
+  }
+
+  requestAnimationFrame(frame);
 }
