@@ -209,7 +209,9 @@ renderGoals();
 }
 
 if (btn.dataset.screen === "accounts") {
-  renderAccountsUI();
+  setTimeout(() => {
+    renderAccountsUI();
+  }, 0);
 }
 };
 });
@@ -501,8 +503,6 @@ function protocolFlow(mode) {
 chosenPlan = mode;
 isInitialized = true;
 lockTabs(false);
-renderAccountsUI();
-
 
 openScreen("advice", buttons[1]);
 loader.classList.remove("hidden");
