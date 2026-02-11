@@ -1036,25 +1036,21 @@ z-index: 5;
 }
 
 /* ===== RESERVE ACCOUNT APPEAR ===== */
-.account-block.reserve {
-  opacity: 0;
-  transform: translateY(10px);
-  transition:
-    opacity 0.35s ease,
-    transform 0.35s ease;
-  pointer-events: none;
-}
-
-.account-block.reserve.show {
-  opacity: 1;
-  transform: translateY(0);
-  pointer-events: auto;
-}
 
 .account-block.reserve {
   display: none;
+  opacity: 0;
+  transform: translateY(10px);
+  pointer-events: none;
+
+  transition:
+    opacity 0.35s ease,
+    transform 0.35s ease;
 }
 
 .account-block.reserve.show-reserve {
   display: block;
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
 }
