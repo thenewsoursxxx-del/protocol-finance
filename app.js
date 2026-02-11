@@ -1070,8 +1070,6 @@ if (Date.now() < end) {
 requestAnimationFrame(frame);
 }
 })();
-
-showGoalCompleteMessage();
 }
 
 let confettiInstance = null;
@@ -1304,7 +1302,21 @@ function drawPlanLine() {
   const points = buildPlanTimeline(new Date(), plannedMonthly, lastCalc.months);
   const maxValue = points[points.length - 1].value;
 
-  bgCtx.strokeStyle = "#4ade80";
+  let planColor = "#ffffff"; // базовый — белый
+
+const total = factHistory.reduce((s, f) => s + f.value, 0);
+const monthsPassed = factHistory.length;
+const plannedSoFar = plannedMonthly * monthsPassed;
+
+if (monthsPassed > 0) {
+  if (total >= plannedSoFar) {
+    planColor = "#4ade80"; // зелёный — всё ок
+  } else {
+    planColor = "#ef4444"; // красный — отставание
+  }
+}
+
+bgCtx.strokeStyle = planColor;
   bgCtx.lineWidth = 2;
   bgCtx.beginPath();
 
@@ -1322,10 +1334,13 @@ function drawPlanLine() {
 let animationFrameId = null;
 
 function animateFactLine() {
-  if (!factHistory.length) return;
+  if (!factHistory.length) {
+    factCtx.clearRect(0, 0, factCanvas.width, factCanvas.height);
+    return;
+  }
 
   const total = factHistory.reduce((s, f) => s + f.value, 0);
-  const maxValue = Math.max(total, plannedMonthly * lastCalc.months);
+  const maxValue = plannedMonthly * lastCalc.months;
 
   let start = null;
   const duration = 900;
@@ -1336,6 +1351,7 @@ function animateFactLine() {
     const progress = Math.min((timestamp - start) / duration, 1);
     const eased = 1 - Math.pow(1 - progress, 3);
 
+    factCtx.clearRect(0, 0, factCanvas.width, factCanvas.height);
     drawFactLayer(eased, total, maxValue);
 
     if (progress < 1) {
@@ -1360,7 +1376,7 @@ function drawFactLayer(progress = 1, total, maxValue) {
   const x = pad + progress * (W - pad * 2);
   const y = H - pad - (total * progress / maxValue) * (H - pad * 2);
 
-  factCtx.strokeStyle = getFactGradient(factCtx, W);
+factCtx.strokeStyle = "#2563eb"; // глубокий синий
   factCtx.lineWidth = 2;
   factCtx.beginPath();
   factCtx.moveTo(pad, H - pad);
