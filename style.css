@@ -1050,3 +1050,11 @@ z-index: 5;
   transform: translateY(0);
   pointer-events: auto;
 }
+
+.account-block.reserve {
+  display: none;
+}
+
+.account-block.reserve.show-reserve {
+  display: block;
+}
