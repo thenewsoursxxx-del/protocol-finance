@@ -242,7 +242,7 @@ renderGoals();
 }
 
 if (btn.dataset.screen === "accounts") {
-  renderAccounts();
+  renderAccountsUI();
 }
 };
 });
@@ -1188,6 +1188,7 @@ drawChart();
 }
 
 function renderAccountsUI() {
+  console.log("chosenPlan:", chosenPlan);
   const mainEl = document.getElementById("mainAmount");
   const reserveEl = document.getElementById("reserveAmount");
 
