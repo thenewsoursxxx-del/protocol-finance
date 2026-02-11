@@ -616,6 +616,8 @@ to: "reserve"
 }
 
 factRatio = fact / plannedMonthly;
+
+drawStaticLayer();   // ← ДОБАВИТЬ ЭТУ СТРОКУ
 animateFactLine();
 runBrain();
 renderAccountsUI();
