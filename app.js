@@ -1355,13 +1355,17 @@ bgCtx.strokeStyle = planColor;
 let animationFrameId = null;
 
 function animateFactLine() {
+  if (!factCanvas || !factCtx || !lastCalc.months) return;
   if (!factHistory.length) {
     factCtx.clearRect(0, 0, factCanvas.width, factCanvas.height);
     return;
   }
 
   const total = factHistory.reduce((s, f) => s + f.value, 0);
-  const maxValue = plannedMonthly * lastCalc.months;
+const maxValue = Math.max(
+  total,
+  plannedMonthly * lastCalc.months
+);
 
   let start = null;
   const duration = 900;
