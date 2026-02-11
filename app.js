@@ -874,7 +874,12 @@ const plannedMax = points[points.length - 1].value;
 const factTotal = factHistory.reduce((s, f) => s + f.value, 0);
 
 const minValue = 0;
-const maxValue = Math.max(plannedMax, accounts.main, factTotal, 1);
+
+const maxValue = Math.max(
+  plannedMax,
+  planStartValue + factTotal,
+  1
+);
 
 ctx.clearRect(0, 0, canvas.width, canvas.height);
 // ===== GRID =====
@@ -953,7 +958,7 @@ if (factHistory.length > 0 || accounts.main > 0) {
 
     const y =
       H - pad -
-      ((cumulative + accounts.main - minValue) /
+      ((planStartValue + cumulative - minValue) /
         (maxValue - minValue)) *
         (H - pad * 2);
 
