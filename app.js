@@ -913,7 +913,7 @@ ctx.stroke();
 ctx.setLineDash([]);
 
 // ===== ЛИНИЯ ФАКТА =====
-if (factHistory.length > 0) {
+if (factHistory.length > 0 || accounts.main > 0) {
 const factGradient = getFactGradient(ctx, W);
 ctx.strokeStyle = factGradient;
 ctx.lineWidth = 1.6;
@@ -944,6 +944,7 @@ H - pad -
 ((accounts.main - minValue) / (maxValue - minValue)) * (H - pad * 2);
 
 ctx.moveTo(pad, startY);
+if (factHistory.length > 0) {
 ctx.lineTo(x, y); // ← микро-линия уже в 1-й месяц
 } else {
 ctx.lineTo(x, y);
