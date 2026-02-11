@@ -554,7 +554,7 @@ font-size:14px;
 ${advice.text}
 </div>
 
-<div class="chart-wrap" style="width:360px; height:260px; margin:16px 0; position:relative;">
+<div class="chart-wrap" style="width:100%; height:260px; margin:16px 0; position:relative;">
   <canvas id="chartBg"></canvas>
   <canvas id="chartFact"></canvas>
 </div>
