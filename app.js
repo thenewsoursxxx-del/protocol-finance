@@ -945,26 +945,29 @@ if (factHistory.length > 0) {
 
   let cumulative = 0;
 
-  // старт строго с нуля
-  ctx.moveTo(pad, H - pad);
-
   groupedArray.forEach((f, i) => {
 
-    cumulative += f.total * factAnimationProgress;
+    const prevCumulative = cumulative;
+    cumulative += f.total;
 
-    const progress = Math.max(
-      (i + 1) / (points.length - 1),
-      0.03
-    );
+    const progress =
+      (i + factAnimationProgress) /
+      (points.length - 1);
 
-    const x = pad + progress * (W - pad * 2);
+    const x =
+      pad + progress * (W - pad * 2);
 
     const y =
       H - pad -
       (cumulative / maxValue) *
       (H - pad * 2);
 
-    ctx.lineTo(x, y);
+    if (i === 0) {
+      ctx.moveTo(pad, H - pad);
+    } else {
+      ctx.lineTo(x, y);
+    }
+
   });
 
   ctx.stroke();
