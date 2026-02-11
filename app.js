@@ -616,7 +616,7 @@ to: "reserve"
 }
 
 factRatio = fact / plannedMonthly;
-drawChart();
+animateFactLine();
 runBrain();
 renderAccountsUI();
 renderGoals();
@@ -872,7 +872,7 @@ const plannedMax = points[points.length - 1].value;
 const factTotal = factHistory.reduce((s, f) => s + f.value, 0);
 
 const minValue = 0;
-const maxValue = Math.max(plannedMax, accounts.main + factTotal, minValue + 1);
+const maxValue = Math.max(plannedMax, accounts.main, factTotal, 1);
 
 ctx.clearRect(0, 0, canvas.width, canvas.height);
 // ===== GRID =====
