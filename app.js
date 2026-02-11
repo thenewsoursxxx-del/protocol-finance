@@ -501,6 +501,7 @@ function protocolFlow(mode) {
 chosenPlan = mode;
 isInitialized = true;
 lockTabs(false);
+renderAccountsUI();
 
 
 openScreen("advice", buttons[1]);
