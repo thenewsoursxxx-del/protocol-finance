@@ -474,28 +474,6 @@ d.setMonth(d.getMonth() + n);
 return d;
 }
 
-function buildPlanTimeline(startDate, monthlyAmount, months) {
-const points = [];
-let total = 0;
-
-for (let i = 0; i <= months; i++) {
-points.push({
-date: addMonths(startDate, i),
-value: total
-});
-total += monthlyAmount;
-}
-
-return points;
-}
-
-function formatDate(d) {
-return d.toLocaleDateString("ru-RU", {
-month: "short",
-year: "2-digit"
-});
-}
-
 /* ===== STAGED FLOW ===== */
 function protocolFlow(mode) {
 chosenPlan = mode;
