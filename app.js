@@ -149,11 +149,6 @@ let goalEditHintTimeout = null;
 
 const accountsList = document.getElementById("accountsList");
 
-function renderAccounts() {
-if (!accountsList) return;
-
-accountsList.innerHTML = "";
-
 // ОСНОВНОЙ СЧЕТ (ВСЕГДА)
 accountsList.innerHTML += `
 <div class="account-card">
