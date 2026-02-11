@@ -862,11 +862,6 @@ const factTotal = factHistory.reduce((s, f) => s + f.value, 0);
 
 const maxValue = Math.max(plannedMax, accounts.main + factTotal, 1);
 
-// ===== ФАКТИЧЕСКИЕ ТОЧКИ (ВСЕГДА С 0) =====
-const factPoints = [
-{ month: 0, value: 0 }
-];
-
 let acc = 0;
 groupedArray.forEach((f, i) => {
 acc += f.total;
