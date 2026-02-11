@@ -499,6 +499,10 @@ year: "2-digit"
 /* ===== STAGED FLOW ===== */
 function protocolFlow(mode) {
 chosenPlan = mode;
+// 🔥 СИНХРОНИЗАЦИЯ С УЖЕ НАКОПЛЕННЫМ
+const initialSaved = parseNumber(savedInput?.value || "0");
+accounts.main = initialSaved;
+accounts.reserve = 0;
 isInitialized = true;
 renderAccountsUI();
 lockTabs(false);
