@@ -857,8 +857,6 @@ const months = lastCalc.months;
 const monthly = plannedMonthly;
 
 const points = buildPlanTimeline(startDate, monthly, months);
-const plannedMax = points[points.length - 1].value;
-const factTotal = factHistory.reduce((s, f) => s + f.value, 0);
 
 const plannedMax = points[points.length - 1].value;
 const factTotal = factHistory.reduce((s, f) => s + f.value, 0);
@@ -920,7 +918,7 @@ const x = pad + (i / (points.length - 1)) * (W - pad * 2);
 const y =
 H -
 pad -
-((cumulative + accounts.main - minValue) / (maxValue - minValue)) * (H - pad * 2);
+((p.value - minValue) / (maxValue - minValue)) * (H - pad * 2);
 if (i === 0) ctx.moveTo(x, y);
 else ctx.lineTo(x, y);
 });
@@ -957,7 +955,7 @@ pad -
 if (i === 0) {
 const startY =
 H - pad -
-(accounts.main / maxValue) * (H - pad * 2);
+((accounts.main - minValue) / (maxValue - minValue)) * (H - pad * 2);
 
 ctx.moveTo(pad, startY);
 ctx.lineTo(x, y); // ← микро-линия уже в 1-й месяц
