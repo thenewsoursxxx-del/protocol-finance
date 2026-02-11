@@ -1328,8 +1328,18 @@ function drawPlanLine() {
   let planColor = "#ffffff";
 
 if (factHistory.length > 0) {
-  const total = factHistory.reduce((s, f) => s + f.value, 0);
-  const monthsPassed = factHistory.length;
+  const mainFacts = factHistory.filter(f => f.to === "main");
+
+const total = mainFacts.reduce((s, f) => s + f.value, 0);
+
+const uniqueMonths = new Set(
+  mainFacts.map(f => {
+    const d = new Date(f.date);
+    return `${d.getFullYear()}-${d.getMonth()}`;
+  })
+);
+
+const monthsPassed = uniqueMonths.size;
   const plannedSoFar = plannedMonthly * monthsPassed;
 
   if (total >= plannedSoFar) {
@@ -1401,7 +1411,16 @@ function drawFactLayer(progress, total, maxValue) {
   const monthsTotal = lastCalc.months;
 
   // сколько месяцев прошло
-  const monthsPassed = Math.max(1, factHistory.length);
+const mainFacts = factHistory.filter(f => f.to === "main");
+
+const uniqueMonths = new Set(
+  mainFacts.map(f => {
+    const d = new Date(f.date);
+    return `${d.getFullYear()}-${d.getMonth()}`;
+  })
+);
+
+const monthsPassed = Math.max(1, uniqueMonths.size);
 
   const x =
     pad +
