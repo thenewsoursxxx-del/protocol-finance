@@ -877,7 +877,7 @@ const minValue = 0;
 
 const maxValue = Math.max(
   plannedMax,
-  planStartValue + factTotal,
+  factTotal,
   1
 );
 
@@ -958,7 +958,7 @@ if (factHistory.length > 0 || accounts.main > 0) {
 
     const y =
       H - pad -
-      ((planStartValue + cumulative - minValue) /
+      ((cumulative - minValue) /
         (maxValue - minValue)) *
         (H - pad * 2);
 
@@ -966,7 +966,7 @@ if (factHistory.length > 0 || accounts.main > 0) {
 
       const startY =
         H - pad -
-        ((accounts.main - minValue) /
+        ctx.moveTo(pad, H - pad);
           (maxValue - minValue)) *
           (H - pad * 2);
 
@@ -1060,7 +1060,7 @@ return d;
 function buildPlanTimeline(startDate, monthlyAmount, months) {
 const points = [];
 
-let total = planStartValue;
+let total = 0;
 
 for (let i = 0; i <= months; i++) {
 points.push({
