@@ -369,7 +369,6 @@ selectedScenario = card.dataset.id;
 haptic("light");
 
 protocolFlow(selectedScenario);
-chosenPlan = "buffer";
 };
 });
 }
