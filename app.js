@@ -209,9 +209,7 @@ renderGoals();
 }
 
 if (btn.dataset.screen === "accounts") {
-  setTimeout(() => {
-    renderAccountsUI();
-  }, 0);
+  renderAccountsUI();
 }
 };
 });
@@ -501,10 +499,8 @@ year: "2-digit"
 /* ===== STAGED FLOW ===== */
 function protocolFlow(mode) {
 chosenPlan = mode;
-
-renderAccountsUI();
-
 isInitialized = true;
+renderAccountsUI();
 lockTabs(false);
 
 openScreen("advice", buttons[1]);
