@@ -147,34 +147,6 @@ title: "Основная цель"
 let goalEditBaseValue = null;
 let goalEditHintTimeout = null;
 
-const accountsList = document.getElementById("accountsList");
-
-// ОСНОВНОЙ СЧЕТ (ВСЕГДА)
-accountsList.innerHTML += `
-<div class="account-card">
-<div class="account-title">Основной счёт</div>
-<div class="account-sub">Накопление цели</div>
-<div class="account-amount">
-${plannedMonthly.toLocaleString()} ₽ / мес
-</div>
-</div>
-`;
-
-// ЕСЛИ РЕЖИМ С РЕЗЕРВОМ — ДОБАВЛЯЕМ ВТОРОЙ СЧЕТ
-if (chosenPlan === "buffer") {
-const reserveAmount = Math.round(plannedMonthly * 0.1);
-
-accountsList.innerHTML += `
-<div class="account-card reserve">
-<div class="account-title">Резерв</div>
-<div class="account-sub">Подушка безопасности</div>
-<div class="account-amount">
-${reserveAmount.toLocaleString()} ₽ / мес
-</div>
-</div>
-`;
-}
-}
 
 /* ===== INPUT FORMAT ===== */
 [incomeInput, expensesInput, goalInput, savedInput].forEach(input => {
