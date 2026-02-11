@@ -130,6 +130,7 @@ let chosenPlan = null;
 let plannedMonthly = 0;
 let factRatio = null;
 let factHistory = [];
+let planStartValue = 0;
 let isInitialized = false;
 let goalCompleted = false;
 let saveMode = "calm";
@@ -479,7 +480,8 @@ function protocolFlow(mode) {
 chosenPlan = mode;
 // 🔥 СИНХРОНИЗАЦИЯ С УЖЕ НАКОПЛЕННЫМ
 const initialSaved = parseNumber(savedInput?.value || "0");
-accounts.main = 0;
+planStartValue = initialSaved;
+accounts.main = initialSaved;
 accounts.reserve = 0;
 // если есть уже накопленные средства — считаем это фактом
 if (initialSaved > 0) {
@@ -1053,7 +1055,7 @@ return d;
 function buildPlanTimeline(startDate, monthlyAmount, months) {
 const points = [];
 
-let total = accounts.main; // стартуем от текущего баланса
+let total = planStartValue;
 
 for (let i = 0; i <= months; i++) {
 points.push({
