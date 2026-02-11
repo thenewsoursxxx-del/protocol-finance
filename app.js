@@ -1188,16 +1188,26 @@ drawChart();
 }
 
 function renderAccountsUI() {
-const mainEl = document.getElementById("mainAmount");
-const reserveEl = document.getElementById("reserveAmount");
+  const mainEl = document.getElementById("mainAmount");
+  const reserveEl = document.getElementById("reserveAmount");
 
-if (mainEl) {
-mainEl.innerText = accounts.main.toLocaleString();
-}
+  if (mainEl) {
+    mainEl.innerText = accounts.main.toLocaleString();
+  }
 
-if (reserveEl) {
-reserveEl.innerText = accounts.reserve.toLocaleString();
-}
+  if (reserveEl) {
+    reserveEl.innerText = accounts.reserve.toLocaleString();
+  }
+
+  // 🔥 вот это главное
+  const reserveBlock = document.querySelector(
+    '.account-block[data-account="reserve"]'
+  );
+
+  if (reserveBlock) {
+    reserveBlock.style.display =
+      chosenPlan === "buffer" ? "block" : "none";
+  }
 }
 
 function renderGoals() {
@@ -1377,6 +1387,7 @@ goalEditHint.classList.remove("show");
 recalcPlanAfterGoalChange();
 renderGoals();
 updatePlanHeader();
+renderAccountsUI();
 drawChart();
 recalcPlanAfterGoalChange();
 pulseGoalCard();
