@@ -1173,8 +1173,11 @@ function renderAccountsUI() {
   );
 
   if (reserveBlock) {
-    reserveBlock.style.display =
-      chosenPlan === "buffer" ? "block" : "none";
+    if (chosenPlan === "buffer") {
+  reserveBlock.classList.add("show-reserve");
+} else {
+  reserveBlock.classList.remove("show-reserve");
+}
   }
 }
 
