@@ -782,6 +782,7 @@ return true;
 
 let bgCanvas, bgCtx;
 let factCanvas, factCtx;
+let lastFactPoint = null;
 const pad = 40;
 let factDots = [];
 let activeFactDot = null;
@@ -822,6 +823,26 @@ function initChart() {
   factCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
   drawStaticLayer();
+  factCanvas.addEventListener("click", e => {
+  if (!lastFactPoint) return;
+
+  const rect = factCanvas.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+
+  const clickX = (e.clientX - rect.left);
+  const clickY = (e.clientY - rect.top);
+
+  const dx = clickX - lastFactPoint.x;
+  const dy = clickY - lastFactPoint.y;
+
+  const distance = Math.sqrt(dx * dx + dy * dy);
+
+  if (distance < 14) {
+    showFactTooltip({
+      value: factHistory.reduce((s, f) => s + f.value, 0)
+    });
+  }
+});
 }
 
 function addMonths(date, n) {
@@ -1375,6 +1396,7 @@ function drawFactLayer(progress = 1, total, maxValue) {
 
   const x = pad + progress * (W - pad * 2);
   const y = H - pad - (total * progress / maxValue) * (H - pad * 2);
+  lastFactPoint = { x, y };
 
 factCtx.strokeStyle = "#2563eb"; // глубокий синий
   factCtx.lineWidth = 2;
@@ -1382,4 +1404,11 @@ factCtx.strokeStyle = "#2563eb"; // глубокий синий
   factCtx.moveTo(pad, H - pad);
   factCtx.lineTo(x, y);
   factCtx.stroke();
+  // ===== Точка факта =====
+if (progress === 1) {
+  factCtx.beginPath();
+  factCtx.arc(x, y, 5, 0, Math.PI * 2);
+  factCtx.fillStyle = "#2563eb"; // тот же глубокий синий
+  factCtx.fill();
+}
 }
