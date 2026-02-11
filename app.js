@@ -1355,17 +1355,18 @@ bgCtx.strokeStyle = planColor;
 let animationFrameId = null;
 
 function animateFactLine() {
-  if (!factCanvas || !factCtx || !lastCalc.months) return;
   if (!factHistory.length) {
     factCtx.clearRect(0, 0, factCanvas.width, factCanvas.height);
     return;
   }
 
+  if (!plannedMonthly || !lastCalc.months) return;
+
   const total = factHistory.reduce((s, f) => s + f.value, 0);
-const maxValue = Math.max(
-  total,
-  plannedMonthly * lastCalc.months
-);
+
+  const planMax = plannedMonthly * lastCalc.months;
+
+  const maxValue = Math.max(total, planMax, 1); // ← защита от 0
 
   let start = null;
   const duration = 900;
@@ -1376,22 +1377,17 @@ const maxValue = Math.max(
     const progress = Math.min((timestamp - start) / duration, 1);
     const eased = 1 - Math.pow(1 - progress, 3);
 
-    factCtx.clearRect(0, 0, factCanvas.width, factCanvas.height);
     drawFactLayer(eased, total, maxValue);
 
     if (progress < 1) {
-      animationFrameId = requestAnimationFrame(frame);
+      requestAnimationFrame(frame);
     }
   }
 
-  if (animationFrameId) {
-    cancelAnimationFrame(animationFrameId);
-  }
-
-  animationFrameId = requestAnimationFrame(frame);
+  requestAnimationFrame(frame);
 }
 
-function drawFactLayer(progress = 1, total, maxValue) {
+function drawFactLayer(progress, total, maxValue) {
   const W = factCanvas.width / (window.devicePixelRatio || 1);
   const H = factCanvas.height / (window.devicePixelRatio || 1);
   const pad = 40;
@@ -1399,20 +1395,24 @@ function drawFactLayer(progress = 1, total, maxValue) {
   factCtx.clearRect(0, 0, factCanvas.width, factCanvas.height);
 
   const x = pad + progress * (W - pad * 2);
-  const y = H - pad - (total * progress / maxValue) * (H - pad * 2);
+  const y =
+    H - pad -
+    (total * progress / maxValue) * (H - pad * 2);
+
   lastFactPoint = { x, y };
 
-factCtx.strokeStyle = "#2563eb"; // глубокий синий
+  factCtx.strokeStyle = "#2563eb";
   factCtx.lineWidth = 2;
+
   factCtx.beginPath();
   factCtx.moveTo(pad, H - pad);
   factCtx.lineTo(x, y);
   factCtx.stroke();
-  // ===== Точка факта =====
-if (progress === 1) {
-  factCtx.beginPath();
-  factCtx.arc(x, y, 5, 0, Math.PI * 2);
-  factCtx.fillStyle = "#2563eb"; // тот же глубокий синий
-  factCtx.fill();
-}
+
+  if (progress === 1) {
+    factCtx.beginPath();
+    factCtx.arc(x, y, 5, 0, Math.PI * 2);
+    factCtx.fillStyle = "#2563eb";
+    factCtx.fill();
+  }
 }
