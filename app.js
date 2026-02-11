@@ -858,9 +858,9 @@ const monthly = plannedMonthly;
 
 const points = buildPlanTimeline(startDate, monthly, months);
 const plannedMax = points[points.length - 1].value;
-const actualMax = accounts.main;
+const factTotal = factHistory.reduce((s, f) => s + f.value, 0);
 
-const maxValue = Math.max(plannedMax, actualMax, 1);
+const maxValue = Math.max(plannedMax, accounts.main + factTotal, 1);
 
 // ===== ФАКТИЧЕСКИЕ ТОЧКИ (ВСЕГДА С 0) =====
 const factPoints = [
@@ -1047,8 +1047,7 @@ return d;
 function buildPlanTimeline(startDate, monthlyAmount, months) {
 const points = [];
 
-// 🔥 стартуем от текущего баланса
-let total = accounts.main;
+let total = accounts.main; // стартуем от текущего баланса
 
 for (let i = 0; i <= months; i++) {
 points.push({
