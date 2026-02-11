@@ -934,7 +934,6 @@ else ctx.lineTo(x, y);
 ctx.stroke();
 ctx.setLineDash([]);
 
-
 // ===== ЛИНИЯ ФАКТА =====
 if (factHistory.length > 0) {
 
@@ -950,21 +949,43 @@ if (factHistory.length > 0) {
     const prevCumulative = cumulative;
     cumulative += f.total;
 
-    const progress =
-      (i + factAnimationProgress) /
-      (points.length - 1);
+    const progressBase =
+      (i + 1) / (points.length - 1);
 
     const x =
-      pad + progress * (W - pad * 2);
+      pad + progressBase * (W - pad * 2);
 
     const y =
       H - pad -
       (cumulative / maxValue) *
       (H - pad * 2);
 
+    // первая точка — стартуем от нуля
     if (i === 0) {
+
+      const animatedY =
+        H - pad -
+        ((cumulative * factAnimationProgress) / maxValue) *
+        (H - pad * 2);
+
       ctx.moveTo(pad, H - pad);
+      ctx.lineTo(x, animatedY);
+
     } else {
+
+      // предыдущие сегменты рисуем полностью
+      const prevProgress =
+        i / (points.length - 1);
+
+      const prevX =
+        pad + prevProgress * (W - pad * 2);
+
+      const prevY =
+        H - pad -
+        (prevCumulative / maxValue) *
+        (H - pad * 2);
+
+      ctx.moveTo(prevX, prevY);
       ctx.lineTo(x, y);
     }
 
