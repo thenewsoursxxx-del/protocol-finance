@@ -554,10 +554,10 @@ font-size:14px;
 ${advice.text}
 </div>
 
-<canvas
-id="chart"
-style="width:360px; height:260px; margin:16px 0;"
-></canvas>
+<div class="chart-wrap" style="width:360px; height:260px; margin:16px 0; position:relative;">
+  <canvas id="chartBg"></canvas>
+  <canvas id="chartFact"></canvas>
+</div>
 
 <div style="display:flex;gap:8px;align-items:center">
 <input id="factInput" inputmode="numeric"
@@ -570,8 +570,6 @@ style="width:52px;height:52px;border-radius:50%">
 </div>
 `;
 
-canvas = document.getElementById("chart");
-ctx = canvas.getContext("2d");
 initChart();
 animateFactLine();
 showBottomNav();
@@ -782,7 +780,8 @@ return true;
 }
 /* ===== GRAPH (CLEAN & STABLE) ===== */
 
-let canvas, ctx;
+let bgCanvas, bgCtx;
+let factCanvas, factCtx;
 const pad = 40;
 let factDots = [];
 let activeFactDot = null;
@@ -798,273 +797,24 @@ return g;
 }
 
 function initChart() {
-canvas = document.getElementById("chart");
-if (!canvas) return;
+  bgCanvas = document.getElementById("chartBg");
+  factCanvas = document.getElementById("chartFact");
 
-const dpr = window.devicePixelRatio || 1;
-const rect = canvas.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  const rect = bgCanvas.getBoundingClientRect();
 
-canvas.width = rect.width * dpr;
-canvas.height = rect.height * dpr;
-
-ctx = canvas.getContext("2d");
-ctx.scale(dpr, dpr);
-
-drawChart();
-
-canvas.addEventListener("click", e => {
-const rect = canvas.getBoundingClientRect();
-const x = e.clientX - rect.left;
-const y = e.clientY - rect.top;
-
-const hit = factDots.find(p => {
-const dx = x - p.x;
-const dy = y - p.y;
-return Math.sqrt(dx * dx + dy * dy) < 10;
-});
-
-if (hit) {
-activeFactDot = hit;
-drawChart();
-showFactTooltip(hit.data);
-}
-});
-}
-
-function drawChart() {
-// ===== GROUP FACTS BY MONTH (SAFE) =====
-const groupedFacts = {};
-const start = new Date();
-
-factHistory.forEach(f => {
-const d = new Date(f.date);
-
-const key = `${d.getFullYear()}-${d.getMonth()}`;
-
-if (!groupedFacts[key]) {
-groupedFacts[key] = {
-date: d,
-total: 0
-};
-}
-
-groupedFacts[key].total += f.value;
-});
-
-// массив месяцев (1 месяц = 1 точка)
-const groupedArray = Object.values(groupedFacts);
-let lineColor = "#e5e7eb"; // светло-серый по умолчанию (нейтральный)
-
-if (typeof factRatio === "number") {
-if (factRatio < 0.7) lineColor = "#ef4444"; // красный
-else if (factRatio < 0.95) lineColor = "#facc15"; // жёлтый
-else lineColor = "#4ade80"; // зелёный
-}
-const dpr = window.devicePixelRatio || 1;
-const W = canvas.width / dpr;
-const H = canvas.height / dpr;
-
-const startDate = new Date();
-const months = lastCalc.months;
-const monthly = plannedMonthly;
-
-const points = buildPlanTimeline(startDate, monthly, months);
-
-const plannedMax = points[points.length - 1].value;
-const factTotal = factHistory.reduce((s, f) => s + f.value, 0);
-
-const minValue = 0;
-
-const maxValue = Math.max(
-  plannedMax,
-  factTotal,
-  1
-);
-
-ctx.clearRect(0, 0, canvas.width, canvas.height);
-// ===== GRID =====
-const gridX = 4; // вертикальные деления (месяцы)
-const gridY = 5; // горизонтальные деления (деньги)
-
-ctx.strokeStyle = "rgba(255,255,255,0.06)";
-ctx.lineWidth = 1;
-
-// горизонтальная сетка
-for (let i = 1; i < gridY; i++) {
-  const y = pad + (i / gridY) * (H - pad * 2);
-  ctx.beginPath();
-  ctx.moveTo(pad, y);
-  ctx.lineTo(W - pad, y);
-  ctx.stroke();
-}
-
-// вертикальная сетка
-for (let i = 1; i < gridX; i++) {
-  const x = pad + (i / gridX) * (W - pad * 2);
-  ctx.beginPath();
-  ctx.moveTo(x, pad);
-  ctx.lineTo(x, H - pad);
-  ctx.stroke();
-}
-
-// ОСИ
-ctx.strokeStyle = "#333";
-ctx.lineWidth = 1;
-ctx.beginPath();
-ctx.moveTo(pad, pad);
-ctx.lineTo(pad, H - pad);
-ctx.lineTo(W - pad, H - pad);
-ctx.stroke();
-
-// ЛИНИЯ
-ctx.strokeStyle = lineColor;
-ctx.lineWidth = 2;
-ctx.beginPath();
-
-points.forEach((p, i) => {
-const x = pad + (i / (points.length - 1)) * (W - pad * 2);
-const y =
-H -
-pad -
-((p.value - minValue) / (maxValue - minValue)) * (H - pad * 2);
-if (i === 0) ctx.moveTo(x, y);
-else ctx.lineTo(x, y);
-});
-
-ctx.stroke();
-ctx.setLineDash([]);
-
-// ===== ЛИНИЯ ФАКТА =====
-if (factHistory.length > 0) {
-
-  const factGradient = getFactGradient(ctx, W);
-  ctx.strokeStyle = factGradient;
-  ctx.lineWidth = 1.6;
-  ctx.beginPath();
-
-  let cumulative = 0;
-
-  groupedArray.forEach((f, i) => {
-
-    const prevCumulative = cumulative;
-    cumulative += f.total;
-
-    const progressBase =
-      (i + 1) / (points.length - 1);
-
-    const x =
-      pad + progressBase * (W - pad * 2);
-
-    const y =
-      H - pad -
-      (cumulative / maxValue) *
-      (H - pad * 2);
-
-    // первая точка — стартуем от нуля
-    if (i === 0) {
-
-      const animatedY =
-        H - pad -
-        ((cumulative * factAnimationProgress) / maxValue) *
-        (H - pad * 2);
-
-      ctx.moveTo(pad, H - pad);
-      ctx.lineTo(x, animatedY);
-
-    } else {
-
-      // предыдущие сегменты рисуем полностью
-      const prevProgress =
-        i / (points.length - 1);
-
-      const prevX =
-        pad + prevProgress * (W - pad * 2);
-
-      const prevY =
-        H - pad -
-        (prevCumulative / maxValue) *
-        (H - pad * 2);
-
-      ctx.moveTo(prevX, prevY);
-      ctx.lineTo(x, y);
-    }
-
+  [bgCanvas, factCanvas].forEach(c => {
+    c.width = rect.width * dpr;
+    c.height = rect.height * dpr;
   });
 
-  ctx.stroke();
-}
+  bgCtx = bgCanvas.getContext("2d");
+  factCtx = factCanvas.getContext("2d");
 
-// ===== ТОЧКИ ФАКТА =====
-if (factHistory.length > 0 && factAnimationProgress > 0.95) {
-const factGradient = ctx.createLinearGradient(pad, 0, W - pad, 0);
-factGradient.addColorStop(0, "#1e3a8a");
-factGradient.addColorStop(0.5, "#2563eb");
-factGradient.addColorStop(1, "#60a5fa");
+  bgCtx.scale(dpr, dpr);
+  factCtx.scale(dpr, dpr);
 
-ctx.fillStyle = factGradient;
-
-let cumulative = 0;
-
-factDots = [];
-groupedArray.forEach((f, i) => {
-cumulative += f.total;
-
-const progress = Math.max(
-(i + 1) / (points.length - 1),
-0.03
-);
-
-const x = pad + progress * (W - pad * 2);
-
-const y =
-  H - pad -
-  (cumulative / maxValue) *
-  (H - pad * 2);
-
-// обычная точка
-ctx.beginPath();
-ctx.arc(x, y, 3.5, 0, Math.PI * 2);
-ctx.fill();
-
-// 🌟 ВНЕШНЕЕ СВЕТЯЩЕЕСЯ КОЛЬЦО ДЛЯ АКТИВНОЙ ТОЧКИ
-if (activeFactDot && activeFactDot.x === x && activeFactDot.y === y) {
-ctx.beginPath();
-ctx.arc(x, y, 8, 0, Math.PI * 2);
-ctx.strokeStyle = "rgba(96,165,250,0.45)";
-ctx.lineWidth = 2;
-ctx.stroke();
-
-ctx.beginPath();
-ctx.arc(x, y, 12, 0, Math.PI * 2);
-ctx.strokeStyle = "rgba(96,165,250,0.18)";
-ctx.lineWidth = 2;
-ctx.stroke();
-}
-
-factDots.push({
-x,
-y,
-data: {
-value: f.total,
-date: f.date
-}
-});
-});
-}
-
-// ПОДПИСИ X
-ctx.fillStyle = "#9a9a9a";
-ctx.font = "13px -apple-system, BlinkMacSystemFont, system-ui";
-ctx.textAlign = "center";
-ctx.textBaseline = "top";
-
-const step = Math.max(1, Math.floor(points.length / 4));
-
-points.forEach((_, i) => {
-if (i % step !== 0 && i !== points.length - 1) return;
-const x = pad + (i / (points.length - 1)) * (W - pad * 2);
-ctx.fillText(i.toString(), x, H - pad + 6);
-});
+  drawStaticLayer();
 }
 
 function addMonths(date, n) {
@@ -1173,7 +923,7 @@ block.classList.add("hide");
 setTimeout(() => {
 block.remove();
 activeFactDot = null;
-drawChart();
+
 }, 280); // ← совпадает с CSS transition
 }, 4000);
 }
@@ -1224,7 +974,7 @@ const newMonths = Math.ceil(remaining / plannedMonthly);
 summaryMonths.innerText = newMonths;
 
 // перерисовываем график
-drawChart();
+
 }
 
 // ===== ОСНОВНАЯ ЦЕЛЬ =====
@@ -1383,7 +1133,7 @@ recalcPlanAfterGoalChange();
 renderGoals();
 updatePlanHeader();
 renderAccountsUI();
-drawChart();
+
 recalcPlanAfterGoalChange();
 pulseGoalCard();
 };
@@ -1450,7 +1200,7 @@ plannedMonthly = Math.round(plannedMonthly * 0.9);
 }
 
 // пересобираем график
-drawChart();
+
 }
 
 if (newGoal > lastCalc.effectiveGoal + accounts.main) {
@@ -1498,30 +1248,115 @@ goalEditHint.innerText = text;
 goalEditHint.classList.add("show");
 }
 
+function drawStaticLayer() {
+  const W = bgCanvas.width / (window.devicePixelRatio || 1);
+  const H = bgCanvas.height / (window.devicePixelRatio || 1);
+
+  bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
+
+  // СЕТКА
+  bgCtx.strokeStyle = "rgba(255,255,255,0.06)";
+  bgCtx.lineWidth = 1;
+
+  const pad = 40;
+  const gridX = 4;
+  const gridY = 5;
+
+  for (let i = 1; i < gridY; i++) {
+    const y = pad + (i / gridY) * (H - pad * 2);
+    bgCtx.beginPath();
+    bgCtx.moveTo(pad, y);
+    bgCtx.lineTo(W - pad, y);
+    bgCtx.stroke();
+  }
+
+  for (let i = 1; i < gridX; i++) {
+    const x = pad + (i / gridX) * (W - pad * 2);
+    bgCtx.beginPath();
+    bgCtx.moveTo(x, pad);
+    bgCtx.lineTo(x, H - pad);
+    bgCtx.stroke();
+  }
+
+  // ОСИ
+  bgCtx.strokeStyle = "#333";
+  bgCtx.beginPath();
+  bgCtx.moveTo(pad, pad);
+  bgCtx.lineTo(pad, H - pad);
+  bgCtx.lineTo(W - pad, H - pad);
+  bgCtx.stroke();
+
+  drawPlanLine();
+}
+
+function drawPlanLine() {
+  const W = bgCanvas.width / (window.devicePixelRatio || 1);
+  const H = bgCanvas.height / (window.devicePixelRatio || 1);
+  const pad = 40;
+
+  const points = buildPlanTimeline(new Date(), plannedMonthly, lastCalc.months);
+  const maxValue = points[points.length - 1].value;
+
+  bgCtx.strokeStyle = "#4ade80";
+  bgCtx.lineWidth = 2;
+  bgCtx.beginPath();
+
+  points.forEach((p, i) => {
+    const x = pad + (i / (points.length - 1)) * (W - pad * 2);
+    const y = H - pad - (p.value / maxValue) * (H - pad * 2);
+
+    if (i === 0) bgCtx.moveTo(x, y);
+    else bgCtx.lineTo(x, y);
+  });
+
+  bgCtx.stroke();
+}
+
+let animationFrameId = null;
+
 function animateFactLine() {
   if (!factHistory.length) return;
 
-  factAnimationProgress = 0;
-  isFactAnimating = true;
+  const total = factHistory.reduce((s, f) => s + f.value, 0);
+  const maxValue = Math.max(total, plannedMonthly * lastCalc.months);
 
-  const duration = 800; // мс
-  const start = performance.now();
+  let start = null;
+  const duration = 900;
 
-  function frame(now) {
-    const elapsed = now - start;
-    const progress = Math.min(elapsed / duration, 1);
+  function frame(timestamp) {
+    if (!start) start = timestamp;
 
-    // easeOutCubic
-    factAnimationProgress = 1 - Math.pow(1 - progress, 3);
+    const progress = Math.min((timestamp - start) / duration, 1);
+    const eased = 1 - Math.pow(1 - progress, 3);
 
-    drawChart();
+    drawFactLayer(eased, total, maxValue);
 
     if (progress < 1) {
-      requestAnimationFrame(frame);
-    } else {
-      isFactAnimating = false;
+      animationFrameId = requestAnimationFrame(frame);
     }
   }
 
-  requestAnimationFrame(frame);
+  if (animationFrameId) {
+    cancelAnimationFrame(animationFrameId);
+  }
+
+  animationFrameId = requestAnimationFrame(frame);
+}
+
+function drawFactLayer(progress = 1, total, maxValue) {
+  const W = factCanvas.width / (window.devicePixelRatio || 1);
+  const H = factCanvas.height / (window.devicePixelRatio || 1);
+  const pad = 40;
+
+  factCtx.clearRect(0, 0, factCanvas.width, factCanvas.height);
+
+  const x = pad + progress * (W - pad * 2);
+  const y = H - pad - (total * progress / maxValue) * (H - pad * 2);
+
+  factCtx.strokeStyle = getFactGradient(factCtx, W);
+  factCtx.lineWidth = 2;
+  factCtx.beginPath();
+  factCtx.moveTo(pad, H - pad);
+  factCtx.lineTo(x, y);
+  factCtx.stroke();
 }
