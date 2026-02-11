@@ -913,45 +913,49 @@ ctx.stroke();
 ctx.setLineDash([]);
 
 // ===== ЛИНИЯ ФАКТА =====
+// ===== ЛИНИЯ ФАКТА =====
 if (factHistory.length > 0 || accounts.main > 0) {
-const factGradient = getFactGradient(ctx, W);
-ctx.strokeStyle = factGradient;
-ctx.lineWidth = 1.6;
-ctx.lineWidth = 1.6;
 
-ctx.beginPath();
+  const factGradient = getFactGradient(ctx, W);
+  ctx.strokeStyle = factGradient;
+  ctx.lineWidth = 1.6;
+  ctx.beginPath();
 
-let cumulative = 0;
+  let cumulative = 0;
 
-groupedArray.forEach((f, i) => {
-cumulative += f.total;
+  groupedArray.forEach((f, i) => {
 
-const progress = Math.max(
-(i + 1) / (points.length - 1),
-0.03 // 🔥 МИНИМАЛЬНЫЙ СДВИГ — линия появляется сразу
-);
+    cumulative += f.total;
 
-const x = pad + progress * (W - pad * 2);
+    const progress = Math.max(
+      (i + 1) / (points.length - 1),
+      0.03
+    );
 
-const y =
-H -
-pad -
-((cumulative + accounts.main - minValue) / (maxValue - minValue)) * (H - pad * 2);
+    const x = pad + progress * (W - pad * 2);
 
-if (i === 0) {
-const startY =
-H - pad -
-((accounts.main - minValue) / (maxValue - minValue)) * (H - pad * 2);
+    const y =
+      H - pad -
+      ((cumulative + accounts.main - minValue) /
+        (maxValue - minValue)) *
+        (H - pad * 2);
 
-ctx.moveTo(pad, startY);
-if (factHistory.length > 0) {
-ctx.lineTo(x, y); // ← микро-линия уже в 1-й месяц
-} else {
-ctx.lineTo(x, y);
-}
-});
+    if (i === 0) {
 
-ctx.stroke();
+      const startY =
+        H - pad -
+        ((accounts.main - minValue) /
+          (maxValue - minValue)) *
+          (H - pad * 2);
+
+      ctx.moveTo(pad, startY);
+    }
+
+    ctx.lineTo(x, y);
+
+  });
+
+  ctx.stroke();
 }
 
 // ===== ТОЧКИ ФАКТА =====
