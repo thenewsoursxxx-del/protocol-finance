@@ -869,24 +869,57 @@ function initChart() {
 
   drawStaticLayer();
   factCanvas.addEventListener("click", e => {
-  if (!lastFactPoint) return;
+
+  if (!factHistory.length) return;
 
   const rect = factCanvas.getBoundingClientRect();
-  const dpr = window.devicePixelRatio || 1;
+  const W = factCanvas.width / (window.devicePixelRatio || 1);
+  const H = factCanvas.height / (window.devicePixelRatio || 1);
 
-  const clickX = (e.clientX - rect.left);
-  const clickY = (e.clientY - rect.top);
+  const pad = 40;
 
-  const dx = clickX - lastFactPoint.x;
-  const dy = clickY - lastFactPoint.y;
+  const total = factHistory
+    .filter(f => f.to === "main")
+    .reduce((s, f) => s + f.value, 0);
+
+  const monthsTotal = lastCalc.months;
+
+  const mainFacts = factHistory.filter(f => f.to === "main");
+
+  const uniqueMonths = new Set(
+    mainFacts.map(f => {
+      const d = new Date(f.date);
+      return `${d.getFullYear()}-${d.getMonth()}`;
+    })
+  );
+
+  const monthsPassed = uniqueMonths.size;
+  if (!monthsPassed) return;
+
+  const maxValue = plannedMonthly * monthsTotal;
+
+  const x =
+    pad +
+    (monthsPassed / monthsTotal) *
+    (W - pad * 2);
+
+  const y =
+    H - pad -
+    (total / maxValue) *
+    (H - pad * 2);
+
+  const clickX = e.clientX - rect.left;
+  const clickY = e.clientY - rect.top;
+
+  const dx = clickX - x;
+  const dy = clickY - y;
 
   const distance = Math.sqrt(dx * dx + dy * dy);
 
-  if (distance < 14) {
-    showFactTooltip({
-      value: factHistory.reduce((s, f) => s + f.value, 0)
-    });
+  if (distance < 18) {
+    showFactTooltip({ value: total });
   }
+
 });
 }
 
