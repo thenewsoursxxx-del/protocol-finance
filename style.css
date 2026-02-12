@@ -232,10 +232,10 @@ transform: translate(-50%, -50%);
 
 /* ===== TOP PROFILE AVATAR ===== */
 .top-profile {
-position: fixed;
-top: 16px;
-right: 16px;
-z-index: 5;
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 3; /* меньше чем protocol-header */
 }
 
 #profileBtn {
@@ -1070,8 +1070,10 @@ z-index: 5;
 .protocol-header {
   display: flex;
   align-items: center;
-  gap: 12px;
+  justify-content: space-between; /* ← ВАЖНО */
   margin-bottom: 16px;
+  position: relative;
+  z-index: 10; /* ← чтобы быть выше */
 }
 
 .protocol-back {
@@ -1086,4 +1088,8 @@ z-index: 5;
 .protocol-title {
   font-size: 20px;
   font-weight: 600;
+}
+
+#screen-advice {
+  padding-top: 60px;
 }
