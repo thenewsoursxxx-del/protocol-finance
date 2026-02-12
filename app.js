@@ -514,6 +514,21 @@ openScreen("advice", buttons[1]);
 adviceCard.innerHTML = "";
 loader.classList.remove("hidden");
 const backBtn = document.getElementById("protocolBack");
+if (backBtn) {
+  backBtn.onclick = () => {
+    haptic("light");
+
+    openScreen("calc", buttons[0]);
+
+    document.querySelectorAll(
+      "#screen-calc label, #screen-calc .input-wrap, .mode-buttons, #calculate"
+    ).forEach(el => el.style.display = "");
+
+    planSummary.style.display = "none";
+
+    hideBottomNav();
+  };
+}
 if (backBtn) backBtn.style.display = "none";
 
 plannedMonthly = lastCalc.monthlySave;
@@ -651,7 +666,6 @@ factInput.value = "";
 factInput.blur();
 };
 
-const backBtn = document.getElementById("protocolBack");
 if (backBtn) backBtn.style.display = "block";
 
 }, 6000);
@@ -1469,24 +1483,3 @@ const monthsPassed = Math.max(1, uniqueMonths.size);
   }
 }
 
-const protocolBack = document.getElementById("protocolBack");
-
-if (protocolBack) {
-  protocolBack.onclick = () => {
-    haptic("light");
-
-    // вернуть экран расчёта
-    openScreen("calc", buttons[0]);
-
-    // показать форму
-    document.querySelectorAll(
-      "#screen-calc label, #screen-calc .input-wrap, .mode-buttons, #calculate"
-    ).forEach(el => el.style.display = "");
-
-    // скрыть summary
-    planSummary.style.display = "none";
-
-    // скрыть нижний навбар
-    hideBottomNav();
-  };
-}
