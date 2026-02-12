@@ -44,6 +44,23 @@ const goalEditAmount = document.getElementById("goalEditAmount");
 const goalEditSave = document.getElementById("goalEditSave");
 const savedInput = document.getElementById("saved");
 const calculateBtn = document.getElementById("calculate");
+const protocolBack = document.getElementById("protocolBack");
+
+if (protocolBack) {
+  protocolBack.addEventListener("click", () => {
+    haptic("light");
+
+    openScreen("calc", buttons[0]);
+
+    document.querySelectorAll(
+      "#screen-calc label, #screen-calc .input-wrap, .mode-buttons, #calculate"
+    ).forEach(el => el.style.display = "");
+
+    planSummary.style.display = "none";
+
+    hideBottomNav();
+  });
+}
 
 // ===== PLAN SUMMARY ELEMENTS =====
 const planSummary = document.getElementById("planSummary");
@@ -205,6 +222,10 @@ if (topProfile) {
   } else {
     topProfile.style.display = "block";
   }
+}
+if (protocolBack) {
+  protocolBack.style.display =
+    name === "advice" ? "block" : "none";
 }
 }
 buttons.forEach(btn => {
@@ -514,23 +535,6 @@ openScreen("advice", null);
 hideBottomNav();
 adviceCard.innerHTML = "";
 loader.classList.remove("hidden");
-const backBtn = document.getElementById("protocolBack");
-if (backBtn) {
-  backBtn.onclick = () => {
-    haptic("light");
-
-    openScreen("calc", buttons[0]);
-
-    document.querySelectorAll(
-      "#screen-calc label, #screen-calc .input-wrap, .mode-buttons, #calculate"
-    ).forEach(el => el.style.display = "");
-
-    planSummary.style.display = "none";
-
-    hideBottomNav();
-  };
-}
-if (backBtn) backBtn.style.display = "none";
 
 plannedMonthly = lastCalc.monthlySave;
 
@@ -666,8 +670,6 @@ setTimeout(fireCelebration, 120);
 factInput.value = "";
 factInput.blur();
 };
-
-if (backBtn) backBtn.style.display = "block";
 
 }, 6000);
 }
