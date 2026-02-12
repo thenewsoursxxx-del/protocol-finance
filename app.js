@@ -1061,8 +1061,9 @@ const newMonths = Math.ceil(remaining / plannedMonthly);
 // обновляем текст над графиком
 summaryMonths.innerText = newMonths;
 
-// перерисовываем график
-
+// пересобираем график
+drawStaticLayer();
+animateFactLine();
 }
 
 // ===== ОСНОВНАЯ ЦЕЛЬ =====
