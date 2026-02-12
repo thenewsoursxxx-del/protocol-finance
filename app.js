@@ -218,6 +218,7 @@ if (btn) {
 } else {
   indicator.style.opacity = "0";
 }
+}
 // ===== TOP PROFILE FIX =====
 
 buttons.forEach(btn => {
