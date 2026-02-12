@@ -614,6 +614,9 @@ initChart();
 animateFactLine();
 if (protocolBack) protocolBack.style.display = "none";
 showBottomNav();
+setTimeout(() => {
+  moveIndicator(buttons[1]);
+}, 50);
 updatePlanHeader();
 
 const factInput = document.getElementById("factInput");
