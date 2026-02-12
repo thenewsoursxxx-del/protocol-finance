@@ -1201,29 +1201,41 @@ z-index: 5;
 
 /* ===== HEADER FIX FINAL ===== */
 
+/* ===== HEADER FINAL CLEAN ===== */
+
 .app-header {
   position: relative;
-  height: 56px;
+  height: 44px;              /* 🔥 меньше высота */
   display: flex;
   align-items: center;
   justify-content: center;
+  margin-bottom: 12px;       /* меньше отступ */
 }
 
 .header-title {
-  font-size: 20px;
+  font-size: 22px;           /* 🔥 чуть крупнее */
   font-weight: 600;
-  text-align: center;
-  width: 100%;
+  line-height: 1;
+  color: #ffffff;
 }
 
 .header-back {
   position: absolute;
-  left: 12px;   /* 👈 отступ от края */
+  left: 0;
   top: 50%;
   transform: translateY(-50%);
-  width: 44px;
-  height: 44px;
+  
+  background: none;
+  border: none;
+
+  font-size: 22px;           /* 🔥 ровно как текст */
+  font-weight: 600;
+  color: #ffffff;            /* ❌ убираем синий */
+
+  padding: 0;
+  height: 22px;              /* = размеру текста */
   display: flex;
   align-items: center;
-  justify-content: center;
+
+  cursor: pointer;
 }
