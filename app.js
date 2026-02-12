@@ -219,16 +219,7 @@ if (btn) {
   indicator.style.opacity = "0";
 }
 // ===== TOP PROFILE FIX =====
-const topProfile = document.querySelector(".top-profile");
 
-if (topProfile) {
-  if (name === "advice") {
-    topProfile.style.display = "none";
-  } else {
-    topProfile.style.display = "block";
-  }
-}
-}
 buttons.forEach(btn => {
 btn.onclick = () => {
 haptic("light");
