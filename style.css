@@ -1067,30 +1067,6 @@ z-index: 5;
   height: 100%;
 }
 
-.protocol-header {
-  display: flex;
-  align-items: center;
-  position: relative;
-  margin-bottom: 16px;
-}
-
-.protocol-back {
-  width: 40px;
-  height: 40px;
-  font-size: 22px;
-  background: transparent;
-  border: none;
-  color: #fff;
-}
-
-.protocol-title {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 20px;
-  font-weight: 600;
-}
-
 #screen-advice {
   position: relative;
   z-index: 1;
@@ -1188,13 +1164,20 @@ z-index: 5;
 
 /* ===== GLOBAL HEADER ===== */
 
+.header-right {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
 .app-header {
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 52px;
-  margin-bottom: 16px;
+  height: 48px;
+  margin-bottom: 18px;
 }
 
 .header-title {
@@ -1214,12 +1197,4 @@ z-index: 5;
   color: #3a7bfd;
   font-size: 18px;
   padding: 8px 12px;
-  cursor: pointer;
-}
-
-.header-right {
-  position: absolute;
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
 }
