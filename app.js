@@ -217,7 +217,6 @@ if (btn) {
   moveIndicator(btn);
 } else {
   indicator.style.opacity = "0";
-  indicator.style.transform = "translateX(-9999px)";
 }
 // ===== TOP PROFILE FIX =====
 const topProfile = document.querySelector(".top-profile");
@@ -375,7 +374,6 @@ const backBtn = document.getElementById("protocolBack");
 if (backBtn) backBtn.style.display = "block";
 };
 });
-if (protocolBack) protocolBack.style.display = "block";
 }
 
 /* ===== CALCULATE ===== */
@@ -614,6 +612,7 @@ style="width:52px;height:52px;border-radius:50%">
 
 initChart();
 animateFactLine();
+if (protocolBack) protocolBack.style.display = "none";
 showBottomNav();
 updatePlanHeader();
 
