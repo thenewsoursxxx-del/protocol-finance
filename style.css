@@ -1094,15 +1094,16 @@ z-index: 5;
 
 #screen-advice {
   position: relative;
-  z-index: 10;
+  z-index: 1;
 }
 
 .protocol-header {
   position: relative;
-  z-index: 100;
+  z-index: 9999;
 }
 
 .protocol-back {
   position: relative;
-  z-index: 101;
+  z-index: 10000;
+  pointer-events: auto;
 }
