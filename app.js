@@ -1505,16 +1505,43 @@ const monthsPassed = Math.max(1, uniqueMonths.size);
 
   const radius = 5 * dotScale;
 
+  // ===== PREMIUM FILL (вертикальный градиент) =====
+  const fillGrad = factCtx.createLinearGradient(
+    x, y - radius,
+    x, y + radius
+  );
+
+  fillGrad.addColorStop(0, "#60a5fa"); // свет сверху
+  fillGrad.addColorStop(1, "#2563eb"); // глубина снизу
+
   factCtx.beginPath();
   factCtx.arc(x, y, radius, 0, Math.PI * 2);
-  factCtx.fillStyle = "#2563eb";
+  factCtx.fillStyle = fillGrad;
   factCtx.fill();
 
-  // мягкое свечение
-  factCtx.beginPath();
-  factCtx.arc(x, y, radius * 2.2, 0, Math.PI * 2);
-  factCtx.fillStyle = "rgba(37,99,235,0.15)";
-  factCtx.fill();
+  // ===== Тонкий белый кант =====
+  factCtx.lineWidth = 1.2;
+  factCtx.strokeStyle = "rgba(255,255,255,0.65)";
+  factCtx.stroke();
+
+  // ===== Glow ТОЛЬКО если точка увеличена (нажата) =====
+  if (dotScale > 1.05) {
+    const glowRadius = radius * 2.8;
+
+    const glow = factCtx.createRadialGradient(
+      x, y, 0,
+      x, y, glowRadius
+    );
+
+    glow.addColorStop(0, "rgba(37,99,235,0.35)");
+    glow.addColorStop(0.4, "rgba(37,99,235,0.18)");
+    glow.addColorStop(1, "rgba(37,99,235,0)");
+
+    factCtx.beginPath();
+    factCtx.arc(x, y, glowRadius, 0, Math.PI * 2);
+    factCtx.fillStyle = glow;
+    factCtx.fill();
+  }
 }
 }
 
