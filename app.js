@@ -1373,6 +1373,39 @@ function drawStaticLayer() {
   bgCtx.stroke();
 
   drawPlanLine();
+  drawMonthLabels();
+}
+
+function drawMonthLabels() {
+  if (!lastCalc.months) return;
+
+  const W = bgCanvas.width / (window.devicePixelRatio || 1);
+  const H = bgCanvas.height / (window.devicePixelRatio || 1);
+  const pad = 40;
+
+  const monthsTotal = lastCalc.months;
+  const startDate = new Date();
+
+  bgCtx.fillStyle = "rgba(255,255,255,0.35)";
+  bgCtx.font = "12px Inter, system-ui";
+  bgCtx.textAlign = "center";
+  bgCtx.textBaseline = "top";
+
+  for (let i = 0; i <= monthsTotal; i++) {
+
+    const x =
+      pad +
+      (i / monthsTotal) *
+        (W - pad * 2);
+
+    const date = addMonths(startDate, i);
+
+    const label = date.toLocaleDateString("ru-RU", {
+      month: "short"
+    });
+
+    bgCtx.fillText(label, x, H - pad + 8);
+  }
 }
 
 function drawPlanLine() {
