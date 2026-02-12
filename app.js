@@ -195,6 +195,13 @@ buttons.forEach(b => b.classList.remove("active"));
 if (btn) btn.classList.add("active");
 
 if (btn) moveIndicator(btn);
+const topProfile = document.querySelector(".top-profile");
+
+if (name === "advice") {
+  topProfile.style.display = "none";
+} else {
+  topProfile.style.display = "block";
+}
 }
 buttons.forEach(btn => {
 btn.onclick = () => {
