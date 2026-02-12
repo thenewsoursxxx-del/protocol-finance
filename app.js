@@ -874,16 +874,18 @@ factCanvas.addEventListener("click", e => {
   if (!lastFactPoint) return;
 
   const rect = factCanvas.getBoundingClientRect();
+  const scaleX = factCanvas.width / rect.width;
+  const scaleY = factCanvas.height / rect.height;
 
-  const clickX = e.clientX - rect.left;
-  const clickY = e.clientY - rect.top;
+  const clickX = (e.clientX - rect.left) * scaleX;
+  const clickY = (e.clientY - rect.top) * scaleY;
 
   const dx = clickX - lastFactPoint.x;
   const dy = clickY - lastFactPoint.y;
 
   const distance = Math.sqrt(dx * dx + dy * dy);
 
-  if (distance < 20) {
+  if (distance < 20 * scaleX) {
     const total = factHistory
       .filter(f => f.to === "main")
       .reduce((s, f) => s + f.value, 0);
