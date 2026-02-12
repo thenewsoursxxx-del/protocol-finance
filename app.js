@@ -1384,7 +1384,13 @@ function drawMonthLabels() {
   const pad = 40;
 
   const monthsTotal = lastCalc.months;
-  const startDate = new Date();
+
+  // 🔥 рассчитываем шаг отображения
+  let step = 1;
+
+  if (monthsTotal > 24) step = 4;
+  else if (monthsTotal > 12) step = 3;
+  else if (monthsTotal > 6) step = 2;
 
   bgCtx.fillStyle = "rgba(255,255,255,0.35)";
   bgCtx.font = "12px Inter, system-ui";
@@ -1393,18 +1399,14 @@ function drawMonthLabels() {
 
   for (let i = 0; i <= monthsTotal; i++) {
 
+    if (i % step !== 0 && i !== monthsTotal) continue;
+
     const x =
       pad +
       (i / monthsTotal) *
         (W - pad * 2);
 
-    const date = addMonths(startDate, i);
-
-    const label = date.toLocaleDateString("ru-RU", {
-      month: "short"
-    });
-
-    bgCtx.fillText(label, x, H - pad + 8);
+    bgCtx.fillText(i, x, H - pad + 8);
   }
 }
 
