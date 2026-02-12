@@ -116,6 +116,7 @@ bottomNav.style.transform = "translateY(140%)";
 
 /* ===== NAV INDICATOR ===== */
 function moveIndicator(btn) {
+  indicator.style.opacity = "1";
 if (!btn) return;
 
 const navRect = bottomNav.getBoundingClientRect();
@@ -212,7 +213,12 @@ document.getElementById("screen-" + name).classList.add("active");
 buttons.forEach(b => b.classList.remove("active"));
 if (btn) btn.classList.add("active");
 
-if (btn) moveIndicator(btn);
+if (btn) {
+  moveIndicator(btn);
+} else {
+  indicator.style.opacity = "0";
+  indicator.style.transform = "translateX(-9999px)";
+}
 // ===== TOP PROFILE FIX =====
 const topProfile = document.querySelector(".top-profile");
 
@@ -222,10 +228,6 @@ if (topProfile) {
   } else {
     topProfile.style.display = "block";
   }
-}
-if (protocolBack) {
-  protocolBack.style.display =
-    name === "advice" ? "block" : "none";
 }
 }
 buttons.forEach(btn => {
@@ -369,8 +371,11 @@ selectedScenario = card.dataset.id;
 haptic("light");
 
 protocolFlow(selectedScenario);
+const backBtn = document.getElementById("protocolBack");
+if (backBtn) backBtn.style.display = "block";
 };
 });
+if (protocolBack) protocolBack.style.display = "block";
 }
 
 /* ===== CALCULATE ===== */
@@ -510,6 +515,7 @@ return d;
 /* ===== STAGED FLOW ===== */
 function protocolFlow(mode) {
 chosenPlan = mode;
+if (protocolBack) protocolBack.style.display = "none";
 // 🔥 СИНХРОНИЗАЦИЯ С УЖЕ НАКОПЛЕННЫМ
 const initialSaved = parseNumber(savedInput?.value || "0");
 planStartValue = initialSaved;
@@ -532,6 +538,8 @@ renderAccountsUI();
 lockTabs(false);
 
 openScreen("advice", null);
+const backBtn = document.getElementById("protocolBack");
+if (backBtn) backBtn.style.display = "none";
 hideBottomNav();
 adviceCard.innerHTML = "";
 loader.classList.remove("hidden");
