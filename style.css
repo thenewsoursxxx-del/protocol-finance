@@ -1092,5 +1092,6 @@ z-index: 5;
 }
 
 #screen-advice {
-  padding-top: 60px;
+  position: relative;
+  z-index: 10;
 }
