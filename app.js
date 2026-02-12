@@ -195,12 +195,13 @@ buttons.forEach(b => b.classList.remove("active"));
 if (btn) btn.classList.add("active");
 
 if (btn) moveIndicator(btn);
+// ===== TOP PROFILE VISIBILITY FIX =====
 const topProfile = document.querySelector(".top-profile");
 
 if (name === "advice") {
-  topProfile.style.display = "none";
+  topProfile.style.pointerEvents = "none";
 } else {
-  topProfile.style.display = "block";
+  topProfile.style.pointerEvents = "auto";
 }
 }
 buttons.forEach(btn => {
