@@ -1097,13 +1097,17 @@ z-index: 5;
   z-index: 1;
 }
 
-.protocol-header {
+#screen-advice .card {
   position: relative;
-  z-index: 9999;
+  z-index: 2;
 }
 
-.protocol-back {
+.chart-wrap {
   position: relative;
-  z-index: 10000;
-  pointer-events: auto;
+  z-index: 2;
+}
+
+.protocol-header {
+  position: relative;
+  z-index: 10;   /* НЕ 9999 */
 }
