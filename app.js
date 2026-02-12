@@ -195,13 +195,15 @@ buttons.forEach(b => b.classList.remove("active"));
 if (btn) btn.classList.add("active");
 
 if (btn) moveIndicator(btn);
-// ===== TOP PROFILE VISIBILITY FIX =====
+// ===== TOP PROFILE FIX =====
 const topProfile = document.querySelector(".top-profile");
 
-if (name === "advice") {
-  topProfile.style.pointerEvents = "none";
-} else {
-  topProfile.style.pointerEvents = "auto";
+if (topProfile) {
+  if (name === "advice") {
+    topProfile.style.display = "none";
+  } else {
+    topProfile.style.display = "block";
+  }
 }
 }
 buttons.forEach(btn => {
@@ -510,6 +512,8 @@ lockTabs(false);
 openScreen("advice", buttons[1]);
 adviceCard.innerHTML = "";
 loader.classList.remove("hidden");
+const backBtn = document.getElementById("protocolBack");
+if (backBtn) backBtn.style.display = "none";
 
 plannedMonthly = lastCalc.monthlySave;
 
@@ -645,6 +649,9 @@ setTimeout(fireCelebration, 120);
 factInput.value = "";
 factInput.blur();
 };
+
+const backBtn = document.getElementById("protocolBack");
+if (backBtn) backBtn.style.display = "block";
 
 }, 6000);
 }
