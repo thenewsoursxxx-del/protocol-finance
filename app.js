@@ -833,6 +833,9 @@ let factDots = [];
 let activeFactDot = null;
 let factAnimationProgress = 1;
 let isFactAnimating = false;
+let dotScale = 1;
+let dotTargetScale = 1;
+let dotAnimating = false;
 
 function getFactGradient(ctx, W) {
 const g = ctx.createLinearGradient(0, 0, W, 0);
@@ -883,13 +886,20 @@ factCanvas.addEventListener("pointerdown", e => {
 
   const distance = Math.sqrt(dx * dx + dy * dy);
 
-  if (distance <= 25) {   // ← увеличили радиус попадания
-    const total = factHistory
-      .filter(f => f.to === "main")
-      .reduce((s, f) => s + f.value, 0);
+  if (distance <= 25) {
 
-    showFactTooltip({ value: total });
-  }
+  const total = factHistory
+    .filter(f => f.to === "main")
+    .reduce((s, f) => s + f.value, 0);
+
+  animateDotScale(1.8);
+
+  showFactTooltip({ value: total });
+
+  setTimeout(() => {
+    animateDotScale(1);
+  }, 3800);
+}
 });
 }
 
@@ -1465,7 +1475,6 @@ const uniqueMonths = new Set(
     return `${d.getFullYear()}-${d.getMonth()}`;
   })
 );
-
 const monthsPassed = Math.max(1, uniqueMonths.size);
 
   const x =
@@ -1491,10 +1500,53 @@ const monthsPassed = Math.max(1, uniqueMonths.size);
   factCtx.stroke();
 
   if (progress === 1) {
-    factCtx.beginPath();
-    factCtx.arc(x, y, 5, 0, Math.PI * 2);
-    factCtx.fillStyle = "#2563eb";
-    factCtx.fill();
-  }
+
+  const radius = 5 * dotScale;
+
+  factCtx.beginPath();
+  factCtx.arc(x, y, radius, 0, Math.PI * 2);
+  factCtx.fillStyle = "#2563eb";
+  factCtx.fill();
+
+  // мягкое свечение
+  factCtx.beginPath();
+  factCtx.arc(x, y, radius * 2.2, 0, Math.PI * 2);
+  factCtx.fillStyle = "rgba(37,99,235,0.15)";
+  factCtx.fill();
+}
 }
 
+function animateDotScale(target, duration = 220) {
+  dotTargetScale = target;
+  const startScale = dotScale;
+  const diff = target - startScale;
+
+  let start = null;
+  dotAnimating = true;
+
+  function frame(ts) {
+    if (!start) start = ts;
+
+    const progress = Math.min((ts - start) / duration, 1);
+    const eased = 1 - Math.pow(1 - progress, 3);
+
+    dotScale = startScale + diff * eased;
+
+    const total = factHistory
+      .filter(f => f.to === "main")
+      .reduce((s, f) => s + f.value, 0);
+
+    const planMax = plannedMonthly * lastCalc.months;
+    const maxValue = Math.max(total, planMax, 1);
+
+    drawFactLayer(1, total, maxValue);
+
+    if (progress < 1) {
+      requestAnimationFrame(frame);
+    } else {
+      dotAnimating = false;
+    }
+  }
+
+  requestAnimationFrame(frame);
+}
