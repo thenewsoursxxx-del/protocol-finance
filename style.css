@@ -1190,11 +1190,10 @@ z-index: 5;
 
 .app-header {
   position: relative;
-  height: 56px;
+  height: 52px;               /* фиксированная высота */
   display: flex;
   align-items: center;
-  justify-content: center;
-  margin-bottom: 18px;
+  justify-content: center;    /* заголовок строго по центру */
 }
 
 .header-title {
@@ -1216,4 +1215,24 @@ z-index: 5;
   padding: 6px;
   cursor: pointer;
   z-index: 2;
+}
+
+.header-back {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.header-title {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0;
+  padding: 0;
 }
