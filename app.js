@@ -508,6 +508,7 @@ renderAccountsUI();
 lockTabs(false);
 
 openScreen("advice", buttons[1]);
+adviceCard.innerHTML = "";
 loader.classList.remove("hidden");
 
 plannedMonthly = lastCalc.monthlySave;
