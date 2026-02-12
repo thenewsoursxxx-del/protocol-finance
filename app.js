@@ -1451,3 +1451,25 @@ const monthsPassed = Math.max(1, uniqueMonths.size);
     factCtx.fill();
   }
 }
+
+const protocolBack = document.getElementById("protocolBack");
+
+if (protocolBack) {
+  protocolBack.onclick = () => {
+    haptic("light");
+
+    // вернуть экран расчёта
+    openScreen("calc", buttons[0]);
+
+    // показать форму
+    document.querySelectorAll(
+      "#screen-calc label, #screen-calc .input-wrap, .mode-buttons, #calculate"
+    ).forEach(el => el.style.display = "");
+
+    // скрыть summary
+    planSummary.style.display = "none";
+
+    // скрыть нижний навбар
+    hideBottomNav();
+  };
+}
