@@ -894,11 +894,12 @@ factCanvas.addEventListener("pointerdown", e => {
 
   animateDotScale(1.8);
 
-  showFactTooltip({ value: total });
-
-  setTimeout(() => {
+  showFactTooltip({ 
+  value: total,
+  onHide: () => {
     animateDotScale(1);
-  }, 3800);
+  }
+});
 }
 });
 }
@@ -985,7 +986,7 @@ block.innerText = text;
 adviceCard.appendChild(block);
 }
 
-function showFactTooltip(f) {
+function showFactTooltip({ value, onHide }) {
 const old = adviceCard.querySelector(".fact-tooltip");
 if (old) old.remove();
 
@@ -997,20 +998,21 @@ const date = new Date().toLocaleDateString("ru-RU");
 block.innerHTML = `
 <div class="fact-date">${date}</div>
 <div class="fact-value">
-Отложено: ${f.value.toLocaleString()} ₽
+Отложено: ${value.toLocaleString()} ₽
 </div>
 `;
 
 adviceCard.appendChild(block);
 
 setTimeout(() => {
-block.classList.add("hide");
+  block.classList.add("hide");
 
-setTimeout(() => {
-block.remove();
-activeFactDot = null;
+  if (onHide) onHide();
 
-}, 280); // ← совпадает с CSS transition
+  setTimeout(() => {
+    block.remove();
+    activeFactDot = null;
+  }, 280);
 }, 4000);
 }
 
