@@ -13,7 +13,6 @@ document.addEventListener("click", e => {
     e.target.closest(".mode-btn") ||
     e.target.closest(".nav-btn") ||
     e.target.closest("#profileBtn") ||
-    e.target.closest("#chartFact") ||
     e.target.closest(".protocol-back")
   ) {
     return;
