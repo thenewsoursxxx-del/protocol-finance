@@ -1185,3 +1185,31 @@ z-index: 5;
   transform: scale(0.9);
   opacity: 1;
 }
+
+/* ===== GLOBAL HEADER ===== */
+
+.app-header {
+  position: relative;
+  height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 18px;
+}
+
+.header-title {
+  font-size: 22px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.header-back {
+  position: absolute;
+  left: 0;
+  background: none;
+  border: none;
+  font-size: 22px;
+  color: white;
+  padding: 8px;
+  cursor: pointer;
+}
