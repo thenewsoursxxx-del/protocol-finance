@@ -869,7 +869,7 @@ function initChart() {
   factCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
   drawStaticLayer();
-factCanvas.addEventListener("click", e => {
+factCanvas.addEventListener("pointerdown", e => {
   e.stopPropagation();
 
   if (!lastFactPoint) return;
