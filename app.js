@@ -1286,7 +1286,8 @@ if (chosenPlan === "buffer") {
 plannedMonthly = Math.round(plannedMonthly * 0.9);
 }
 
-// пересобираем график
+drawStaticLayer();
+animateFactLine();
 
 }
 
