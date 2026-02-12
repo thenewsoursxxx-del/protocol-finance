@@ -875,7 +875,6 @@ factCanvas.addEventListener("pointerdown", e => {
 
   const rect = factCanvas.getBoundingClientRect();
 
-  // координаты в CSS-пикселях
   const clickX = e.clientX - rect.left;
   const clickY = e.clientY - rect.top;
 
@@ -884,7 +883,7 @@ factCanvas.addEventListener("pointerdown", e => {
 
   const distance = Math.sqrt(dx * dx + dy * dy);
 
-  if (distance < 20) {
+  if (distance <= 25) {   // ← увеличили радиус попадания
     const total = factHistory
       .filter(f => f.to === "main")
       .reduce((s, f) => s + f.value, 0);
