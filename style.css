@@ -1190,14 +1190,15 @@ z-index: 5;
 
 .app-header {
   position: relative;
-  height: 52px;               /* фиксированная высота */
   display: flex;
   align-items: center;
-  justify-content: center;    /* заголовок строго по центру */
+  justify-content: center;
+  height: 52px;
+  margin-bottom: 16px;
 }
 
 .header-title {
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 600;
   text-align: center;
   pointer-events: none;
@@ -1205,34 +1206,20 @@ z-index: 5;
 
 .header-back {
   position: absolute;
-  left: 16px;
+  left: 0;
   top: 50%;
   transform: translateY(-50%);
   background: none;
   border: none;
-  font-size: 22px;
-  color: white;
-  padding: 6px;
+  color: #3a7bfd;
+  font-size: 18px;
+  padding: 8px 12px;
   cursor: pointer;
-  z-index: 2;
 }
 
-.header-back {
+.header-right {
   position: absolute;
-  left: 16px;
+  right: 0;
   top: 50%;
   transform: translateY(-50%);
-  
-  background: none;
-  border: none;
-  color: #fff;
-  font-size: 20px;
-  cursor: pointer;
-}
-
-.header-title {
-  font-size: 20px;
-  font-weight: 600;
-  margin: 0;
-  padding: 0;
 }
