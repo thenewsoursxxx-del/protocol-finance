@@ -1521,7 +1521,7 @@ const monthsPassed = Math.max(1, uniqueMonths.size);
 
   // ===== Тонкий белый кант =====
   factCtx.lineWidth = 1.2;
-  factCtx.strokeStyle = "rgba(255,255,255,0.65)";
+  factCtx.strokeStyle = "rgba(255,255,255,0.45)";
   factCtx.stroke();
 
   // ===== Glow ТОЛЬКО если точка увеличена (нажата) =====
