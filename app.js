@@ -510,7 +510,8 @@ isInitialized = true;
 renderAccountsUI();
 lockTabs(false);
 
-openScreen("advice", buttons[1]);
+openScreen("advice", null);
+hideBottomNav();
 adviceCard.innerHTML = "";
 loader.classList.remove("hidden");
 const backBtn = document.getElementById("protocolBack");
