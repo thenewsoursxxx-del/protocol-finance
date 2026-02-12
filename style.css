@@ -1162,45 +1162,6 @@ z-index: 5;
   opacity: 1;
 }
 
-/* ===== GLOBAL HEADER ===== */
-
-.header-right {
-  position: absolute;
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
-}
-
-.app-header {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 48px;
-  margin-bottom: 18px;
-}
-
-.header-title {
-  font-size: 20px;
-  font-weight: 600;
-  text-align: center;
-  pointer-events: none;
-}
-
-.header-back {
-  position: absolute;
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  background: none;
-  border: none;
-  color: #3a7bfd;
-  font-size: 18px;
-  padding: 8px 12px;
-}
-
-/* ===== HEADER FIX FINAL ===== */
-
 /* ===== HEADER FINAL CLEAN ===== */
 
 .app-header {
