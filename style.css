@@ -1070,22 +1070,23 @@ z-index: 5;
 .protocol-header {
   display: flex;
   align-items: center;
-  justify-content: space-between; /* ← ВАЖНО */
-  margin-bottom: 16px;
   position: relative;
-  z-index: 10; /* ← чтобы быть выше */
+  margin-bottom: 16px;
 }
 
 .protocol-back {
-  background: none;
+  width: 40px;
+  height: 40px;
+  font-size: 22px;
+  background: transparent;
   border: none;
   color: #fff;
-  font-size: 22px;
-  cursor: pointer;
-  padding: 4px 8px;
 }
 
 .protocol-title {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
   font-size: 20px;
   font-weight: 600;
 }
