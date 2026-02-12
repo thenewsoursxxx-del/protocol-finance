@@ -1190,7 +1190,7 @@ z-index: 5;
 
 .app-header {
   position: relative;
-  height: 54px;
+  height: 56px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1201,15 +1201,19 @@ z-index: 5;
   font-size: 22px;
   font-weight: 600;
   text-align: center;
+  pointer-events: none;
 }
 
 .header-back {
   position: absolute;
-  left: 0;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
   background: none;
   border: none;
   font-size: 22px;
   color: white;
-  padding: 8px;
+  padding: 6px;
   cursor: pointer;
+  z-index: 2;
 }
