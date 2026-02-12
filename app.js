@@ -370,8 +370,6 @@ selectedScenario = card.dataset.id;
 haptic("light");
 
 protocolFlow(selectedScenario);
-const backBtn = document.getElementById("protocolBack");
-if (backBtn) backBtn.style.display = "block";
 };
 });
 }
@@ -470,6 +468,7 @@ advice
 
 isInitialized = true; // разрешаем переходы
 openScreen("advice", null); // показываем экран с карточками
+if (protocolBack) protocolBack.style.display = "block";
 
 // показать summary
 planSummary.style.display = "block";
@@ -614,9 +613,9 @@ initChart();
 animateFactLine();
 if (protocolBack) protocolBack.style.display = "none";
 showBottomNav();
-setTimeout(() => {
-  moveIndicator(buttons[1]);
-}, 50);
+buttons.forEach(b => b.classList.remove("active"));
+buttons[1].classList.add("active");
+moveIndicator(buttons[1]);
 updatePlanHeader();
 
 const factInput = document.getElementById("factInput");
