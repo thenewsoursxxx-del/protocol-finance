@@ -1065,7 +1065,7 @@ z-index: 5;
   inset: 0;
   width: 100%;
   height: 100%;
-  pointer-events: none;
+  pointer-events: none; /* ← ВОТ ЭТО КЛЮЧ */
 }
 
 .protocol-header {
@@ -1095,4 +1095,14 @@ z-index: 5;
 #screen-advice {
   position: relative;
   z-index: 10;
+}
+
+.protocol-header {
+  position: relative;
+  z-index: 100;
+}
+
+.protocol-back {
+  position: relative;
+  z-index: 101;
 }
