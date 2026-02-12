@@ -13,7 +13,7 @@ document.addEventListener("click", e => {
     e.target.closest(".mode-btn") ||
     e.target.closest(".nav-btn") ||
     e.target.closest("#profileBtn") ||
-    e.target.closest("#chartFact")
+    e.target.closest("#chartFact") ||
     e.target.closest(".protocol-back")
   ) {
     return;
@@ -869,7 +869,7 @@ function initChart() {
   factCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
   drawStaticLayer();
-factCanvas.addEventListener("click", e => {
+factCanvas.addEventListener("pointerdown", e => {
   e.stopPropagation();
 
   if (!lastFactPoint) return;
