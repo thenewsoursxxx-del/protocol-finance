@@ -897,8 +897,8 @@ function initChart() {
   const monthsPassed = uniqueMonths.size;
   if (!monthsPassed) return;
 
-  const maxValue = plannedMonthly * monthsTotal;
-
+  const maxValue = Math.max(plannedMonthly * monthsTotal, total, 1);
+if (!monthsTotal) return;
   const x =
     pad +
     (monthsPassed / monthsTotal) *
