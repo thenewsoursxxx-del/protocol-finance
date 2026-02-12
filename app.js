@@ -869,6 +869,7 @@ function initChart() {
 
   drawStaticLayer();
   factCanvas.addEventListener("click", e => {
+    e.stopPropagation();
 
   if (!factHistory.length) return;
 
