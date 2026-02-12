@@ -1110,3 +1110,34 @@ z-index: 5;
   position: relative;
   z-index: 10;   /* НЕ 9999 */
 }
+
+.goal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.goal-title {
+  font-size: 28px;
+  font-weight: 600;
+  white-space: nowrap;      /* 🔥 одна строка */
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.goal-edit-btn {
+  background: none;
+  border: none;
+  font-size: 26px;          /* 🔥 размер почти как текст */
+  cursor: pointer;
+  opacity: 0.65;
+  transition: 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.goal-edit-btn:active {
+  transform: scale(0.9);
+  opacity: 1;
+}
