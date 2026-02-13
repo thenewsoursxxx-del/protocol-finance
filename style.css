@@ -264,10 +264,7 @@ stroke-width: 2;
 }
 
 /* ===== GLOBAL UI SCALE (SAFE FOR TELEGRAM) ===== */
-.app-scale {
-transform: scale(0.94);
-transform-origin: top center;
-}
+
 
 /* ===== PACE BUTTONS ===== */
 .pace-buttons {
