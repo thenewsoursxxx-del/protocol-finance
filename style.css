@@ -1203,16 +1203,17 @@ html, body {
 }
 
 .app {
-  height: 100vh;
-  overflow: hidden;   /* ВАЖНО */
+  height: 100%;
+  overflow: hidden;   /* важно */
 }
 
 .screen {
   display: none;
-  height: 100vh;
-  overflow-y: auto;
-  padding-top: 20px;
-  padding-bottom: 140px; /* чтобы не перекрывал nav */
+  height: 100%;
+  overflow-y: auto;   /* скролл ТОЛЬКО тут */
+  padding: 20px;
+  padding-bottom: 140px;
+  -webkit-overflow-scrolling: touch;
 }
 
 .screen.active {
