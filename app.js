@@ -1368,7 +1368,7 @@ function drawStaticLayer() {
 
   drawPlanLine();
   drawMonthLabels();
-// ===== WATERMARK LOGO + TEXT (REFINED) =====
+// ===== WATERMARK LOGO + TEXT (PREMIUM REFINED) =====
 const logo = new Image();
 logo.src = "logo.svg";
 
@@ -1376,33 +1376,43 @@ logo.onload = () => {
   const W = bgCanvas.width / (window.devicePixelRatio || 1);
   const H = bgCanvas.height / (window.devicePixelRatio || 1);
 
-  const size = 170; // логотип чуть меньше
+  const size = 170;
   const centerX = W / 2;
   const centerY = H / 2;
 
   bgCtx.save();
 
-  // ----- LOGO -----
-  bgCtx.globalAlpha = 0.07; // немного ярче
+  // ===== LOGO =====
+  bgCtx.globalAlpha = 0.07;
   bgCtx.drawImage(
     logo,
     centerX - size / 2,
-    centerY - size / 2 - 12, // чуть выше центра
+    centerY - size / 2 - 12,
     size,
     size
   );
 
-  // ----- TEXT -----
-  bgCtx.globalAlpha = 0.11; // немного ярче чем было
+  // ===== TEXT: Protocol =====
+  bgCtx.globalAlpha = 0.16; // светлее чем было
   bgCtx.fillStyle = "#ffffff";
-  bgCtx.font = "600 16px Inter, system-ui"; // меньше размер
+  bgCtx.font = "600 16px Inter, system-ui";
   bgCtx.textAlign = "center";
   bgCtx.textBaseline = "top";
 
+  const textY = centerY + size / 2 - 20;
+
+  bgCtx.fillText("Protocol", centerX, textY);
+
+  // ===== TM (lighter & smaller) =====
+  const protocolWidth = bgCtx.measureText("Protocol").width;
+
+  bgCtx.globalAlpha = 0.12; // чуть слабее основного текста
+  bgCtx.font = "400 10px Inter, system-ui";
+
   bgCtx.fillText(
-    "Protocol™",
-    centerX,
-    centerY + size / 2 - 20 // ближе к логотипу
+    "™",
+    centerX + protocolWidth / 2 + 3, // аккуратно справа
+    textY - 4 // немного выше baseline
   );
 
   bgCtx.restore();
