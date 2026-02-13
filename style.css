@@ -1162,41 +1162,40 @@ z-index: 5;
   opacity: 1;
 }
 
-/* ===== HEADER FINAL CLEAN ===== */
+/* ===== HEADER PROPER LAYOUT ===== */
 
 .app-header {
-  position: relative;
-  height: 44px;              /* 🔥 меньше высота */
   display: flex;
   align-items: center;
-  justify-content: center;
-  margin-bottom: 12px;       /* меньше отступ */
+  justify-content: space-between;
+
+  height: 44px;
+  margin-bottom: 12px;
+}
+
+.header-left {
+  width: 60px; /* фикс зона под стрелку */
+  display: flex;
+  align-items: center;
+}
+
+.header-center {
+  flex: 1;
+  text-align: center;
 }
 
 .header-title {
-  font-size: 22px;           /* 🔥 чуть крупнее */
+  font-size: 22px;
   font-weight: 600;
   line-height: 1;
   color: #ffffff;
 }
 
 .header-back {
-  position: absolute;
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  
   background: none;
   border: none;
-
-  font-size: 22px;           /* 🔥 ровно как текст */
-  font-weight: 600;
-  color: #ffffff;            /* ❌ убираем синий */
-
+  font-size: 22px;
+  color: #ffffff;
   padding: 0;
-  height: 22px;              /* = размеру текста */
-  display: flex;
-  align-items: center;
-
   cursor: pointer;
 }
