@@ -15,7 +15,6 @@ font-size: 18px;
 
 .app {
 padding: 20px;
-padding-bottom: 220px; /* ← ВАЖНО */
 position: relative;
 }
 
@@ -1200,10 +1199,22 @@ z-index: 5;
 
 html, body {
   height: 100%;
+  overflow: hidden;
 }
 
 .app {
-  height: 100vh;              /* фиксируем высоту */
-  overflow-y: auto;           /* скролл только внутри */
-  -webkit-overflow-scrolling: touch;
+  height: 100vh;
+  overflow: hidden;   /* ВАЖНО */
+}
+
+.screen {
+  display: none;
+  height: 100vh;
+  overflow-y: auto;
+  padding-top: 20px;
+  padding-bottom: 140px; /* чтобы не перекрывал nav */
+}
+
+.screen.active {
+  display: block;
 }
