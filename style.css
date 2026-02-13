@@ -15,6 +15,7 @@ font-size: 18px;
 
 .app {
 padding: 20px;
+padding-bottom: 220px; /* ← ВАЖНО */
 position: relative;
 }
 
@@ -263,7 +264,10 @@ stroke-width: 2;
 }
 
 /* ===== GLOBAL UI SCALE (SAFE FOR TELEGRAM) ===== */
-
+.app-scale {
+transform: scale(0.94);
+transform-origin: top center;
+}
 
 /* ===== PACE BUTTONS ===== */
 .pace-buttons {
@@ -1199,23 +1203,10 @@ z-index: 5;
 
 html, body {
   height: 100%;
-  overflow: hidden;
 }
 
 .app {
-  height: 100%;
-  overflow: hidden;   /* важно */
-}
-
-.screen {
-  display: none;
-  height: 100%;
-  overflow-y: auto;   /* скролл ТОЛЬКО тут */
-  padding: 20px;
-  padding-bottom: 140px;
+  height: 100vh;              /* фиксируем высоту */
+  overflow-y: auto;           /* скролл только внутри */
   -webkit-overflow-scrolling: touch;
-}
-
-.screen.active {
-  display: block;
 }
