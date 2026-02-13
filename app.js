@@ -1368,6 +1368,23 @@ function drawStaticLayer() {
 
   drawPlanLine();
   drawMonthLabels();
+  // ===== WATERMARK LOGO =====
+const logo = new Image();
+logo.src = "logo.svg";
+
+logo.onload = () => {
+  const W = bgCanvas.width / (window.devicePixelRatio || 1);
+  const H = bgCanvas.height / (window.devicePixelRatio || 1);
+
+  const size = 140; // размер логотипа
+  const x = W / 2 - size / 2;
+  const y = H / 2 - size / 2;
+
+  bgCtx.save();
+  bgCtx.globalAlpha = 0.05; // прозрачность (0.03–0.08 идеально)
+  bgCtx.drawImage(logo, x, y, size, size);
+  bgCtx.restore();
+};
 }
 
 function drawMonthLabels() {
