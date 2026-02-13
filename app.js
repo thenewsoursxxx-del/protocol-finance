@@ -1368,7 +1368,7 @@ function drawStaticLayer() {
 
   drawPlanLine();
   drawMonthLabels();
-// ===== WATERMARK LOGO + TEXT =====
+// ===== WATERMARK LOGO + TEXT (REFINED) =====
 const logo = new Image();
 logo.src = "logo.svg";
 
@@ -1376,31 +1376,34 @@ logo.onload = () => {
   const W = bgCanvas.width / (window.devicePixelRatio || 1);
   const H = bgCanvas.height / (window.devicePixelRatio || 1);
 
-  const size = 180; // 🔥 больше (можно 200 если нужно)
-
+  const size = 170; // логотип чуть меньше
   const centerX = W / 2;
   const centerY = H / 2;
 
   bgCtx.save();
 
   // ----- LOGO -----
-  bgCtx.globalAlpha = 0.06; // мягкая прозрачность
+  bgCtx.globalAlpha = 0.07; // немного ярче
   bgCtx.drawImage(
     logo,
     centerX - size / 2,
-    centerY - size / 2 - 20,
+    centerY - size / 2 - 12, // чуть выше центра
     size,
     size
   );
 
   // ----- TEXT -----
-  bgCtx.globalAlpha = 0.08;
+  bgCtx.globalAlpha = 0.11; // немного ярче чем было
   bgCtx.fillStyle = "#ffffff";
-  bgCtx.font = "600 22px Inter, system-ui";
+  bgCtx.font = "600 16px Inter, system-ui"; // меньше размер
   bgCtx.textAlign = "center";
   bgCtx.textBaseline = "top";
 
-  bgCtx.fillText("Protocol™", centerX, centerY + size / 2 - 10);
+  bgCtx.fillText(
+    "Protocol™",
+    centerX,
+    centerY + size / 2 - 20 // ближе к логотипу
+  );
 
   bgCtx.restore();
 };
