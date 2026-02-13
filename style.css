@@ -1173,8 +1173,9 @@ z-index: 5;
   margin-bottom: 12px;
 }
 
-.header-left {
-  width: 60px; /* фикс зона под стрелку */
+.header-left,
+.header-right {
+  width: 60px; /* баланс */
   display: flex;
   align-items: center;
 }
