@@ -7,18 +7,18 @@ Telegram.WebApp.expand();
 }
 
 document.addEventListener("click", e => {
-  if (
-    e.target.closest("input") ||
-    e.target.closest("textarea") ||
-    e.target.closest(".mode-btn") ||
-    e.target.closest(".nav-btn") ||
-    e.target.closest("#profileBtn") ||
-    e.target.closest(".protocol-back")
-  ) {
-    return;
-  }
+if (
+e.target.closest("input") ||
+e.target.closest("textarea") ||
+e.target.closest(".mode-btn") ||
+e.target.closest(".nav-btn") ||
+e.target.closest("#profileBtn") ||
+e.target.closest(".protocol-back")
+) {
+return;
+}
 
-  document.activeElement?.blur();
+document.activeElement?.blur();
 });
 
 /* ===== FORMAT ===== */
@@ -47,19 +47,19 @@ const calculateBtn = document.getElementById("calculate");
 const protocolBack = document.getElementById("protocolBack");
 
 if (protocolBack) {
-  protocolBack.addEventListener("click", () => {
-    haptic("light");
+protocolBack.addEventListener("click", () => {
+haptic("light");
 
-    openScreen("calc", buttons[0]);
+openScreen("calc", buttons[0]);
 
-    document.querySelectorAll(
-      "#screen-calc label, #screen-calc .input-wrap, .mode-buttons, #calculate"
-    ).forEach(el => el.style.display = "");
+document.querySelectorAll(
+"#screen-calc label, #screen-calc .input-wrap, .mode-buttons, #calculate"
+).forEach(el => el.style.display = "");
 
-    planSummary.style.display = "none";
+planSummary.style.display = "none";
 
-    hideBottomNav();
-  });
+hideBottomNav();
+});
 }
 
 // ===== PLAN SUMMARY ELEMENTS =====
@@ -99,7 +99,6 @@ const withBuffer = document.getElementById("withBuffer");
 
 const lockText = document.getElementById("lockText");
 const resetBtn = document.getElementById("resetPlan");
-const calcLock = document.getElementById("calcLock");
 
 const confirmReset = document.getElementById("confirmReset");
 const confirmYes = document.getElementById("confirmYes");
@@ -117,7 +116,7 @@ bottomNav.style.transform = "translateY(140%)";
 
 /* ===== NAV INDICATOR ===== */
 function moveIndicator(btn) {
-  indicator.style.opacity = "1";
+indicator.style.opacity = "1";
 if (!btn) return;
 
 const navRect = bottomNav.getBoundingClientRect();
@@ -215,9 +214,9 @@ buttons.forEach(b => b.classList.remove("active"));
 if (btn) btn.classList.add("active");
 
 if (btn) {
-  moveIndicator(btn);
+moveIndicator(btn);
 } else {
-  indicator.style.opacity = "0";
+indicator.style.opacity = "0";
 }
 }
 // ===== TOP PROFILE FIX =====
@@ -236,7 +235,7 @@ renderGoals();
 }
 
 if (btn.dataset.screen === "accounts") {
-  renderAccountsUI();
+renderAccountsUI();
 }
 };
 });
@@ -513,15 +512,15 @@ accounts.main = initialSaved;
 accounts.reserve = 0;
 // если есть уже накопленные средства — считаем это фактом
 if (initialSaved > 0) {
-  const now = new Date();
-  now.setDate(1);
-  now.setHours(0, 0, 0, 0);
+const now = new Date();
+now.setDate(1);
+now.setHours(0, 0, 0, 0);
 
-  factHistory = [{
-    value: initialSaved,
-    date: now,
-    to: "main"
-  }];
+factHistory = [{
+value: initialSaved,
+date: now,
+to: "main"
+}];
 }
 isInitialized = true;
 renderAccountsUI();
@@ -587,15 +586,8 @@ ${advice.text}
 </div>
 
 <div class="chart-wrap" style="width:100%; height:260px; margin:16px 0; position:relative;">
-  <canvas id="chartBg"></canvas>
-  <canvas id="chartFact"></canvas>
-
-  <div class="chart-watermark">
-    <img src="logo.svg" />
-    <div class="chart-brand">
-      Protocol<span>™</span>
-    </div>
-  </div>
+<canvas id="chartBg"></canvas>
+<canvas id="chartFact"></canvas>
 </div>
 
 <div class="fact-input-row">
@@ -660,7 +652,7 @@ to: "reserve"
 
 factRatio = fact / plannedMonthly;
 
-drawStaticLayer();   // ← ДОБАВИТЬ ЭТУ СТРОКУ
+drawStaticLayer(); // ← ДОБАВИТЬ ЭТУ СТРОКУ
 animateFactLine();
 runBrain();
 renderAccountsUI();
@@ -823,17 +815,6 @@ input.placeholder = input.dataset.placeholder;
 
 return true;
 }
-
-// ===== WATERMARK CACHE (GLOBAL) =====
-const watermarkLogo = new Image();
-watermarkLogo.src = "logo.svg";
-
-let watermarkReady = false;
-
-watermarkLogo.onload = () => {
-  watermarkReady = true;
-};
-
 /* ===== GRAPH (CLEAN & STABLE) ===== */
 
 let bgCanvas, bgCtx;
@@ -857,59 +838,59 @@ return g;
 }
 
 function initChart() {
-  const wrap = document.querySelector(".chart-wrap");
+const wrap = document.querySelector(".chart-wrap");
 
-  bgCanvas = document.getElementById("chartBg");
-  factCanvas = document.getElementById("chartFact");
+bgCanvas = document.getElementById("chartBg");
+factCanvas = document.getElementById("chartFact");
 
-  const dpr = window.devicePixelRatio || 1;
+const dpr = window.devicePixelRatio || 1;
 
-  const width = wrap.clientWidth;
-  const height = wrap.clientHeight;
+const width = wrap.clientWidth;
+const height = wrap.clientHeight;
 
-  [bgCanvas, factCanvas].forEach(c => {
-    c.style.width = width + "px";
-    c.style.height = height + "px";
+[bgCanvas, factCanvas].forEach(c => {
+c.style.width = width + "px";
+c.style.height = height + "px";
 
-    c.width = width * dpr;
-    c.height = height * dpr;
-  });
+c.width = width * dpr;
+c.height = height * dpr;
+});
 
-  bgCtx = bgCanvas.getContext("2d");
-  factCtx = factCanvas.getContext("2d");
+bgCtx = bgCanvas.getContext("2d");
+factCtx = factCanvas.getContext("2d");
 
-  bgCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  factCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+bgCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+factCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-  drawStaticLayer();
+drawStaticLayer();
 factCanvas.addEventListener("pointerdown", e => {
-  e.stopPropagation();
+e.stopPropagation();
 
-  if (!lastFactPoint) return;
+if (!lastFactPoint) return;
 
-  const rect = factCanvas.getBoundingClientRect();
+const rect = factCanvas.getBoundingClientRect();
 
-  const clickX = e.clientX - rect.left;
-  const clickY = e.clientY - rect.top;
+const clickX = e.clientX - rect.left;
+const clickY = e.clientY - rect.top;
 
-  const dx = clickX - lastFactPoint.x;
-  const dy = clickY - lastFactPoint.y;
+const dx = clickX - lastFactPoint.x;
+const dy = clickY - lastFactPoint.y;
 
-  const distance = Math.sqrt(dx * dx + dy * dy);
+const distance = Math.sqrt(dx * dx + dy * dy);
 
-  if (distance <= 25) {
+if (distance <= 25) {
 
-  const total = factHistory
-    .filter(f => f.to === "main")
-    .reduce((s, f) => s + f.value, 0);
+const total = factHistory
+.filter(f => f.to === "main")
+.reduce((s, f) => s + f.value, 0);
 
-  animateDotScale(1.8);
+animateDotScale(1.8);
 
-  showFactTooltip({ 
-  value: total,
-  onHide: () => {
-    animateDotScale(1);
-  }
+showFactTooltip({
+value: total,
+onHide: () => {
+animateDotScale(1);
+}
 });
 }
 });
@@ -1016,42 +997,42 @@ block.innerHTML = `
 adviceCard.appendChild(block);
 
 setTimeout(() => {
-  block.classList.add("hide");
+block.classList.add("hide");
 
-  if (onHide) onHide();
+if (onHide) onHide();
 
-  setTimeout(() => {
-    block.remove();
-    activeFactDot = null;
-  }, 280);
+setTimeout(() => {
+block.remove();
+activeFactDot = null;
+}, 280);
 }, 4000);
 }
 
 function renderAccountsUI() {
-  console.log("chosenPlan:", chosenPlan);
-  const mainEl = document.getElementById("mainAmount");
-  const reserveEl = document.getElementById("reserveAmount");
+console.log("chosenPlan:", chosenPlan);
+const mainEl = document.getElementById("mainAmount");
+const reserveEl = document.getElementById("reserveAmount");
 
-  if (mainEl) {
-    mainEl.innerText = accounts.main.toLocaleString();
-  }
-
-  if (reserveEl) {
-    reserveEl.innerText = accounts.reserve.toLocaleString();
-  }
-
-  // 🔥 вот это главное
-  const reserveBlock = document.querySelector(
-    '.account-block[data-account="reserve"]'
-  );
-
-  if (reserveBlock) {
-    if (chosenPlan === "buffer") {
-  reserveBlock.classList.add("show-reserve");
-} else {
-  reserveBlock.classList.remove("show-reserve");
+if (mainEl) {
+mainEl.innerText = accounts.main.toLocaleString();
 }
-  }
+
+if (reserveEl) {
+reserveEl.innerText = accounts.reserve.toLocaleString();
+}
+
+// 🔥 вот это главное
+const reserveBlock = document.querySelector(
+'.account-block[data-account="reserve"]'
+);
+
+if (reserveBlock) {
+if (chosenPlan === "buffer") {
+reserveBlock.classList.add("show-reserve");
+} else {
+reserveBlock.classList.remove("show-reserve");
+}
+}
 }
 
 function renderGoals() {
@@ -1302,6 +1283,10 @@ animateFactLine();
 
 }
 
+if (newGoal > lastCalc.effectiveGoal + accounts.main) {
+showBrainMessage("Цель увеличена — план автоматически пересчитан.");
+}
+
 function updatePlanHeader() {
 if (!lastCalc.ok) return;
 
@@ -1344,323 +1329,331 @@ goalEditHint.classList.add("show");
 }
 
 function drawStaticLayer() {
-  const W = bgCanvas.width / (window.devicePixelRatio || 1);
-  const H = bgCanvas.height / (window.devicePixelRatio || 1);
+const W = bgCanvas.width / (window.devicePixelRatio || 1);
+const H = bgCanvas.height / (window.devicePixelRatio || 1);
 
-  bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
+bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
 
-  // СЕТКА
-  bgCtx.strokeStyle = "rgba(255,255,255,0.06)";
-  bgCtx.lineWidth = 1;
+// СЕТКА
+bgCtx.strokeStyle = "rgba(255,255,255,0.06)";
+bgCtx.lineWidth = 1;
 
-  const pad = 40;
-  const gridX = 4;
-  const gridY = 5;
+const pad = 40;
+const gridX = 4;
+const gridY = 5;
 
-  for (let i = 1; i < gridY; i++) {
-    const y = pad + (i / gridY) * (H - pad * 2);
-    bgCtx.beginPath();
-    bgCtx.moveTo(pad, y);
-    bgCtx.lineTo(W - pad, y);
-    bgCtx.stroke();
-  }
+for (let i = 1; i < gridY; i++) {
+const y = pad + (i / gridY) * (H - pad * 2);
+bgCtx.beginPath();
+bgCtx.moveTo(pad, y);
+bgCtx.lineTo(W - pad, y);
+bgCtx.stroke();
+}
 
-  for (let i = 1; i < gridX; i++) {
-    const x = pad + (i / gridX) * (W - pad * 2);
-    bgCtx.beginPath();
-    bgCtx.moveTo(x, pad);
-    bgCtx.lineTo(x, H - pad);
-    bgCtx.stroke();
-  }
+for (let i = 1; i < gridX; i++) {
+const x = pad + (i / gridX) * (W - pad * 2);
+bgCtx.beginPath();
+bgCtx.moveTo(x, pad);
+bgCtx.lineTo(x, H - pad);
+bgCtx.stroke();
+}
 
-  // ОСИ
-  bgCtx.strokeStyle = "#333";
-  bgCtx.beginPath();
-  bgCtx.moveTo(pad, pad);
-  bgCtx.lineTo(pad, H - pad);
-  bgCtx.lineTo(W - pad, H - pad);
-  bgCtx.stroke();
+// ОСИ
+bgCtx.strokeStyle = "#333";
+bgCtx.beginPath();
+bgCtx.moveTo(pad, pad);
+bgCtx.lineTo(pad, H - pad);
+bgCtx.lineTo(W - pad, H - pad);
+bgCtx.stroke();
 
-  drawPlanLine();
-  drawMonthLabels();
+drawPlanLine();
+drawMonthLabels();
 // ===== WATERMARK LOGO + TEXT (PREMIUM REFINED) =====
-// ===== WATERMARK =====
-if (watermarkReady) {
+const logo = new Image();
+logo.src = "logo.svg";
 
-  const size = 170;
-  const centerX = W / 2;
-  const centerY = H / 2;
+logo.onload = () => {
+const W = bgCanvas.width / (window.devicePixelRatio || 1);
+const H = bgCanvas.height / (window.devicePixelRatio || 1);
 
-  bgCtx.save();
+const size = 170;
+const centerX = W / 2;
+const centerY = H / 2;
 
-  bgCtx.globalAlpha = 0.07;
-  bgCtx.drawImage(
-    watermarkLogo,
-    centerX - size / 2,
-    centerY - size / 2 - 12,
-    size,
-    size
-  );
+bgCtx.save();
 
-  bgCtx.globalAlpha = 0.18;
-  bgCtx.fillStyle = "#ffffff";
-  bgCtx.font = "600 16px Inter, system-ui";
-  bgCtx.textAlign = "center";
-  bgCtx.textBaseline = "top";
+// ===== LOGO =====
+bgCtx.globalAlpha = 0.07;
+bgCtx.drawImage(
+logo,
+centerX - size / 2,
+centerY - size / 2 - 12,
+size,
+size
+);
 
-  const textY = centerY + size / 2 - 20;
+// ===== TEXT: Protocol =====
+bgCtx.globalAlpha = 0.16; // светлее чем было
+bgCtx.fillStyle = "#ffffff";
+bgCtx.font = "600 16px Inter, system-ui";
+bgCtx.textAlign = "center";
+bgCtx.textBaseline = "top";
 
-  bgCtx.fillText("Protocol", centerX, textY);
+const textY = centerY + size / 2 - 20;
 
-  const protocolWidth = bgCtx.measureText("Protocol").width;
+bgCtx.fillText("Protocol", centerX, textY);
 
-  bgCtx.globalAlpha = 0.13;
-  bgCtx.font = "400 10px Inter, system-ui";
+// ===== TM (lighter & smaller) =====
+const protocolWidth = bgCtx.measureText("Protocol").width;
 
-  bgCtx.fillText(
-    "™",
-    centerX + protocolWidth / 2 + 3,
-    textY - 4
-  );
+bgCtx.globalAlpha = 0.12; // чуть слабее основного текста
+bgCtx.font = "400 10px Inter, system-ui";
 
-  bgCtx.restore();
+bgCtx.fillText(
+"™",
+centerX + protocolWidth / 2 + 3, // аккуратно справа
+textY - 4 // немного выше baseline
+);
+
+bgCtx.restore();
+};
 }
 
 function drawMonthLabels() {
-  if (!lastCalc.months) return;
+if (!lastCalc.months) return;
 
-  const W = bgCanvas.width / (window.devicePixelRatio || 1);
-  const H = bgCanvas.height / (window.devicePixelRatio || 1);
-  const pad = 40;
+const W = bgCanvas.width / (window.devicePixelRatio || 1);
+const H = bgCanvas.height / (window.devicePixelRatio || 1);
+const pad = 40;
 
-  const monthsTotal = lastCalc.months;
+const monthsTotal = lastCalc.months;
 
-  // 🔥 рассчитываем шаг отображения
-  let step = 1;
+// 🔥 рассчитываем шаг отображения
+let step = 1;
 
-  if (monthsTotal > 24) step = 4;
-  else if (monthsTotal > 12) step = 3;
-  else if (monthsTotal > 6) step = 2;
+if (monthsTotal > 24) step = 4;
+else if (monthsTotal > 12) step = 3;
+else if (monthsTotal > 6) step = 2;
 
-  bgCtx.fillStyle = "rgba(255,255,255,0.35)";
-  bgCtx.font = "12px Inter, system-ui";
-  bgCtx.textAlign = "center";
-  bgCtx.textBaseline = "top";
+bgCtx.fillStyle = "rgba(255,255,255,0.35)";
+bgCtx.font = "12px Inter, system-ui";
+bgCtx.textAlign = "center";
+bgCtx.textBaseline = "top";
 
-  for (let i = 0; i <= monthsTotal; i++) {
+for (let i = 0; i <= monthsTotal; i++) {
 
-    if (i % step !== 0 && i !== monthsTotal) continue;
+if (i % step !== 0 && i !== monthsTotal) continue;
 
-    const x =
-      pad +
-      (i / monthsTotal) *
-        (W - pad * 2);
+const x =
+pad +
+(i / monthsTotal) *
+(W - pad * 2);
 
-    bgCtx.fillText(i, x, H - pad + 8);
-  }
+bgCtx.fillText(i, x, H - pad + 8);
+}
 }
 
 function drawPlanLine() {
-  const W = bgCanvas.width / (window.devicePixelRatio || 1);
-  const H = bgCanvas.height / (window.devicePixelRatio || 1);
-  const pad = 40;
+const W = bgCanvas.width / (window.devicePixelRatio || 1);
+const H = bgCanvas.height / (window.devicePixelRatio || 1);
+const pad = 40;
 
-  const points = buildPlanTimeline(new Date(), plannedMonthly, lastCalc.months);
-  const maxValue = points[points.length - 1].value;
+const points = buildPlanTimeline(new Date(), plannedMonthly, lastCalc.months);
+const maxValue = points[points.length - 1].value;
 
-  let planColor = "#ffffff";
+let planColor = "#ffffff";
 
 if (factHistory.length > 0) {
-  const mainFacts = factHistory.filter(f => f.to === "main");
+const mainFacts = factHistory.filter(f => f.to === "main");
 
 const total = mainFacts.reduce((s, f) => s + f.value, 0);
 
 const uniqueMonths = new Set(
-  mainFacts.map(f => {
-    const d = new Date(f.date);
-    return `${d.getFullYear()}-${d.getMonth()}`;
-  })
+mainFacts.map(f => {
+const d = new Date(f.date);
+return `${d.getFullYear()}-${d.getMonth()}`;
+})
 );
 
 const monthsPassed = uniqueMonths.size;
-  const plannedSoFar = plannedMonthly * monthsPassed;
+const plannedSoFar = plannedMonthly * monthsPassed;
 
-  if (total >= plannedSoFar) {
-    planColor = "#4ade80";
-  } else {
-    planColor = "#ef4444";
-  }
+if (total >= plannedSoFar) {
+planColor = "#4ade80";
+} else {
+planColor = "#ef4444";
+}
 }
 
 bgCtx.strokeStyle = planColor;
-  bgCtx.lineWidth = 2;
-  bgCtx.beginPath();
+bgCtx.lineWidth = 2;
+bgCtx.beginPath();
 
-  points.forEach((p, i) => {
-    const x = pad + (i / (points.length - 1)) * (W - pad * 2);
-    const y = H - pad - (p.value / maxValue) * (H - pad * 2);
+points.forEach((p, i) => {
+const x = pad + (i / (points.length - 1)) * (W - pad * 2);
+const y = H - pad - (p.value / maxValue) * (H - pad * 2);
 
-    if (i === 0) bgCtx.moveTo(x, y);
-    else bgCtx.lineTo(x, y);
-  });
+if (i === 0) bgCtx.moveTo(x, y);
+else bgCtx.lineTo(x, y);
+});
 
-  bgCtx.stroke();
+bgCtx.stroke();
 }
 
 let animationFrameId = null;
 
 function animateFactLine() {
-  if (!factHistory.length) {
-    factCtx.clearRect(0, 0, factCanvas.width, factCanvas.height);
-    return;
-  }
+if (!factHistory.length) {
+factCtx.clearRect(0, 0, factCanvas.width, factCanvas.height);
+return;
+}
 
-  if (!plannedMonthly || !lastCalc.months) return;
+if (!plannedMonthly || !lastCalc.months) return;
 
-  const total = factHistory
-  .filter(f => f.to === "main")
-  .reduce((s, f) => s + f.value, 0);
+const total = factHistory
+.filter(f => f.to === "main")
+.reduce((s, f) => s + f.value, 0);
 
-  const planMax = plannedMonthly * lastCalc.months;
+const planMax = plannedMonthly * lastCalc.months;
 
-  const maxValue = Math.max(total, planMax, 1); // ← защита от 0
+const maxValue = Math.max(total, planMax, 1); // ← защита от 0
 
-  let start = null;
-  const duration = 900;
+let start = null;
+const duration = 900;
 
-  function frame(timestamp) {
-    if (!start) start = timestamp;
+function frame(timestamp) {
+if (!start) start = timestamp;
 
-    const progress = Math.min((timestamp - start) / duration, 1);
-    const eased = 1 - Math.pow(1 - progress, 3);
+const progress = Math.min((timestamp - start) / duration, 1);
+const eased = 1 - Math.pow(1 - progress, 3);
 
-    drawFactLayer(eased, total, maxValue);
+drawFactLayer(eased, total, maxValue);
 
-    if (progress < 1) {
-      requestAnimationFrame(frame);
-    }
-  }
+if (progress < 1) {
+requestAnimationFrame(frame);
+}
+}
 
-  requestAnimationFrame(frame);
+requestAnimationFrame(frame);
 }
 
 function drawFactLayer(progress, total, maxValue) {
-  const W = factCanvas.width / (window.devicePixelRatio || 1);
-  const H = factCanvas.height / (window.devicePixelRatio || 1);
-  const pad = 40;
+const W = factCanvas.width / (window.devicePixelRatio || 1);
+const H = factCanvas.height / (window.devicePixelRatio || 1);
+const pad = 40;
 
-  factCtx.clearRect(0, 0, factCanvas.width, factCanvas.height);
+factCtx.clearRect(0, 0, factCanvas.width, factCanvas.height);
 
-  const monthsTotal = lastCalc.months;
+const monthsTotal = lastCalc.months;
 
-  // сколько месяцев прошло
+// сколько месяцев прошло
 const mainFacts = factHistory.filter(f => f.to === "main");
 
 const uniqueMonths = new Set(
-  mainFacts.map(f => {
-    const d = new Date(f.date);
-    return `${d.getFullYear()}-${d.getMonth()}`;
-  })
+mainFacts.map(f => {
+const d = new Date(f.date);
+return `${d.getFullYear()}-${d.getMonth()}`;
+})
 );
 const monthsPassed = Math.max(1, uniqueMonths.size);
 
-  const x =
-    pad +
-    (monthsPassed / monthsTotal) *
-      (W - pad * 2) *
-      progress;
+const x =
+pad +
+(monthsPassed / monthsTotal) *
+(W - pad * 2) *
+progress;
 
-  const y =
-    H - pad -
-    (total / maxValue) *
-      (H - pad * 2) *
-      progress;
+const y =
+H - pad -
+(total / maxValue) *
+(H - pad * 2) *
+progress;
 
-  lastFactPoint = { x, y };
+lastFactPoint = { x, y };
 
-  factCtx.strokeStyle = "#2563eb";
-  factCtx.lineWidth = 2;
+factCtx.strokeStyle = "#2563eb";
+factCtx.lineWidth = 2;
 
-  factCtx.beginPath();
-  factCtx.moveTo(pad, H - pad);
-  factCtx.lineTo(x, y);
-  factCtx.stroke();
+factCtx.beginPath();
+factCtx.moveTo(pad, H - pad);
+factCtx.lineTo(x, y);
+factCtx.stroke();
 
-  if (progress === 1) {
+if (progress === 1) {
 
-  const radius = 5 * dotScale;
+const radius = 5 * dotScale;
 
-  // ===== PREMIUM FILL (вертикальный градиент) =====
-  const fillGrad = factCtx.createLinearGradient(
-    x, y - radius,
-    x, y + radius
-  );
+// ===== PREMIUM FILL (вертикальный градиент) =====
+const fillGrad = factCtx.createLinearGradient(
+x, y - radius,
+x, y + radius
+);
 
-  fillGrad.addColorStop(0, "#60a5fa"); // свет сверху
-  fillGrad.addColorStop(1, "#2563eb"); // глубина снизу
+fillGrad.addColorStop(0, "#60a5fa"); // свет сверху
+fillGrad.addColorStop(1, "#2563eb"); // глубина снизу
 
-  factCtx.beginPath();
-  factCtx.arc(x, y, radius, 0, Math.PI * 2);
-  factCtx.fillStyle = fillGrad;
-  factCtx.fill();
+factCtx.beginPath();
+factCtx.arc(x, y, radius, 0, Math.PI * 2);
+factCtx.fillStyle = fillGrad;
+factCtx.fill();
 
-  // ===== Тонкий белый кант =====
-  factCtx.lineWidth = 1.2;
-  factCtx.strokeStyle = "rgba(255,255,255,0.45)";
-  factCtx.stroke();
+// ===== Тонкий белый кант =====
+factCtx.lineWidth = 1.2;
+factCtx.strokeStyle = "rgba(255,255,255,0.45)";
+factCtx.stroke();
 
-  // ===== Glow ТОЛЬКО если точка увеличена (нажата) =====
-  if (dotScale > 1.05) {
-    const glowRadius = radius * 2.8;
+// ===== Glow ТОЛЬКО если точка увеличена (нажата) =====
+if (dotScale > 1.05) {
+const glowRadius = radius * 2.8;
 
-    const glow = factCtx.createRadialGradient(
-      x, y, 0,
-      x, y, glowRadius
-    );
+const glow = factCtx.createRadialGradient(
+x, y, 0,
+x, y, glowRadius
+);
 
-    glow.addColorStop(0, "rgba(37,99,235,0.35)");
-    glow.addColorStop(0.4, "rgba(37,99,235,0.18)");
-    glow.addColorStop(1, "rgba(37,99,235,0)");
+glow.addColorStop(0, "rgba(37,99,235,0.35)");
+glow.addColorStop(0.4, "rgba(37,99,235,0.18)");
+glow.addColorStop(1, "rgba(37,99,235,0)");
 
-    factCtx.beginPath();
-    factCtx.arc(x, y, glowRadius, 0, Math.PI * 2);
-    factCtx.fillStyle = glow;
-    factCtx.fill();
-  }
+factCtx.beginPath();
+factCtx.arc(x, y, glowRadius, 0, Math.PI * 2);
+factCtx.fillStyle = glow;
+factCtx.fill();
+}
 }
 }
 
 function animateDotScale(target, duration = 220) {
-  dotTargetScale = target;
-  const startScale = dotScale;
-  const diff = target - startScale;
+dotTargetScale = target;
+const startScale = dotScale;
+const diff = target - startScale;
 
-  let start = null;
-  dotAnimating = true;
+let start = null;
+dotAnimating = true;
 
-  function frame(ts) {
-    if (!start) start = ts;
+function frame(ts) {
+if (!start) start = ts;
 
-    const progress = Math.min((ts - start) / duration, 1);
-    const eased = 1 - Math.pow(1 - progress, 3);
+const progress = Math.min((ts - start) / duration, 1);
+const eased = 1 - Math.pow(1 - progress, 3);
 
-    dotScale = startScale + diff * eased;
+dotScale = startScale + diff * eased;
 
-    const total = factHistory
-      .filter(f => f.to === "main")
-      .reduce((s, f) => s + f.value, 0);
+const total = factHistory
+.filter(f => f.to === "main")
+.reduce((s, f) => s + f.value, 0);
 
-    const planMax = plannedMonthly * lastCalc.months;
-    const maxValue = Math.max(total, planMax, 1);
+const planMax = plannedMonthly * lastCalc.months;
+const maxValue = Math.max(total, planMax, 1);
 
-    drawFactLayer(1, total, maxValue);
+drawFactLayer(1, total, maxValue);
 
-    if (progress < 1) {
-      requestAnimationFrame(frame);
-    } else {
-      dotAnimating = false;
-    }
-  }
+if (progress < 1) {
+requestAnimationFrame(frame);
+} else {
+dotAnimating = false;
+}
+}
 
-  requestAnimationFrame(frame);
+requestAnimationFrame(frame);
 }
