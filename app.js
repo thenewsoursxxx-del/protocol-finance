@@ -650,6 +650,10 @@ factInput.addEventListener("input", e => {
   factInput.classList.remove("error", "shake");
 });
 
+factInput.addEventListener("focus", () => {
+  factInput.classList.remove("error", "shake");
+});
+
 applyBtn.onclick = () => {
 
   const fact = parseNumber(factInput.value || "0");
