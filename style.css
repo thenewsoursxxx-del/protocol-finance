@@ -1267,3 +1267,14 @@ html, body {
   font-size: 10px;
   opacity: 0.45;
 }
+
+/* ===== FACT INPUT ERROR ===== */
+
+#factInput.error {
+  border: 1px solid #ef4444;
+  box-shadow: 0 0 0 2px rgba(239,68,68,0.15);
+}
+
+#factInput.shake {
+  animation: input-shake 0.35s ease;
+}
