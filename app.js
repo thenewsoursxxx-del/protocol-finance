@@ -590,7 +590,7 @@ ${advice.text}
   <canvas id="chartFact"></canvas>
 </div>
 
-<div style="display:flex;gap:8px;align-items:center">
+<div class="fact-input-row">
 <input id="factInput" inputmode="numeric"
 placeholder="Сколько вы отложили"
 style="flex:1"/>
