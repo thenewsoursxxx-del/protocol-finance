@@ -1210,3 +1210,26 @@ html, body {
   overflow-y: auto;           /* скролл только внутри */
   -webkit-overflow-scrolling: touch;
 }
+
+.fact-input-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.fact-input-row input {
+  height: 56px;
+  margin-bottom: 0; /* важно */
+}
+
+.fact-input-row button {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 0;
+}
