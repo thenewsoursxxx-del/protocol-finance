@@ -592,7 +592,7 @@ ${advice.text}
 
 <div style="display:flex;gap:8px;align-items:center">
 <input id="factInput" inputmode="numeric"
-placeholder="Фактически отложено"
+placeholder="Сколько вы отложили"
 style="flex:1"/>
 <button id="applyFact"
 style="width:52px;height:52px;border-radius:50%">
