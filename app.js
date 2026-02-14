@@ -322,7 +322,9 @@ type === "reserve"
   }
 
 }else {
-filtered.forEach(f => {
+filtered
+  .sort((a, b) => new Date(b.date) - new Date(a.date))
+  .forEach(f => {
 list.innerHTML += `
 <div class="card">
 <div style="font-size:15px;font-weight:600">
