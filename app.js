@@ -510,18 +510,7 @@ const initialSaved = parseNumber(savedInput?.value || "0");
 planStartValue = initialSaved;
 accounts.main = initialSaved;
 accounts.reserve = 0;
-// если есть уже накопленные средства — считаем это фактом
-if (initialSaved > 0) {
-const now = new Date();
-now.setDate(1);
-now.setHours(0, 0, 0, 0);
 
-factHistory = [{
-value: initialSaved,
-date: now,
-to: "main"
-}];
-}
 isInitialized = true;
 renderAccountsUI();
 lockTabs(false);
@@ -1456,6 +1445,28 @@ const points = buildPlanTimeline(new Date(), plannedMonthly, lastCalc.months);
 const maxValue = points[points.length - 1].value;
 
 let planColor = "#ffffff";
+
+// если пользователь ещё не вводил реальные пополнения — линия всегда белая
+if (factHistory.length === 0) {
+  bgCtx.strokeStyle = "#ffffff";
+  bgCtx.lineWidth = 2;
+
+  const points = buildPlanTimeline(new Date(), plannedMonthly, lastCalc.months);
+  const maxValue = points[points.length - 1].value;
+
+  bgCtx.beginPath();
+
+  points.forEach((p, i) => {
+    const x = pad + (i / (points.length - 1)) * (W - pad * 2);
+    const y = H - pad - (p.value / maxValue) * (H - pad * 2);
+
+    if (i === 0) bgCtx.moveTo(x, y);
+    else bgCtx.lineTo(x, y);
+  });
+
+  bgCtx.stroke();
+  return; // ← ВАЖНО
+}
 
 if (factHistory.length > 0) {
 const mainFacts = factHistory.filter(f => f.to === "main");
