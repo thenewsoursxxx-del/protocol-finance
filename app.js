@@ -648,8 +648,28 @@ e.target.value = formatNumber(e.target.value);
 });
 
 applyBtn.onclick = () => {
-const fact = parseNumber(factInput.value);
-if (!fact) return;
+
+  const fact = parseNumber(factInput.value || "0");
+  const wrap = factInput.closest(".fact-input-row");
+
+  if (!fact) {
+
+    // 🔴 подсветка
+    factInput.classList.add("error");
+
+    // 🔁 перезапуск shake
+    factInput.classList.remove("shake");
+    void factInput.offsetWidth;
+    factInput.classList.add("shake");
+
+    haptic("error");
+
+    setTimeout(() => {
+      factInput.classList.remove("error");
+    }, 600);
+
+    return;
+  }
 
 let toMain = fact;
 let toReserve = 0;
