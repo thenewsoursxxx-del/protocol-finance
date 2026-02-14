@@ -588,6 +588,13 @@ ${advice.text}
 <div class="chart-wrap" style="width:100%; height:260px; margin:16px 0; position:relative;">
   <canvas id="chartBg"></canvas>
   <canvas id="chartFact"></canvas>
+
+  <div class="chart-watermark">
+    <img src="logo.svg" />
+    <div class="chart-brand">
+      Protocol<span>™</span>
+    </div>
+  </div>
 </div>
 
 <div class="fact-input-row">
