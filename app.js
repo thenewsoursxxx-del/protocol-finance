@@ -644,32 +644,31 @@ const factInput = document.getElementById("factInput");
 const applyBtn = document.getElementById("applyFact");
 
 factInput.addEventListener("input", e => {
-e.target.value = formatNumber(e.target.value);
+  e.target.value = formatNumber(e.target.value);
+
+  // 🔥 убираем ошибку как только начали ввод
+  factInput.classList.remove("error", "shake");
 });
 
 applyBtn.onclick = () => {
 
   const fact = parseNumber(factInput.value || "0");
-  const wrap = factInput.closest(".fact-input-row");
+
+  // 🔥 ВСЕГДА сначала очищаем ошибку
+  factInput.classList.remove("error", "shake");
 
   if (!fact) {
 
-    // 🔴 подсветка
     factInput.classList.add("error");
 
-    // 🔁 перезапуск shake
-    factInput.classList.remove("shake");
     void factInput.offsetWidth;
     factInput.classList.add("shake");
 
     haptic("error");
-
-    setTimeout(() => {
-      factInput.classList.remove("error");
-    }, 600);
-
     return;
   }
+
+  // дальше твоя логика без изменений
 
 let toMain = fact;
 let toReserve = 0;
