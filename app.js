@@ -160,6 +160,7 @@ let accounts = {
 main: 0,
 reserve: 0
 };
+let initialBalance = 0;
 let goalMeta = {
 title: "Основная цель"
 };
@@ -286,6 +287,20 @@ type === "reserve"
 : "История основного счёта";
 
 list.innerHTML = "";
+
+// показываем стартовую сумму
+if (type === "main" && initialBalance > 0) {
+  list.innerHTML += `
+    <div class="card" style="opacity:.85">
+      <div style="font-size:15px;font-weight:600">
+        Начальный баланс: ${initialBalance.toLocaleString()} ₽
+      </div>
+      <div style="font-size:13px;opacity:.6;margin-top:4px">
+        Указано при создании плана
+      </div>
+    </div>
+  `;
+}
 
 const filtered = factHistory.filter(f =>
 type === "reserve"
@@ -507,6 +522,7 @@ chosenPlan = mode;
 if (protocolBack) protocolBack.style.display = "none";
 // 🔥 СИНХРОНИЗАЦИЯ С УЖЕ НАКОПЛЕННЫМ
 const initialSaved = parseNumber(savedInput?.value || "0");
+initialBalance = initialSaved;
 planStartValue = initialSaved;
 accounts.main = initialSaved;
 accounts.reserve = 0;
