@@ -1411,7 +1411,7 @@ bgCtx.fillText(
 );
 
 bgCtx.restore();
-
+}
 
 function drawMonthLabels() {
 if (!lastCalc.months) return;
