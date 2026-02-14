@@ -278,67 +278,83 @@ openAccountHistory(type);
 });
 
 function openAccountHistory(type) {
-const title = document.getElementById("historyTitle");
-const list = document.getElementById("historyList");
 
-title.innerText =
-type === "reserve"
-? "История резерва"
-: "История основного счёта";
+  const title = document.getElementById("historyTitle");
+  const list = document.getElementById("historyList");
 
-list.innerHTML = "";
+  title.innerText =
+    type === "reserve"
+      ? "История резерва"
+      : "История основного счёта";
 
-// показываем стартовую сумму
-if (type === "main" && initialBalance > 0) {
-  list.innerHTML += `
-    <div class="card" style="opacity:.85">
-      <div style="font-size:15px;font-weight:600">
-        Начальный баланс: ${initialBalance.toLocaleString()} ₽
-      </div>
-      <div style="font-size:13px;opacity:.6;margin-top:4px">
-        Указано при создании плана
-      </div>
-    </div>
-  `;
-}
+  list.innerHTML = "";
 
-const filtered = factHistory.filter(f =>
-type === "reserve"
-? f.to === "reserve"
-: f.to === "main"
-);
+  // 1️⃣ собираем операции
+  let entries = factHistory
+    .filter(f =>
+      type === "reserve"
+        ? f.to === "reserve"
+        : f.to === "main"
+    )
+    .map(f => ({
+      value: f.value,
+      date: new Date(f.date),
+      isInitial: false
+    }));
 
- if (filtered.length === 0) {
-
-  // если нет операций И нет стартового баланса
-  if (!(type === "main" && initialBalance > 0)) {
-
-    list.innerHTML = `
-    <div class="card" style="opacity:.6;font-size:14px">
-    Операций пока нет
-    </div>
-    `;
-
+  // 2️⃣ добавляем стартовый баланс как самую старую запись
+  if (type === "main" && initialBalance > 0) {
+    entries.push({
+      value: initialBalance,
+      date: new Date(0), // 1970 год — гарантированно самый старый
+      isInitial: true
+    });
   }
 
-}else {
-filtered
-  .sort((a, b) => new Date(b.date) - new Date(a.date))
-  .forEach(f => {
-list.innerHTML += `
-<div class="card">
-<div style="font-size:15px;font-weight:600">
-+${f.value.toLocaleString()} ₽
-</div>
-<div style="font-size:13px;opacity:.6;margin-top:4px">
-${new Date(f.date).toLocaleDateString("ru-RU")}
-</div>
-</div>
-`;
-});
-}
+  // 3️⃣ если вообще пусто
+  if (entries.length === 0) {
+    list.innerHTML = `
+      <div class="card" style="opacity:.6;font-size:14px">
+        Операций пока нет
+      </div>
+    `;
+    openScreen("progress", null);
+    return;
+  }
 
-openScreen("progress", null);
+  // 4️⃣ сортируем: новые сверху
+  entries.sort((a, b) => b.date - a.date);
+
+  // 5️⃣ рисуем
+  entries.forEach(e => {
+
+    if (e.isInitial) {
+      list.innerHTML += `
+        <div class="card" style="opacity:.85">
+          <div style="font-size:15px;font-weight:600">
+            Начальный баланс: ${e.value.toLocaleString()} ₽
+          </div>
+          <div style="font-size:13px;opacity:.6;margin-top:4px">
+            Указано при создании плана
+          </div>
+        </div>
+      `;
+    } else {
+      list.innerHTML += `
+        <div class="card">
+          <div style="font-size:15px;font-weight:600">
+            +${e.value.toLocaleString()} ₽
+          </div>
+          <div style="font-size:13px;opacity:.6;margin-top:4px">
+            ${e.date.toLocaleDateString("ru-RU")}
+          </div>
+        </div>
+      `;
+    }
+
+  });
+
+  openScreen("progress", null);
 }
 
 /* ===== BOTTOM SHEET ===== */
