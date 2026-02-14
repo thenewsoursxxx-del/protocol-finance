@@ -99,6 +99,7 @@ const withBuffer = document.getElementById("withBuffer");
 
 const lockText = document.getElementById("lockText");
 const resetBtn = document.getElementById("resetPlan");
+const calcLock = document.getElementById("calcLock");
 
 const confirmReset = document.getElementById("confirmReset");
 const confirmYes = document.getElementById("confirmYes");
@@ -1299,10 +1300,6 @@ plannedMonthly = Math.round(plannedMonthly * 0.9);
 drawStaticLayer();
 animateFactLine();
 
-}
-
-if (newGoal > lastCalc.effectiveGoal + accounts.main) {
-showBrainMessage("Цель увеличена — план автоматически пересчитан.");
 }
 
 function updatePlanHeader() {
