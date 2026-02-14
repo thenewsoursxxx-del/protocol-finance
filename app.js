@@ -822,6 +822,17 @@ input.placeholder = input.dataset.placeholder;
 
 return true;
 }
+
+// ===== WATERMARK CACHE (GLOBAL) =====
+const watermarkLogo = new Image();
+watermarkLogo.src = "logo.svg";
+
+let watermarkReady = false;
+
+watermarkLogo.onload = () => {
+  watermarkReady = true;
+};
+
 /* ===== GRAPH (CLEAN & STABLE) ===== */
 
 let bgCanvas, bgCtx;
@@ -1376,12 +1387,8 @@ function drawStaticLayer() {
   drawPlanLine();
   drawMonthLabels();
 // ===== WATERMARK LOGO + TEXT (PREMIUM REFINED) =====
-const logo = new Image();
-logo.src = "logo.svg";
-
-logo.onload = () => {
-  const W = bgCanvas.width / (window.devicePixelRatio || 1);
-  const H = bgCanvas.height / (window.devicePixelRatio || 1);
+// ===== WATERMARK =====
+if (watermarkReady) {
 
   const size = 170;
   const centerX = W / 2;
@@ -1389,18 +1396,16 @@ logo.onload = () => {
 
   bgCtx.save();
 
-  // ===== LOGO =====
   bgCtx.globalAlpha = 0.07;
   bgCtx.drawImage(
-    logo,
+    watermarkLogo,
     centerX - size / 2,
     centerY - size / 2 - 12,
     size,
     size
   );
 
-  // ===== TEXT: Protocol =====
-  bgCtx.globalAlpha = 0.16; // светлее чем было
+  bgCtx.globalAlpha = 0.18;
   bgCtx.fillStyle = "#ffffff";
   bgCtx.font = "600 16px Inter, system-ui";
   bgCtx.textAlign = "center";
@@ -1410,20 +1415,18 @@ logo.onload = () => {
 
   bgCtx.fillText("Protocol", centerX, textY);
 
-  // ===== TM (lighter & smaller) =====
   const protocolWidth = bgCtx.measureText("Protocol").width;
 
-  bgCtx.globalAlpha = 0.12; // чуть слабее основного текста
+  bgCtx.globalAlpha = 0.13;
   bgCtx.font = "400 10px Inter, system-ui";
 
   bgCtx.fillText(
     "™",
-    centerX + protocolWidth / 2 + 3, // аккуратно справа
-    textY - 4 // немного выше baseline
+    centerX + protocolWidth / 2 + 3,
+    textY - 4
   );
 
   bgCtx.restore();
-};
 }
 
 function drawMonthLabels() {
