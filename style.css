@@ -1235,6 +1235,9 @@ html, body {
 }
 
 .chart-watermark {
+  will-change: opacity;
+  backface-visibility: hidden;
+  transform: translateZ(0);
   position: absolute;
   inset: 0;
 
