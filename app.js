@@ -1457,10 +1457,7 @@ const maxValue = points[points.length - 1].value;
 
 let planColor = "#ffffff";
 
-// игнорируем стартовое накопление
-const realFacts = factHistory.filter(f => f.value !== planStartValue);
-
-if (realFacts.length > 0) {
+if (factHistory.length > 0) {
 const mainFacts = factHistory.filter(f => f.to === "main");
 
 const total = mainFacts.reduce((s, f) => s + f.value, 0);
@@ -1544,7 +1541,7 @@ factCtx.clearRect(0, 0, factCanvas.width, factCanvas.height);
 const monthsTotal = lastCalc.months;
 
 // сколько месяцев прошло
-const mainFacts = realFacts.filter(f => f.to === "main");
+const mainFacts = factHistory.filter(f => f.to === "main");
 
 const uniqueMonths = new Set(
 mainFacts.map(f => {
