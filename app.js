@@ -308,13 +308,20 @@ type === "reserve"
 : f.to === "main"
 );
 
-if (filtered.length === 0) {
-list.innerHTML = `
-<div class="card" style="opacity:.6;font-size:14px">
-Операций пока нет
-</div>
-`;
-} else {
+ if (filtered.length === 0) {
+
+  // если нет операций И нет стартового баланса
+  if (!(type === "main" && initialBalance > 0)) {
+
+    list.innerHTML = `
+    <div class="card" style="opacity:.6;font-size:14px">
+    Операций пока нет
+    </div>
+    `;
+
+  }
+
+}else {
 filtered.forEach(f => {
 list.innerHTML += `
 <div class="card">
