@@ -1233,3 +1233,34 @@ html, body {
 
   padding: 0;
 }
+
+.chart-watermark {
+  position: absolute;
+  inset: 0;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  pointer-events: none;
+  opacity: 0.09;
+}
+
+.chart-watermark img {
+  width: 110px;
+  height: auto;
+}
+
+.chart-brand {
+  margin-top: 4px;
+  font-size: 16px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.65);
+  letter-spacing: 0.3px;
+}
+
+.chart-brand span {
+  font-size: 10px;
+  opacity: 0.45;
+}
