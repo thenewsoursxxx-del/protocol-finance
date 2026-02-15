@@ -1248,7 +1248,7 @@ goalEditorOverlay.onclick = () => {
 goalEditorSheet.style.transform = "translateY(100%)";
 setTimeout(() => {
   goalEditorOverlay.style.display = "none";
-}, 350);
+}, 550);
 goalEditHint.classList.remove("show");
 };
 
@@ -1278,7 +1278,7 @@ goalCompleted = true;
 goalEditorSheet.style.transform = "translateY(100%)";
 setTimeout(() => {
   goalEditorOverlay.style.display = "none";
-}, 350);
+}, 550);
 goalEditHint.classList.remove("show");
 
 // 5️⃣ пересчитываем UI
