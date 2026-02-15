@@ -16,17 +16,17 @@ viewport-fit=cover" />
 <link rel="stylesheet" href="style.css?v=11001">
 </head>
 <body>
-  
-  <!-- ===== TOP PROFILE (OUTSIDE APP) ===== -->
+
+<!-- ===== TOP PROFILE (OUTSIDE APP) ===== -->
 <div class="top-profile">
-  <button id="profileBtn">
-    <div class="avatar">
-      <svg viewBox="0 0 24 24">
-        <circle cx="12" cy="8" r="4"></circle>
-        <path d="M4 20c0-4 4-6 8-6s8 2 8 6"></path>
-      </svg>
-    </div>
-  </button>
+<button id="profileBtn">
+<div class="avatar">
+<svg viewBox="0 0 24 24">
+<circle cx="12" cy="8" r="4"></circle>
+<path d="M4 20c0-4 4-6 8-6s8 2 8 6"></path>
+</svg>
+</div>
+</button>
 </div>
 
 <div id="app" class="app">
@@ -35,43 +35,43 @@ viewport-fit=cover" />
 <div class="screen active" id="screen-calc">
 
 <div class="app-header">
-  <div class="header-left"></div>
-  <div class="header-center">
-    <div class="header-title">Расчёт</div>
-  </div>
-  <div class="header-right"></div>
+<div class="header-left"></div>
+<div class="header-center">
+<div class="header-title">Расчёт</div>
+</div>
+<div class="header-right"></div>
 </div>
 
 <label>Доход</label>
 <div class="input-wrap">
-  <input id="income" inputmode="numeric" placeholder="100.000">
-  <div class="input-hint">
-    Укажите ваш ежемесячный доход после налогов
-  </div>
+<input id="income" inputmode="numeric" placeholder="100.000">
+<div class="input-hint">
+Укажите ваш ежемесячный доход после налогов
+</div>
 </div>
 
 <label>Расходы</label>
 <div class="input-wrap">
-  <input id="expenses" inputmode="numeric" placeholder="50.000">
-  <div class="input-hint">
-    Сумма обязательных ежемесячных расходов
-  </div>
+<input id="expenses" inputmode="numeric" placeholder="50.000">
+<div class="input-hint">
+Сумма обязательных ежемесячных расходов
+</div>
 </div>
 
 <label>Цель</label>
 <div class="input-wrap">
-  <input id="goal" inputmode="numeric" placeholder="300.000">
-  <div class="input-hint">
-    Сумма, которую вы хотите накопить
-  </div>
+<input id="goal" inputmode="numeric" placeholder="300.000">
+<div class="input-hint">
+Сумма, которую вы хотите накопить
+</div>
 </div>
 
 <label>Уже накоплено</label>
 <div class="input-wrap">
-  <input id="saved" inputmode="numeric" placeholder="0">
-  <div class="input-hint">
-    Сумма, которую вы уже накопили
-  </div>
+<input id="saved" inputmode="numeric" placeholder="0">
+<div class="input-hint">
+Сумма, которую вы уже накопили
+</div>
 </div>
 
 <!-- ===== SLIDER ===== -->
@@ -88,23 +88,23 @@ viewport-fit=cover" />
 <!-- ===== PLAN SUMMARY (HIDDEN BY DEFAULT) ===== -->
 <div id="planSummary" style="display:none">
 
-  <div class="card">
-    <div style="font-size:14px;opacity:.7">Текущий план</div>
+<div class="card">
+<div style="font-size:14px;opacity:.7">Текущий план</div>
 
-    <div style="margin-top:8px;font-size:18px;font-weight:600">
-      <span id="summaryMonthly">—</span> ₽ / месяц
-    </div>
+<div style="margin-top:8px;font-size:18px;font-weight:600">
+<span id="summaryMonthly">—</span> ₽ / месяц
+</div>
 
-    <div style="margin-top:4px;font-size:14px;opacity:.7">
-      Примерно <span id="summaryMonths">—</span> месяцев
-    </div>
+<div style="margin-top:4px;font-size:14px;opacity:.7">
+Примерно <span id="summaryMonths">—</span> месяцев
+</div>
 
-    <div style="margin-top:8px;font-size:13px;opacity:.6">
-      Режим: <span id="summaryMode">—</span>
-    </div>
-  </div>
+<div style="margin-top:8px;font-size:13px;opacity:.6">
+Режим: <span id="summaryMode">—</span>
+</div>
+</div>
 
-  <button id="editPlan">Изменить расчёт</button>
+<button id="editPlan">Изменить расчёт</button>
 </div>
 
 <!-- ===== LOCK OVERLAY ===== -->
@@ -120,208 +120,207 @@ viewport-fit=cover" />
 <!-- ===== ADVICE ===== -->
 <div class="screen" id="screen-advice">
 
-  <div class="app-header">
+<div class="app-header">
 
-  <div class="header-left">
-    <button id="protocolBack" class="header-back">←</button>
-  </div>
+<div class="header-left">
+<button id="protocolBack" class="header-back">←</button>
+</div>
 
-  <div class="header-center">
-    <div class="header-title">Protocol</div>
-  </div>
+<div class="header-center">
+<div class="header-title">Protocol</div>
+</div>
 
-  <div class="header-right"></div>
+<div class="header-right"></div>
 
 </div>
 
-  <div id="loader" class="loader hidden"></div>
-  <div id="adviceCard" class="card">
+<div id="loader" class="loader hidden"></div>
+<div id="adviceCard" class="card">
 
-  <!-- ФЕЙК ЗАГРУЗКА (ПОЛНЫЙ ЭКРАН) -->
-  <div id="adviceSlider" class="advice-slider">
+<!-- ФЕЙК ЗАГРУЗКА (ПОЛНЫЙ ЭКРАН) -->
+<div id="fakeScreen" class="fake-screen">
+<div style="text-align:center">
+<div class="loader"></div>
+<div style="margin-top:16px">
+Protocol анализирует данные…
+</div>
+</div>
+</div>
 
-    <div id="fakeScreen" class="fake-screen">
-    <div style="text-align:center">
-      <div class="loader"></div>
-      <div style="margin-top:16px">
-        Protocol анализирует данные…
-      </div>
-    </div>
-  </div>
+<!-- РЕАЛЬНЫЙ КОНТЕНТ -->
+<div id="realScreen" class="real-screen"></div>
 
-  <!-- РЕАЛЬНЫЙ КОНТЕНТ -->
-  <div id="realScreen" class="real-screen"></div>
+</div>
 
-  </div>
 </div>
 
 <div class="screen" id="screen-progress">
 
 <div class="profile-header">
-  <button id="historyBack" class="profile-back">←</button>
-  <div class="profile-title" id="historyTitle">
-    История счёта
-  </div>
+<button id="historyBack" class="profile-back">←</button>
+<div class="profile-title" id="historyTitle">
+История счёта
+</div>
 </div>
 
-  <div id="historyList"></div>
+<div id="historyList"></div>
 
 </div>
 
 <div class="screen" id="screen-accounts">
 
 <div class="app-header">
-  <div class="header-left"></div>
-  <div class="header-center">
-    <div class="header-title">Счета</div>
-  </div>
-  <div class="header-right"></div>
+<div class="header-left"></div>
+<div class="header-center">
+<div class="header-title">Счета</div>
+</div>
+<div class="header-right"></div>
 </div>
 
-  <!-- ОСНОВНОЙ СЧЁТ -->
+<!-- ОСНОВНОЙ СЧЁТ -->
 <div class="account-block" data-account="main">
-  <div class="card">
-    <div style="font-size:17px;font-weight:600">Основной счёт</div>
-    <div style="opacity:.6;font-size:14px;margin-top:4px">Накоплено</div>
-    <div style="margin-top:8px;font-size:22px;font-weight:600">
-  <span id="mainAmount">0</span> ₽
+<div class="card">
+<div style="font-size:17px;font-weight:600">Основной счёт</div>
+<div style="opacity:.6;font-size:14px;margin-top:4px">Накоплено</div>
+<div style="margin-top:8px;font-size:22px;font-weight:600">
+<span id="mainAmount">0</span> ₽
 </div>
 </div>
 
 
-  <div class="account-hint neutral">
-    Этот счёт отражает ваши накопления по плану Protocol.
-    Это может быть банковский или инвестиционный счёт
-    либо наличные — главное, чтобы сумма соответствовала расчётам.
-  </div>
+<div class="account-hint neutral">
+Этот счёт отражает ваши накопления по плану Protocol.
+Это может быть банковский или инвестиционный счёт
+либо наличные — главное, чтобы сумма соответствовала расчётам.
+</div>
 </div>
 
 
 <!-- РЕЗЕРВ (ИСПРАВЛЕНО) -->
 <div class="account-block reserve" data-account="reserve">
-  <div class="card">
-    <div style="font-size:17px;font-weight:600">Резерв</div>
-    <div style="opacity:.6;font-size:14px;margin-top:4px">
-      Подушка безопасности
-    </div>
-    <div style="margin-top:8px;font-size:22px;font-weight:600">
-      <span id="reserveAmount">0</span> ₽
-    </div>
-  </div>
+<div class="card">
+<div style="font-size:17px;font-weight:600">Резерв</div>
+<div style="opacity:.6;font-size:14px;margin-top:4px">
+Подушка безопасности
+</div>
+<div style="margin-top:8px;font-size:22px;font-weight:600">
+<span id="reserveAmount">0</span> ₽
+</div>
+</div>
 
-  <div class="account-hint">
-    Резерв — это средства для экстренных ситуаций.
-    Эти деньги не участвуют в достижении цели и
-    используются только при необходимости.
-  </div>
+<div class="account-hint">
+Резерв — это средства для экстренных ситуаций.
+Эти деньги не участвуют в достижении цели и
+используются только при необходимости.
+</div>
 </div>
 </div>
 
 <div class="screen" id="screen-goals">
 
 <div class="app-header">
-  <div class="header-left"></div>
-  <div class="header-center">
-    <div class="header-title">Цели</div>
-  </div>
-  <div class="header-right"></div>
+<div class="header-left"></div>
+<div class="header-center">
+<div class="header-title">Цели</div>
+</div>
+<div class="header-right"></div>
 </div>
 
-  <div class="card" id="activeGoalCard">
-    <div style="font-size:14px;opacity:.6">Активная цель</div>
+<div class="card" id="activeGoalCard">
+<div style="font-size:14px;opacity:.6">Активная цель</div>
 
-    <div class="goal-title-row">
-  <h3 id="goalTitle">Основная цель</h3>
+<div class="goal-title-row">
+<h3 id="goalTitle">Основная цель</h3>
 
-  <button id="editGoalBtn" class="goal-edit-btn">
-    <svg viewBox="0 0 24 24">
-      <path d="M12 20h9"/>
-      <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>
-    </svg>
-  </button>
+<button id="editGoalBtn" class="goal-edit-btn">
+<svg viewBox="0 0 24 24">
+<path d="M12 20h9"/>
+<path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>
+</svg>
+</button>
 </div>
 
-    <div style="margin-top:10px;font-size:14px;opacity:.7">
-      Цель: <b><span id="goalTotal">—</span> ₽</b><br>
-      Накоплено: <b><span id="goalSaved">—</span> ₽</b>
-    </div>
-    
-    <div
-  class="card"
-  id="goalReserveCard"
-  style="display:none"
+<div style="margin-top:10px;font-size:14px;opacity:.7">
+Цель: <b><span id="goalTotal">—</span> ₽</b><br>
+Накоплено: <b><span id="goalSaved">—</span> ₽</b>
+</div>
+
+<div
+class="card"
+id="goalReserveCard"
+style="display:none"
 >
-  <div style="font-size:14px;opacity:.6">
-    Резерв
-  </div>
-
-  <div style="font-size:22px;font-weight:600;margin-top:4px">
-    <span id="goalReserveAmount">0</span> ₽
-  </div>
-
-  <div style="
-    margin-top:8px;
-    font-size:14px;
-    line-height:1.4;
-    opacity:.75
-  ">
-    Эти средства не участвуют в достижении цели и
-    используются как подушка безопасности.
-  </div>
+<div style="font-size:14px;opacity:.6">
+Резерв
 </div>
 
-    <div style="margin-top:12px">
-      <div style="height:6px;border-radius:6px;background:#222;overflow:hidden">
-        <div id="goalProgressBar"
-             style="height:100%;width:0%;background:#3a7bfd">
-        </div>
-      </div>
-      <div style="margin-top:6px;font-size:13px;opacity:.6">
-        <span id="goalPercent">0</span>%
-      </div>
-    </div>
-  </div>
+<div style="font-size:22px;font-weight:600;margin-top:4px">
+<span id="goalReserveAmount">0</span> ₽
+</div>
 
-  <div class="protocol-verdict" id="goalVerdict">
-    Protocol анализирует цель…
-  </div>
+<div style="
+margin-top:8px;
+font-size:14px;
+line-height:1.4;
+opacity:.75
+">
+Эти средства не участвуют в достижении цели и
+используются как подушка безопасности.
+</div>
+</div>
+
+<div style="margin-top:12px">
+<div style="height:6px;border-radius:6px;background:#222;overflow:hidden">
+<div id="goalProgressBar"
+style="height:100%;width:0%;background:#3a7bfd">
+</div>
+</div>
+<div style="margin-top:6px;font-size:13px;opacity:.6">
+<span id="goalPercent">0</span>%
+</div>
+</div>
+</div>
+
+<div class="protocol-verdict" id="goalVerdict">
+Protocol анализирует цель…
+</div>
 </div>
 
 <div class="screen" id="screen-ai">
 
 <div class="app-header">
-  <div class="header-left"></div>
-  <div class="header-center">
-    <div class="header-title">AI ассистент</div>
-  </div>
-  <div class="header-right"></div>
+<div class="header-left"></div>
+<div class="header-center">
+<div class="header-title">AI ассистент</div>
+</div>
+<div class="header-right"></div>
 </div>
 </div>
 
 <!-- ===== PROFILE ===== -->
 <div class="screen" id="screen-profile">
-  
-  <div class="profile-header">
-      <button id="profileBack">←</button>
-      <div class="profile-title">Профиль</div>
+
+<div class="profile-header">
+<button id="profileBack">←</button>
+<div class="profile-title">Профиль</div>
 </div>
 
-  <div class="profile-card">
-    <div class="profile-avatar">
-      <svg viewBox="0 0 24 24">
-        <circle cx="12" cy="8" r="4"></circle>
-        <path d="M4 20c0-4 4-6 8-6s8 2 8 6"></path>
-      </svg>
-    </div>
+<div class="profile-card">
+<div class="profile-avatar">
+<svg viewBox="0 0 24 24">
+<circle cx="12" cy="8" r="4"></circle>
+<path d="M4 20c0-4 4-6 8-6s8 2 8 6"></path>
+</svg>
+</div>
 
-    <div>
-      <div class="profile-name">Пользователь</div>
-      <div class="profile-status">Protocol Finance</div>
-    </div>
-  </div>
+<div>
+<div class="profile-name">Пользователь</div>
+<div class="profile-status">Protocol Finance</div>
+</div>
+</div>
 
-  <button class="profile-btn">⚙️ Настройки</button>
-  <button class="profile-btn danger">🔄 Сбросить план</button>
+<button class="profile-btn">⚙️ Настройки</button>
+<button class="profile-btn danger">🔄 Сбросить план</button>
 </div>
 
 <!-- ===== NAV ===== -->
@@ -381,42 +380,42 @@ viewport-fit=cover" />
 </div>
 
 <canvas
-  id="confetti-canvas"
-  style="
-    position: fixed;
-    inset: 0;
-    width: 100vw;
-    height: 100vh;
-    pointer-events: none;
-    z-index: 999999;
-  ">
+id="confetti-canvas"
+style="
+position: fixed;
+inset: 0;
+width: 100vw;
+height: 100vh;
+pointer-events: none;
+z-index: 999999;
+">
 </canvas>
 
 <!-- ===== GOAL EDITOR ===== -->
 <div id="goalEditorOverlay" style="
-  display:none;
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,0.55);
-  z-index:30;
+display:none;
+position:fixed;
+inset:0;
+background:rgba(0,0,0,0.55);
+z-index:30;
 "></div>
 
 <div id="goalEditorSheet" class="sheet goal-editor">
-  
-  <h2 style="margin-bottom:18px">Редактирование цели</h2>
 
-  <div class="input-wrap">
-    <label>Название цели</label>
-    <input id="goalEditTitle" placeholder="Например: Квартира" />
-  </div>
+<h2 style="margin-bottom:18px">Редактирование цели</h2>
 
-  <div class="input-wrap">
-    <label>Сумма цели</label>
-    <input id="goalEditAmount" inputmode="numeric" placeholder="300.000" />
-  </div>
-  <div id="goalEditHint" class="goal-edit-hint"></div>
+<div class="input-wrap">
+<label>Название цели</label>
+<input id="goalEditTitle" placeholder="Например: Квартира" />
+</div>
 
-  <button id="goalEditSave">Готово</button>
+<div class="input-wrap">
+<label>Сумма цели</label>
+<input id="goalEditAmount" inputmode="numeric" placeholder="300.000" />
+</div>
+<div id="goalEditHint" class="goal-edit-hint"></div>
+
+<button id="goalEditSave">Готово</button>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
