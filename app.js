@@ -562,6 +562,13 @@ const backBtn = document.getElementById("protocolBack");
 if (backBtn) backBtn.style.display = "none";
 hideBottomNav();
 
+adviceCard.innerHTML = `
+  <div id="adviceSlider" class="advice-slider">
+    <div id="fakeScreen" class="fake-screen"></div>
+    <div id="realScreen" class="real-screen"></div>
+  </div>
+`;
+
 loader.classList.remove("hidden");
 
 plannedMonthly = lastCalc.monthlySave;
