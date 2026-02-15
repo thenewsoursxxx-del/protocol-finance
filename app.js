@@ -569,8 +569,6 @@ adviceCard.innerHTML = `
   </div>
 `;
 
-loader.classList.remove("hidden");
-
 plannedMonthly = lastCalc.monthlySave;
 
 if (mode === "buffer") plannedMonthly = Math.round(plannedMonthly * 0.9);
@@ -600,8 +598,6 @@ setTimeout(() => {
 }, 4000);
 
 setTimeout(() => {
-
-  loader.classList.add("hidden");
 
   const slider = document.getElementById("adviceSlider");
   const fake = document.getElementById("fakeScreen");
