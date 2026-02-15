@@ -587,22 +587,53 @@ loader.classList.add("hidden");
 const explanation = ProtocolCore.explain(lastCalc);
 const advice = ProtocolCore.buildAdvice(lastCalc);
 
-adviceCard.innerHTML = `
-<div class="reveal-wrap">
+const realContent = document.getElementById("realScreen");
 
-  <div class="reveal-loading">
-    <div style="text-align:center">
-      <div class="loader"></div>
-      <div style="margin-top:16px">
-        Protocol анализирует данные…
-      </div>
-    </div>
-  </div>
+realContent.innerHTML = `
+<div id="planHeader">
+<div id="planMonthly" style="font-size:16px;font-weight:600"></div>
 
-  <div class="reveal-content" id="realContent"></div>
+<div id="planExplanation"
+style="margin-top:8px;font-size:14px;line-height:1.4;opacity:0.75;">
+</div>
+</div>
 
+<div style="
+margin-top:10px;
+padding:10px 12px;
+border-radius:14px;
+background:#111;
+border:1px solid #222;
+font-size:14px;
+">
+${advice.text}
+</div>
+
+<div class="chart-wrap"
+style="width:100%; height:260px; margin:16px 0; position:relative;">
+<canvas id="chartBg"></canvas>
+<canvas id="chartFact"></canvas>
+</div>
+
+<div class="fact-input-row">
+<input id="factInput" inputmode="numeric"
+placeholder="Сколько вы отложили" style="flex:1"/>
+<button id="applyFact"
+style="width:52px;height:52px;border-radius:50%">
+➜
+</button>
 </div>
 `;
+
+const fake = document.getElementById("fakeScreen");
+
+setTimeout(() => {
+  fake.style.transform = "translateX(-100%)";
+}, 50);
+
+setTimeout(() => {
+  fake.remove();
+}, 700);
 
 const realContent = document.getElementById("realContent");
 
