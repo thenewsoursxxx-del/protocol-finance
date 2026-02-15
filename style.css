@@ -1281,33 +1281,7 @@ html, body {
   animation: input-shake 0.35s ease;
 }
 
-.fake-screen,
-.real-screen {
-  position: absolute;
-  inset: 0;
-  padding: 24px;
-  box-sizing: border-box;
-  transition: transform 0.6s ease;
-  
-}
-
-.fake-screen {
-  background: #000;
-  z-index: 2;
-}
-
-.real-screen {
-  z-index: 1;
-}
-
 #adviceCard {
   position: relative;
-  overflow: hidden;
-  min-height: 420px;
-}
-
-#screen-advice .card {
-  position: relative;
-  overflow: hidden;
-  padding: 0;
+  overflow: visible;
 }
