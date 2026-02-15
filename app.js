@@ -206,20 +206,36 @@ moveIndicator(buttons[0]);
 
 /* ===== OPEN SCREEN ===== */
 function openScreen(name, btn) {
-if (!isInitialized && name !== "calc") return;
 
-screens.forEach(s => s.classList.remove("active"));
-document.getElementById("screen-" + name).classList.add("active");
+  if (!isInitialized && name !== "calc") return;
 
-buttons.forEach(b => b.classList.remove("active"));
-if (btn) btn.classList.add("active");
+  const current = document.querySelector(".screen.active");
+  const next = document.getElementById("screen-" + name);
 
-if (btn) {
-moveIndicator(btn);
-} else {
-indicator.style.opacity = "0";
-}
-clearFactInputError();
+  if (current === next) return;
+
+  // Подготовка нового экрана
+  next.classList.add("enter-right");
+  next.classList.add("active");
+
+  requestAnimationFrame(() => {
+    next.classList.remove("enter-right");
+  });
+
+  // Уводим старый влево
+  if (current) {
+    current.classList.add("hidden-left");
+
+    setTimeout(() => {
+      current.classList.remove("active");
+      current.classList.remove("hidden-left");
+    }, 450);
+  }
+
+  buttons.forEach(b => b.classList.remove("active"));
+  if (btn) btn.classList.add("active");
+
+  if (btn) moveIndicator(btn);
 }
 // ===== TOP PROFILE FIX =====
 
