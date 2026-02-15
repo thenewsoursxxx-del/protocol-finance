@@ -1340,3 +1340,13 @@ html, body {
 .slide-in-right.active {
   transform: translateX(0);
 }
+
+#adviceCard {
+  position: relative;
+  overflow: hidden;
+}
+
+.advice-layer {
+  position: absolute;
+  inset: 0;
+}
