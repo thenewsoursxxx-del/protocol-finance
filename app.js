@@ -599,10 +599,9 @@ adviceCard.innerText = "Готово.";
 
 setTimeout(() => {
 
-  // 1️⃣ сначала карточка уезжает влево
-  adviceCard.classList.add("slide-left");
+  adviceCard.style.transform = "translateX(-100%)";
+  adviceCard.style.transition = "transform 0.45s ease";
 
-  // 2️⃣ ждём пока она уедет
   setTimeout(() => {
 
     loader.classList.add("hidden");
@@ -610,7 +609,6 @@ setTimeout(() => {
     const explanation = ProtocolCore.explain(lastCalc);
     const advice = ProtocolCore.buildAdvice(lastCalc);
 
-    // 3️⃣ меняем содержимое
     adviceCard.innerHTML = `
       <div id="planHeader">
         <div id="planMonthly"
@@ -648,18 +646,24 @@ setTimeout(() => {
       </div>
     `;
 
-    // 4️⃣ возвращаем карточку на место
-    adviceCard.classList.remove("slide-left");
+    adviceCard.style.transition = "none";
+    adviceCard.style.transform = "translateX(100%)";
+
+    requestAnimationFrame(() => {
+      adviceCard.style.transition = "transform 0.45s ease";
+      adviceCard.style.transform = "translateX(0)";
+    });
 
     initChart();
     animateFactLine();
     showBottomNav();
+    updatePlanHeader();
+
     buttons.forEach(b => b.classList.remove("active"));
     buttons[1].classList.add("active");
     moveIndicator(buttons[1]);
-    updatePlanHeader();
 
-  }, 450); // это время анимации
+  }, 450);
 
 }, 6000);
 }
