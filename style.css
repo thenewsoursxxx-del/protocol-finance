@@ -1280,3 +1280,32 @@ html, body {
 #factInput.shake {
   animation: input-shake 0.35s ease;
 }
+
+/* ===== SCREEN SLIDE ANIMATION ===== */
+
+.screen {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  transition: transform 0.45s cubic-bezier(.22,1,.36,1), opacity 0.3s ease;
+}
+
+.screen.enter-right {
+  transform: translateX(100%);
+}
+
+.screen.enter-left {
+  transform: translateX(-100%);
+}
+
+.screen.active {
+  transform: translateX(0);
+  opacity: 1;
+  z-index: 2;
+}
+
+.screen.hidden-left {
+  transform: translateX(-100%);
+  opacity: 0.6;
+  z-index: 1;
+}
