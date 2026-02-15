@@ -571,57 +571,18 @@ if (mode === "buffer") plannedMonthly = Math.round(plannedMonthly * 0.9);
 adviceCard.innerText = "Protocol анализирует данные…";
 
 setTimeout(() => {
-adviceCard.innerText =
-mode === "buffer"
-? "Часть средств будет направляться в резерв."
-: "Все средства идут напрямую в цель.";
-}, 2000);
 
-setTimeout(() => {
-adviceCard.innerText = "Готово.";
-}, 4000);
+  loader.classList.add("hidden");
 
-setTimeout(() => {
-
-loader.classList.add("hidden");
-
-const fake = document.getElementById("fakeScreen");
-const real = document.getElementById("realScreen");
-
-// 1️⃣ расширяем маленький блок
-fake.classList.add("expand");
-
-// 2️⃣ через 500мс начинаем уезд
-setTimeout(() => {
-  fake.classList.add("slide-out");
-}, 500);
-
-// 3️⃣ после уезда показываем реальный контент
-setTimeout(() => {
+  const slider = document.getElementById("adviceSlider");
+  const fake = document.getElementById("fakeScreen");
+  const real = document.getElementById("realScreen");
 
   const explanation = ProtocolCore.explain(lastCalc);
   const advice = ProtocolCore.buildAdvice(lastCalc);
 
+  // 1️⃣ Заполняем реальный экран
   real.innerHTML = `
-<div id="adviceSlider" style="
-  width:200%;
-  display:flex;
-  transition: transform 0.6s cubic-bezier(.22,1,.36,1);
-">
-
-  <!-- ЛЕВАЯ ЧАСТЬ (ФЕЙК ЭКРАН) -->
-  <div style="width:50%;padding:24px;">
-    <div style="text-align:center;margin-top:60px">
-      <div class="loader"></div>
-      <div style="margin-top:16px">
-        Готово.
-      </div>
-    </div>
-  </div>
-
-  <!-- ПРАВАЯ ЧАСТЬ (РЕАЛЬНЫЙ КОНТЕНТ) -->
-  <div style="width:50%;padding:24px;">
-
     <div id="planHeader">
       <div id="planMonthly"
         style="font-size:16px;font-weight:600"></div>
@@ -656,114 +617,21 @@ setTimeout(() => {
         ➜
       </button>
     </div>
+  `;
 
-  </div>
-</div>
-`;
+  // 2️⃣ Сдвигаем весь slider
+  setTimeout(() => {
+    slider.style.transform = "translateX(-50%)";
+  }, 50);
 
-const slider = document.getElementById("adviceSlider");
-
-setTimeout(() => {
-  slider.style.transform = "translateX(-50%)";
-}, 50);
-
-initChart();
-animateFactLine();
-if (protocolBack) protocolBack.style.display = "none";
-showBottomNav();
-buttons.forEach(b => b.classList.remove("active"));
-buttons[1].classList.add("active");
-moveIndicator(buttons[1]);
-updatePlanHeader();
-
-const factInput = document.getElementById("factInput");
-const applyBtn = document.getElementById("applyFact");
-
-factInput.addEventListener("input", e => {
-e.target.value = formatNumber(e.target.value);
-
-// 🔥 убираем ошибку как только начали ввод
-factInput.classList.remove("error", "shake");
-});
-
-factInput.addEventListener("focus", () => {
-factInput.classList.remove("error", "shake");
-});
-
-applyBtn.onclick = () => {
-
-const fact = parseNumber(factInput.value || "0");
-
-// 🔥 ВСЕГДА сначала очищаем ошибку
-factInput.classList.remove("error", "shake");
-
-if (!fact) {
-
-factInput.classList.add("error");
-
-void factInput.offsetWidth;
-factInput.classList.add("shake");
-
-haptic("error");
-return;
-}
-
-// дальше твоя логика без изменений
-
-let toMain = fact;
-let toReserve = 0;
-
-if (chosenPlan === "buffer") {
-toReserve = Math.round(fact * 0.1);
-toMain = fact - toReserve;
-accounts.reserve += toReserve;
-}
-
-accounts.main += toMain;
-
-const now = new Date();
-now.setDate(1);
-now.setHours(0, 0, 0, 0);
-
-factHistory.push({
-value: toMain,
-date: now,
-to: "main"
-});
-
-if (toReserve > 0) {
-factHistory.push({
-value: toReserve,
-date: now,
-to: "reserve"
-});
-}
-
-factRatio = fact / plannedMonthly;
-
-drawStaticLayer(); // ← ДОБАВИТЬ ЭТУ СТРОКУ
-animateFactLine();
-runBrain();
-renderAccountsUI();
-renderGoals();
-const goalTotal = parseNumber(goalInput.value || "0");
-
-if (
-!goalCompleted &&
-goalTotal > 0 &&
-accounts.main >= goalTotal
-) {
-goalCompleted = true;
-setTimeout(fireCelebration, 120);
-}
-
-factInput.value = "";
-factInput.blur();
-};
-
-  fake.style.display = "none";
-
-}, 1100);
+  // 3️⃣ Инициализация
+  initChart();
+  animateFactLine();
+  showBottomNav();
+  buttons.forEach(b => b.classList.remove("active"));
+  buttons[1].classList.add("active");
+  moveIndicator(buttons[1]);
+  updatePlanHeader();
 
 }, 6000);
 }
