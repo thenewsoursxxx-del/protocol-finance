@@ -135,7 +135,22 @@ viewport-fit=cover" />
 </div>
 
   <div id="loader" class="loader hidden"></div>
-  <div id="adviceCard" class="card"></div>
+  <div id="adviceCard" class="card">
+
+  <!-- ФЕЙК ЗАГРУЗКА (ПОЛНЫЙ ЭКРАН) -->
+  <div id="fakeScreen" class="fake-screen">
+    <div style="text-align:center">
+      <div class="loader"></div>
+      <div style="margin-top:16px">
+        Protocol анализирует данные…
+      </div>
+    </div>
+  </div>
+
+  <!-- РЕАЛЬНЫЙ КОНТЕНТ -->
+  <div id="realScreen" class="real-screen"></div>
+
+</div>
 
 </div>
 
@@ -386,7 +401,6 @@ viewport-fit=cover" />
   z-index:30;
 "></div>
 
-<div
 <div id="goalEditorSheet" class="sheet goal-editor">
   
   <h2 style="margin-bottom:18px">Редактирование цели</h2>
