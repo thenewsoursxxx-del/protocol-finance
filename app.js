@@ -561,102 +561,170 @@ openScreen("advice", null);
 const backBtn = document.getElementById("protocolBack");
 if (backBtn) backBtn.style.display = "none";
 hideBottomNav();
-
-adviceCard.innerHTML = `
-  <div id="adviceSlider" class="advice-slider">
-    <div id="fakeScreen" class="fake-screen"></div>
-    <div id="realScreen" class="real-screen"></div>
-  </div>
-`;
+adviceCard.innerHTML = "";
+loader.classList.remove("hidden");
 
 plannedMonthly = lastCalc.monthlySave;
 
 if (mode === "buffer") plannedMonthly = Math.round(plannedMonthly * 0.9);
 
-const fake = document.getElementById("fakeScreen");
-
-fake.innerHTML = `
-  <div style="text-align:center;margin-top:60px">
-    <div class="loader"></div>
-    <div id="fakeText" style="margin-top:16px">
-      Protocol анализирует данные…
-    </div>
-  </div>
-`;
-
-const fakeText = document.getElementById("fakeText");
+adviceCard.innerText = "Protocol анализирует данные…";
 
 setTimeout(() => {
-  fakeText.innerText =
-    mode === "buffer"
-      ? "Часть средств будет направляться в резерв."
-      : "Все средства идут напрямую в цель.";
+adviceCard.innerText =
+mode === "buffer"
+? "Часть средств будет направляться в резерв."
+: "Все средства идут напрямую в цель.";
 }, 2000);
 
 setTimeout(() => {
-  fakeText.innerText = "Готово.";
+adviceCard.innerText = "Готово.";
 }, 4000);
 
 setTimeout(() => {
+loader.classList.add("hidden");
 
-  const slider = document.getElementById("adviceSlider");
-  const fake = document.getElementById("fakeScreen");
-  const real = document.getElementById("realScreen");
+const explanation = ProtocolCore.explain(lastCalc);
+const advice = ProtocolCore.buildAdvice(lastCalc);
 
-  const explanation = ProtocolCore.explain(lastCalc);
-  const advice = ProtocolCore.buildAdvice(lastCalc);
+adviceCard.innerHTML = `
+<div id="planHeader">
+<div
+id="planMonthly"
+style="font-size:16px;font-weight:600"
+></div>
 
-  // 1️⃣ Заполняем реальный экран
-  real.innerHTML = `
-    <div id="planHeader">
-      <div id="planMonthly"
-        style="font-size:16px;font-weight:600"></div>
+<div
+id="planExplanation"
+style="
+margin-top:8px;
+font-size:14px;
+line-height:1.4;
+opacity:0.75;
+"
+></div>
+</div>
 
-      <div id="planExplanation"
-        style="margin-top:8px;font-size:14px;line-height:1.4;opacity:0.75;">
-      </div>
-    </div>
+<div style="
+margin-top:10px;
+padding:10px 12px;
+border-radius:14px;
+background:#111;
+border:1px solid #222;
+font-size:14px;
+">
+${advice.text}
+</div>
 
-    <div style="
-      margin-top:10px;
-      padding:10px 12px;
-      border-radius:14px;
-      background:#111;
-      border:1px solid #222;
-      font-size:14px;
-    ">
-      ${advice.text}
-    </div>
+<div class="chart-wrap" style="width:100%; height:260px; margin:16px 0; position:relative;">
+<canvas id="chartBg"></canvas>
+<canvas id="chartFact"></canvas>
+</div>
 
-    <div class="chart-wrap"
-      style="width:100%; height:260px; margin:16px 0; position:relative;">
-      <canvas id="chartBg"></canvas>
-      <canvas id="chartFact"></canvas>
-    </div>
+<div class="fact-input-row">
+<input id="factInput" inputmode="numeric"
+placeholder="Сколько вы отложили"
+style="flex:1"/>
+<button id="applyFact"
+style="width:52px;height:52px;border-radius:50%">
+➜
+</button>
+</div>
+`;
 
-    <div class="fact-input-row">
-      <input id="factInput" inputmode="numeric"
-        placeholder="Сколько вы отложили" style="flex:1"/>
-      <button id="applyFact"
-        style="width:52px;height:52px;border-radius:50%">
-        ➜
-      </button>
-    </div>
-  `;
+initChart();
+animateFactLine();
+if (protocolBack) protocolBack.style.display = "none";
+showBottomNav();
+buttons.forEach(b => b.classList.remove("active"));
+buttons[1].classList.add("active");
+moveIndicator(buttons[1]);
+updatePlanHeader();
 
-  // 2️⃣ Сдвигаем весь slider
-  setTimeout(() => {
-    slider.style.transform = "translateX(-50%)";
-  }, 50);
+const factInput = document.getElementById("factInput");
+const applyBtn = document.getElementById("applyFact");
 
-  // 3️⃣ Инициализация
-  initChart();
-  animateFactLine();
-  showBottomNav();
-  buttons.forEach(b => b.classList.remove("active"));
-  buttons[1].classList.add("active");
-  moveIndicator(buttons[1]);
-  updatePlanHeader();
+factInput.addEventListener("input", e => {
+e.target.value = formatNumber(e.target.value);
+
+// 🔥 убираем ошибку как только начали ввод
+factInput.classList.remove("error", "shake");
+});
+
+factInput.addEventListener("focus", () => {
+factInput.classList.remove("error", "shake");
+});
+
+applyBtn.onclick = () => {
+
+const fact = parseNumber(factInput.value || "0");
+
+// 🔥 ВСЕГДА сначала очищаем ошибку
+factInput.classList.remove("error", "shake");
+
+if (!fact) {
+
+factInput.classList.add("error");
+
+void factInput.offsetWidth;
+factInput.classList.add("shake");
+
+haptic("error");
+return;
+}
+
+// дальше твоя логика без изменений
+
+let toMain = fact;
+let toReserve = 0;
+
+if (chosenPlan === "buffer") {
+toReserve = Math.round(fact * 0.1);
+toMain = fact - toReserve;
+accounts.reserve += toReserve;
+}
+
+accounts.main += toMain;
+
+const now = new Date();
+now.setDate(1);
+now.setHours(0, 0, 0, 0);
+
+factHistory.push({
+value: toMain,
+date: now,
+to: "main"
+});
+
+if (toReserve > 0) {
+factHistory.push({
+value: toReserve,
+date: now,
+to: "reserve"
+});
+}
+
+factRatio = fact / plannedMonthly;
+
+drawStaticLayer(); // ← ДОБАВИТЬ ЭТУ СТРОКУ
+animateFactLine();
+runBrain();
+renderAccountsUI();
+renderGoals();
+const goalTotal = parseNumber(goalInput.value || "0");
+
+if (
+!goalCompleted &&
+goalTotal > 0 &&
+accounts.main >= goalTotal
+) {
+goalCompleted = true;
+setTimeout(fireCelebration, 120);
+}
+
+factInput.value = "";
+factInput.blur();
+};
 
 }, 6000);
 }
