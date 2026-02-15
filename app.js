@@ -635,23 +635,6 @@ setTimeout(() => {
   fake.remove();
 }, 700);
 
-setTimeout(() => {
-
-  const loading = document.querySelector(".reveal-loading");
-  const content = document.querySelector(".reveal-content");
-
-  loading.style.transform = "translateX(-100%)";
-  loading.style.opacity = "0";
-
-  content.style.transform = "scale(1)";
-  content.style.opacity = "1";
-
-  setTimeout(() => {
-    loading.remove();
-  }, 800);
-
-}, 100);
-
 initChart();
 animateFactLine();
 if (protocolBack) protocolBack.style.display = "none";
