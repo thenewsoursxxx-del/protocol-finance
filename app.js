@@ -219,6 +219,7 @@ moveIndicator(btn);
 } else {
 indicator.style.opacity = "0";
 }
+clearFactInputError();
 }
 // ===== TOP PROFILE FIX =====
 
@@ -872,6 +873,13 @@ return true;
 // ===== WATERMARK (загружается один раз) =====
 const watermarkLogo = new Image();
 watermarkLogo.src = "logo.svg";
+
+function clearFactInputError() {
+  const factInput = document.getElementById("factInput");
+  if (!factInput) return;
+
+  factInput.classList.remove("error", "shake");
+}
 
 /* ===== GRAPH (CLEAN & STABLE) ===== */
 
