@@ -1415,10 +1415,6 @@ animateFactLine();
 
 }
 
-if (newGoal > lastCalc.effectiveGoal + accounts.main) {
-showBrainMessage("Цель увеличена — план автоматически пересчитан.");
-}
-
 function updatePlanHeader() {
 if (!lastCalc.ok) return;
 
