@@ -1236,12 +1236,12 @@ goalEditAmount.value = goalInput.value;
 goalEditBaseValue = parseNumber(goalInput.value || "0");
 
 goalEditorOverlay.style.display = "block";
-goalEditorSheet.style.bottom = "0";
+goalEditorSheet.style.transform = "translateY(0)";
 };
 }
 
 goalEditorOverlay.onclick = () => {
-goalEditorSheet.style.bottom = "-100%";
+goalEditorSheet.style.transform = "translateY(100%)";
 goalEditorOverlay.style.display = "none";
 goalEditHint.classList.remove("show");
 };
@@ -1269,7 +1269,7 @@ goalCompleted = true;
 }
 
 // 4️⃣ закрываем редактор
-goalEditorSheet.style.bottom = "-100%";
+goalEditorSheet.style.transform = "translateY(100%)";
 goalEditorOverlay.style.display = "none";
 goalEditHint.classList.remove("show");
 
