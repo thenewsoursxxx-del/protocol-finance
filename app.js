@@ -206,36 +206,20 @@ moveIndicator(buttons[0]);
 
 /* ===== OPEN SCREEN ===== */
 function openScreen(name, btn) {
+if (!isInitialized && name !== "calc") return;
 
-  if (!isInitialized && name !== "calc") return;
+screens.forEach(s => s.classList.remove("active"));
+document.getElementById("screen-" + name).classList.add("active");
 
-  const current = document.querySelector(".screen.active");
-  const next = document.getElementById("screen-" + name);
+buttons.forEach(b => b.classList.remove("active"));
+if (btn) btn.classList.add("active");
 
-  if (current === next) return;
-
-  // Подготовка нового экрана
-  next.classList.add("enter-right");
-  next.classList.add("active");
-
-  requestAnimationFrame(() => {
-    next.classList.remove("enter-right");
-  });
-
-  // Уводим старый влево
-  if (current) {
-    current.classList.add("hidden-left");
-
-    setTimeout(() => {
-      current.classList.remove("active");
-      current.classList.remove("hidden-left");
-    }, 450);
-  }
-
-  buttons.forEach(b => b.classList.remove("active"));
-  if (btn) btn.classList.add("active");
-
-  if (btn) moveIndicator(btn);
+if (btn) {
+moveIndicator(btn);
+} else {
+indicator.style.opacity = "0";
+}
+clearFactInputError();
 }
 // ===== TOP PROFILE FIX =====
 
@@ -598,83 +582,149 @@ adviceCard.innerText = "Готово.";
 }, 4000);
 
 setTimeout(() => {
-
-  loader.classList.add("hidden");
+loader.classList.add("hidden");
 
 const explanation = ProtocolCore.explain(lastCalc);
 const advice = ProtocolCore.buildAdvice(lastCalc);
 
-// 1️⃣ создаём новый слой
-const newLayer = document.createElement("div");
-newLayer.className = "advice-layer";
+adviceCard.innerHTML = `
+<div id="planHeader">
+<div
+id="planMonthly"
+style="font-size:16px;font-weight:600"
+></div>
 
-newLayer.innerHTML = `
-  <div id="planHeader">
-    <div id="planMonthly"
-      style="font-size:16px;font-weight:600"></div>
+<div
+id="planExplanation"
+style="
+margin-top:8px;
+font-size:14px;
+line-height:1.4;
+opacity:0.75;
+"
+></div>
+</div>
 
-    <div id="planExplanation"
-      style="margin-top:8px;font-size:14px;line-height:1.4;opacity:0.75;">
-    </div>
-  </div>
+<div style="
+margin-top:10px;
+padding:10px 12px;
+border-radius:14px;
+background:#111;
+border:1px solid #222;
+font-size:14px;
+">
+${advice.text}
+</div>
 
-  <div style="
-    margin-top:10px;
-    padding:10px 12px;
-    border-radius:14px;
-    background:#111;
-    border:1px solid #222;
-    font-size:14px;
-  ">
-    ${advice.text}
-  </div>
+<div class="chart-wrap" style="width:100%; height:260px; margin:16px 0; position:relative;">
+<canvas id="chartBg"></canvas>
+<canvas id="chartFact"></canvas>
+</div>
 
-  <div class="chart-wrap"
-    style="width:100%; height:260px; margin:16px 0; position:relative;">
-    <canvas id="chartBg"></canvas>
-    <canvas id="chartFact"></canvas>
-  </div>
-
-  <div class="fact-input-row">
-    <input id="factInput" inputmode="numeric"
-      placeholder="Сколько вы отложили" style="flex:1"/>
-    <button id="applyFact"
-      style="width:52px;height:52px;border-radius:50%">
-      ➜
-    </button>
-  </div>
+<div class="fact-input-row">
+<input id="factInput" inputmode="numeric"
+placeholder="Сколько вы отложили"
+style="flex:1"/>
+<button id="applyFact"
+style="width:52px;height:52px;border-radius:50%">
+➜
+</button>
+</div>
 `;
 
-// 2️⃣ готовим позиции
-newLayer.style.transform = "translateX(100%) scale(0.98)";
-newLayer.style.opacity = "0";
+initChart();
+animateFactLine();
+if (protocolBack) protocolBack.style.display = "none";
+showBottomNav();
+buttons.forEach(b => b.classList.remove("active"));
+buttons[1].classList.add("active");
+moveIndicator(buttons[1]);
+updatePlanHeader();
 
-adviceCard.appendChild(newLayer);
+const factInput = document.getElementById("factInput");
+const applyBtn = document.getElementById("applyFact");
 
-// 3️⃣ одновременно запускаем анимацию
-requestAnimationFrame(() => {
+factInput.addEventListener("input", e => {
+e.target.value = formatNumber(e.target.value);
 
-  newLayer.style.transition = "transform 0.45s cubic-bezier(.22,.61,.36,1), opacity 0.45s";
-  newLayer.style.transform = "translateX(0) scale(1)";
-  newLayer.style.opacity = "1";
+// 🔥 убираем ошибку как только начали ввод
+factInput.classList.remove("error", "shake");
 });
 
-// 4️⃣ после анимации чистим старый слой
-setTimeout(() => {
+factInput.addEventListener("focus", () => {
+factInput.classList.remove("error", "shake");
+});
 
-  adviceCard.innerHTML = "";
-  adviceCard.appendChild(newLayer);
+applyBtn.onclick = () => {
 
-  initChart();
-  animateFactLine();
-  showBottomNav();
-  updatePlanHeader();
+const fact = parseNumber(factInput.value || "0");
 
-  buttons.forEach(b => b.classList.remove("active"));
-  buttons[1].classList.add("active");
-  moveIndicator(buttons[1]);
+// 🔥 ВСЕГДА сначала очищаем ошибку
+factInput.classList.remove("error", "shake");
 
-}, 450);
+if (!fact) {
+
+factInput.classList.add("error");
+
+void factInput.offsetWidth;
+factInput.classList.add("shake");
+
+haptic("error");
+return;
+}
+
+// дальше твоя логика без изменений
+
+let toMain = fact;
+let toReserve = 0;
+
+if (chosenPlan === "buffer") {
+toReserve = Math.round(fact * 0.1);
+toMain = fact - toReserve;
+accounts.reserve += toReserve;
+}
+
+accounts.main += toMain;
+
+const now = new Date();
+now.setDate(1);
+now.setHours(0, 0, 0, 0);
+
+factHistory.push({
+value: toMain,
+date: now,
+to: "main"
+});
+
+if (toReserve > 0) {
+factHistory.push({
+value: toReserve,
+date: now,
+to: "reserve"
+});
+}
+
+factRatio = fact / plannedMonthly;
+
+drawStaticLayer(); // ← ДОБАВИТЬ ЭТУ СТРОКУ
+animateFactLine();
+runBrain();
+renderAccountsUI();
+renderGoals();
+const goalTotal = parseNumber(goalInput.value || "0");
+
+if (
+!goalCompleted &&
+goalTotal > 0 &&
+accounts.main >= goalTotal
+) {
+goalCompleted = true;
+setTimeout(fireCelebration, 120);
+}
+
+factInput.value = "";
+factInput.blur();
+};
 
 }, 6000);
 }
