@@ -1236,7 +1236,11 @@ goalEditAmount.value = goalInput.value;
 goalEditBaseValue = parseNumber(goalInput.value || "0");
 
 goalEditorOverlay.style.display = "block";
-goalEditorSheet.style.transform = "translateY(0)";
+
+// 🔥 ДАЁМ БРАУЗЕРУ 1 КАДР
+requestAnimationFrame(() => {
+  goalEditorSheet.style.transform = "translateY(0)";
+});
 };
 }
 
