@@ -1280,39 +1280,3 @@ html, body {
 #factInput.shake {
   animation: input-shake 0.35s ease;
 }
-
-#adviceCard {
-  position: relative;
-  overflow: hidden;
-}
-
-.advice-slider {
-  display: flex;
-  width: 200%;
-  transition: transform 0.55s cubic-bezier(.22,1,.36,1);
-}
-
-.fake-screen,
-.real-screen {
-  width: 100%;
-  flex-shrink: 0;
-  padding: 24px;
-  box-sizing: border-box;
-}
-
-/* ===== ADVICE SLIDER ANIMATION ===== */
-
-.fake-screen {
-  transition: 
-    height 0.5s cubic-bezier(.22,1,.36,1),
-    transform 0.6s cubic-bezier(.22,1,.36,1);
-  overflow: hidden;
-}
-
-.fake-screen.expand {
-  height: 100%;
-}
-
-.fake-screen.slide-out {
-  transform: translateX(-100%);
-}
