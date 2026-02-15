@@ -1235,7 +1235,7 @@ goalEditTitle.value = goalMeta.title;
 goalEditAmount.value = goalInput.value;
 goalEditBaseValue = parseNumber(goalInput.value || "0");
 
-goalEditorOverlay.classList.add("show");
+goalEditorOverlay.style.display = "block";
 
 // 🔥 ДАЁМ БРАУЗЕРУ 1 КАДР
 requestAnimationFrame(() => {
@@ -1277,10 +1277,10 @@ goalCompleted = true;
 // 4️⃣ закрываем редактор
 goalEditorOverlay.onclick = () => {
   goalEditorSheet.style.transform = "translateY(100%)";
-  goalEditorOverlay.classList.remove("show");
-  goalEditHint.classList.remove("show");
+setTimeout(() => {
+  goalEditorOverlay.style.display = "none";
+}, 550);
 };
-
 // 5️⃣ пересчитываем UI
 recalcPlanAfterGoalChange();
 renderGoals();
