@@ -568,16 +568,28 @@ plannedMonthly = lastCalc.monthlySave;
 
 if (mode === "buffer") plannedMonthly = Math.round(plannedMonthly * 0.9);
 
-adviceCard.innerText = "Protocol анализирует данные…";
+const fake = document.getElementById("fakeScreen");
+
+fake.innerHTML = `
+  <div style="text-align:center;margin-top:60px">
+    <div class="loader"></div>
+    <div id="fakeText" style="margin-top:16px">
+      Protocol анализирует данные…
+    </div>
+  </div>
+`;
+
+const fakeText = document.getElementById("fakeText");
+
 setTimeout(() => {
-  adviceCard.innerText =
+  fakeText.innerText =
     mode === "buffer"
       ? "Часть средств будет направляться в резерв."
       : "Все средства идут напрямую в цель.";
 }, 2000);
 
 setTimeout(() => {
-  adviceCard.innerText = "Готово.";
+  fakeText.innerText = "Готово.";
 }, 4000);
 
 setTimeout(() => {
