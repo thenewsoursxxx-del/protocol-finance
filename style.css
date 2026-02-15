@@ -1303,6 +1303,7 @@ html, body {
 #adviceCard {
   position: relative;
   overflow: hidden;
+  min-height: 420px;
 }
 
 #screen-advice .card {
