@@ -280,82 +280,82 @@ openAccountHistory(type);
 
 function openAccountHistory(type) {
 
-  const title = document.getElementById("historyTitle");
-  const list = document.getElementById("historyList");
+const title = document.getElementById("historyTitle");
+const list = document.getElementById("historyList");
 
-  title.innerText =
-    type === "reserve"
-      ? "История резерва"
-      : "История основного счёта";
+title.innerText =
+type === "reserve"
+? "История резерва"
+: "История основного счёта";
 
-  list.innerHTML = "";
+list.innerHTML = "";
 
-  // 1️⃣ собираем операции
-  let entries = factHistory
-    .filter(f =>
-      type === "reserve"
-        ? f.to === "reserve"
-        : f.to === "main"
-    )
-    .map(f => ({
-      value: f.value,
-      date: new Date(f.date),
-      isInitial: false
-    }));
+// 1️⃣ собираем операции
+let entries = factHistory
+.filter(f =>
+type === "reserve"
+? f.to === "reserve"
+: f.to === "main"
+)
+.map(f => ({
+value: f.value,
+date: new Date(f.date),
+isInitial: false
+}));
 
-  // 2️⃣ добавляем стартовый баланс как самую старую запись
-  if (type === "main" && initialBalance > 0) {
-    entries.push({
-      value: initialBalance,
-      date: new Date(0), // 1970 год — гарантированно самый старый
-      isInitial: true
-    });
-  }
+// 2️⃣ добавляем стартовый баланс как самую старую запись
+if (type === "main" && initialBalance > 0) {
+entries.push({
+value: initialBalance,
+date: new Date(0), // 1970 год — гарантированно самый старый
+isInitial: true
+});
+}
 
-  // 3️⃣ если вообще пусто
-  if (entries.length === 0) {
-    list.innerHTML = `
-      <div class="card" style="opacity:.6;font-size:14px">
-        Операций пока нет
-      </div>
-    `;
-    openScreen("progress", null);
-    return;
-  }
+// 3️⃣ если вообще пусто
+if (entries.length === 0) {
+list.innerHTML = `
+<div class="card" style="opacity:.6;font-size:14px">
+Операций пока нет
+</div>
+`;
+openScreen("progress", null);
+return;
+}
 
-  // 4️⃣ сортируем: новые сверху
-  entries.sort((a, b) => b.date - a.date);
+// 4️⃣ сортируем: новые сверху
+entries.sort((a, b) => b.date - a.date);
 
-  // 5️⃣ рисуем
-  entries.forEach(e => {
+// 5️⃣ рисуем
+entries.forEach(e => {
 
-    if (e.isInitial) {
-      list.innerHTML += `
-        <div class="card" style="opacity:.85">
-          <div style="font-size:15px;font-weight:600">
-            Начальный баланс: ${e.value.toLocaleString()} ₽
-          </div>
-          <div style="font-size:13px;opacity:.6;margin-top:4px">
-            Указано при создании плана
-          </div>
-        </div>
-      `;
-    } else {
-      list.innerHTML += `
-        <div class="card">
-          <div style="font-size:15px;font-weight:600">
-            +${e.value.toLocaleString()} ₽
-          </div>
-          <div style="font-size:13px;opacity:.6;margin-top:4px">
-            ${e.date.toLocaleDateString("ru-RU")}
-          </div>
-        </div>
-      `;
-    }
+if (e.isInitial) {
+list.innerHTML += `
+<div class="card" style="opacity:.85">
+<div style="font-size:15px;font-weight:600">
+Начальный баланс: ${e.value.toLocaleString()} ₽
+</div>
+<div style="font-size:13px;opacity:.6;margin-top:4px">
+Указано при создании плана
+</div>
+</div>
+`;
+} else {
+list.innerHTML += `
+<div class="card">
+<div style="font-size:15px;font-weight:600">
++${e.value.toLocaleString()} ₽
+</div>
+<div style="font-size:13px;opacity:.6;margin-top:4px">
+${e.date.toLocaleDateString("ru-RU")}
+</div>
+</div>
+`;
+}
 
-  });
+});
 
-  openScreen("progress", null);
+openScreen("progress", null);
 }
 
 /* ===== BOTTOM SHEET ===== */
@@ -587,15 +587,22 @@ loader.classList.add("hidden");
 const explanation = ProtocolCore.explain(lastCalc);
 const advice = ProtocolCore.buildAdvice(lastCalc);
 
-const realContent = document.getElementById("realScreen");
-
-realContent.innerHTML = `
+adviceCard.innerHTML = `
 <div id="planHeader">
-<div id="planMonthly" style="font-size:16px;font-weight:600"></div>
+<div
+id="planMonthly"
+style="font-size:16px;font-weight:600"
+></div>
 
-<div id="planExplanation"
-style="margin-top:8px;font-size:14px;line-height:1.4;opacity:0.75;">
-</div>
+<div
+id="planExplanation"
+style="
+margin-top:8px;
+font-size:14px;
+line-height:1.4;
+opacity:0.75;
+"
+></div>
 </div>
 
 <div style="
@@ -609,31 +616,21 @@ font-size:14px;
 ${advice.text}
 </div>
 
-<div class="chart-wrap"
-style="width:100%; height:260px; margin:16px 0; position:relative;">
+<div class="chart-wrap" style="width:100%; height:260px; margin:16px 0; position:relative;">
 <canvas id="chartBg"></canvas>
 <canvas id="chartFact"></canvas>
 </div>
 
 <div class="fact-input-row">
 <input id="factInput" inputmode="numeric"
-placeholder="Сколько вы отложили" style="flex:1"/>
+placeholder="Сколько вы отложили"
+style="flex:1"/>
 <button id="applyFact"
 style="width:52px;height:52px;border-radius:50%">
 ➜
 </button>
 </div>
 `;
-
-const fake = document.getElementById("fakeScreen");
-
-setTimeout(() => {
-  fake.style.transform = "translateX(-100%)";
-}, 50);
-
-setTimeout(() => {
-  fake.remove();
-}, 700);
 
 initChart();
 animateFactLine();
@@ -648,35 +645,35 @@ const factInput = document.getElementById("factInput");
 const applyBtn = document.getElementById("applyFact");
 
 factInput.addEventListener("input", e => {
-  e.target.value = formatNumber(e.target.value);
+e.target.value = formatNumber(e.target.value);
 
-  // 🔥 убираем ошибку как только начали ввод
-  factInput.classList.remove("error", "shake");
+// 🔥 убираем ошибку как только начали ввод
+factInput.classList.remove("error", "shake");
 });
 
 factInput.addEventListener("focus", () => {
-  factInput.classList.remove("error", "shake");
+factInput.classList.remove("error", "shake");
 });
 
 applyBtn.onclick = () => {
 
-  const fact = parseNumber(factInput.value || "0");
+const fact = parseNumber(factInput.value || "0");
 
-  // 🔥 ВСЕГДА сначала очищаем ошибку
-  factInput.classList.remove("error", "shake");
+// 🔥 ВСЕГДА сначала очищаем ошибку
+factInput.classList.remove("error", "shake");
 
-  if (!fact) {
+if (!fact) {
 
-    factInput.classList.add("error");
+factInput.classList.add("error");
 
-    void factInput.offsetWidth;
-    factInput.classList.add("shake");
+void factInput.offsetWidth;
+factInput.classList.add("shake");
 
-    haptic("error");
-    return;
-  }
+haptic("error");
+return;
+}
 
-  // дальше твоя логика без изменений
+// дальше твоя логика без изменений
 
 let toMain = fact;
 let toReserve = 0;
@@ -878,10 +875,10 @@ const watermarkLogo = new Image();
 watermarkLogo.src = "logo.svg";
 
 function clearFactInputError() {
-  const factInput = document.getElementById("factInput");
-  if (!factInput) return;
+const factInput = document.getElementById("factInput");
+if (!factInput) return;
 
-  factInput.classList.remove("error", "shake");
+factInput.classList.remove("error", "shake");
 }
 
 /* ===== GRAPH (CLEAN & STABLE) ===== */
@@ -1242,7 +1239,7 @@ goalEditorOverlay.style.display = "block";
 
 // 🔥 ДАЁМ БРАУЗЕРУ 1 КАДР
 requestAnimationFrame(() => {
-  goalEditorSheet.style.transform = "translateY(0)";
+goalEditorSheet.style.transform = "translateY(0)";
 });
 };
 }
@@ -1250,7 +1247,7 @@ requestAnimationFrame(() => {
 goalEditorOverlay.onclick = () => {
 goalEditorSheet.style.transform = "translateY(100%)";
 setTimeout(() => {
-  goalEditorOverlay.style.display = "none";
+goalEditorOverlay.style.display = "none";
 }, 550);
 goalEditHint.classList.remove("show");
 };
@@ -1279,9 +1276,9 @@ goalCompleted = true;
 
 // 4️⃣ закрываем редактор
 goalEditorOverlay.onclick = () => {
-  goalEditorSheet.style.transform = "translateY(100%)";
+goalEditorSheet.style.transform = "translateY(100%)";
 setTimeout(() => {
-  goalEditorOverlay.style.display = "none";
+goalEditorOverlay.style.display = "none";
 }, 550);
 };
 // 5️⃣ пересчитываем UI
@@ -1358,6 +1355,10 @@ plannedMonthly = Math.round(plannedMonthly * 0.9);
 drawStaticLayer();
 animateFactLine();
 
+}
+
+if (newGoal > lastCalc.effectiveGoal + accounts.main) {
+showBrainMessage("Цель увеличена — план автоматически пересчитан.");
 }
 
 function updatePlanHeader() {
@@ -1450,11 +1451,11 @@ bgCtx.save();
 
 bgCtx.globalAlpha = 0.07;
 bgCtx.drawImage(
-  watermarkLogo,
-  centerX - size / 2,
-  centerY - size / 2 - 12,
-  size,
-  size
+watermarkLogo,
+centerX - size / 2,
+centerY - size / 2 - 12,
+size,
+size
 );
 
 bgCtx.globalAlpha = 0.16;
@@ -1473,9 +1474,9 @@ bgCtx.globalAlpha = 0.12;
 bgCtx.font = "400 10px Inter, system-ui";
 
 bgCtx.fillText(
-  "™",
-  centerX + protocolWidth / 2 + 3,
-  textY - 4
+"™",
+centerX + protocolWidth / 2 + 3,
+textY - 4
 );
 
 bgCtx.restore();
@@ -1527,24 +1528,24 @@ let planColor = "#ffffff";
 
 // если пользователь ещё не вводил реальные пополнения — линия всегда белая
 if (factHistory.length === 0) {
-  bgCtx.strokeStyle = "#ffffff";
-  bgCtx.lineWidth = 2;
+bgCtx.strokeStyle = "#ffffff";
+bgCtx.lineWidth = 2;
 
-  const points = buildPlanTimeline(new Date(), plannedMonthly, lastCalc.months);
-  const maxValue = points[points.length - 1].value;
+const points = buildPlanTimeline(new Date(), plannedMonthly, lastCalc.months);
+const maxValue = points[points.length - 1].value;
 
-  bgCtx.beginPath();
+bgCtx.beginPath();
 
-  points.forEach((p, i) => {
-    const x = pad + (i / (points.length - 1)) * (W - pad * 2);
-    const y = H - pad - (p.value / maxValue) * (H - pad * 2);
+points.forEach((p, i) => {
+const x = pad + (i / (points.length - 1)) * (W - pad * 2);
+const y = H - pad - (p.value / maxValue) * (H - pad * 2);
 
-    if (i === 0) bgCtx.moveTo(x, y);
-    else bgCtx.lineTo(x, y);
-  });
+if (i === 0) bgCtx.moveTo(x, y);
+else bgCtx.lineTo(x, y);
+});
 
-  bgCtx.stroke();
-  return; // ← ВАЖНО
+bgCtx.stroke();
+return; // ← ВАЖНО
 }
 
 if (factHistory.length > 0) {
