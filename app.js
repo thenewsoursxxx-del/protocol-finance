@@ -569,6 +569,16 @@ plannedMonthly = lastCalc.monthlySave;
 if (mode === "buffer") plannedMonthly = Math.round(plannedMonthly * 0.9);
 
 adviceCard.innerText = "Protocol анализирует данные…";
+setTimeout(() => {
+  adviceCard.innerText =
+    mode === "buffer"
+      ? "Часть средств будет направляться в резерв."
+      : "Все средства идут напрямую в цель.";
+}, 2000);
+
+setTimeout(() => {
+  adviceCard.innerText = "Готово.";
+}, 4000);
 
 setTimeout(() => {
 
