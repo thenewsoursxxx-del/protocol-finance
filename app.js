@@ -588,49 +588,69 @@ const explanation = ProtocolCore.explain(lastCalc);
 const advice = ProtocolCore.buildAdvice(lastCalc);
 
 adviceCard.innerHTML = `
-<div id="planHeader">
-<div
-id="planMonthly"
-style="font-size:16px;font-weight:600"
-></div>
-
-<div
-id="planExplanation"
-style="
-margin-top:8px;
-font-size:14px;
-line-height:1.4;
-opacity:0.75;
-"
-></div>
-</div>
-
-<div style="
-margin-top:10px;
-padding:10px 12px;
-border-radius:14px;
-background:#111;
-border:1px solid #222;
-font-size:14px;
+<div id="adviceSlider" style="
+  width:200%;
+  display:flex;
+  transition: transform 0.6s cubic-bezier(.22,1,.36,1);
 ">
-${advice.text}
-</div>
 
-<div class="chart-wrap" style="width:100%; height:260px; margin:16px 0; position:relative;">
-<canvas id="chartBg"></canvas>
-<canvas id="chartFact"></canvas>
-</div>
+  <!-- ЛЕВАЯ ЧАСТЬ (ФЕЙК ЭКРАН) -->
+  <div style="width:50%;padding:24px;">
+    <div style="text-align:center;margin-top:60px">
+      <div class="loader"></div>
+      <div style="margin-top:16px">
+        Готово.
+      </div>
+    </div>
+  </div>
 
-<div class="fact-input-row">
-<input id="factInput" inputmode="numeric"
-placeholder="Сколько вы отложили"
-style="flex:1"/>
-<button id="applyFact"
-style="width:52px;height:52px;border-radius:50%">
-➜
-</button>
+  <!-- ПРАВАЯ ЧАСТЬ (РЕАЛЬНЫЙ КОНТЕНТ) -->
+  <div style="width:50%;padding:24px;">
+
+    <div id="planHeader">
+      <div id="planMonthly"
+        style="font-size:16px;font-weight:600"></div>
+
+      <div id="planExplanation"
+        style="margin-top:8px;font-size:14px;line-height:1.4;opacity:0.75;">
+      </div>
+    </div>
+
+    <div style="
+      margin-top:10px;
+      padding:10px 12px;
+      border-radius:14px;
+      background:#111;
+      border:1px solid #222;
+      font-size:14px;
+    ">
+      ${advice.text}
+    </div>
+
+    <div class="chart-wrap"
+      style="width:100%; height:260px; margin:16px 0; position:relative;">
+      <canvas id="chartBg"></canvas>
+      <canvas id="chartFact"></canvas>
+    </div>
+
+    <div class="fact-input-row">
+      <input id="factInput" inputmode="numeric"
+        placeholder="Сколько вы отложили" style="flex:1"/>
+      <button id="applyFact"
+        style="width:52px;height:52px;border-radius:50%">
+        ➜
+      </button>
+    </div>
+
+  </div>
 </div>
 `;
+
+const slider = document.getElementById("adviceSlider");
+
+setTimeout(() => {
+  slider.style.transform = "translateX(-50%)";
+}, 50);
 
 initChart();
 animateFactLine();
