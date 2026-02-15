@@ -598,55 +598,70 @@ adviceCard.innerText = "Готово.";
 }, 4000);
 
 setTimeout(() => {
-loader.classList.add("hidden");
 
-const explanation = ProtocolCore.explain(lastCalc);
-const advice = ProtocolCore.buildAdvice(lastCalc);
+  // 1️⃣ сначала карточка уезжает влево
+  adviceCard.classList.add("slide-left");
 
-adviceCard.innerHTML = `
-<div id="planHeader">
-<div
-id="planMonthly"
-style="font-size:16px;font-weight:600"
-></div>
+  // 2️⃣ ждём пока она уедет
+  setTimeout(() => {
 
-<div
-id="planExplanation"
-style="
-margin-top:8px;
-font-size:14px;
-line-height:1.4;
-opacity:0.75;
-"
-></div>
-</div>
+    loader.classList.add("hidden");
 
-<div style="
-margin-top:10px;
-padding:10px 12px;
-border-radius:14px;
-background:#111;
-border:1px solid #222;
-font-size:14px;
-">
-${advice.text}
-</div>
+    const explanation = ProtocolCore.explain(lastCalc);
+    const advice = ProtocolCore.buildAdvice(lastCalc);
 
-<div class="chart-wrap" style="width:100%; height:260px; margin:16px 0; position:relative;">
-<canvas id="chartBg"></canvas>
-<canvas id="chartFact"></canvas>
-</div>
+    // 3️⃣ меняем содержимое
+    adviceCard.innerHTML = `
+      <div id="planHeader">
+        <div id="planMonthly"
+          style="font-size:16px;font-weight:600"></div>
 
-<div class="fact-input-row">
-<input id="factInput" inputmode="numeric"
-placeholder="Сколько вы отложили"
-style="flex:1"/>
-<button id="applyFact"
-style="width:52px;height:52px;border-radius:50%">
-➜
-</button>
-</div>
-`;
+        <div id="planExplanation"
+          style="margin-top:8px;font-size:14px;line-height:1.4;opacity:0.75;">
+        </div>
+      </div>
+
+      <div style="
+        margin-top:10px;
+        padding:10px 12px;
+        border-radius:14px;
+        background:#111;
+        border:1px solid #222;
+        font-size:14px;
+      ">
+        ${advice.text}
+      </div>
+
+      <div class="chart-wrap"
+        style="width:100%; height:260px; margin:16px 0; position:relative;">
+        <canvas id="chartBg"></canvas>
+        <canvas id="chartFact"></canvas>
+      </div>
+
+      <div class="fact-input-row">
+        <input id="factInput" inputmode="numeric"
+          placeholder="Сколько вы отложили" style="flex:1"/>
+        <button id="applyFact"
+          style="width:52px;height:52px;border-radius:50%">
+          ➜
+        </button>
+      </div>
+    `;
+
+    // 4️⃣ возвращаем карточку на место
+    adviceCard.classList.remove("slide-left");
+
+    initChart();
+    animateFactLine();
+    showBottomNav();
+    buttons.forEach(b => b.classList.remove("active"));
+    buttons[1].classList.add("active");
+    moveIndicator(buttons[1]);
+    updatePlanHeader();
+
+  }, 450); // это время анимации
+
+}, 6000);
 
 initChart();
 animateFactLine();
