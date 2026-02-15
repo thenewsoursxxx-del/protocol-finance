@@ -1280,3 +1280,36 @@ html, body {
 #factInput.shake {
   animation: input-shake 0.35s ease;
 }
+
+.reveal-wrap {
+  position: relative;
+  overflow: hidden;
+  min-height: 420px;
+}
+
+.reveal-loading {
+  position: absolute;
+  inset: 0;
+  background: #000;
+  z-index: 10;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  transition: transform 0.8s cubic-bezier(.22,1,.36,1),
+              opacity 0.8s ease;
+
+  will-change: transform;
+}
+
+.reveal-content {
+  position: relative;
+  z-index: 1;
+
+  transform: scale(0.96);
+  opacity: 0.3;
+
+  transition: transform 0.8s cubic-bezier(.22,1,.36,1),
+              opacity 0.8s ease;
+}
