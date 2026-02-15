@@ -582,12 +582,27 @@ adviceCard.innerText = "Готово.";
 }, 4000);
 
 setTimeout(() => {
+
 loader.classList.add("hidden");
 
-const explanation = ProtocolCore.explain(lastCalc);
-const advice = ProtocolCore.buildAdvice(lastCalc);
+const fake = document.getElementById("fakeScreen");
+const real = document.getElementById("realScreen");
 
-adviceCard.innerHTML = `
+// 1️⃣ расширяем маленький блок
+fake.classList.add("expand");
+
+// 2️⃣ через 500мс начинаем уезд
+setTimeout(() => {
+  fake.classList.add("slide-out");
+}, 500);
+
+// 3️⃣ после уезда показываем реальный контент
+setTimeout(() => {
+
+  const explanation = ProtocolCore.explain(lastCalc);
+  const advice = ProtocolCore.buildAdvice(lastCalc);
+
+  real.innerHTML = `
 <div id="adviceSlider" style="
   width:200%;
   display:flex;
@@ -745,6 +760,10 @@ setTimeout(fireCelebration, 120);
 factInput.value = "";
 factInput.blur();
 };
+
+  fake.style.display = "none";
+
+}, 1100);
 
 }, 6000);
 }
