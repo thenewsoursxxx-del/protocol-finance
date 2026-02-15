@@ -654,10 +654,6 @@ adviceCard.appendChild(newLayer);
 // 3️⃣ одновременно запускаем анимацию
 requestAnimationFrame(() => {
 
-  adviceCard.style.transition = "transform 0.45s cubic-bezier(.22,.61,.36,1), opacity 0.45s";
-  adviceCard.style.transform = "translateX(-30%) scale(0.98)";
-  adviceCard.style.opacity = "0.4";
-
   newLayer.style.transition = "transform 0.45s cubic-bezier(.22,.61,.36,1), opacity 0.45s";
   newLayer.style.transform = "translateX(0) scale(1)";
   newLayer.style.opacity = "1";
@@ -668,10 +664,6 @@ setTimeout(() => {
 
   adviceCard.innerHTML = "";
   adviceCard.appendChild(newLayer);
-
-  adviceCard.style.transition = "none";
-  adviceCard.style.transform = "none";
-  adviceCard.style.opacity = "1";
 
   initChart();
   animateFactLine();
