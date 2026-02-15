@@ -561,7 +561,7 @@ openScreen("advice", null);
 const backBtn = document.getElementById("protocolBack");
 if (backBtn) backBtn.style.display = "none";
 hideBottomNav();
-adviceCard.innerHTML = "";
+
 loader.classList.remove("hidden");
 
 plannedMonthly = lastCalc.monthlySave;
