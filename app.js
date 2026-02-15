@@ -599,71 +599,90 @@ adviceCard.innerText = "Готово.";
 
 setTimeout(() => {
 
-  adviceCard.style.transform = "translateX(-100%)";
-  adviceCard.style.transition = "transform 0.45s ease";
+  loader.classList.add("hidden");
 
-  setTimeout(() => {
+const explanation = ProtocolCore.explain(lastCalc);
+const advice = ProtocolCore.buildAdvice(lastCalc);
 
-    loader.classList.add("hidden");
+// 1️⃣ создаём новый слой
+const newLayer = document.createElement("div");
+newLayer.className = "advice-layer";
 
-    const explanation = ProtocolCore.explain(lastCalc);
-    const advice = ProtocolCore.buildAdvice(lastCalc);
+newLayer.innerHTML = `
+  <div id="planHeader">
+    <div id="planMonthly"
+      style="font-size:16px;font-weight:600"></div>
 
-    adviceCard.innerHTML = `
-      <div id="planHeader">
-        <div id="planMonthly"
-          style="font-size:16px;font-weight:600"></div>
+    <div id="planExplanation"
+      style="margin-top:8px;font-size:14px;line-height:1.4;opacity:0.75;">
+    </div>
+  </div>
 
-        <div id="planExplanation"
-          style="margin-top:8px;font-size:14px;line-height:1.4;opacity:0.75;">
-        </div>
-      </div>
+  <div style="
+    margin-top:10px;
+    padding:10px 12px;
+    border-radius:14px;
+    background:#111;
+    border:1px solid #222;
+    font-size:14px;
+  ">
+    ${advice.text}
+  </div>
 
-      <div style="
-        margin-top:10px;
-        padding:10px 12px;
-        border-radius:14px;
-        background:#111;
-        border:1px solid #222;
-        font-size:14px;
-      ">
-        ${advice.text}
-      </div>
+  <div class="chart-wrap"
+    style="width:100%; height:260px; margin:16px 0; position:relative;">
+    <canvas id="chartBg"></canvas>
+    <canvas id="chartFact"></canvas>
+  </div>
 
-      <div class="chart-wrap"
-        style="width:100%; height:260px; margin:16px 0; position:relative;">
-        <canvas id="chartBg"></canvas>
-        <canvas id="chartFact"></canvas>
-      </div>
+  <div class="fact-input-row">
+    <input id="factInput" inputmode="numeric"
+      placeholder="Сколько вы отложили" style="flex:1"/>
+    <button id="applyFact"
+      style="width:52px;height:52px;border-radius:50%">
+      ➜
+    </button>
+  </div>
+`;
 
-      <div class="fact-input-row">
-        <input id="factInput" inputmode="numeric"
-          placeholder="Сколько вы отложили" style="flex:1"/>
-        <button id="applyFact"
-          style="width:52px;height:52px;border-radius:50%">
-          ➜
-        </button>
-      </div>
-    `;
+// 2️⃣ готовим позиции
+newLayer.style.transform = "translateX(100%) scale(0.98)";
+newLayer.style.opacity = "0";
 
-    adviceCard.style.transition = "none";
-    adviceCard.style.transform = "translateX(100%)";
+adviceCard.appendChild(newLayer);
 
-    requestAnimationFrame(() => {
-      adviceCard.style.transition = "transform 0.45s ease";
-      adviceCard.style.transform = "translateX(0)";
-    });
+// 3️⃣ одновременно запускаем анимацию
+requestAnimationFrame(() => {
 
-    initChart();
-    animateFactLine();
-    showBottomNav();
-    updatePlanHeader();
+  adviceCard.style.transition = "transform 0.45s cubic-bezier(.22,.61,.36,1), opacity 0.45s";
+  adviceCard.style.transform = "translateX(-30%) scale(0.98)";
+  adviceCard.style.opacity = "0.4";
 
-    buttons.forEach(b => b.classList.remove("active"));
-    buttons[1].classList.add("active");
-    moveIndicator(buttons[1]);
+  newLayer.style.transition = "transform 0.45s cubic-bezier(.22,.61,.36,1), opacity 0.45s";
+  newLayer.style.transform = "translateX(0) scale(1)";
+  newLayer.style.opacity = "1";
+});
 
-  }, 450);
+// 4️⃣ после анимации чистим старый слой
+setTimeout(() => {
+
+  adviceCard.innerHTML = "";
+  adviceCard.appendChild(newLayer);
+
+  adviceCard.style.transition = "none";
+  adviceCard.style.transform = "none";
+  adviceCard.style.opacity = "1";
+
+  initChart();
+  animateFactLine();
+  showBottomNav();
+  updatePlanHeader();
+
+  buttons.forEach(b => b.classList.remove("active"));
+  buttons[1].classList.add("active");
+  moveIndicator(buttons[1]);
+
+}, 450);
 
 }, 6000);
 }
