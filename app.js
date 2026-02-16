@@ -1742,3 +1742,56 @@ dotAnimating = false;
 
 requestAnimationFrame(frame);
 }
+
+/* =========================================
+   NAV DRAG SWITCH (SAFE FOR TELEGRAM)
+========================================= */
+
+let navDragging = false;
+
+bottomNav.addEventListener("pointerdown", (e) => {
+  navDragging = true;
+  handleNavDrag(e);
+});
+
+bottomNav.addEventListener("pointermove", (e) => {
+  if (!navDragging) return;
+  handleNavDrag(e);
+});
+
+bottomNav.addEventListener("pointerup", () => {
+  navDragging = false;
+});
+
+bottomNav.addEventListener("pointercancel", () => {
+  navDragging = false;
+});
+
+function handleNavDrag(e) {
+  const rect = bottomNav.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+
+  const btnWidth = rect.width / buttons.length;
+  const index = Math.floor(x / btnWidth);
+
+  if (index < 0 || index >= buttons.length) return;
+
+  const btn = buttons[index];
+
+  if (!btn.classList.contains("active")) {
+    haptic("light");
+
+    lastScreenBeforeProfile = btn.dataset.screen;
+    lastNavBtnBeforeProfile = btn;
+
+    openScreen(btn.dataset.screen, btn);
+
+    if (btn.dataset.screen === "goals") {
+      renderGoals();
+    }
+
+    if (btn.dataset.screen === "accounts") {
+      renderAccountsUI();
+    }
+  }
+}
