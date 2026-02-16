@@ -13,6 +13,15 @@ font-family: system-ui, -apple-system;
 font-size: 18px;
 }
 
+.app {
+padding: 20px;
+padding-bottom: 220px; /* ← ВАЖНО */
+position: relative;
+}
+
+.screen { display: none; }
+.screen.active { display: block; }
+
 h2 { font-size: 22px; margin-bottom: 18px; }
 
 label { display: block; margin-bottom: 6px; opacity: .7; font-size: 14px }
@@ -548,6 +557,15 @@ font-weight: 500;
 box-shadow:
 0 0 0 1px rgba(58,123,253,0.35),
 0 20px 55px rgba(58,123,253,0.45);
+}
+
+.app {
+background:
+radial-gradient(
+120% 60% at 50% 0%,
+rgba(255,255,255,0.04),
+rgba(0,0,0,0) 70%
+);
 }
 
 .scenario-card > b {
@@ -1189,8 +1207,10 @@ html, body {
   height: 100%;
 }
 
-#app {
-  height: var(--app-height);
+.app {
+  height: 100vh;              /* фиксируем высоту */
+  overflow-y: auto;           /* скролл только внутри */
+  -webkit-overflow-scrolling: touch;
 }
 
 .fact-input-row {
@@ -1259,28 +1279,4 @@ html, body {
 
 #factInput.shake {
   animation: input-shake 0.35s ease;
-}
-
-/* ===== SWIPE ENGINE ===== */
-
-.app {
-  height: var(--app-height);
-  position: relative;
-  overflow: hidden;   /* ← ВАЖНО */
-}
-
-.screens-wrapper {
-  display: flex;
-  width: 500%;
-  height: 100%;
-  transition: transform 0.35s cubic-bezier(.22,.61,.36,1);
-}
-
-.screen {
-  flex: 0 0 100%;
-  height: 100%;
-  overflow-y: auto;
-  overflow-x: hidden;   /* ← чтобы не было горизонтального скролла */
-  padding: 20px;
-  padding-bottom: 220px;
 }

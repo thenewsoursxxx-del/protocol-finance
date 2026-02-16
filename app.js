@@ -1,26 +1,10 @@
 const tg = window.Telegram?.WebApp;
+tg?.expand();
 
-function setAppHeight() {
-  let height;
-
-  if (tg && (tg.viewportStableHeight || tg.viewportHeight)) {
-    height = tg.viewportStableHeight || tg.viewportHeight;
-  } else {
-    height = window.innerHeight;
-  }
-
-  document.documentElement.style.setProperty('--app-height', height + 'px');
+if (window.Telegram?.WebApp) {
+Telegram.WebApp.ready();
+Telegram.WebApp.expand();
 }
-
-if (tg) {
-  tg.expand();
-  tg.ready();
-  tg.onEvent('viewportChanged', setAppHeight);
-}
-
-window.addEventListener('resize', setAppHeight);
-
-setAppHeight();
 
 document.addEventListener("click", e => {
 if (
@@ -221,33 +205,21 @@ calcLock.style.display = "none";
 moveIndicator(buttons[0]);
 
 /* ===== OPEN SCREEN ===== */
-let currentIndex = 0;
-
-const wrapper = document.getElementById("screensWrapper");
-
-let startX = 0;
-let startY = 0;
-let currentTranslate = 0;
-let isDragging = false;
-
 function openScreen(name, btn) {
+if (!isInitialized && name !== "calc") return;
 
-  const order = ["calc", "advice", "accounts", "goals", "ai"];
+screens.forEach(s => s.classList.remove("active"));
+document.getElementById("screen-" + name).classList.add("active");
 
-  const newIndex = order.indexOf(name);
-  if (newIndex === -1) return;
+buttons.forEach(b => b.classList.remove("active"));
+if (btn) btn.classList.add("active");
 
-  currentIndex = newIndex;
-
-  wrapper.style.transition =
-    "transform 0.35s cubic-bezier(.22,.61,.36,1)";
-  wrapper.style.transform =
-    `translateX(-${newIndex * 100}%)`;
-
-  buttons.forEach(b => b.classList.remove("active"));
-  if (btn) btn.classList.add("active");
-
-  if (btn) moveIndicator(btn);
+if (btn) {
+moveIndicator(btn);
+} else {
+indicator.style.opacity = "0";
+}
+clearFactInputError();
 }
 // ===== TOP PROFILE FIX =====
 
@@ -1770,63 +1742,3 @@ dotAnimating = false;
 
 requestAnimationFrame(frame);
 }
-
-wrapper.addEventListener("touchstart", e => {
-
-  if (!isInitialized && currentIndex === 0) return;
-
-  startX = e.touches[0].clientX;
-  startY = e.touches[0].clientY;
-  isDragging = true;
-  wrapper.style.transition = "none";
-});
-
-wrapper.addEventListener("touchmove", e => {
-  if (!isDragging) return;
-
-  const currentX = e.touches[0].clientX;
-  const currentY = e.touches[0].clientY;
-
-  const diffX = currentX - startX;
-  const diffY = currentY - startY;
-
-  // если вертикальное движение больше — выходим
-  if (Math.abs(diffY) > Math.abs(diffX)) return;
-
-  currentTranslate =
-    -currentIndex * window.innerWidth + diffX;
-
-  wrapper.style.transform =
-    `translateX(${currentTranslate}px)`;
-});
-
-wrapper.addEventListener("touchend", () => {
-  if (!isDragging) return;
-
-  isDragging = false;
-
-  const movedBy =
-    currentTranslate + currentIndex * window.innerWidth;
-
-  const threshold = window.innerWidth * 0.18; // 18% ширины
-
-  if (movedBy < -threshold && currentIndex < buttons.length - 1) {
-    currentIndex++;
-  } 
-  else if (movedBy > threshold && currentIndex > 0) {
-    currentIndex--;
-  }
-
-  wrapper.style.transition =
-    "transform 0.35s cubic-bezier(.22,.61,.36,1)";
-
-  wrapper.style.transform =
-    `translateX(-${currentIndex * 100}%)`;
-
-  const btn = buttons[currentIndex];
-
-  buttons.forEach(b => b.classList.remove("active"));
-  if (btn) btn.classList.add("active");
-
-  moveIndicator(btn);
-});
