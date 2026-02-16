@@ -205,21 +205,33 @@ calcLock.style.display = "none";
 moveIndicator(buttons[0]);
 
 /* ===== OPEN SCREEN ===== */
+let currentIndex = 0;
+
+const wrapper = document.getElementById("screensWrapper");
+
+let startX = 0;
+let startY = 0;
+let currentTranslate = 0;
+let isDragging = false;
+
 function openScreen(name, btn) {
-if (!isInitialized && name !== "calc") return;
 
-screens.forEach(s => s.classList.remove("active"));
-document.getElementById("screen-" + name).classList.add("active");
+  const order = ["calc", "advice", "accounts", "goals", "ai"];
 
-buttons.forEach(b => b.classList.remove("active"));
-if (btn) btn.classList.add("active");
+  const newIndex = order.indexOf(name);
+  if (newIndex === -1) return;
 
-if (btn) {
-moveIndicator(btn);
-} else {
-indicator.style.opacity = "0";
-}
-clearFactInputError();
+  currentIndex = newIndex;
+
+  wrapper.style.transition =
+    "transform 0.35s cubic-bezier(.22,.61,.36,1)";
+  wrapper.style.transform =
+    `translateX(-${newIndex * 100}%)`;
+
+  buttons.forEach(b => b.classList.remove("active"));
+  if (btn) btn.classList.add("active");
+
+  if (btn) moveIndicator(btn);
 }
 // ===== TOP PROFILE FIX =====
 
@@ -1742,3 +1754,62 @@ dotAnimating = false;
 
 requestAnimationFrame(frame);
 }
+
+let startY = 0;
+
+wrapper.addEventListener("touchstart", e => {
+  startX = e.touches[0].clientX;
+  startY = e.touches[0].clientY;
+  isDragging = true;
+  wrapper.style.transition = "none";
+});
+
+wrapper.addEventListener("touchmove", e => {
+  if (!isDragging) return;
+
+  const currentX = e.touches[0].clientX;
+  const currentY = e.touches[0].clientY;
+
+  const diffX = currentX - startX;
+  const diffY = currentY - startY;
+
+  // если вертикальное движение больше — выходим
+  if (Math.abs(diffY) > Math.abs(diffX)) return;
+
+  currentTranslate =
+    -currentIndex * window.innerWidth + diffX;
+
+  wrapper.style.transform =
+    `translateX(${currentTranslate}px)`;
+});
+
+wrapper.addEventListener("touchend", () => {
+  if (!isDragging) return;
+
+  isDragging = false;
+
+  const movedBy =
+    currentTranslate + currentIndex * window.innerWidth;
+
+  const threshold = window.innerWidth * 0.18; // 18% ширины
+
+  if (movedBy < -threshold && currentIndex < buttons.length - 1) {
+    currentIndex++;
+  } 
+  else if (movedBy > threshold && currentIndex > 0) {
+    currentIndex--;
+  }
+
+  wrapper.style.transition =
+    "transform 0.35s cubic-bezier(.22,.61,.36,1)";
+
+  wrapper.style.transform =
+    `translateX(-${currentIndex * 100}%)`;
+
+  const btn = buttons[currentIndex];
+
+  buttons.forEach(b => b.classList.remove("active"));
+  if (btn) btn.classList.add("active");
+
+  moveIndicator(btn);
+});
