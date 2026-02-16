@@ -1280,3 +1280,22 @@ html, body {
 #factInput.shake {
   animation: input-shake 0.35s ease;
 }
+
+/* ===== SWIPE ENGINE ===== */
+
+.app {
+  overflow: hidden; /* важно */
+}
+
+.screens-wrapper {
+  display: flex;
+  width: 500%; /* 5 экранов */
+  height: 100%;
+  transition: transform 0.35s cubic-bezier(.22,.61,.36,1);
+}
+
+.screen {
+  flex: 0 0 100%;
+  height: 100%;
+  display: block !important; /* убираем display:none */
+}
