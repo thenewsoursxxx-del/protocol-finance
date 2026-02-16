@@ -1281,70 +1281,66 @@ html, body {
   animation: input-shake 0.35s ease;
 }
 
-/* ===== ADVANCED FLOAT BUTTON ===== */
+/* ===== ADVANCED BUTTON ===== */
 
 .advanced-btn {
   position: fixed;
-  bottom: 118px; /* над навбаром */
+  bottom: 110px; /* выше nav */
   left: 50%;
   transform: translateX(-50%);
-  z-index: 40;
-
+  
   width: 74px;
   height: 74px;
   border-radius: 50%;
-
   border: none;
   cursor: pointer;
 
-  display: flex;
+  display: none; /* по умолчанию скрыта */
   align-items: center;
   justify-content: center;
 
-  overflow: hidden;
-}
-
-/* живой изумрудный градиент */
-.advanced-btn::before {
-  content: "";
-  position: absolute;
-  inset: -2px;
-  border-radius: 50%;
+  font-size: 34px;
+  color: #ffffff;
 
   background: linear-gradient(
-    120deg,
-    #064e3b,
-    #047857,
-    #10b981,
-    #047857,
-    #064e3b
+    145deg,
+    #0f5132,
+    #198754,
+    #20c997
   );
 
-  background-size: 300% 300%;
-  animation: emeraldShift 6s ease infinite;
-}
-
-@keyframes emeraldShift {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-
-.advanced-btn span {
-  position: relative;
-  z-index: 2;
-
-  font-size: 34px;
-  font-weight: 300;
-  color: #ffffff;
-}
-
-.advanced-btn::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
   box-shadow:
-    0 0 40px rgba(16,185,129,0.35),
-    0 10px 30px rgba(0,0,0,0.6);
+    0 0 20px rgba(16,185,129,0.6),
+    0 0 60px rgba(16,185,129,0.35);
+
+  transition:
+    transform .2s ease,
+    box-shadow .3s ease;
+}
+
+/* лёгкое "дыхание" */
+@keyframes emerald-glow {
+  0% {
+    box-shadow:
+      0 0 20px rgba(16,185,129,0.5),
+      0 0 60px rgba(16,185,129,0.25);
+  }
+  50% {
+    box-shadow:
+      0 0 28px rgba(16,185,129,0.8),
+      0 0 80px rgba(16,185,129,0.45);
+  }
+  100% {
+    box-shadow:
+      0 0 20px rgba(16,185,129,0.5),
+      0 0 60px rgba(16,185,129,0.25);
+  }
+}
+
+.advanced-btn {
+  animation: emerald-glow 3s ease-in-out infinite;
+}
+
+.advanced-btn:active {
+  transform: translateX(-50%) scale(0.92);
 }
