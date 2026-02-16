@@ -258,15 +258,11 @@ haptic("light");
 
 openScreen(lastScreenBeforeProfile, lastNavBtnBeforeProfile);
 
-// nav показываем ТОЛЬКО если это не calc
-if (lastScreenBeforeProfile === "calc") {
-bottomNav.style.transform = "translateY(140%)";
-bottomNav.style.opacity = "0";
-bottomNav.style.pointerEvents = "none";
+// показываем nav если план уже создан
+if (isInitialized) {
+showBottomNav();
 } else {
-bottomNav.style.transform = "translateY(0)";
-bottomNav.style.opacity = "1";
-bottomNav.style.pointerEvents = "auto";
+hideBottomNav();
 }
 };
 }
