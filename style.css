@@ -1187,6 +1187,16 @@ transition: transform 0.55s cubic-bezier(.22,1,.36,1);
 
 html, body {
   height: 100%;
+  overflow: hidden; /* ВАЖНО */
+}
+
+#app {
+  height: 100vh;
+  overflow: hidden;
+}
+
+.app {
+  height: 100%;
 }
 
 .fact-input-row {
