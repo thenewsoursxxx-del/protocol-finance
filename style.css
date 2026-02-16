@@ -1190,7 +1190,7 @@ html, body {
 }
 
 #app {
-  height: 100%;
+  height: var(--app-height);
 }
 
 .fact-input-row {
@@ -1276,7 +1276,7 @@ html, body {
 
 .screen {
   flex: 0 0 100%;
-  height: 100%;
+  height: var(--app-height);
   overflow-y: auto;
   padding: 20px;
   padding-bottom: 220px;
