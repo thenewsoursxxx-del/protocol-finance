@@ -1285,7 +1285,7 @@ html, body {
 
 .advanced-btn {
   position: fixed;
-  bottom: 185px; /* ещё выше — чтобы оторвать от nav */
+  bottom: 160px;    
   left: 50%;
   transform: translateX(-50%);
 
@@ -1306,25 +1306,26 @@ html, body {
 
   /* ГЛУБОКИЙ ИЗУМРУД С ОБЪЁМОМ */
   background:
-    radial-gradient(circle at 30% 25%, rgba(255,255,255,0.18), transparent 40%),
-    linear-gradient(
-      135deg,
-      #031f1a,
-      #053c31,
-      #065f46,
-      #047857,
-      #065f46,
-      #053c31
-    );
+  radial-gradient(circle at 30% 25%, rgba(255,255,255,0.18), transparent 45%),
+  linear-gradient(
+    120deg,
+    #021a16,
+    #053c31,
+    #047857,
+    #10b981,
+    #047857,
+    #053c31,
+    #021a16
+  );
 
-  background-size: 100% 100%, 300% 300%;
-  animation: emeraldFlow 16s ease-in-out infinite;
+background-size: 100% 100%, 400% 400%;
+animation: emeraldFlow 8s ease-in-out infinite;
 
   box-shadow:
-    0 18px 55px rgba(4,120,87,0.45),
-    0 0 60px rgba(16,185,129,0.25),
-    inset 0 3px 10px rgba(255,255,255,0.08),
-    inset 0 -6px 18px rgba(0,0,0,0.4);
+  0 20px 60px rgba(0,150,110,0.55),
+  0 0 90px rgba(16,185,129,0.35),
+  inset 0 3px 8px rgba(255,255,255,0.08),
+  inset 0 -8px 20px rgba(0,0,0,0.5);
 
   z-index: 25;
 
@@ -1335,11 +1336,11 @@ html, body {
 
 /* ПЕРЕЛИВ */
 @keyframes emeraldFlow {
-  0%   { background-position: 0% 50%; }
-  25%  { background-position: 40% 60%; }
-  50%  { background-position: 100% 50%; }
-  75%  { background-position: 60% 40%; }
-  100% { background-position: 0% 50%; }
+  0%   { background-position: 0% 0%, 0% 50%; }
+  25%  { background-position: 0% 0%, 50% 40%; }
+  50%  { background-position: 0% 0%, 100% 50%; }
+  75%  { background-position: 0% 0%, 50% 60%; }
+  100% { background-position: 0% 0%, 0% 50%; }
 }
 
 /* PREMIUM PRESS */
