@@ -1803,19 +1803,9 @@ if (accountsAddBtn) {
 
     haptic("light");
 
-    // скрываем все экраны
-    screens.forEach(s => s.classList.remove("active"));
+    openScreen("add-account", null);
 
-    // показываем экран добавления счёта
-    document
-      .getElementById("screen-add-account")
-      .classList.add("active");
-
-    // скрываем nav
     hideBottomNav();
-
-    // скрываем кнопку +
-    accountsAddBtn.style.display = "none";
   };
 }
 
