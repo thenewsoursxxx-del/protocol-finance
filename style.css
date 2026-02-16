@@ -1285,7 +1285,7 @@ html, body {
 
 .advanced-btn {
   position: fixed;
-  bottom: 120px; /* чуть выше nav */
+  bottom: 150px; /* чуть выше nav */
   left: 50%;
   transform: translateX(-50%);
   
@@ -1313,10 +1313,11 @@ html, body {
     #059669,
     #10b981
   );
-  background-size: 300% 300%;
+  background-size: 400% 400%;
 
-  animation: emeraldFlow 6s ease infinite,
-             breathe 3.6s ease-in-out infinite;
+animation:
+  emeraldFlow 14s cubic-bezier(0.4,0,0.2,1) infinite,
+  breathe 4s ease-in-out infinite;
 
   box-shadow:
     0 8px 25px rgba(16,185,129,0.35);
@@ -1327,9 +1328,11 @@ html, body {
 
 /* ПЕРЕЛИВ */
 @keyframes emeraldFlow {
-  0%   { background-position: 0% 50%; }
-  50%  { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+  0%   { background-position: 0% 30%; }
+  25%  { background-position: 60% 70%; }
+  50%  { background-position: 100% 40%; }
+  75%  { background-position: 40% 80%; }
+  100% { background-position: 0% 30%; }
 }
 
 /* BREATHING */
@@ -1351,13 +1354,13 @@ html, body {
     rgba(16,185,129,0.05) 65%,
     transparent 75%
   );
-  filter: blur(14px);
+  filter: blur(20px);
   z-index: -1;
   animation: glowPulse 4s ease-in-out infinite;
 }
 
 @keyframes glowPulse {
-  0%,100% { opacity: .6; }
+  0%,100% { opacity: .5; }
   50%     { opacity: 1; }
 }
 
