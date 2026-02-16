@@ -1281,7 +1281,10 @@ html, body {
   animation: input-shake 0.35s ease;
 }
 
-/* ===== ADVANCED EMERALD BUTTON ===== */
+button {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
 
 /* ===== ADVANCED EMERALD BUTTON CLEAN ===== */
 
