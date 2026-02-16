@@ -1,24 +1,26 @@
 const tg = window.Telegram?.WebApp;
 
-if (tg) {
-  tg.expand();
+function setAppHeight() {
+  let height;
 
-  function setAppHeight() {
-    const height = tg.viewportStableHeight || tg.viewportHeight;
-    document.documentElement.style.setProperty('--app-height', height + 'px');
+  if (tg && (tg.viewportStableHeight || tg.viewportHeight)) {
+    height = tg.viewportStableHeight || tg.viewportHeight;
+  } else {
+    height = window.innerHeight;
   }
 
-  setAppHeight();
+  document.documentElement.style.setProperty('--app-height', height + 'px');
+}
+
+if (tg) {
+  tg.expand();
+  tg.ready();
   tg.onEvent('viewportChanged', setAppHeight);
 }
 
-const tg = window.Telegram?.WebApp;
-tg?.expand();
+window.addEventListener('resize', setAppHeight);
 
-if (window.Telegram?.WebApp) {
-Telegram.WebApp.ready();
-Telegram.WebApp.expand();
-}
+setAppHeight();
 
 document.addEventListener("click", e => {
 if (
