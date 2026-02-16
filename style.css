@@ -1351,28 +1351,18 @@ animation: emeraldFlow 8s ease-in-out infinite;
   inset: -70px;
   border-radius: 50%;
 
-  background: conic-gradient(
-    from 0deg,
-    rgba(16,185,129,0.4),
-    transparent 12%,
-    rgba(16,185,129,0.3),
-    transparent 25%,
-    rgba(16,185,129,0.35),
-    transparent 38%,
-    rgba(16,185,129,0.28),
-    transparent 50%,
-    rgba(16,185,129,0.35),
-    transparent 63%,
-    rgba(16,185,129,0.3),
-    transparent 75%,
-    rgba(16,185,129,0.4)
-  );
+  background: repeating-conic-gradient(
+  from 0deg,
+  rgba(16,185,129,0.9) 0deg 6deg,
+  transparent 6deg 18deg
+);
 
-  filter: blur(22px);
+filter: blur(6px);
+opacity: 0.85;
+mix-blend-mode: screen;
 
   animation:
     raysRotate 36s linear infinite,
-    raysPulse 10s ease-in-out infinite;
 
   z-index: -2;
 }
