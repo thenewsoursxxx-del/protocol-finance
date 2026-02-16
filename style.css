@@ -1287,7 +1287,7 @@ html, body {
 
 .advanced-btn {
   position: fixed;
-  bottom: 160px;
+  bottom: 135px;
   left: 50%;
   transform: translateX(-50%);
 
