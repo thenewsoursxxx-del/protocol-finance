@@ -121,7 +121,7 @@ color: #fff;
 
   z-index: 20;
   
-  touch-action: pan-y;
+  touch-action: none;
 }
 
 .nav-indicator {
