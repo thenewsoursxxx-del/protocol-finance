@@ -1795,3 +1795,37 @@ if (advancedBack) {
     showBottomNav();
   };
 }
+
+/* ===== ADD ACCOUNT SCREEN ===== */
+
+if (accountsAddBtn) {
+  accountsAddBtn.onclick = () => {
+
+    haptic("light");
+
+    // скрываем все экраны
+    screens.forEach(s => s.classList.remove("active"));
+
+    // показываем экран добавления счёта
+    document
+      .getElementById("screen-add-account")
+      .classList.add("active");
+
+    // скрываем nav
+    hideBottomNav();
+
+    // скрываем кнопку +
+    accountsAddBtn.style.display = "none";
+  };
+}
+
+if (addAccountBack) {
+  addAccountBack.onclick = () => {
+
+    haptic("light");
+
+    openScreen("accounts", buttons[2]);
+
+    showBottomNav();
+  };
+}
