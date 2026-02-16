@@ -1187,15 +1187,9 @@ transition: transform 0.55s cubic-bezier(.22,1,.36,1);
 
 html, body {
   height: 100%;
-  overflow: hidden; /* ВАЖНО */
 }
 
 #app {
-  height: 100vh;
-  overflow: hidden;
-}
-
-.app {
   height: 100%;
 }
 
@@ -1270,8 +1264,7 @@ html, body {
 /* ===== SWIPE ENGINE ===== */
 
 .app {
-  height: 100vh;
-  overflow: hidden;
+  height: 100%;
   position: relative;
 }
 
