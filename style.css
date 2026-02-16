@@ -1344,3 +1344,18 @@ html, body {
 .advanced-btn:active {
   transform: translateX(-50%) scale(0.92);
 }
+
+.advanced-btn::before {
+  content: "";
+  position: absolute;
+  inset: -25px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(16,185,129,0.35),
+    rgba(16,185,129,0.15),
+    transparent 70%
+  );
+  z-index: -1;
+  filter: blur(20px);
+}
