@@ -1264,15 +1264,14 @@ html, body {
 /* ===== SWIPE ENGINE ===== */
 
 .app {
-  height: 100%;
+  height: var(--app-height);
   position: relative;
 }
 
 .screens-wrapper {
   display: flex;
-  width: 500%; /* 5 экранов */
-  height: 100%;
-  transition: transform 0.35s cubic-bezier(.22,.61,.36,1);
+  width: 500%;
+  height: var(--app-height);
 }
 
 .screen {
