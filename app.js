@@ -113,7 +113,6 @@ const buttons = document.querySelectorAll(".nav-btn");
 const indicator = document.querySelector(".nav-indicator");
 const bottomNav = document.querySelector(".bottom-nav");
 const advancedBtn = document.getElementById("advancedBtn");
-const accountsAddBtn = document.getElementById("accountsAddBtn");
 const advancedBack = document.getElementById("advancedBack");
 // ❌ скрываем bottom-nav при старте (экран расчёта)
 bottomNav.style.opacity = "0";
@@ -1791,62 +1790,6 @@ if (advancedBack) {
     haptic("light");
 
     openScreen("goals", buttons[3]);
-
-    showBottomNav();
-  };
-}
-
-const addAccountBack = document.getElementById("addAccountBack");
-
-if (accountsAddBtn) {
-  accountsAddBtn.onclick = () => {
-
-    haptic("light");
-
-    screens.forEach(s => s.classList.remove("active"));
-    document
-      .getElementById("screen-add-account")
-      .classList.add("active");
-
-    hideBottomNav();
-    accountsAddBtn.style.display = "none";
-  };
-}
-
-if (addAccountBack) {
-  addAccountBack.onclick = () => {
-
-    haptic("light");
-
-    openScreen("accounts", buttons[2]);
-    showBottomNav();
-  };
-}
-
-if (accountsAddBtn) {
-  accountsAddBtn.onclick = () => {
-
-    haptic("light");
-
-    // скрыть все экраны
-    screens.forEach(s => s.classList.remove("active"));
-
-    // показать экран добавления
-    document
-      .getElementById("screen-add-account")
-      .classList.add("active");
-
-    // скрыть нижний навбар
-    hideBottomNav();
-  };
-}
-
-if (addAccountBack) {
-  addAccountBack.onclick = () => {
-
-    haptic("light");
-
-    openScreen("accounts", buttons[2]);
 
     showBottomNav();
   };
