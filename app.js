@@ -39,6 +39,8 @@ const editGoalBtn = document.getElementById("editGoalBtn");
 const goalEditorSheet = document.getElementById("goalEditorSheet");
 const goalEditorOverlay = document.getElementById("goalEditorOverlay");
 const goalEditHint = document.getElementById("goalEditHint");
+const accountsAddBtn = document.getElementById("accountsAddBtn");
+const addAccountBack = document.getElementById("addAccountBack");
 
 const goalEditTitle = document.getElementById("goalEditTitle");
 const goalEditAmount = document.getElementById("goalEditAmount");
@@ -1817,6 +1819,35 @@ if (addAccountBack) {
     haptic("light");
 
     openScreen("accounts", buttons[2]);
+    showBottomNav();
+  };
+}
+
+if (accountsAddBtn) {
+  accountsAddBtn.onclick = () => {
+
+    haptic("light");
+
+    // скрыть все экраны
+    screens.forEach(s => s.classList.remove("active"));
+
+    // показать экран добавления
+    document
+      .getElementById("screen-add-account")
+      .classList.add("active");
+
+    // скрыть нижний навбар
+    hideBottomNav();
+  };
+}
+
+if (addAccountBack) {
+  addAccountBack.onclick = () => {
+
+    haptic("light");
+
+    openScreen("accounts", buttons[2]);
+
     showBottomNav();
   };
 }
