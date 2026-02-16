@@ -6,19 +6,20 @@ Telegram.WebApp.ready();
 Telegram.WebApp.expand();
 }
 
-document.addEventListener("click", e => {
-if (
-e.target.closest("input") ||
-e.target.closest("textarea") ||
-e.target.closest(".mode-btn") ||
-e.target.closest(".nav-btn") ||
-e.target.closest("#profileBtn") ||
-e.target.closest(".protocol-back")
-) {
-return;
-}
+document.addEventListener("pointerdown", e => {
+  if (
+    e.target.closest("input") ||
+    e.target.closest("textarea") ||
+    e.target.closest(".mode-btn") ||
+    e.target.closest(".nav-btn") ||
+    e.target.closest("#profileBtn") ||
+    e.target.closest(".protocol-back") ||
+    e.target.closest("button")
+  ) {
+    return;
+  }
 
-document.activeElement?.blur();
+  document.activeElement?.blur();
 });
 
 /* ===== FORMAT ===== */
