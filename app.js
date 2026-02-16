@@ -1755,9 +1755,10 @@ dotAnimating = false;
 requestAnimationFrame(frame);
 }
 
-let startY = 0;
-
 wrapper.addEventListener("touchstart", e => {
+
+  if (!isInitialized && currentIndex === 0) return;
+
   startX = e.touches[0].clientX;
   startY = e.touches[0].clientY;
   isDragging = true;
