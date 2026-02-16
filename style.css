@@ -1280,3 +1280,71 @@ html, body {
 #factInput.shake {
   animation: input-shake 0.35s ease;
 }
+
+/* ===== ADVANCED FLOAT BUTTON ===== */
+
+.advanced-btn {
+  position: fixed;
+  bottom: 118px; /* над навбаром */
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 40;
+
+  width: 74px;
+  height: 74px;
+  border-radius: 50%;
+
+  border: none;
+  cursor: pointer;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  overflow: hidden;
+}
+
+/* живой изумрудный градиент */
+.advanced-btn::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: 50%;
+
+  background: linear-gradient(
+    120deg,
+    #064e3b,
+    #047857,
+    #10b981,
+    #047857,
+    #064e3b
+  );
+
+  background-size: 300% 300%;
+  animation: emeraldShift 6s ease infinite;
+}
+
+@keyframes emeraldShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.advanced-btn span {
+  position: relative;
+  z-index: 2;
+
+  font-size: 34px;
+  font-weight: 300;
+  color: #ffffff;
+}
+
+.advanced-btn::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  box-shadow:
+    0 0 40px rgba(16,185,129,0.35),
+    0 10px 30px rgba(0,0,0,0.6);
+}
