@@ -102,6 +102,7 @@ const withBuffer = document.getElementById("withBuffer");
 
 const lockText = document.getElementById("lockText");
 const resetBtn = document.getElementById("resetPlan");
+const calcLock = document.getElementById("calcLock");
 
 const confirmReset = document.getElementById("confirmReset");
 const confirmYes = document.getElementById("confirmYes");
