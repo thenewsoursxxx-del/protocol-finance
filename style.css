@@ -135,6 +135,8 @@ border-radius: 999px;
 background: #fff;
 
 transition: transform .35s cubic-bezier(.4,0,.2,1);
+
+pointer-events: none;
 }
 .nav-btn {
 flex: 1;
