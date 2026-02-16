@@ -120,6 +120,8 @@ color: #fff;
     0 8px 30px rgba(0,0,0,0.45);
 
   z-index: 20;
+  
+  touch-action: pan-y;
 }
 
 .nav-indicator {
@@ -1279,8 +1281,4 @@ html, body {
 
 #factInput.shake {
   animation: input-shake 0.35s ease;
-}
-
-.bottom-nav {
-  touch-action: none;
 }
