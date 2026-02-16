@@ -206,7 +206,6 @@ moveIndicator(buttons[0]);
 
 /* ===== OPEN SCREEN ===== */
 function openScreen(name, btn) {
-if (!isInitialized && name !== "calc") return;
 
 screens.forEach(s => s.classList.remove("active"));
 document.getElementById("screen-" + name).classList.add("active");
@@ -1777,6 +1776,9 @@ function handleNavDrag(e) {
   if (index < 0 || index >= buttons.length) return;
 
   const btn = buttons[index];
+
+  // 🔥 если вкладка заблокирована — не переключаем
+  if (btn.style.pointerEvents === "none") return;
 
   if (!btn.classList.contains("active")) {
     haptic("light");
