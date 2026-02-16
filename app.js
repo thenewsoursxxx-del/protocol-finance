@@ -224,10 +224,12 @@ indicator.style.opacity = "0";
 clearFactInputError();
 
 // показываем advanced кнопку только в goals
-if (name === "goals") {
-  advancedBtn.style.display = "flex";
-} else {
-  advancedBtn.style.display = "none";
+if (advancedBtn) {
+  if (name === "goals" && isInitialized) {
+    advancedBtn.style.display = "flex";
+  } else {
+    advancedBtn.style.display = "none";
+  }
 }
 }
 // ===== TOP PROFILE FIX =====
@@ -1779,7 +1781,5 @@ if (advancedBack) {
     openScreen("goals", buttons[3]);
 
     showBottomNav();
-
-    advancedBtn.style.display = "flex";
   };
 }
