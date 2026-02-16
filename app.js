@@ -109,6 +109,8 @@ const screens = document.querySelectorAll(".screen");
 const buttons = document.querySelectorAll(".nav-btn");
 const indicator = document.querySelector(".nav-indicator");
 const bottomNav = document.querySelector(".bottom-nav");
+const advancedBtn = document.getElementById("advancedBtn");
+const advancedBack = document.getElementById("advancedBack");
 // ❌ скрываем bottom-nav при старте (экран расчёта)
 bottomNav.style.opacity = "0";
 bottomNav.style.pointerEvents = "none";
@@ -220,6 +222,13 @@ moveIndicator(btn);
 indicator.style.opacity = "0";
 }
 clearFactInputError();
+
+// показываем advanced кнопку только в goals
+if (name === "goals") {
+  advancedBtn.style.display = "flex";
+} else {
+  advancedBtn.style.display = "none";
+}
 }
 // ===== TOP PROFILE FIX =====
 
@@ -1737,4 +1746,40 @@ dotAnimating = false;
 }
 
 requestAnimationFrame(frame);
+}
+
+/* ===== ADVANCED SCREEN LOGIC ===== */
+
+if (advancedBtn) {
+  advancedBtn.onclick = () => {
+
+    haptic("light");
+
+    // скрываем все экраны
+    screens.forEach(s => s.classList.remove("active"));
+
+    // показываем advanced
+    document
+      .getElementById("screen-advanced")
+      .classList.add("active");
+
+    // скрываем nav
+    hideBottomNav();
+
+    // скрываем кнопку
+    advancedBtn.style.display = "none";
+  };
+}
+
+if (advancedBack) {
+  advancedBack.onclick = () => {
+
+    haptic("light");
+
+    openScreen("goals", buttons[3]);
+
+    showBottomNav();
+
+    advancedBtn.style.display = "flex";
+  };
 }
