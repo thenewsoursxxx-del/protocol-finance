@@ -1750,6 +1750,10 @@ let navDragging = false;
 
 bottomNav.addEventListener("pointerdown", (e) => {
   navDragging = true;
+
+  // 🔥 ВАЖНО — захватываем указатель
+  bottomNav.setPointerCapture(e.pointerId);
+
   handleNavDrag(e);
 });
 
@@ -1758,8 +1762,11 @@ bottomNav.addEventListener("pointermove", (e) => {
   handleNavDrag(e);
 });
 
-bottomNav.addEventListener("pointerup", () => {
+bottomNav.addEventListener("pointerup", (e) => {
   navDragging = false;
+
+  // 🔥 освобождаем указатель
+  bottomNav.releasePointerCapture(e.pointerId);
 });
 
 bottomNav.addEventListener("pointercancel", () => {
