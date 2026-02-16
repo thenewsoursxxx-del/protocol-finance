@@ -471,8 +471,17 @@ transition: transform 0.18s cubic-bezier(.34,1.56,.64,1),
 stroke-width 0.2s ease;
 }
 
+.nav-btn {
+  transition: transform 0.12s ease, opacity 0.12s ease;
+}
+
+.nav-btn:active {
+  transform: scale(0.92);
+}
+
 .nav-btn:active svg {
-transform: translateY(-6px) scale(1.05);
+  transform: scale(0.95);
+  opacity: 0.85;
 }
 
 /* === MODE BUTTON PRESS EFFECT === */
