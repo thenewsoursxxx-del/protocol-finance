@@ -111,6 +111,7 @@ const buttons = document.querySelectorAll(".nav-btn");
 const indicator = document.querySelector(".nav-indicator");
 const bottomNav = document.querySelector(".bottom-nav");
 const advancedBtn = document.getElementById("advancedBtn");
+const accountsAddBtn = document.getElementById("accountsAddBtn");
 const advancedBack = document.getElementById("advancedBack");
 // ❌ скрываем bottom-nav при старте (экран расчёта)
 bottomNav.style.opacity = "0";
@@ -230,6 +231,14 @@ if (advancedBtn) {
     advancedBtn.style.display = "flex";
   } else {
     advancedBtn.style.display = "none";
+  }
+}
+// показываем + кнопку только в accounts
+if (accountsAddBtn) {
+  if (name === "accounts" && isInitialized) {
+    accountsAddBtn.style.display = "flex";
+  } else {
+    accountsAddBtn.style.display = "none";
   }
 }
 }
@@ -1781,6 +1790,33 @@ if (advancedBack) {
 
     openScreen("goals", buttons[3]);
 
+    showBottomNav();
+  };
+}
+
+const addAccountBack = document.getElementById("addAccountBack");
+
+if (accountsAddBtn) {
+  accountsAddBtn.onclick = () => {
+
+    haptic("light");
+
+    screens.forEach(s => s.classList.remove("active"));
+    document
+      .getElementById("screen-add-account")
+      .classList.add("active");
+
+    hideBottomNav();
+    accountsAddBtn.style.display = "none";
+  };
+}
+
+if (addAccountBack) {
+  addAccountBack.onclick = () => {
+
+    haptic("light");
+
+    openScreen("accounts", buttons[2]);
     showBottomNav();
   };
 }
