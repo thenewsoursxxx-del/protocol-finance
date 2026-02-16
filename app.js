@@ -372,7 +372,7 @@ function renderProtocolResult({ scenariosHTML, advice }) {
 adviceCard.innerHTML = `
 <div style="margin-bottom:12px">
 <div style="font-size:14px;opacity:.7;margin-bottom:6px">
-Возможные варианты:
+Выберите возможные варианты:
 </div>
 ${scenariosHTML}
 </div>
