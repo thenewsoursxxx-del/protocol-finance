@@ -1748,34 +1748,26 @@ requestAnimationFrame(frame);
 
 let navDragging = false;
 
-bottomNav.addEventListener("pointerdown", (e) => {
+bottomNav.addEventListener("touchstart", (e) => {
   navDragging = true;
+  handleNavTouch(e);
+}, { passive: true });
 
-  // 🔥 ВАЖНО — захватываем указатель
-  bottomNav.setPointerCapture(e.pointerId);
-
-  handleNavDrag(e);
-});
-
-bottomNav.addEventListener("pointermove", (e) => {
+bottomNav.addEventListener("touchmove", (e) => {
   if (!navDragging) return;
-  handleNavDrag(e);
-});
+  handleNavTouch(e);
+}, { passive: true });
 
-bottomNav.addEventListener("pointerup", (e) => {
-  navDragging = false;
-
-  // 🔥 освобождаем указатель
-  bottomNav.releasePointerCapture(e.pointerId);
-});
-
-bottomNav.addEventListener("pointercancel", () => {
+bottomNav.addEventListener("touchend", () => {
   navDragging = false;
 });
 
-function handleNavDrag(e) {
+function handleNavTouch(e) {
+  const touch = e.touches[0];
+  if (!touch) return;
+
   const rect = bottomNav.getBoundingClientRect();
-  const x = e.clientX - rect.left;
+  const x = touch.clientX - rect.left;
 
   const btnWidth = rect.width / buttons.length;
   const index = Math.floor(x / btnWidth);
@@ -1784,7 +1776,6 @@ function handleNavDrag(e) {
 
   const btn = buttons[index];
 
-  // 🔥 если вкладка заблокирована — не переключаем
   if (btn.style.pointerEvents === "none") return;
 
   if (!btn.classList.contains("active")) {
@@ -1795,12 +1786,8 @@ function handleNavDrag(e) {
 
     openScreen(btn.dataset.screen, btn);
 
-    if (btn.dataset.screen === "goals") {
-      renderGoals();
-    }
-
-    if (btn.dataset.screen === "accounts") {
-      renderAccountsUI();
-    }
+    if (btn.dataset.screen === "goals") renderGoals();
+    if (btn.dataset.screen === "accounts") renderAccountsUI();
   }
+}
 }
