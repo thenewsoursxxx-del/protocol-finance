@@ -1280,3 +1280,7 @@ html, body {
 #factInput.shake {
   animation: input-shake 0.35s ease;
 }
+
+.bottom-nav {
+  touch-action: none;
+}
