@@ -1266,18 +1266,21 @@ html, body {
 .app {
   height: var(--app-height);
   position: relative;
+  overflow: hidden;   /* ← ВАЖНО */
 }
 
 .screens-wrapper {
   display: flex;
   width: 500%;
-  height: var(--app-height);
+  height: 100%;
+  transition: transform 0.35s cubic-bezier(.22,.61,.36,1);
 }
 
 .screen {
   flex: 0 0 100%;
-  height: var(--app-height);
+  height: 100%;
   overflow-y: auto;
+  overflow-x: hidden;   /* ← чтобы не было горизонтального скролла */
   padding: 20px;
   padding-bottom: 220px;
 }
