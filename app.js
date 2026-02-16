@@ -206,6 +206,7 @@ moveIndicator(buttons[0]);
 
 /* ===== OPEN SCREEN ===== */
 function openScreen(name, btn) {
+if (!isInitialized && name !== "calc") return;
 
 screens.forEach(s => s.classList.remove("active"));
 document.getElementById("screen-" + name).classList.add("active");
@@ -1740,54 +1741,4 @@ dotAnimating = false;
 }
 
 requestAnimationFrame(frame);
-}
-
-/* =========================================
-   NAV DRAG SWITCH (SAFE FOR TELEGRAM)
-========================================= */
-
-let navDragging = false;
-
-bottomNav.addEventListener("touchstart", (e) => {
-  navDragging = true;
-  handleNavTouch(e);
-}, { passive: true });
-
-bottomNav.addEventListener("touchmove", (e) => {
-  if (!navDragging) return;
-  handleNavTouch(e);
-}, { passive: true });
-
-bottomNav.addEventListener("touchend", () => {
-  navDragging = false;
-});
-
-function handleNavTouch(e) {
-  const touch = e.touches[0];
-  if (!touch) return;
-
-  const rect = bottomNav.getBoundingClientRect();
-  const x = touch.clientX - rect.left;
-
-  const btnWidth = rect.width / buttons.length;
-  const index = Math.floor(x / btnWidth);
-
-  if (index < 0 || index >= buttons.length) return;
-
-  const btn = buttons[index];
-
-  if (btn.style.pointerEvents === "none") return;
-
-  if (!btn.classList.contains("active")) {
-    haptic("light");
-
-    lastScreenBeforeProfile = btn.dataset.screen;
-    lastNavBtnBeforeProfile = btn;
-
-    openScreen(btn.dataset.screen, btn);
-
-    if (btn.dataset.screen === "goals") renderGoals();
-    if (btn.dataset.screen === "accounts") renderAccountsUI();
-  }
-}
 }

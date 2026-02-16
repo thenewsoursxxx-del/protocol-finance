@@ -120,8 +120,6 @@ color: #fff;
     0 8px 30px rgba(0,0,0,0.45);
 
   z-index: 20;
-  
-  touch-action: none;
 }
 
 .nav-indicator {
@@ -135,8 +133,6 @@ border-radius: 999px;
 background: #fff;
 
 transition: transform .35s cubic-bezier(.4,0,.2,1);
-
-pointer-events: none;
 }
 .nav-btn {
 flex: 1;
