@@ -745,7 +745,7 @@ animateFactLine();
 runBrain();
 renderAccountsUI();
 renderGoals();
-const goalTotal = parseNumber(goalInput.value || "0");
+const goalTotal = getPrimaryGoal().target;
 
 if (
 !goalCompleted &&
