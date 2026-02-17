@@ -456,12 +456,17 @@ const validGoal = validateRequired(goalInput);
 
 if (!validIncome || !validExpenses || !validGoal) return;
 
+const primaryGoal = getPrimaryGoal();
+
+primaryGoal.target = parseNumber(goalInput.value || "0");
+primaryGoal.saved = parseNumber(savedInput?.value || "0");
+
 const baseResult = ProtocolCore.calculateBase({
-income: parseNumber(incomeInput.value),
-expenses: parseNumber(expensesInput.value),
-goal: parseNumber(goalInput.value),
-saved: parseNumber(savedInput?.value || "0"),
-mode: saveMode
+  income: parseNumber(incomeInput.value),
+  expenses: parseNumber(expensesInput.value),
+  goal: primaryGoal.target,
+  saved: primaryGoal.saved,
+  mode: saveMode
 });
 
 if (!baseResult.ok) {
@@ -599,8 +604,10 @@ adviceCard.innerHTML = "";
 loader.classList.remove("hidden");
 
 plannedMonthly = lastCalc.monthlySave;
+calculateAllocations(plannedMonthly);
 
 if (mode === "buffer") plannedMonthly = Math.round(plannedMonthly * 0.9);
+calculateAllocations(plannedMonthly);
 
 adviceCard.innerText = "Protocol анализирует данные…";
 
@@ -1151,7 +1158,11 @@ if (!lastCalc.ok) return;
 
 const titleEl = document.getElementById("goalTitle");
 if (titleEl) {
-titleEl.innerText = goalMeta.title;
+const primaryGoal = getPrimaryGoal();
+
+if (titleEl && primaryGoal) {
+  titleEl.innerText = primaryGoal.title;
+}
 }
 
 // ===== ОСНОВНАЯ ЦЕЛЬ =====
@@ -1294,10 +1305,10 @@ return;
 }
 
 // 1️⃣ обновляем мету цели
-goalMeta.title = newTitle;
+const primaryGoal = getPrimaryGoal();
 
-// 2️⃣ обновляем ТОЛЬКО цель (не трогаем accounts)
-goalInput.value = formatNumber(String(newAmount));
+primaryGoal.title = newTitle;
+primaryGoal.target = newAmount;
 
 // 3️⃣ если цель стала меньше накопленного — считаем её выполненной
 if (accounts.main >= newAmount) {
@@ -1830,21 +1841,26 @@ if (addAccountBack) {
   };
 }
 
-function calculateAllocations(monthlyAmount) {
-
-  const totalPriority = goals.reduce((sum, g) => sum + g.priority, 0);
-
-  goals.forEach(g => {
-    g.allocation = totalPriority
-      ? g.priority / totalPriority
-      : 1 / goals.length;
-
-    g.monthlyContribution = monthlyAmount * g.allocation;
-  });
-
-  return goals;
-}
-
 function getPrimaryGoal() {
   return goals[0];
+}
+
+function calculateAllocations(monthlyAmount) {
+
+  if (!goals.length) return;
+
+  const totalWeight = goals.reduce((sum, g) => {
+    return sum + g.priority * g.allocation;
+  }, 0);
+
+  goals.forEach(goal => {
+
+    const weight = goal.priority * goal.allocation;
+
+    const share = totalWeight
+      ? (weight / totalWeight)
+      : 0;
+
+    goal.monthlyContribution = Math.round(monthlyAmount * share);
+  });
 }
