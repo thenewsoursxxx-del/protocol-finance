@@ -2,6 +2,7 @@ const tg = window.Telegram?.WebApp;
 tg?.expand();
 
 const buttons = document.querySelectorAll(".nav-btn");
+const screens = document.querySelectorAll(".screen");
 const indicator = document.querySelector(".nav-indicator");
 
 if (window.Telegram?.WebApp) {
