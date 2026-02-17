@@ -1017,59 +1017,35 @@ function initChart() {
 
   drawStaticLayer();
 
-  // 👇 ОДИН РАЗ объявляем переменные
-  let startX = 0;
-  let isDragging = false;
+let startX = 0;
+let isDragging = false;
 
-  factCanvas.addEventListener("pointerdown", e => {
-    startX = e.clientX;
-    isDragging = true;
+factCanvas.addEventListener("pointerdown", e => {
+  startX = e.clientX;
+  isDragging = true;
+});
 
-    if (!lastFactPoint) return;
+factCanvas.addEventListener("pointerup", e => {
+  if (!isDragging) return;
 
-    const rect = factCanvas.getBoundingClientRect();
-    const clickX = e.clientX - rect.left;
-    const clickY = e.clientY - rect.top;
+  const diff = e.clientX - startX;
 
-    const dx = clickX - lastFactPoint.x;
-    const dy = clickY - lastFactPoint.y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
+  if (Math.abs(diff) > 50) {
 
-    // Клик по точке
-    if (distance <= 25) {
-      const total = factHistory
-        .filter(f => f.to === "main")
-        .reduce((s, f) => s + f.value, 0);
-
-      animateDotScale(1.8);
-
-      showFactTooltip({
-        value: total,
-        onHide: () => animateDotScale(1)
-      });
-    }
-  });
-
-  factCanvas.addEventListener("pointerup", e => {
-    if (!isDragging) return;
-
-    const diff = e.clientX - startX;
-
-    if (Math.abs(diff) > 40) {
-      if (diff < 0 && activeGoalIndex < goals.length - 1) {
-        activeGoalIndex++;
-      }
-
-      if (diff > 0 && activeGoalIndex > 0) {
-        activeGoalIndex--;
-      }
-
-      updateGoalView();
-      updateArrowVisibility();
+    if (diff < 0 && activeGoalIndex < goals.length - 1) {
+      activeGoalIndex++;
     }
 
-    isDragging = false;
-  });
+    if (diff > 0 && activeGoalIndex > 0) {
+      activeGoalIndex--;
+    }
+
+    updateGoalView();
+    updateArrowVisibility();
+  }
+
+  isDragging = false;
+});
 }
 
 function addMonths(date, n) {
@@ -1886,8 +1862,31 @@ function getActiveGoal() {
 }
 
 function updateGoalView() {
+
+  const goal = getActiveGoal();
+  if (!goal) return;
+
+  const baseResult = ProtocolCore.calculateBase({
+    income: parseNumber(incomeInput.value),
+    expenses: parseNumber(expensesInput.value),
+    goal: goal.amount,
+    saved: goal.saved,
+    mode: saveMode
+  });
+
+  if (baseResult.ok) {
+    lastCalc = baseResult;
+    plannedMonthly = baseResult.monthlySave;
+
+    if (chosenPlan === "buffer") {
+      plannedMonthly = Math.round(plannedMonthly * 0.9);
+    }
+  }
+
   renderGoals();
   updatePlanHeader();
+  drawStaticLayer();
+  animateFactLine();
 }
 
 function addGoal() {
