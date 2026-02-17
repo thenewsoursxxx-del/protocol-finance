@@ -1020,22 +1020,20 @@ function initChart() {
 let startX = 0;
 let isDragging = false;
 
-factCanvas.addEventListener("pointerdown", e => {
+wrap.onpointerdown = e => {
   startX = e.clientX;
   isDragging = true;
-});
+};
 
-factCanvas.addEventListener("pointerup", e => {
+wrap.onpointerup = e => {
   if (!isDragging) return;
 
   const diff = e.clientX - startX;
 
-  if (Math.abs(diff) > 50) {
-
+  if (Math.abs(diff) > 60) {
     if (diff < 0 && activeGoalIndex < goals.length - 1) {
       activeGoalIndex++;
     }
-
     if (diff > 0 && activeGoalIndex > 0) {
       activeGoalIndex--;
     }
@@ -1045,7 +1043,7 @@ factCanvas.addEventListener("pointerup", e => {
   }
 
   isDragging = false;
-});
+};
 }
 
 function addMonths(date, n) {
@@ -1573,6 +1571,8 @@ const W = bgCanvas.width / (window.devicePixelRatio || 1);
 const H = bgCanvas.height / (window.devicePixelRatio || 1);
 const pad = 40;
 
+if (!lastCalc.months || lastCalc.months <= 0) return;
+if (!plannedMonthly || plannedMonthly <= 0) return;
 const points = buildPlanTimeline(new Date(), plannedMonthly, lastCalc.months);
 const maxValue = points[points.length - 1].value;
 
@@ -1675,6 +1675,7 @@ requestAnimationFrame(frame);
 }
 
 function drawFactLayer(progress, total, maxValue) {
+  if (!lastCalc.months || lastCalc.months <= 0) return;
 const W = factCanvas.width / (window.devicePixelRatio || 1);
 const H = factCanvas.height / (window.devicePixelRatio || 1);
 const pad = 40;
