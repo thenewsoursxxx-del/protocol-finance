@@ -1467,19 +1467,13 @@ button {
   overflow: hidden;
 }
 
-/* === ADVANCED FOG FADE SYSTEM === */
+/* ===== CLEAN SIDE EMERALD FOG ===== */
 
-#screen-advanced {
-  position: relative;
-  min-height: 100vh;
-  overflow: hidden;
-}
-
-#screen-advanced .advanced-fog {
-  position: absolute;
+.advanced-fog {
+  position: fixed;
   inset: 0;
   pointer-events: none;
-  z-index: 2;
+  z-index: 0;
 
   border-radius: 40px;
 
@@ -1498,22 +1492,11 @@ button {
     );
 
   filter: blur(14px);
-
-  opacity: 0;
-  transition: opacity 1s ease;
+  opacity: 0.85;
 
   animation:
     fogMove 14s ease-in-out infinite alternate,
     fogBreath 8s ease-in-out infinite;
-}
-
-body.advanced-active #screen-advanced .advanced-fog {
-  opacity: 0.85;
-}
-
-#screen-advanced > *:not(.advanced-fog) {
-  position: relative;
-  z-index: 3;
 }
 
 /* лёгкое горизонтальное движение */
@@ -1534,6 +1517,14 @@ body.advanced-active #screen-advanced .advanced-fog {
 @keyframes fogBreath {
   0%,100% { opacity: 0.82; }
   50% { opacity: 0.95; }
+}
+
+.advanced-fog {
+  display: none;
+}
+
+body.advanced-active .advanced-fog {
+  display: block;
 }
 
 @keyframes emeraldSideBreath {
