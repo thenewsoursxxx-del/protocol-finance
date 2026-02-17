@@ -1492,3 +1492,11 @@ button {
   position: relative;
   z-index: 1;
 }
+
+/* ===== FIX ADVANCED FULL HEIGHT ===== */
+
+#screen-advanced {
+  min-height: 100vh;   /* ВОТ ЭТО ГЛАВНОЕ */
+  position: relative;
+  overflow: hidden;
+}
