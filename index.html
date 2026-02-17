@@ -389,9 +389,36 @@ Protocol анализирует цель…
     <div class="header-right"></div>
   </div>
 
-  <div style="padding:20px; opacity:.6">
-    Здесь будут продвинутые настройки Protocol.
+  <div class="advanced-wrap">
+
+  <!-- ДОБАВИТЬ ЦЕЛЬ -->
+  <div class="card">
+    <button id="addGoalBtn" class="adv-btn">
+      Добавить цель
+    </button>
   </div>
+
+  <!-- СРОК -->
+  <div class="card">
+    <div class="adv-label">Срок цели</div>
+
+    <div class="adv-row">
+      <button id="goalTimeMinus" class="mini-btn">–</button>
+      <div id="goalTimeValue">Авто</div>
+      <button id="goalTimePlus" class="mini-btn">+</button>
+    </div>
+  </div>
+
+  <!-- РАСПРЕДЕЛЕНИЕ -->
+  <div class="card">
+    <div class="adv-label">Распределение средств</div>
+
+    <button id="equalWeightBtn" class="adv-btn">
+      Поровну между целями
+    </button>
+  </div>
+
+</div>
 
 </div>
 
