@@ -1503,20 +1503,20 @@ button {
 
   background:
     radial-gradient(
-      55% 100% at 0% 50%,
+      45% 100% at 0% 50%,
       rgba(16,185,129,0.35),
       rgba(16,185,129,0.18),
       transparent 35%
     ),
     radial-gradient(
-      55% 100% at 100% 50%,
+      45% 100% at 100% 50%,
       rgba(16,185,129,0.35),
       rgba(16,185,129,0.18),
       transparent 35%
     );
 
   background-size: 120% 120%;
-  animation: emeraldFogMove 12s ease-in-out infinite;
+  animation: emeraldFogMove 8s ease-in-out infinite;
 }
 
 @keyframes emeraldFogMove {
