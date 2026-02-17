@@ -1642,3 +1642,12 @@ button {
 .chart-arrow:active {
   transform: translateY(-50%) scale(0.92);
 }
+
+canvas {
+  background: transparent !important;
+  display: block;
+}
+
+.chart-wrap {
+  overflow: hidden;
+}
