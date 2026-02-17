@@ -627,115 +627,28 @@ adviceCard.innerText = "Готово.";
 setTimeout(() => {
 loader.classList.add("hidden");
 
-const explanation = ProtocolCore.explain(lastCalc);
-const advice = ProtocolCore.buildAdvice(lastCalc);
-
 adviceCard.innerHTML = `
-<div id="planHeader">
-
-  <div style="font-size:13px;opacity:.6">
-    Цель
-  </div>
-
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">
-
-    <div>
-      <div id="inlineGoalTitle"
-           style="font-size:18px;font-weight:600"></div>
-
-      <div id="inlineGoalAmount"
-           style="font-size:14px;opacity:.7;margin-top:4px"></div>
-    </div>
-
-    <button id="inlineEditGoal"
-      style="
-        background:#111;
-        border:1px solid #333;
-        color:#fff;
-        border-radius:10px;
-        padding:6px 12px;
-        font-size:13px;
-      ">
-      Изменить
-    </button>
-
-  </div>
-
-</div>
-<div id="activeGoalBlock" style="margin-top:14px">
-
-  <div style="font-size:13px;opacity:.6">
-    Цель
-  </div>
-
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">
-    <div>
-      <div id="activeGoalTitle" style="font-size:18px;font-weight:600"></div>
-      <div id="activeGoalAmount" style="font-size:14px;opacity:.7;margin-top:4px"></div>
-    </div>
-
-    <button id="editGoalBtnMini"
-      style="
-        background:#111;
-        border:1px solid #333;
-        color:#fff;
-        border-radius:12px;
-        padding:8px 12px;
-        font-size:13px;
-      ">
-      Изменить
-    </button>
-  </div>
-
-</div>
-<div
-id="planMonthly"
-style="font-size:16px;font-weight:600"
-></div>
-
-<div
-id="planExplanation"
-style="
-margin-top:8px;
-font-size:14px;
-line-height:1.4;
-opacity:0.75;
-"
-></div>
-</div>
-
-<div style="
-margin-top:10px;
-padding:10px 12px;
-border-radius:14px;
-background:#111;
-border:1px solid #222;
-font-size:14px;
-">
-${advice.text}
-</div>
-
-<div id="goalSwitcher" class="goal-switcher" style="display:none;">
-  <button id="goalPrev" class="goal-nav-btn">‹</button>
-  <div id="goalSwitchTitle" class="goal-switch-title"></div>
-  <button id="goalNext" class="goal-nav-btn">›</button>
-</div>
 
 <div class="chart-wrap" style="width:100%; height:260px; margin:16px 0; position:relative;">
-<canvas id="chartBg"></canvas>
-<canvas id="chartFact"></canvas>
+  <canvas id="chartBg"></canvas>
+  <canvas id="chartFact"></canvas>
 </div>
 
 <div class="fact-input-row">
-<input id="factInput" inputmode="numeric"
-placeholder="Сколько вы отложили"
-style="flex:1"/>
-<button id="applyFact"
-style="width:52px;height:52px;border-radius:50%">
-➜
-</button>
+  <input id="factInput" inputmode="numeric"
+  placeholder="Сколько вы отложили"
+  style="flex:1"/>
+  
+  <button id="applyFact"
+  style="width:52px;height:52px;border-radius:50%">
+  ➜
+  </button>
 </div>
+
 `;
+
+const explanation = ProtocolCore.explain(lastCalc);
+const advice = ProtocolCore.buildAdvice(lastCalc);
 
 initChart();
 animateFactLine();
@@ -745,10 +658,6 @@ buttons.forEach(b => b.classList.remove("active"));
 buttons[1].classList.add("active");
 moveIndicator(buttons[1]);
 updatePlanHeader();
-initGoalSwitcher();
-updateGoalSwitcher();
-updateActiveGoalBlock();
-bindMiniGoalEdit();
 
 const factInput = document.getElementById("factInput");
 const applyBtn = document.getElementById("applyFact");
@@ -1268,7 +1177,10 @@ goals.forEach((goal, index) => {
         padding:6px 10px;
         font-size:12px;
       ">
-      ✏️
+      <svg viewBox="0 0 24 24" width="16" height="16">
+  <path d="M12 20h9"/>
+  <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>
+</svg>
     </button>
   </div>
     
@@ -2040,8 +1952,6 @@ if (addGoalBtn) {
     });
 
     recalcAllocationsPremium();
-    updateGoalSwitcher();
-updateActiveGoalBlock();
   };
 }
 
