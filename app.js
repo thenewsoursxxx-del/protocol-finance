@@ -657,8 +657,13 @@ ${advice.text}
 </div>
 
 <div class="chart-wrap" style="width:100%; height:260px; margin:16px 0; position:relative;">
-<canvas id="chartBg"></canvas>
-<canvas id="chartFact"></canvas>
+
+  <button class="chart-arrow left">‹</button>
+  <button class="chart-arrow right">›</button>
+
+  <canvas id="chartBg"></canvas>
+  <canvas id="chartFact"></canvas>
+
 </div>
 
 <div class="fact-input-row">
@@ -673,6 +678,25 @@ style="width:52px;height:52px;border-radius:50%">
 `;
 
 initChart();
+const leftArrow = document.querySelector(".chart-arrow.left");
+const rightArrow = document.querySelector(".chart-arrow.right");
+
+if (leftArrow && rightArrow) {
+
+  leftArrow.onclick = () => {
+    if (activeGoalIndex > 0) {
+      activeGoalIndex--;
+      updateGoalView();
+    }
+  };
+
+  rightArrow.onclick = () => {
+    if (activeGoalIndex < goals.length - 1) {
+      activeGoalIndex++;
+      updateGoalView();
+    }
+  };
+}
 animateFactLine();
 if (protocolBack) protocolBack.style.display = "none";
 showBottomNav();
@@ -725,19 +749,6 @@ accounts.reserve += toReserve;
 }
 
 distributeMoney(toMain);
-
-function distributeMoney(amount) {
-
-  if (!goals.length) return;
-
-  const totalWeight = goals.reduce((s, g) => s + g.weight, 0);
-
-  goals.forEach(goal => {
-    const share = amount * (goal.weight / totalWeight);
-    goal.saved += share;
-  });
-
-}
 
 const now = new Date();
 now.setDate(1);
@@ -1183,50 +1194,28 @@ function renderGoals() {
   document.getElementById("goalSaved").innerText = saved.toLocaleString();
   document.getElementById("goalPercent").innerText = percent;
   document.getElementById("goalProgressBar").style.width = percent + "%";
-}
 
-// ===== ОСНОВНАЯ ЦЕЛЬ =====
-const saved = accounts.main;
-const total = parseNumber(goalInput.value || "0");
+  // ✅ verdict внутри
+  const verdict = document.getElementById("goalVerdict");
 
-const percent = total
-? Math.min(100, Math.round((saved / total) * 100))
-: 0;
+  if (percent >= 100) {
+    verdict.innerText = "Цель достигнута. Protocol фиксирует успех.";
+  } else if (percent >= 70) {
+    verdict.innerText = "Цель близка к завершению. Темп хороший.";
+  } else {
+    verdict.innerText = "Цель в процессе. Стабильность важнее скорости.";
+  }
 
-document.getElementById("goalTotal").innerText =
-total.toLocaleString();
+  // ✅ резерв внутри
+  const reserveCard = document.getElementById("goalReserveCard");
 
-document.getElementById("goalSaved").innerText =
-saved.toLocaleString();
-
-document.getElementById("goalPercent").innerText = percent;
-
-document.getElementById("goalProgressBar").style.width =
-percent + "%";
-
-const verdict = document.getElementById("goalVerdict");
-
-if (percent >= 100) {
-verdict.innerText =
-"Цель достигнута. Protocol фиксирует успех.";
-} else if (percent >= 70) {
-verdict.innerText =
-"Цель близка к завершению. Темп хороший.";
-} else {
-verdict.innerText =
-"Цель в процессе. Стабильность важнее скорости.";
-}
-
-// ===== РЕЗЕРВ =====
-const reserveCard = document.getElementById("goalReserveCard");
-
-if (chosenPlan === "buffer") {
-reserveCard.style.display = "block";
-document.getElementById("goalReserveAmount").innerText =
-accounts.reserve.toLocaleString();
-} else {
-reserveCard.style.display = "none";
-}
+  if (chosenPlan === "buffer") {
+    reserveCard.style.display = "block";
+    document.getElementById("goalReserveAmount").innerText =
+      accounts.reserve.toLocaleString();
+  } else {
+    reserveCard.style.display = "none";
+  }
 }
 
 function fireCelebration() {
@@ -1324,11 +1313,10 @@ haptic("error");
 return;
 }
 
-// 1️⃣ обновляем мету цели
-goalMeta.title = newTitle;
+const goal = getActiveGoal();
 
-// 2️⃣ обновляем ТОЛЬКО цель (не трогаем accounts)
-goalInput.value = formatNumber(String(newAmount));
+goal.title = newTitle;
+goal.amount = newAmount;
 
 // 3️⃣ если цель стала меньше накопленного — считаем её выполненной
 if (accounts.main >= newAmount) {
@@ -1419,19 +1407,18 @@ animateFactLine();
 }
 
 function updatePlanHeader() {
-if (!lastCalc.ok) return;
 
-const monthlyEl = document.getElementById("planMonthly");
-const explainEl = document.getElementById("planExplanation");
+  if (!goals.length) return;
 
-if (!monthlyEl || !explainEl) return;
+  const goal = getActiveGoal();
 
-monthlyEl.innerText =
-`План: ${plannedMonthly.toLocaleString()} ₽ / месяц`;
+  const monthlyEl = document.getElementById("planMonthly");
 
-explainEl.innerHTML = ProtocolCore
-.explain(lastCalc)
-.replace(/\n/g, "<br>");
+  monthlyEl.innerHTML =
+    `<div style="font-size:20px;font-weight:600;margin-bottom:4px">
+      ${goal.title}
+     </div>
+     План: ${plannedMonthly.toLocaleString()} ₽ / месяц`;
 }
 
 function handleGoalEditHint(ratio) {
@@ -1864,3 +1851,35 @@ if (addAccountBack) {
 function getActiveGoal() {
   return goals[activeGoalIndex];
 }
+
+function updateGoalView() {
+  renderGoals();
+  updatePlanHeader();
+}
+
+function addGoal() {
+
+  goals.push({
+    id: Date.now(),
+    title: "Новая цель",
+    amount: 100000,
+    saved: 0,
+    weight: 1
+  });
+
+  activeGoalIndex = goals.length - 1;
+
+  renderGoals();
+}
+
+function distributeMoney(amount) {
+
+  if (!goals.length) return;
+
+  const totalWeight = goals.reduce((s, g) => s + g.weight, 0);
+
+  goals.forEach(goal => {
+    const share = amount * (goal.weight / totalWeight);
+    goal.saved += share;
+  });
+  }
