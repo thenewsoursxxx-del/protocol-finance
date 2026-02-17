@@ -1504,3 +1504,11 @@ button {
     opacity: 1;
   }
 }
+
+.advanced-fog {
+  display: none;
+}
+
+body.advanced-active .advanced-fog {
+  display: block;
+}
