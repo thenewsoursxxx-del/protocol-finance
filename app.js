@@ -117,11 +117,9 @@ const bottomNav = document.querySelector(".bottom-nav");
 const advancedBtn = document.getElementById("advancedBtn");
 const advancedBack = document.getElementById("advancedBack");
 // ❌ скрываем bottom-nav при старте (экран расчёта)
-if (bottomNav) {
-  bottomNav.style.opacity = "0";
-  bottomNav.style.pointerEvents = "none";
-  bottomNav.style.transform = "translateY(140%)";
-}
+bottomNav.style.opacity = "0";
+bottomNav.style.pointerEvents = "none";
+bottomNav.style.transform = "translateY(140%)";
 
 /* ===== NAV INDICATOR ===== */
 function moveIndicator(btn) {
@@ -170,20 +168,10 @@ main: 0,
 reserve: 0
 };
 let initialBalance = 0;
-let goals = [
-  {
-    id: Date.now(),
-    title: "Основная цель",
-    target: 0,
-    saved: 0,
-    deadlineMonths: 12,
-    priority: 3,
-    expectedReturn: 0,
-    allocation: 1
-  }
-];
+let goalMeta = {
+title: "Основная цель"
+};
 
-let activeGoalIndex = 0;
 let goalEditBaseValue = null;
 let goalEditHintTimeout = null;
 
@@ -459,17 +447,12 @@ const validGoal = validateRequired(goalInput);
 
 if (!validIncome || !validExpenses || !validGoal) return;
 
-const primaryGoal = getPrimaryGoal();
-
-primaryGoal.target = parseNumber(goalInput.value || "0");
-primaryGoal.saved = parseNumber(savedInput?.value || "0");
-
 const baseResult = ProtocolCore.calculateBase({
-  income: parseNumber(incomeInput.value),
-  expenses: parseNumber(expensesInput.value),
-  goal: primaryGoal.target,
-  saved: primaryGoal.saved,
-  mode: saveMode
+income: parseNumber(incomeInput.value),
+expenses: parseNumber(expensesInput.value),
+goal: parseNumber(goalInput.value),
+saved: parseNumber(savedInput?.value || "0"),
+mode: saveMode
 });
 
 if (!baseResult.ok) {
@@ -609,7 +592,6 @@ loader.classList.remove("hidden");
 plannedMonthly = lastCalc.monthlySave;
 
 if (mode === "buffer") plannedMonthly = Math.round(plannedMonthly * 0.9);
-calculateAllocations(plannedMonthly);
 
 adviceCard.innerText = "Protocol анализирует данные…";
 
@@ -627,28 +609,53 @@ adviceCard.innerText = "Готово.";
 setTimeout(() => {
 loader.classList.add("hidden");
 
+const explanation = ProtocolCore.explain(lastCalc);
+const advice = ProtocolCore.buildAdvice(lastCalc);
+
 adviceCard.innerHTML = `
+<div id="planHeader">
+<div
+id="planMonthly"
+style="font-size:16px;font-weight:600"
+></div>
+
+<div
+id="planExplanation"
+style="
+margin-top:8px;
+font-size:14px;
+line-height:1.4;
+opacity:0.75;
+"
+></div>
+</div>
+
+<div style="
+margin-top:10px;
+padding:10px 12px;
+border-radius:14px;
+background:#111;
+border:1px solid #222;
+font-size:14px;
+">
+${advice.text}
+</div>
 
 <div class="chart-wrap" style="width:100%; height:260px; margin:16px 0; position:relative;">
-  <canvas id="chartBg"></canvas>
-  <canvas id="chartFact"></canvas>
+<canvas id="chartBg"></canvas>
+<canvas id="chartFact"></canvas>
 </div>
 
 <div class="fact-input-row">
-  <input id="factInput" inputmode="numeric"
-  placeholder="Сколько вы отложили"
-  style="flex:1"/>
-  
-  <button id="applyFact"
-  style="width:52px;height:52px;border-radius:50%">
-  ➜
-  </button>
+<input id="factInput" inputmode="numeric"
+placeholder="Сколько вы отложили"
+style="flex:1"/>
+<button id="applyFact"
+style="width:52px;height:52px;border-radius:50%">
+➜
+</button>
 </div>
-
 `;
-
-const explanation = ProtocolCore.explain(lastCalc);
-const advice = ProtocolCore.buildAdvice(lastCalc);
 
 initChart();
 animateFactLine();
@@ -703,7 +710,6 @@ accounts.reserve += toReserve;
 }
 
 accounts.main += toMain;
-distributeToGoals(toMain);
 
 const now = new Date();
 now.setDate(1);
@@ -730,7 +736,7 @@ animateFactLine();
 runBrain();
 renderAccountsUI();
 renderGoals();
-const goalTotal = getPrimaryGoal().target;
+const goalTotal = parseNumber(goalInput.value || "0");
 
 if (
 !goalCompleted &&
@@ -834,7 +840,7 @@ function haptic(type = "light") {
 }
 /* ===== TELEGRAM USER AUTO FILL ===== */
 
-const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+const tgUser = Telegram.WebApp.initDataUnsafe?.user;
 
 // верхняя иконка
 const topAvatar = document.querySelector("#profileBtn .avatar");
@@ -1132,94 +1138,55 @@ reserveBlock.classList.remove("show-reserve");
 }
 
 function renderGoals() {
+if (!lastCalc.ok) return;
 
-  const container = document.getElementById("screen-goals");
+const titleEl = document.getElementById("goalTitle");
+if (titleEl) {
+titleEl.innerText = goalMeta.title;
+}
 
-  if (!container) return;
+// ===== ОСНОВНАЯ ЦЕЛЬ =====
+const saved = accounts.main;
+const total = parseNumber(goalInput.value || "0");
 
-  // очищаем всё кроме header
-  const header = container.querySelector(".app-header");
-  container.innerHTML = "";
-  container.appendChild(header);
+const percent = total
+? Math.min(100, Math.round((saved / total) * 100))
+: 0;
 
-goals.forEach((goal, index) => {
+document.getElementById("goalTotal").innerText =
+total.toLocaleString();
 
-    const percent = goal.target
-      ? Math.min(100, Math.round((goal.saved / goal.target) * 100))
-      : 0;
+document.getElementById("goalSaved").innerText =
+saved.toLocaleString();
 
-    const card = document.createElement("div");
-    card.className = "card";
-    card.style.marginBottom = "18px";
+document.getElementById("goalPercent").innerText = percent;
 
-    card.innerHTML = `
-  <div style="font-size:14px;opacity:.6">
-    Цель
-  </div>
+document.getElementById("goalProgressBar").style.width =
+percent + "%";
 
-  <div style="
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    margin-top:4px;
-  ">
-    <div style="font-size:22px;font-weight:600">
-      ${goal.title}
-    </div>
+const verdict = document.getElementById("goalVerdict");
 
-    <button class="goal-edit-mini"
-      data-index="${index}"
-      style="
-        background:#111;
-        border:1px solid #333;
-        color:#fff;
-        border-radius:10px;
-        padding:6px 10px;
-        font-size:12px;
-      ">
-      <svg viewBox="0 0 24 24" width="16" height="16">
-  <path d="M12 20h9"/>
-  <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>
-</svg>
-    </button>
-  </div>
-    
-      <div style="margin-top:10px;font-size:14px;opacity:.7">
-        ${goal.saved.toLocaleString()} ₽ из ${goal.target.toLocaleString()} ₽
-      </div>
+if (percent >= 100) {
+verdict.innerText =
+"Цель достигнута. Protocol фиксирует успех.";
+} else if (percent >= 70) {
+verdict.innerText =
+"Цель близка к завершению. Темп хороший.";
+} else {
+verdict.innerText =
+"Цель в процессе. Стабильность важнее скорости.";
+}
 
-      <div style="margin-top:10px">
-        <div style="height:6px;border-radius:6px;background:#222;overflow:hidden">
-          <div style="
-            height:100%;
-            width:${percent}%;
-            background:#3a7bfd;
-            transition: width .4s ease;
-          "></div>
-        </div>
-        <div style="margin-top:6px;font-size:13px;opacity:.6">
-          ${percent}%
-        </div>
-      </div>
-    `;
+// ===== РЕЗЕРВ =====
+const reserveCard = document.getElementById("goalReserveCard");
 
-    container.appendChild(card);
-    card.querySelector(".goal-edit-mini").onclick = () => {
-
-  const goal = goals[index];
-
-  goalEditTitle.value = goal.title;
-  goalEditAmount.value = goal.target.toLocaleString();
-
-  goalEditBaseValue = goal.target;
-
-  goalEditorOverlay.style.display = "block";
-
-  requestAnimationFrame(() => {
-    goalEditorSheet.style.transform = "translateY(0)";
-  });
-};
-  });
+if (chosenPlan === "buffer") {
+reserveCard.style.display = "block";
+document.getElementById("goalReserveAmount").innerText =
+accounts.reserve.toLocaleString();
+} else {
+reserveCard.style.display = "none";
+}
 }
 
 function fireCelebration() {
@@ -1285,8 +1252,7 @@ if (editGoalBtn) {
 editGoalBtn.onclick = () => {
 haptic("light");
 
-const primaryGoal = getPrimaryGoal();
-goalEditTitle.value = primaryGoal.title;
+goalEditTitle.value = goalMeta.title;
 goalEditAmount.value = goalInput.value;
 goalEditBaseValue = parseNumber(goalInput.value || "0");
 
@@ -1319,10 +1285,10 @@ return;
 }
 
 // 1️⃣ обновляем мету цели
-const primaryGoal = getPrimaryGoal();
+goalMeta.title = newTitle;
 
-primaryGoal.title = newTitle;
-primaryGoal.target = newAmount;
+// 2️⃣ обновляем ТОЛЬКО цель (не трогаем accounts)
+goalInput.value = formatNumber(String(newAmount));
 
 // 3️⃣ если цель стала меньше накопленного — считаем её выполненной
 if (accounts.main >= newAmount) {
@@ -1342,6 +1308,7 @@ renderGoals();
 updatePlanHeader();
 renderAccountsUI();
 
+recalcPlanAfterGoalChange();
 pulseGoalCard();
 };
 
@@ -1364,6 +1331,16 @@ function pulseGoalCard() {
 const card = document.getElementById("activeGoalCard");
 if (!card) return;
 
+card.classList.add("pulse");
+setTimeout(() => card.classList.remove("pulse"), 400);
+}
+
+let goalPulseTimeout = null;
+
+function pulseGoalCard() {
+const card = document.getElementById("activeGoalCard");
+if (!card) return;
+
 card.classList.remove("pulse");
 clearTimeout(goalPulseTimeout);
 
@@ -1376,8 +1353,7 @@ card.classList.remove("pulse");
 function recalcPlanAfterGoalChange() {
 if (!lastCalc.ok) return;
 
-const primaryGoal = getPrimaryGoal();
-const newGoal = primaryGoal.target;
+const newGoal = parseNumber(goalInput.value || "0");
 if (!newGoal) return;
 
 const baseResult = ProtocolCore.calculateBase({
@@ -1524,59 +1500,70 @@ bgCtx.restore();
 }
 
 function drawMonthLabels() {
+if (!lastCalc.months) return;
 
-  const goal = goals[activeGoalIndex];
-  if (!goal || !goal.deadlineMonths) return;
+const W = bgCanvas.width / (window.devicePixelRatio || 1);
+const H = bgCanvas.height / (window.devicePixelRatio || 1);
+const pad = 40;
 
-  const monthsTotal = goal.deadlineMonths;
+const monthsTotal = lastCalc.months;
 
-  const W = bgCanvas.width / (window.devicePixelRatio || 1);
-  const H = bgCanvas.height / (window.devicePixelRatio || 1);
-  const pad = 40;
+// 🔥 рассчитываем шаг отображения
+let step = 1;
 
-  let step = 1;
+if (monthsTotal > 24) step = 4;
+else if (monthsTotal > 12) step = 3;
+else if (monthsTotal > 6) step = 2;
 
-  if (monthsTotal > 24) step = 4;
-  else if (monthsTotal > 12) step = 3;
-  else if (monthsTotal > 6) step = 2;
+bgCtx.fillStyle = "rgba(255,255,255,0.35)";
+bgCtx.font = "12px Inter, system-ui";
+bgCtx.textAlign = "center";
+bgCtx.textBaseline = "top";
 
-  bgCtx.fillStyle = "rgba(255,255,255,0.35)";
-  bgCtx.font = "12px Inter, system-ui";
-  bgCtx.textAlign = "center";
-  bgCtx.textBaseline = "top";
+for (let i = 0; i <= monthsTotal; i++) {
 
-  for (let i = 0; i <= monthsTotal; i++) {
+if (i % step !== 0 && i !== monthsTotal) continue;
 
-    if (i % step !== 0 && i !== monthsTotal) continue;
+const x =
+pad +
+(i / monthsTotal) *
+(W - pad * 2);
 
-    const x =
-      pad +
-      (i / monthsTotal) *
-      (W - pad * 2);
-
-    bgCtx.fillText(i, x, H - pad + 8);
-  }
+bgCtx.fillText(i, x, H - pad + 8);
+}
 }
 
 function drawPlanLine() {
+const W = bgCanvas.width / (window.devicePixelRatio || 1);
+const H = bgCanvas.height / (window.devicePixelRatio || 1);
+const pad = 40;
 
-  const W = bgCanvas.width / (window.devicePixelRatio || 1);
-  const H = bgCanvas.height / (window.devicePixelRatio || 1);
-  const pad = 40;
+const points = buildPlanTimeline(new Date(), plannedMonthly, lastCalc.months);
+const maxValue = points[points.length - 1].value;
 
-  const goal = goals[activeGoalIndex];
+let planColor = "#ffffff";
 
-  if (!goal || !goal.monthlyContribution || !goal.deadlineMonths) return;
+// если пользователь ещё не вводил реальные пополнения — линия всегда белая
+if (factHistory.length === 0) {
+bgCtx.strokeStyle = "#ffffff";
+bgCtx.lineWidth = 2;
 
-  const points = buildPlanTimeline(
-    new Date(),
-    goal.monthlyContribution,
-    goal.deadlineMonths
-  );
+const points = buildPlanTimeline(new Date(), plannedMonthly, lastCalc.months);
+const maxValue = points[points.length - 1].value;
 
-  const maxValue = points[points.length - 1].value;
+bgCtx.beginPath();
 
-  let planColor = "#ffffff";
+points.forEach((p, i) => {
+const x = pad + (i / (points.length - 1)) * (W - pad * 2);
+const y = H - pad - (p.value / maxValue) * (H - pad * 2);
+
+if (i === 0) bgCtx.moveTo(x, y);
+else bgCtx.lineTo(x, y);
+});
+
+bgCtx.stroke();
+return; // ← ВАЖНО
+}
 
 if (factHistory.length > 0) {
 const mainFacts = factHistory.filter(f => f.to === "main");
@@ -1618,40 +1605,38 @@ bgCtx.stroke();
 let animationFrameId = null;
 
 function animateFactLine() {
+if (!factHistory.length) {
+factCtx.clearRect(0, 0, factCanvas.width, factCanvas.height);
+return;
+}
 
-  if (!factHistory.length) {
-    factCtx.clearRect(0, 0, factCanvas.width, factCanvas.height);
-    return;
-  }
+if (!plannedMonthly || !lastCalc.months) return;
 
-  const goal = goals[activeGoalIndex];
-  if (!goal || !goal.monthlyContribution || !goal.deadlineMonths) return;
+const total = factHistory
+.filter(f => f.to === "main")
+.reduce((s, f) => s + f.value, 0);
 
-  const total = factHistory
-    .filter(f => f.to === "main")
-    .reduce((s, f) => s + f.value, 0);
+const planMax = plannedMonthly * lastCalc.months;
 
-  const planMax = goal.monthlyContribution * goal.deadlineMonths;
-  const maxValue = Math.max(total, planMax, 1);
+const maxValue = Math.max(total, planMax, 1); // ← защита от 0
 
-  let start = null;
-  const duration = 900;
+let start = null;
+const duration = 900;
 
-  function frame(timestamp) {
+function frame(timestamp) {
+if (!start) start = timestamp;
 
-    if (!start) start = timestamp;
+const progress = Math.min((timestamp - start) / duration, 1);
+const eased = 1 - Math.pow(1 - progress, 3);
 
-    const progress = Math.min((timestamp - start) / duration, 1);
-    const eased = 1 - Math.pow(1 - progress, 3);
+drawFactLayer(eased, total, maxValue);
 
-    drawFactLayer(eased, total, maxValue);
+if (progress < 1) {
+requestAnimationFrame(frame);
+}
+}
 
-    if (progress < 1) {
-      requestAnimationFrame(frame);
-    }
-  }
-
-  requestAnimationFrame(frame);
+requestAnimationFrame(frame);
 }
 
 function drawFactLayer(progress, total, maxValue) {
@@ -1661,7 +1646,7 @@ const pad = 40;
 
 factCtx.clearRect(0, 0, factCanvas.width, factCanvas.height);
 
-const monthsTotal = goals[activeGoalIndex].deadlineMonths;
+const monthsTotal = lastCalc.months;
 
 // сколько месяцев прошло
 const mainFacts = factHistory.filter(f => f.to === "main");
@@ -1760,8 +1745,7 @@ const total = factHistory
 .filter(f => f.to === "main")
 .reduce((s, f) => s + f.value, 0);
 
-const goal = goals[activeGoalIndex];
-const planMax = goal.monthlyContribution * goal.deadlineMonths;
+const planMax = plannedMonthly * lastCalc.months;
 const maxValue = Math.max(total, planMax, 1);
 
 drawFactLayer(1, total, maxValue);
@@ -1782,8 +1766,6 @@ if (advancedBtn) {
   advancedBtn.onclick = () => {
 
     haptic("light");
-    
-    renderAdvancedGoals();
 
     // скрываем все экраны
 document.querySelectorAll(".screen")
@@ -1836,264 +1818,5 @@ if (addAccountBack) {
     openScreen("accounts", buttons[2]);
 
     showBottomNav();
-  };
-}
-
-function getPrimaryGoal() {
-  return goals[0];
-}
-
-function calculateAllocations(monthlyAmount) {
-
-  if (!goals.length) return;
-
-  const totalWeight = goals.reduce((sum, g) => {
-    return sum + g.priority * g.allocation;
-  }, 0);
-
-  goals.forEach(goal => {
-
-    const weight = goal.priority * goal.allocation;
-
-    const share = totalWeight
-      ? (weight / totalWeight)
-      : 0;
-
-    goal.monthlyContribution = Math.round(monthlyAmount * share);
-  });
-}
-
-function renderAdvancedGoals() {
-
-  const container = document.getElementById("advancedGoalsContainer");
-  if (!container) return;
-
-  container.innerHTML = "";
-
-  goals.forEach((goal, index) => {
-
-    const percent = Math.round((goal.allocation || 0) * 100);
-
-    container.innerHTML += `
-      <div class="advanced-goal-card">
-
-        <div class="adv-goal-header">
-          <div class="adv-goal-title">${goal.title}</div>
-          <div class="adv-goal-priority">
-            Приоритет:
-            <input type="range"
-              min="1"
-              max="5"
-              value="${goal.priority}"
-              data-index="${index}"
-              class="priority-slider"
-            >
-          </div>
-        </div>
-
-        <div class="adv-goal-amount">
-          Цель: ${goal.target.toLocaleString()} ₽
-        </div>
-
-        <div class="allocation-bar">
-          <div class="allocation-fill"
-               style="width:${percent}%"></div>
-        </div>
-
-        <div class="allocation-percent">
-          ${percent}% от бюджета
-        </div>
-
-      </div>
-    `;
-  });
-
-  bindPrioritySliders();
-}
-
-function bindPrioritySliders() {
-
-  document.querySelectorAll(".priority-slider")
-    .forEach(slider => {
-
-      slider.oninput = (e) => {
-
-        const index = e.target.dataset.index;
-        goals[index].priority = Number(e.target.value);
-
-        recalcAllocationsPremium();
-      };
-    });
-}
-
-function recalcAllocationsPremium() {
-
-  calculateAllocations(plannedMonthly);
-
-  renderAdvancedGoals();
-  renderGoals();
-  
-}
-
-const addGoalBtn = document.getElementById("addGoalBtn");
-
-if (addGoalBtn) {
-  addGoalBtn.onclick = () => {
-
-    goals.push({
-      id: Date.now(),
-      title: "Новая цель",
-      target: 100000,
-      saved: 0,
-      deadlineMonths: 12,
-      priority: 3,
-      expectedReturn: 0,
-      allocation: 1
-    });
-
-    recalcAllocationsPremium();
-  };
-}
-
-function distributeToGoals(amount) {
-
-  if (!goals.length || amount <= 0) return;
-
-  // пересчитываем allocation
-  calculateAllocations(plannedMonthly);
-
-  goals.forEach(goal => {
-
-const share = plannedMonthly
-  ? goal.monthlyContribution / plannedMonthly
-  : 0;
-
-    const portion = Math.round(amount * share);
-
-    goal.saved += portion;
-  });
-
-}
-
-function initGoalSwitcher() {
-
-  const prev = document.getElementById("goalPrev");
-  const next = document.getElementById("goalNext");
-
-  if (!prev || !next) return;
-
-  prev.onclick = () => {
-    if (activeGoalIndex > 0) {
-      activeGoalIndex--;
-      updateGoalSwitcher();
-updateActiveGoalBlock();
-redrawActiveGoalChart();
-    }
-  };
-
-  next.onclick = () => {
-    if (activeGoalIndex < goals.length - 1) {
-      activeGoalIndex++;
-      updateGoalSwitcher();
-updateActiveGoalBlock();
-redrawActiveGoalChart();
-    }
-  };
-
-  initGoalSwipe();
-}
-
-function updateGoalSwitcher() {
-
-  const title = document.getElementById("goalSwitchTitle");
-  const switcher = document.getElementById("goalSwitcher");
-
-  if (!title || !switcher) return;
-
-  if (goals.length <= 1) {
-    switcher.style.display = "none";
-    return;
-  }
-
-  switcher.style.display = "flex";
-
-  title.innerText = goals[activeGoalIndex].title;
-}
-
-function redrawActiveGoalChart() {
-  const goal = goals[activeGoalIndex];
-
-  plannedMonthly = goal.monthlyContribution;
-
-  drawStaticLayer();
-  animateFactLine();
-}
-
-function initGoalSwipe() {
-
-  const chart = document.querySelector(".chart-wrap");
-  if (!chart) return;
-
-  let startX = 0;
-
-  chart.addEventListener("touchstart", e => {
-    startX = e.touches[0].clientX;
-  });
-
-  chart.addEventListener("touchend", e => {
-
-    const endX = e.changedTouches[0].clientX;
-    const diff = endX - startX;
-
-    if (Math.abs(diff) < 40) return;
-
-    if (diff < 0 && activeGoalIndex < goals.length - 1) {
-      activeGoalIndex++;
-    }
-
-    if (diff > 0 && activeGoalIndex > 0) {
-      activeGoalIndex--;
-    }
-
-    updateGoalSwitcher();
-updateActiveGoalBlock();
-redrawActiveGoalChart();
-  });
-}
-
-function updateActiveGoalBlock() {
-
-  const goal = goals[activeGoalIndex];
-
-  const titleEl = document.getElementById("activeGoalTitle");
-  const amountEl = document.getElementById("activeGoalAmount");
-
-  if (!goal || !titleEl || !amountEl) return;
-
-  titleEl.innerText = goal.title;
-
-  amountEl.innerText =
-    `${goal.saved.toLocaleString()} ₽ из ${goal.target.toLocaleString()} ₽`;
-}
-
-function bindMiniGoalEdit() {
-
-  const btn = document.getElementById("editGoalBtnMini");
-  if (!btn) return;
-
-  btn.onclick = () => {
-
-    const goal = goals[activeGoalIndex];
-
-    goalEditTitle.value = goal.title;
-    goalEditAmount.value = goal.target.toLocaleString();
-
-    goalEditBaseValue = goal.target;
-
-    goalEditorOverlay.style.display = "block";
-
-    requestAnimationFrame(() => {
-      goalEditorSheet.style.transform = "translateY(0)";
-    });
   };
 }
