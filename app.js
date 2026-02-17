@@ -1804,6 +1804,7 @@ document.querySelectorAll(".screen")
     // скрываем кнопку
     advancedBtn.style.display = "none";
   };
+  renderAdvancedGoals();
 }
 
 if (advancedBack) {
@@ -1863,4 +1864,95 @@ function calculateAllocations(monthlyAmount) {
 
     goal.monthlyContribution = Math.round(monthlyAmount * share);
   });
+}
+
+function renderAdvancedGoals() {
+
+  const container = document.getElementById("advancedGoalsContainer");
+  if (!container) return;
+
+  container.innerHTML = "";
+
+  goals.forEach((goal, index) => {
+
+    const percent = Math.round((goal.allocation || 0) * 100);
+
+    container.innerHTML += `
+      <div class="advanced-goal-card">
+
+        <div class="adv-goal-header">
+          <div class="adv-goal-title">${goal.title}</div>
+          <div class="adv-goal-priority">
+            Приоритет:
+            <input type="range"
+              min="1"
+              max="5"
+              value="${goal.priority}"
+              data-index="${index}"
+              class="priority-slider"
+            >
+          </div>
+        </div>
+
+        <div class="adv-goal-amount">
+          Цель: ${goal.target.toLocaleString()} ₽
+        </div>
+
+        <div class="allocation-bar">
+          <div class="allocation-fill"
+               style="width:${percent}%"></div>
+        </div>
+
+        <div class="allocation-percent">
+          ${percent}% от бюджета
+        </div>
+
+      </div>
+    `;
+  });
+
+  bindPrioritySliders();
+}
+
+function bindPrioritySliders() {
+
+  document.querySelectorAll(".priority-slider")
+    .forEach(slider => {
+
+      slider.oninput = (e) => {
+
+        const index = e.target.dataset.index;
+        goals[index].priority = Number(e.target.value);
+
+        recalcAllocationsPremium();
+      };
+    });
+}
+
+function recalcAllocationsPremium() {
+
+  calculateAllocations(plannedMonthly);
+
+  renderAdvancedGoals();
+  renderGoals();
+}
+
+const addGoalBtn = document.getElementById("addGoalBtn");
+
+if (addGoalBtn) {
+  addGoalBtn.onclick = () => {
+
+    goals.push({
+      id: Date.now(),
+      title: "Новая цель",
+      target: 100000,
+      saved: 0,
+      deadlineMonths: 12,
+      priority: 3,
+      expectedReturn: 0,
+      allocation: 1
+    });
+
+    recalcAllocationsPremium();
+  };
 }
