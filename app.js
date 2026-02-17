@@ -657,10 +657,10 @@ font-size:14px;
 ${advice.text}
 </div>
 
-<div class="goal-switcher">
-  <button id="goalPrev">←</button>
-  <div id="goalSwitchTitle"></div>
-  <button id="goalNext">→</button>
+<div id="goalSwitcher" class="goal-switcher" style="display:none;">
+  <button id="goalPrev" class="goal-nav-btn">‹</button>
+  <div id="goalSwitchTitle" class="goal-switch-title"></div>
+  <button id="goalNext" class="goal-nav-btn">›</button>
 </div>
 
 <div class="chart-wrap" style="width:100%; height:260px; margin:16px 0; position:relative;">
@@ -1993,8 +1993,18 @@ function initGoalSwitcher() {
 }
 
 function updateGoalSwitcher() {
+
+  const wrapper = document.getElementById("goalSwitcher");
   const title = document.getElementById("goalSwitchTitle");
-  if (!title) return;
+
+  if (!wrapper || !title) return;
+
+  if (goals.length <= 1) {
+    wrapper.style.display = "none";
+    return;
+  }
+
+  wrapper.style.display = "flex";
 
   title.innerText = goals[activeGoalIndex].title;
 }
