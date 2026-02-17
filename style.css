@@ -1470,12 +1470,8 @@ button {
 /* ===== ADVANCED EDGE FOG — SIDE ONLY ===== */
 
 .advanced-fog {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-
+  position: fixed;
+  inset: 0;
   pointer-events: none;
   z-index: 0;
 
@@ -1483,17 +1479,17 @@ button {
     linear-gradient(
       to right,
       rgba(16,185,129,0.35),
-      rgba(16,185,129,0.18) 30%,
-      transparent 65%
+      rgba(16,185,129,0.18) 25%,
+      transparent 60%
     ),
     linear-gradient(
       to left,
       rgba(16,185,129,0.35),
-      rgba(16,185,129,0.18) 30%,
-      transparent 65%
+      rgba(16,185,129,0.18) 25%,
+      transparent 60%
     );
 
-  background-size: 24% 100%, 24% 100%;
+  background-size: 28% 100%, 28% 100%;
   background-repeat: no-repeat;
   background-position: left center, right center;
 
