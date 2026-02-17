@@ -229,6 +229,11 @@ indicator.style.opacity = "0";
 }
 clearFactInputError();
 
+// туман только на экране «Расширенные настройки» — при любом другом экране снимаем
+if (name !== "advanced") {
+  document.body.classList.remove("advanced-active");
+}
+
 // показываем advanced кнопку только в goals
 if (advancedBtn) {
   if (name === "goals" && isInitialized) {
@@ -775,6 +780,9 @@ haptic("light");
 
 // закрываем клавиатуру
 document.activeElement?.blur();
+
+// туман только в расширенных настройках — при открытии профиля убираем
+document.body.classList.remove("advanced-active");
 
 // показываем профиль
 document.querySelectorAll(".screen")
