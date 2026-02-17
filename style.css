@@ -1610,3 +1610,49 @@ button {
   color: white;
   font-size: 18px;
 }
+
+.goals-list {
+  margin-top: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.goal-mini-card {
+  padding: 14px;
+  border-radius: 14px;
+  background: #111;
+  border: 1px solid #222;
+  cursor: pointer;
+}
+
+.goal-mini-card.active {
+  border: 1px solid #3a7bfd;
+}
+
+.chart-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(20,20,20,0.8);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: white;
+  font-size: 18px;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.chart-arrow.left {
+  left: 8px;
+}
+
+.chart-arrow.right {
+  right: 8px;
+}
+
+.chart-arrow:active {
+  transform: translateY(-50%) scale(0.9);
+  background: rgba(40,40,40,0.9);
+}
