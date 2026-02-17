@@ -137,12 +137,6 @@ navRect.left +
 indicator.style.transform = `translateX(${x}px)`;
 }
 
-/* ===== NAV NEVER MOVES ===== */
-bottomNav.style.position = "fixed";
-bottomNav.style.bottom = "26px";
-bottomNav.style.left = "20px";
-bottomNav.style.right = "20px";
-
 const PROTOCOL_COLORS = [
 "#3a7bfd", // основной синий
 "#60a5fa", // светлый
@@ -892,7 +886,7 @@ function haptic(type = "light") {
 }
 /* ===== TELEGRAM USER AUTO FILL ===== */
 
-const tgUser = Telegram.WebApp.initDataUnsafe?.user;
+const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
 
 // верхняя иконка
 const topAvatar = document.querySelector("#profileBtn .avatar");
