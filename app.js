@@ -117,9 +117,11 @@ const bottomNav = document.querySelector(".bottom-nav");
 const advancedBtn = document.getElementById("advancedBtn");
 const advancedBack = document.getElementById("advancedBack");
 // ❌ скрываем bottom-nav при старте (экран расчёта)
-bottomNav.style.opacity = "0";
-bottomNav.style.pointerEvents = "none";
-bottomNav.style.transform = "translateY(140%)";
+if (bottomNav) {
+  bottomNav.style.opacity = "0";
+  bottomNav.style.pointerEvents = "none";
+  bottomNav.style.transform = "translateY(140%)";
+}
 
 /* ===== NAV INDICATOR ===== */
 function moveIndicator(btn) {
@@ -923,7 +925,7 @@ function haptic(type = "light") {
 }
 /* ===== TELEGRAM USER AUTO FILL ===== */
 
-const tgUser = Telegram.WebApp.initDataUnsafe?.user;
+const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
 
 // верхняя иконка
 const topAvatar = document.querySelector("#profileBtn .avatar");
@@ -1231,7 +1233,7 @@ function renderGoals() {
   container.innerHTML = "";
   container.appendChild(header);
 
-  goals.forEach(goal => {
+goals.forEach((goal, index) => {
 
     const percent = goal.target
       ? Math.min(100, Math.round((goal.saved / goal.target) * 100))
@@ -1242,14 +1244,34 @@ function renderGoals() {
     card.style.marginBottom = "18px";
 
     card.innerHTML = `
-      <div style="font-size:14px;opacity:.6">
-        Цель
-      </div>
+  <div style="font-size:14px;opacity:.6">
+    Цель
+  </div>
 
-      <div style="font-size:22px;font-weight:600;margin-top:4px">
-        ${goal.title}
-      </div>
+  <div style="
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-top:4px;
+  ">
+    <div style="font-size:22px;font-weight:600">
+      ${goal.title}
+    </div>
 
+    <button class="goal-edit-mini"
+      data-index="${index}"
+      style="
+        background:#111;
+        border:1px solid #333;
+        color:#fff;
+        border-radius:10px;
+        padding:6px 10px;
+        font-size:12px;
+      ">
+      ✏️
+    </button>
+  </div>
+    
       <div style="margin-top:10px;font-size:14px;opacity:.7">
         ${goal.saved.toLocaleString()} ₽ из ${goal.target.toLocaleString()} ₽
       </div>
@@ -1270,6 +1292,21 @@ function renderGoals() {
     `;
 
     container.appendChild(card);
+    card.querySelector(".goal-edit-mini").onclick = () => {
+
+  const goal = goals[index];
+
+  goalEditTitle.value = goal.title;
+  goalEditAmount.value = goal.target.toLocaleString();
+
+  goalEditBaseValue = goal.target;
+
+  goalEditorOverlay.style.display = "block";
+
+  requestAnimationFrame(() => {
+    goalEditorSheet.style.transform = "translateY(0)";
+  });
+};
   });
 }
 
