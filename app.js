@@ -726,6 +726,7 @@ accounts.reserve += toReserve;
 }
 
 accounts.main += toMain;
+distributeToGoals(toMain);
 
 const now = new Date();
 now.setDate(1);
@@ -1166,8 +1167,10 @@ if (titleEl && primaryGoal) {
 }
 
 // ===== ОСНОВНАЯ ЦЕЛЬ =====
-const saved = accounts.main;
-const total = parseNumber(goalInput.value || "0");
+const primaryGoal = getPrimaryGoal();
+
+const saved = primaryGoal.saved;
+const total = primaryGoal.target;
 
 const percent = total
 ? Math.min(100, Math.round((saved / total) * 100))
@@ -1956,4 +1959,22 @@ if (addGoalBtn) {
 
     recalcAllocationsPremium();
   };
+}
+
+function distributeToGoals(amount) {
+
+  if (!goals.length || amount <= 0) return;
+
+  // пересчитываем allocation
+  calculateAllocations(plannedMonthly);
+
+  goals.forEach(goal => {
+
+    const share = goal.monthlyContribution / plannedMonthly;
+
+    const portion = Math.round(amount * share);
+
+    goal.saved += portion;
+  });
+
 }
