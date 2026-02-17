@@ -172,6 +172,9 @@ let goalMeta = {
 title: "Основная цель"
 };
 
+let goals = [];
+let activeGoalIndex = 0;
+
 let goalEditBaseValue = null;
 let goalEditHintTimeout = null;
 
@@ -464,6 +467,18 @@ const advice = ProtocolCore.buildAdvice(baseResult);
 
 lastCalc = baseResult;
 
+goals = [
+  {
+    id: Date.now(),
+    title: "Основная цель",
+    amount: parseNumber(goalInput.value),
+    saved: parseNumber(savedInput?.value || "0"),
+    weight: 1
+  }
+];
+
+activeGoalIndex = 0;
+
 // ===== BUILD 2 SCENARIOS (DIRECT vs BUFFER) =====
 const baseMonthly = lastCalc.monthlySave;
 const bufferRate = 0.1; // 10% в подушку
@@ -709,7 +724,20 @@ toMain = fact - toReserve;
 accounts.reserve += toReserve;
 }
 
-accounts.main += toMain;
+distributeMoney(toMain);
+
+function distributeMoney(amount) {
+
+  if (!goals.length) return;
+
+  const totalWeight = goals.reduce((s, g) => s + g.weight, 0);
+
+  goals.forEach(goal => {
+    const share = amount * (goal.weight / totalWeight);
+    goal.saved += share;
+  });
+
+}
 
 const now = new Date();
 now.setDate(1);
@@ -1138,11 +1166,23 @@ reserveBlock.classList.remove("show-reserve");
 }
 
 function renderGoals() {
-if (!lastCalc.ok) return;
 
-const titleEl = document.getElementById("goalTitle");
-if (titleEl) {
-titleEl.innerText = goalMeta.title;
+  if (!goals.length) return;
+
+  const goal = getActiveGoal();
+
+  const saved = goal.saved;
+  const total = goal.amount;
+
+  const percent = total
+    ? Math.min(100, Math.round((saved / total) * 100))
+    : 0;
+
+  document.getElementById("goalTitle").innerText = goal.title;
+  document.getElementById("goalTotal").innerText = total.toLocaleString();
+  document.getElementById("goalSaved").innerText = saved.toLocaleString();
+  document.getElementById("goalPercent").innerText = percent;
+  document.getElementById("goalProgressBar").style.width = percent + "%";
 }
 
 // ===== ОСНОВНАЯ ЦЕЛЬ =====
@@ -1819,4 +1859,8 @@ if (addAccountBack) {
 
     showBottomNav();
   };
+}
+
+function getActiveGoal() {
+  return goals[activeGoalIndex];
 }
