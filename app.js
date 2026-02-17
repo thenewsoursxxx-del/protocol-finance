@@ -63,7 +63,9 @@ document.querySelectorAll(
 "#screen-calc label, #screen-calc .input-wrap, .mode-buttons, #calculate"
 ).forEach(el => el.style.display = "");
 
-planSummary.style.display = "none";
+if (planSummary) {
+  planSummary.style.display = "none";
+}
 
 hideBottomNav();
 });
@@ -116,10 +118,12 @@ const confirmNo = document.getElementById("confirmNo");
 const bottomNav = document.querySelector(".bottom-nav");
 const advancedBtn = document.getElementById("advancedBtn");
 const advancedBack = document.getElementById("advancedBack");
-// ❌ скрываем bottom-nav при старте (экран расчёта)
-bottomNav.style.opacity = "0";
-bottomNav.style.pointerEvents = "none";
-bottomNav.style.transform = "translateY(140%)";
+
+if (bottomNav) {
+  bottomNav.style.opacity = "0";
+  bottomNav.style.pointerEvents = "none";
+  bottomNav.style.transform = "translateY(140%)";
+}
 
 /* ===== NAV INDICATOR ===== */
 function moveIndicator(btn) {
@@ -535,7 +539,9 @@ openScreen("advice", null); // показываем экран с карточк
 if (protocolBack) protocolBack.style.display = "block";
 
 // показать summary
-planSummary.style.display = "block";
+if (planSummary) {
+  planSummary.style.display = "block";
+}
 
 // заполнить данные
 summaryMonthly.innerText = lastCalc.monthlySave.toLocaleString();
@@ -562,7 +568,9 @@ document.querySelectorAll(
 ).forEach(el => el.style.display = "");
 
 // спрятать summary
-planSummary.style.display = "none";
+if (planSummary) {
+  planSummary.style.display = "none";
+}
 };
 
 /* ===== TIME HELPERS ===== */
@@ -1488,10 +1496,17 @@ bgCtx.stroke();
 }
 
 // ОСЬ Y (только левая вертикальная)
+// ось Y
 bgCtx.strokeStyle = "#333";
 bgCtx.beginPath();
 bgCtx.moveTo(pad, pad);
 bgCtx.lineTo(pad, H - pad);
+bgCtx.stroke();
+
+// ось X
+bgCtx.beginPath();
+bgCtx.moveTo(pad, H - pad);
+bgCtx.lineTo(W - pad, H - pad);
 bgCtx.stroke();
 
 drawPlanLine();
