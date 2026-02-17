@@ -168,9 +168,18 @@ main: 0,
 reserve: 0
 };
 let initialBalance = 0;
-let goalMeta = {
-title: "Основная цель"
-};
+let goals = [
+  {
+    id: Date.now(),
+    title: "Основная цель",
+    target: 0,
+    saved: 0,
+    deadlineMonths: 12,
+    priority: 3,
+    expectedReturn: 0,
+    allocation: 1
+  }
+];
 
 let goalEditBaseValue = null;
 let goalEditHintTimeout = null;
@@ -1819,4 +1828,23 @@ if (addAccountBack) {
 
     showBottomNav();
   };
+}
+
+function calculateAllocations(monthlyAmount) {
+
+  const totalPriority = goals.reduce((sum, g) => sum + g.priority, 0);
+
+  goals.forEach(g => {
+    g.allocation = totalPriority
+      ? g.priority / totalPriority
+      : 1 / goals.length;
+
+    g.monthlyContribution = monthlyAmount * g.allocation;
+  });
+
+  return goals;
+}
+
+function getPrimaryGoal() {
+  return goals[0];
 }
