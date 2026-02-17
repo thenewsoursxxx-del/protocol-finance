@@ -293,10 +293,14 @@ hideBottomNav();
 }
 
 document.querySelectorAll(".account-block").forEach(block => {
-block.onclick = () => {
-const type = block.dataset.account;
-openAccountHistory(type);
-};
+  block.onclick = () => {
+
+    const accountsScreen = document.getElementById("screen-accounts");
+    if (!accountsScreen.classList.contains("active")) return;
+
+    const type = block.dataset.account;
+    openAccountHistory(type);
+  };
 });
 
 function openAccountHistory(type) {
