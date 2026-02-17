@@ -1,7 +1,6 @@
 const tg = window.Telegram?.WebApp;
 tg?.expand();
 
-const screens = document.querySelectorAll(".screen");
 const buttons = document.querySelectorAll(".nav-btn");
 const indicator = document.querySelector(".nav-indicator");
 
@@ -218,7 +217,8 @@ if (!isInitialized &&
     name !== "add-account" && 
     name !== "advanced") return;
 
-screens.forEach(s => s.classList.remove("active"));
+document.querySelectorAll(".screen")
+  .forEach(s => s.classList.remove("active"));
 document.getElementById("screen-" + name).classList.add("active");
 
 buttons.forEach(b => b.classList.remove("active"));
