@@ -1578,3 +1578,28 @@ button {
   font-size:13px;
   opacity:.6;
 }
+
+.goal-switcher {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin: 14px 0;
+}
+
+.goal-nav-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.05);
+  color: #fff;
+  font-size: 20px;
+}
+
+.goal-switch-title {
+  font-size: 14px;
+  opacity: 0.8;
+  min-width: 120px;
+  text-align: center;
+}
