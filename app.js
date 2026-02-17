@@ -604,7 +604,6 @@ adviceCard.innerHTML = "";
 loader.classList.remove("hidden");
 
 plannedMonthly = lastCalc.monthlySave;
-calculateAllocations(plannedMonthly);
 
 if (mode === "buffer") plannedMonthly = Math.round(plannedMonthly * 0.9);
 calculateAllocations(plannedMonthly);
@@ -1155,61 +1154,56 @@ reserveBlock.classList.remove("show-reserve");
 }
 
 function renderGoals() {
-if (!lastCalc.ok) return;
 
-const titleEl = document.getElementById("goalTitle");
-if (titleEl) {
-const primaryGoal = getPrimaryGoal();
+  const container = document.getElementById("screen-goals");
 
-if (titleEl && primaryGoal) {
-  titleEl.innerText = primaryGoal.title;
-}
-}
+  if (!container) return;
 
-// ===== ОСНОВНАЯ ЦЕЛЬ =====
-const primaryGoal = getPrimaryGoal();
+  // очищаем всё кроме header
+  const header = container.querySelector(".app-header");
+  container.innerHTML = "";
+  container.appendChild(header);
 
-const saved = primaryGoal.saved;
-const total = primaryGoal.target;
+  goals.forEach(goal => {
 
-const percent = total
-? Math.min(100, Math.round((saved / total) * 100))
-: 0;
+    const percent = goal.target
+      ? Math.min(100, Math.round((goal.saved / goal.target) * 100))
+      : 0;
 
-document.getElementById("goalTotal").innerText =
-total.toLocaleString();
+    const card = document.createElement("div");
+    card.className = "card";
+    card.style.marginBottom = "18px";
 
-document.getElementById("goalSaved").innerText =
-saved.toLocaleString();
+    card.innerHTML = `
+      <div style="font-size:14px;opacity:.6">
+        Цель
+      </div>
 
-document.getElementById("goalPercent").innerText = percent;
+      <div style="font-size:22px;font-weight:600;margin-top:4px">
+        ${goal.title}
+      </div>
 
-document.getElementById("goalProgressBar").style.width =
-percent + "%";
+      <div style="margin-top:10px;font-size:14px;opacity:.7">
+        ${goal.saved.toLocaleString()} ₽ из ${goal.target.toLocaleString()} ₽
+      </div>
 
-const verdict = document.getElementById("goalVerdict");
+      <div style="margin-top:10px">
+        <div style="height:6px;border-radius:6px;background:#222;overflow:hidden">
+          <div style="
+            height:100%;
+            width:${percent}%;
+            background:#3a7bfd;
+            transition: width .4s ease;
+          "></div>
+        </div>
+        <div style="margin-top:6px;font-size:13px;opacity:.6">
+          ${percent}%
+        </div>
+      </div>
+    `;
 
-if (percent >= 100) {
-verdict.innerText =
-"Цель достигнута. Protocol фиксирует успех.";
-} else if (percent >= 70) {
-verdict.innerText =
-"Цель близка к завершению. Темп хороший.";
-} else {
-verdict.innerText =
-"Цель в процессе. Стабильность важнее скорости.";
-}
-
-// ===== РЕЗЕРВ =====
-const reserveCard = document.getElementById("goalReserveCard");
-
-if (chosenPlan === "buffer") {
-reserveCard.style.display = "block";
-document.getElementById("goalReserveAmount").innerText =
-accounts.reserve.toLocaleString();
-} else {
-reserveCard.style.display = "none";
-}
+    container.appendChild(card);
+  });
 }
 
 function fireCelebration() {
@@ -1275,7 +1269,8 @@ if (editGoalBtn) {
 editGoalBtn.onclick = () => {
 haptic("light");
 
-goalEditTitle.value = goalMeta.title;
+const primaryGoal = getPrimaryGoal();
+goalEditTitle.value = primaryGoal.title;
 goalEditAmount.value = goalInput.value;
 goalEditBaseValue = parseNumber(goalInput.value || "0");
 
@@ -1331,7 +1326,6 @@ renderGoals();
 updatePlanHeader();
 renderAccountsUI();
 
-recalcPlanAfterGoalChange();
 pulseGoalCard();
 };
 
@@ -1354,16 +1348,6 @@ function pulseGoalCard() {
 const card = document.getElementById("activeGoalCard");
 if (!card) return;
 
-card.classList.add("pulse");
-setTimeout(() => card.classList.remove("pulse"), 400);
-}
-
-let goalPulseTimeout = null;
-
-function pulseGoalCard() {
-const card = document.getElementById("activeGoalCard");
-if (!card) return;
-
 card.classList.remove("pulse");
 clearTimeout(goalPulseTimeout);
 
@@ -1376,7 +1360,8 @@ card.classList.remove("pulse");
 function recalcPlanAfterGoalChange() {
 if (!lastCalc.ok) return;
 
-const newGoal = parseNumber(goalInput.value || "0");
+const primaryGoal = getPrimaryGoal();
+const newGoal = primaryGoal.target;
 if (!newGoal) return;
 
 const baseResult = ProtocolCore.calculateBase({
@@ -1939,6 +1924,7 @@ function recalcAllocationsPremium() {
 
   renderAdvancedGoals();
   renderGoals();
+  
 }
 
 const addGoalBtn = document.getElementById("addGoalBtn");
