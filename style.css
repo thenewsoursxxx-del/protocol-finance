@@ -1586,68 +1586,44 @@ button {
   border: 1px solid #3a7bfd;
 }
 
-.chart-arrow {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  background: rgba(20,20,20,0.8);
-  border: 1px solid rgba(255,255,255,0.1);
-  color: white;
-  font-size: 18px;
-  transition: transform 0.15s ease, background 0.15s ease;
+.chart-wrap {
+  overflow: hidden;
 }
 
-.chart-arrow.left {
-  left: 8px;
-}
-
-.chart-arrow.right {
-  right: 8px;
-}
-
-.chart-arrow:active {
-  transform: translateY(-50%) scale(0.9);
-  background: rgba(40,40,40,0.9);
+.chart-wrap {
+  position: relative;
 }
 
 .chart-arrow {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  width: 44px;
-  height: 44px;
+  width: 42px;
+  height: 42px;
   border-radius: 50%;
+  background: rgba(255,255,255,0.08);
   border: 1px solid rgba(255,255,255,0.15);
-  background: rgba(0,0,0,0.6);
   color: #fff;
   font-size: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
-  backdrop-filter: blur(6px);
-  transition: transform 0.1s ease, opacity 0.2s ease;
 }
 
 .chart-arrow.left {
-  left: 8px;
+  left: -12px;
 }
 
 .chart-arrow.right {
-  right: 8px;
+  right: -12px;
 }
 
 .chart-arrow:active {
-  transform: translateY(-50%) scale(0.92);
+  transform: translateY(-50%) scale(0.9);
 }
+
 
 canvas {
   background: transparent !important;
   display: block;
-}
-
-.chart-wrap {
-  overflow: hidden;
 }
