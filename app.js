@@ -1767,14 +1767,11 @@ if (advancedBtn) {
 
     haptic("light");
     
-function openAdvanced() {
-  document.body.classList.remove("advanced-active");
+document.body.classList.remove("advanced-active");
 
-  // маленькая задержка чтобы перезапустить transition
-  requestAnimationFrame(() => {
-    document.body.classList.add("advanced-active");
-  });
-}
+requestAnimationFrame(() => {
+  document.body.classList.add("advanced-active");
+});
 
     // скрываем все экраны
 document.querySelectorAll(".screen")
