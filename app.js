@@ -168,9 +168,6 @@ main: 0,
 reserve: 0
 };
 let initialBalance = 0;
-let goalMeta = {
-title: "Основная цель"
-};
 
 let goals = [];
 let activeGoalIndex = 0;
@@ -683,20 +680,6 @@ const rightArrow = document.querySelector(".chart-arrow.right");
 
 if (leftArrow && rightArrow) {
 
-  function updateArrowVisibility() {
-    if (goals.length <= 1) {
-      leftArrow.style.opacity = "0";
-      rightArrow.style.opacity = "0";
-      leftArrow.style.pointerEvents = "none";
-      rightArrow.style.pointerEvents = "none";
-    } else {
-      leftArrow.style.opacity = activeGoalIndex > 0 ? "1" : "0.3";
-      rightArrow.style.opacity = activeGoalIndex < goals.length - 1 ? "1" : "0.3";
-      leftArrow.style.pointerEvents = "auto";
-      rightArrow.style.pointerEvents = "auto";
-    }
-  }
-
   updateArrowVisibility();
 
   leftArrow.onclick = () => {
@@ -722,6 +705,10 @@ buttons.forEach(b => b.classList.remove("active"));
 buttons[1].classList.add("active");
 moveIndicator(buttons[1]);
 updatePlanHeader();
+const explanationEl = document.getElementById("planExplanation");
+if (explanationEl && explanation) {
+  explanationEl.innerHTML = explanation.text || explanation;
+}
 
 const factInput = document.getElementById("factInput");
 const applyBtn = document.getElementById("applyFact");
@@ -793,15 +780,16 @@ animateFactLine();
 runBrain();
 renderAccountsUI();
 renderGoals();
-const goalTotal = parseNumber(goalInput.value || "0");
+const activeGoal = getActiveGoal();
 
 if (
-!goalCompleted &&
-goalTotal > 0 &&
-accounts.main >= goalTotal
+  !goalCompleted &&
+  activeGoal &&
+  activeGoal.amount > 0 &&
+  activeGoal.saved >= activeGoal.amount
 ) {
-goalCompleted = true;
-setTimeout(fireCelebration, 120);
+  goalCompleted = true;
+  setTimeout(fireCelebration, 120);
 }
 
 factInput.value = "";
@@ -997,62 +985,84 @@ return g;
 }
 
 function initChart() {
-const wrap = document.querySelector(".chart-wrap");
+  const wrap = document.querySelector(".chart-wrap");
 
-bgCanvas = document.getElementById("chartBg");
-factCanvas = document.getElementById("chartFact");
+  bgCanvas = document.getElementById("chartBg");
+  factCanvas = document.getElementById("chartFact");
 
-const dpr = window.devicePixelRatio || 1;
+  const dpr = window.devicePixelRatio || 1;
 
-const width = wrap.clientWidth;
-const height = wrap.clientHeight;
+  const width = wrap.clientWidth;
+  const height = wrap.clientHeight;
 
-[bgCanvas, factCanvas].forEach(c => {
-c.style.width = width + "px";
-c.style.height = height + "px";
+  [bgCanvas, factCanvas].forEach(c => {
+    c.style.width = width + "px";
+    c.style.height = height + "px";
+    c.width = width * dpr;
+    c.height = height * dpr;
+  });
 
-c.width = width * dpr;
-c.height = height * dpr;
-});
+  bgCtx = bgCanvas.getContext("2d");
+  factCtx = factCanvas.getContext("2d");
 
-bgCtx = bgCanvas.getContext("2d");
-factCtx = factCanvas.getContext("2d");
+  bgCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  factCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-bgCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
-factCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  drawStaticLayer();
 
-drawStaticLayer();
-factCanvas.addEventListener("pointerdown", e => {
-e.stopPropagation();
+  // 👇 ОДИН РАЗ объявляем переменные
+  let startX = 0;
+  let isDragging = false;
 
-if (!lastFactPoint) return;
+  factCanvas.addEventListener("pointerdown", e => {
+    startX = e.clientX;
+    isDragging = true;
 
-const rect = factCanvas.getBoundingClientRect();
+    if (!lastFactPoint) return;
 
-const clickX = e.clientX - rect.left;
-const clickY = e.clientY - rect.top;
+    const rect = factCanvas.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const clickY = e.clientY - rect.top;
 
-const dx = clickX - lastFactPoint.x;
-const dy = clickY - lastFactPoint.y;
+    const dx = clickX - lastFactPoint.x;
+    const dy = clickY - lastFactPoint.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
 
-const distance = Math.sqrt(dx * dx + dy * dy);
+    // Клик по точке
+    if (distance <= 25) {
+      const total = factHistory
+        .filter(f => f.to === "main")
+        .reduce((s, f) => s + f.value, 0);
 
-if (distance <= 25) {
+      animateDotScale(1.8);
 
-const total = factHistory
-.filter(f => f.to === "main")
-.reduce((s, f) => s + f.value, 0);
+      showFactTooltip({
+        value: total,
+        onHide: () => animateDotScale(1)
+      });
+    }
+  });
 
-animateDotScale(1.8);
+  factCanvas.addEventListener("pointerup", e => {
+    if (!isDragging) return;
 
-showFactTooltip({
-value: total,
-onHide: () => {
-animateDotScale(1);
-}
-});
-}
-});
+    const diff = e.clientX - startX;
+
+    if (Math.abs(diff) > 40) {
+      if (diff < 0 && activeGoalIndex < goals.length - 1) {
+        activeGoalIndex++;
+      }
+
+      if (diff > 0 && activeGoalIndex > 0) {
+        activeGoalIndex--;
+      }
+
+      updateGoalView();
+      updateArrowVisibility();
+    }
+
+    isDragging = false;
+  });
 }
 
 function addMonths(date, n) {
@@ -1303,20 +1313,22 @@ useWorker: true
 initConfetti();
 
 if (editGoalBtn) {
-editGoalBtn.onclick = () => {
-haptic("light");
+  editGoalBtn.onclick = () => {
+    haptic("light");
 
-goalEditTitle.value = goalMeta.title;
-goalEditAmount.value = goalInput.value;
-goalEditBaseValue = parseNumber(goalInput.value || "0");
+    const goal = getActiveGoal();
+    if (!goal) return;
 
-goalEditorOverlay.style.display = "block";
+    goalEditTitle.value = goal.title;
+    goalEditAmount.value = goal.amount.toLocaleString();
+    goalEditBaseValue = goal.amount;
 
-// 🔥 ДАЁМ БРАУЗЕРУ 1 КАДР
-requestAnimationFrame(() => {
-goalEditorSheet.style.transform = "translateY(0)";
-});
-};
+    goalEditorOverlay.style.display = "block";
+
+    requestAnimationFrame(() => {
+      goalEditorSheet.style.transform = "translateY(0)";
+    });
+  };
 }
 
 goalEditorOverlay.onclick = () => {
@@ -1384,16 +1396,6 @@ function pulseGoalCard() {
 const card = document.getElementById("activeGoalCard");
 if (!card) return;
 
-card.classList.add("pulse");
-setTimeout(() => card.classList.remove("pulse"), 400);
-}
-
-let goalPulseTimeout = null;
-
-function pulseGoalCard() {
-const card = document.getElementById("activeGoalCard");
-if (!card) return;
-
 card.classList.remove("pulse");
 clearTimeout(goalPulseTimeout);
 
@@ -1406,7 +1408,8 @@ card.classList.remove("pulse");
 function recalcPlanAfterGoalChange() {
 if (!lastCalc.ok) return;
 
-const newGoal = parseNumber(goalInput.value || "0");
+const goal = getActiveGoal();
+const newGoal = goal.amount;
 if (!newGoal) return;
 
 const baseResult = ProtocolCore.calculateBase({
@@ -1895,6 +1898,10 @@ function addGoal() {
   activeGoalIndex = goals.length - 1;
 
   renderGoals();
+  updateGoalView();
+  updateArrowVisibility();
+  drawStaticLayer();
+animateFactLine();
 }
 
 function distributeMoney(amount) {
@@ -1927,4 +1934,23 @@ if (equalWeightBtn) {
     const weight = 1;
     goals.forEach(g => g.weight = weight);
   };
+}
+
+function updateArrowVisibility() {
+  const leftArrow = document.querySelector(".chart-arrow.left");
+  const rightArrow = document.querySelector(".chart-arrow.right");
+
+  if (!leftArrow || !rightArrow) return;
+
+  if (goals.length <= 1) {
+    leftArrow.style.opacity = "0";
+    rightArrow.style.opacity = "0";
+    leftArrow.style.pointerEvents = "none";
+    rightArrow.style.pointerEvents = "none";
+  } else {
+    leftArrow.style.opacity = activeGoalIndex > 0 ? "1" : "0.3";
+    rightArrow.style.opacity = activeGoalIndex < goals.length - 1 ? "1" : "0.3";
+    leftArrow.style.pointerEvents = "auto";
+    rightArrow.style.pointerEvents = "auto";
+  }
 }
