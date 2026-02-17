@@ -1766,6 +1766,8 @@ if (advancedBtn) {
   advancedBtn.onclick = () => {
 
     haptic("light");
+    
+       document.body.classList.add("advanced-active");
 
     // скрываем все экраны
 document.querySelectorAll(".screen")
@@ -1790,6 +1792,8 @@ if (advancedBack) {
   advancedBack.onclick = () => {
 
     haptic("light");
+    
+    document.body.classList.remove("advanced-active");
 
     openScreen("goals", buttons[3]);
 
