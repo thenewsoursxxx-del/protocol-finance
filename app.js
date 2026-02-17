@@ -1517,60 +1517,49 @@ bgCtx.restore();
 }
 
 function drawMonthLabels() {
-if (!lastCalc.months) return;
 
-const W = bgCanvas.width / (window.devicePixelRatio || 1);
-const H = bgCanvas.height / (window.devicePixelRatio || 1);
-const pad = 40;
+  const goal = goals[activeGoalIndex];
+  if (!goal || !goal.deadlineMonths) return;
 
-const monthsTotal = lastCalc.months;
+  const monthsTotal = goal.deadlineMonths;
 
-// 🔥 рассчитываем шаг отображения
-let step = 1;
+  const W = bgCanvas.width / (window.devicePixelRatio || 1);
+  const H = bgCanvas.height / (window.devicePixelRatio || 1);
+  const pad = 40;
 
-if (monthsTotal > 24) step = 4;
-else if (monthsTotal > 12) step = 3;
-else if (monthsTotal > 6) step = 2;
+  let step = 1;
 
-bgCtx.fillStyle = "rgba(255,255,255,0.35)";
-bgCtx.font = "12px Inter, system-ui";
-bgCtx.textAlign = "center";
-bgCtx.textBaseline = "top";
+  if (monthsTotal > 24) step = 4;
+  else if (monthsTotal > 12) step = 3;
+  else if (monthsTotal > 6) step = 2;
 
-for (let i = 0; i <= monthsTotal; i++) {
+  bgCtx.fillStyle = "rgba(255,255,255,0.35)";
+  bgCtx.font = "12px Inter, system-ui";
+  bgCtx.textAlign = "center";
+  bgCtx.textBaseline = "top";
 
-if (i % step !== 0 && i !== monthsTotal) continue;
+  for (let i = 0; i <= monthsTotal; i++) {
 
-const x =
-pad +
-(i / monthsTotal) *
-(W - pad * 2);
+    if (i % step !== 0 && i !== monthsTotal) continue;
 
-bgCtx.fillText(i, x, H - pad + 8);
-}
+    const x =
+      pad +
+      (i / monthsTotal) *
+      (W - pad * 2);
+
+    bgCtx.fillText(i, x, H - pad + 8);
+  }
 }
 
 function drawPlanLine() {
-const W = bgCanvas.width / (window.devicePixelRatio || 1);
-const H = bgCanvas.height / (window.devicePixelRatio || 1);
-const pad = 40;
 
-const goal = goals[activeGoalIndex];
-const points = buildPlanTimeline(
-  new Date(),
-  goal.monthlyContribution,
-  goal.deadlineMonths
-);
-const maxValue = points[points.length - 1].value;
-
-let planColor = "#ffffff";
-
-if (factHistory.length === 0) {
-
-  bgCtx.strokeStyle = "#ffffff";
-  bgCtx.lineWidth = 2;
+  const W = bgCanvas.width / (window.devicePixelRatio || 1);
+  const H = bgCanvas.height / (window.devicePixelRatio || 1);
+  const pad = 40;
 
   const goal = goals[activeGoalIndex];
+
+  if (!goal || !goal.monthlyContribution || !goal.deadlineMonths) return;
 
   const points = buildPlanTimeline(
     new Date(),
@@ -1580,33 +1569,7 @@ if (factHistory.length === 0) {
 
   const maxValue = points[points.length - 1].value;
 
-  bgCtx.beginPath();
-
-  points.forEach((p, i) => {
-    const x = pad + (i / (points.length - 1)) * (W - pad * 2);
-    const y = H - pad - (p.value / maxValue) * (H - pad * 2);
-
-    if (i === 0) bgCtx.moveTo(x, y);
-    else bgCtx.lineTo(x, y);
-  });
-
-  bgCtx.stroke();
-  return;
-}
-
-bgCtx.beginPath();
-
-points.forEach((p, i) => {
-const x = pad + (i / (points.length - 1)) * (W - pad * 2);
-const y = H - pad - (p.value / maxValue) * (H - pad * 2);
-
-if (i === 0) bgCtx.moveTo(x, y);
-else bgCtx.lineTo(x, y);
-});
-
-bgCtx.stroke();
-return; // ← ВАЖНО
-}
+  let planColor = "#ffffff";
 
 if (factHistory.length > 0) {
 const mainFacts = factHistory.filter(f => f.to === "main");
@@ -1648,39 +1611,40 @@ bgCtx.stroke();
 let animationFrameId = null;
 
 function animateFactLine() {
-if (!factHistory.length) {
-factCtx.clearRect(0, 0, factCanvas.width, factCanvas.height);
-return;
-}
 
-const goal = goals[activeGoalIndex];
-if (!goal || !goal.monthlyContribution || !goal.deadlineMonths) return;
+  if (!factHistory.length) {
+    factCtx.clearRect(0, 0, factCanvas.width, factCanvas.height);
+    return;
+  }
 
-const total = factHistory
-.filter(f => f.to === "main")
-.reduce((s, f) => s + f.value, 0);
+  const goal = goals[activeGoalIndex];
+  if (!goal || !goal.monthlyContribution || !goal.deadlineMonths) return;
 
-const planMax = plannedMonthly * lastCalc.months;
+  const total = factHistory
+    .filter(f => f.to === "main")
+    .reduce((s, f) => s + f.value, 0);
 
-const maxValue = Math.max(total, planMax, 1); // ← защита от 0
+  const planMax = goal.monthlyContribution * goal.deadlineMonths;
+  const maxValue = Math.max(total, planMax, 1);
 
-let start = null;
-const duration = 900;
+  let start = null;
+  const duration = 900;
 
-function frame(timestamp) {
-if (!start) start = timestamp;
+  function frame(timestamp) {
 
-const progress = Math.min((timestamp - start) / duration, 1);
-const eased = 1 - Math.pow(1 - progress, 3);
+    if (!start) start = timestamp;
 
-drawFactLayer(eased, total, maxValue);
+    const progress = Math.min((timestamp - start) / duration, 1);
+    const eased = 1 - Math.pow(1 - progress, 3);
 
-if (progress < 1) {
-requestAnimationFrame(frame);
-}
-}
+    drawFactLayer(eased, total, maxValue);
 
-requestAnimationFrame(frame);
+    if (progress < 1) {
+      requestAnimationFrame(frame);
+    }
+  }
+
+  requestAnimationFrame(frame);
 }
 
 function drawFactLayer(progress, total, maxValue) {
@@ -1789,7 +1753,8 @@ const total = factHistory
 .filter(f => f.to === "main")
 .reduce((s, f) => s + f.value, 0);
 
-const planMax = plannedMonthly * lastCalc.months;
+const goal = goals[activeGoalIndex];
+const planMax = goal.monthlyContribution * goal.deadlineMonths;
 const maxValue = Math.max(total, planMax, 1);
 
 drawFactLayer(1, total, maxValue);
