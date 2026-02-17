@@ -630,6 +630,32 @@ const advice = ProtocolCore.buildAdvice(lastCalc);
 
 adviceCard.innerHTML = `
 <div id="planHeader">
+<div id="activeGoalBlock" style="margin-top:14px">
+
+  <div style="font-size:13px;opacity:.6">
+    Цель
+  </div>
+
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">
+    <div>
+      <div id="activeGoalTitle" style="font-size:18px;font-weight:600"></div>
+      <div id="activeGoalAmount" style="font-size:14px;opacity:.7;margin-top:4px"></div>
+    </div>
+
+    <button id="editGoalBtnMini"
+      style="
+        background:#111;
+        border:1px solid #333;
+        color:#fff;
+        border-radius:12px;
+        padding:8px 12px;
+        font-size:13px;
+      ">
+      Изменить
+    </button>
+  </div>
+
+</div>
 <div
 id="planMonthly"
 style="font-size:16px;font-weight:600"
@@ -689,6 +715,8 @@ moveIndicator(buttons[1]);
 updatePlanHeader();
 initGoalSwitcher();
 updateGoalSwitcher();
+updateActiveGoalBlock();
+bindMiniGoalEdit();
 
 const factInput = document.getElementById("factInput");
 const applyBtn = document.getElementById("applyFact");
@@ -1945,6 +1973,8 @@ if (addGoalBtn) {
     });
 
     recalcAllocationsPremium();
+    updateGoalSwitcher();
+updateActiveGoalBlock();
   };
 }
 
@@ -1994,17 +2024,17 @@ function initGoalSwitcher() {
 
 function updateGoalSwitcher() {
 
-  const wrapper = document.getElementById("goalSwitcher");
   const title = document.getElementById("goalSwitchTitle");
+  const switcher = document.getElementById("goalSwitcher");
 
-  if (!wrapper || !title) return;
+  if (!title || !switcher) return;
 
   if (goals.length <= 1) {
-    wrapper.style.display = "none";
+    switcher.style.display = "none";
     return;
   }
 
-  wrapper.style.display = "flex";
+  switcher.style.display = "flex";
 
   title.innerText = goals[activeGoalIndex].title;
 }
@@ -2047,4 +2077,41 @@ function initGoalSwipe() {
     updateGoalSwitcher();
     redrawActiveGoalChart();
   });
+}
+
+function updateActiveGoalBlock() {
+
+  const goal = goals[activeGoalIndex];
+
+  const titleEl = document.getElementById("activeGoalTitle");
+  const amountEl = document.getElementById("activeGoalAmount");
+
+  if (!goal || !titleEl || !amountEl) return;
+
+  titleEl.innerText = goal.title;
+
+  amountEl.innerText =
+    `${goal.saved.toLocaleString()} ₽ из ${goal.target.toLocaleString()} ₽`;
+}
+
+function bindMiniGoalEdit() {
+
+  const btn = document.getElementById("editGoalBtnMini");
+  if (!btn) return;
+
+  btn.onclick = () => {
+
+    const goal = goals[activeGoalIndex];
+
+    goalEditTitle.value = goal.title;
+    goalEditAmount.value = goal.target.toLocaleString();
+
+    goalEditBaseValue = goal.target;
+
+    goalEditorOverlay.style.display = "block";
+
+    requestAnimationFrame(() => {
+      goalEditorSheet.style.transform = "translateY(0)";
+    });
+  };
 }
