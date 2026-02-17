@@ -1948,26 +1948,17 @@ function updateArrowVisibility() {
   if (!leftArrow || !rightArrow) return;
 
   if (goals.length <= 1) {
-    leftArrow.style.opacity = "0";
-    rightArrow.style.opacity = "0";
-    leftArrow.style.pointerEvents = "none";
-    rightArrow.style.pointerEvents = "none";
+    leftArrow.style.display = "none";
+    rightArrow.style.display = "none";
     return;
   }
 
-  if (activeGoalIndex > 0) {
-    leftArrow.style.opacity = "1";
-    leftArrow.style.pointerEvents = "auto";
-  } else {
-    leftArrow.style.opacity = "0.3";
-    leftArrow.style.pointerEvents = "none";
-  }
+  leftArrow.style.display = "flex";
+  rightArrow.style.display = "flex";
 
-  if (activeGoalIndex < goals.length - 1) {
-    rightArrow.style.opacity = "1";
-    rightArrow.style.pointerEvents = "auto";
-  } else {
-    rightArrow.style.opacity = "0.3";
-    rightArrow.style.pointerEvents = "none";
-  }
+  leftArrow.style.pointerEvents =
+    activeGoalIndex > 0 ? "auto" : "none";
+
+  rightArrow.style.pointerEvents =
+    activeGoalIndex < goals.length - 1 ? "auto" : "none";
 }
