@@ -630,6 +630,36 @@ const advice = ProtocolCore.buildAdvice(lastCalc);
 
 adviceCard.innerHTML = `
 <div id="planHeader">
+
+  <div style="font-size:13px;opacity:.6">
+    Цель
+  </div>
+
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">
+
+    <div>
+      <div id="inlineGoalTitle"
+           style="font-size:18px;font-weight:600"></div>
+
+      <div id="inlineGoalAmount"
+           style="font-size:14px;opacity:.7;margin-top:4px"></div>
+    </div>
+
+    <button id="inlineEditGoal"
+      style="
+        background:#111;
+        border:1px solid #333;
+        color:#fff;
+        border-radius:10px;
+        padding:6px 12px;
+        font-size:13px;
+      ">
+      Изменить
+    </button>
+
+  </div>
+
+</div>
 <div id="activeGoalBlock" style="margin-top:14px">
 
   <div style="font-size:13px;opacity:.6">
@@ -1987,7 +2017,9 @@ function distributeToGoals(amount) {
 
   goals.forEach(goal => {
 
-    const share = goal.monthlyContribution / plannedMonthly;
+const share = plannedMonthly
+  ? goal.monthlyContribution / plannedMonthly
+  : 0;
 
     const portion = Math.round(amount * share);
 
@@ -2007,7 +2039,8 @@ function initGoalSwitcher() {
     if (activeGoalIndex > 0) {
       activeGoalIndex--;
       updateGoalSwitcher();
-      redrawActiveGoalChart();
+updateActiveGoalBlock();
+redrawActiveGoalChart();
     }
   };
 
@@ -2015,7 +2048,8 @@ function initGoalSwitcher() {
     if (activeGoalIndex < goals.length - 1) {
       activeGoalIndex++;
       updateGoalSwitcher();
-      redrawActiveGoalChart();
+updateActiveGoalBlock();
+redrawActiveGoalChart();
     }
   };
 
@@ -2075,7 +2109,8 @@ function initGoalSwipe() {
     }
 
     updateGoalSwitcher();
-    redrawActiveGoalChart();
+updateActiveGoalBlock();
+redrawActiveGoalChart();
   });
 }
 
