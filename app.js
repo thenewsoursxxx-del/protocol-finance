@@ -2,7 +2,6 @@ const tg = window.Telegram?.WebApp;
 tg?.expand();
 
 const buttons = document.querySelectorAll(".nav-btn");
-const screens = document.querySelectorAll(".screen");
 const indicator = document.querySelector(".nav-indicator");
 
 if (window.Telegram?.WebApp) {
@@ -785,7 +784,8 @@ haptic("light");
 document.activeElement?.blur();
 
 // показываем профиль
-screens.forEach(s => s.classList.remove("active"));
+document.querySelectorAll(".screen")
+  .forEach(s => s.classList.remove("active"));
 document.getElementById("screen-profile").classList.add("active");
 
 // убираем активность навбара
@@ -1776,7 +1776,8 @@ if (advancedBtn) {
     haptic("light");
 
     // скрываем все экраны
-    screens.forEach(s => s.classList.remove("active"));
+document.querySelectorAll(".screen")
+  .forEach(s => s.classList.remove("active"));
 
     // показываем advanced
     document
