@@ -181,6 +181,7 @@ let goals = [
   }
 ];
 
+let activeGoalIndex = 0;
 let goalEditBaseValue = null;
 let goalEditHintTimeout = null;
 
@@ -656,6 +657,12 @@ font-size:14px;
 ${advice.text}
 </div>
 
+<div class="goal-switcher">
+  <button id="goalPrev">←</button>
+  <div id="goalSwitchTitle"></div>
+  <button id="goalNext">→</button>
+</div>
+
 <div class="chart-wrap" style="width:100%; height:260px; margin:16px 0; position:relative;">
 <canvas id="chartBg"></canvas>
 <canvas id="chartFact"></canvas>
@@ -680,6 +687,8 @@ buttons.forEach(b => b.classList.remove("active"));
 buttons[1].classList.add("active");
 moveIndicator(buttons[1]);
 updatePlanHeader();
+initGoalSwitcher();
+updateGoalSwitcher();
 
 const factInput = document.getElementById("factInput");
 const applyBtn = document.getElementById("applyFact");
@@ -1546,18 +1555,44 @@ const W = bgCanvas.width / (window.devicePixelRatio || 1);
 const H = bgCanvas.height / (window.devicePixelRatio || 1);
 const pad = 40;
 
-const points = buildPlanTimeline(new Date(), plannedMonthly, lastCalc.months);
+const goal = goals[activeGoalIndex];
+const points = buildPlanTimeline(
+  new Date(),
+  goal.monthlyContribution,
+  goal.deadlineMonths
+);
 const maxValue = points[points.length - 1].value;
 
 let planColor = "#ffffff";
 
-// если пользователь ещё не вводил реальные пополнения — линия всегда белая
 if (factHistory.length === 0) {
-bgCtx.strokeStyle = "#ffffff";
-bgCtx.lineWidth = 2;
 
-const points = buildPlanTimeline(new Date(), plannedMonthly, lastCalc.months);
-const maxValue = points[points.length - 1].value;
+  bgCtx.strokeStyle = "#ffffff";
+  bgCtx.lineWidth = 2;
+
+  const goal = goals[activeGoalIndex];
+
+  const points = buildPlanTimeline(
+    new Date(),
+    goal.monthlyContribution,
+    goal.deadlineMonths
+  );
+
+  const maxValue = points[points.length - 1].value;
+
+  bgCtx.beginPath();
+
+  points.forEach((p, i) => {
+    const x = pad + (i / (points.length - 1)) * (W - pad * 2);
+    const y = H - pad - (p.value / maxValue) * (H - pad * 2);
+
+    if (i === 0) bgCtx.moveTo(x, y);
+    else bgCtx.lineTo(x, y);
+  });
+
+  bgCtx.stroke();
+  return;
+}
 
 bgCtx.beginPath();
 
@@ -1618,7 +1653,8 @@ factCtx.clearRect(0, 0, factCanvas.width, factCanvas.height);
 return;
 }
 
-if (!plannedMonthly || !lastCalc.months) return;
+const goal = goals[activeGoalIndex];
+if (!goal || !goal.monthlyContribution || !goal.deadlineMonths) return;
 
 const total = factHistory
 .filter(f => f.to === "main")
@@ -1654,7 +1690,7 @@ const pad = 40;
 
 factCtx.clearRect(0, 0, factCanvas.width, factCanvas.height);
 
-const monthsTotal = lastCalc.months;
+const monthsTotal = goals[activeGoalIndex].deadlineMonths;
 
 // сколько месяцев прошло
 const mainFacts = factHistory.filter(f => f.to === "main");
@@ -1963,4 +1999,77 @@ function distributeToGoals(amount) {
     goal.saved += portion;
   });
 
+}
+
+function initGoalSwitcher() {
+
+  const prev = document.getElementById("goalPrev");
+  const next = document.getElementById("goalNext");
+
+  if (!prev || !next) return;
+
+  prev.onclick = () => {
+    if (activeGoalIndex > 0) {
+      activeGoalIndex--;
+      updateGoalSwitcher();
+      redrawActiveGoalChart();
+    }
+  };
+
+  next.onclick = () => {
+    if (activeGoalIndex < goals.length - 1) {
+      activeGoalIndex++;
+      updateGoalSwitcher();
+      redrawActiveGoalChart();
+    }
+  };
+
+  initGoalSwipe();
+}
+
+function updateGoalSwitcher() {
+  const title = document.getElementById("goalSwitchTitle");
+  if (!title) return;
+
+  title.innerText = goals[activeGoalIndex].title;
+}
+
+function redrawActiveGoalChart() {
+  const goal = goals[activeGoalIndex];
+
+  plannedMonthly = goal.monthlyContribution;
+
+  drawStaticLayer();
+  animateFactLine();
+}
+
+function initGoalSwipe() {
+
+  const chart = document.querySelector(".chart-wrap");
+  if (!chart) return;
+
+  let startX = 0;
+
+  chart.addEventListener("touchstart", e => {
+    startX = e.touches[0].clientX;
+  });
+
+  chart.addEventListener("touchend", e => {
+
+    const endX = e.changedTouches[0].clientX;
+    const diff = endX - startX;
+
+    if (Math.abs(diff) < 40) return;
+
+    if (diff < 0 && activeGoalIndex < goals.length - 1) {
+      activeGoalIndex++;
+    }
+
+    if (diff > 0 && activeGoalIndex > 0) {
+      activeGoalIndex--;
+    }
+
+    updateGoalSwitcher();
+    redrawActiveGoalChart();
+  });
 }
