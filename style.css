@@ -1467,33 +1467,56 @@ button {
   overflow: hidden;
 }
 
-/* ===== ADVANCED EDGE FOG — SIDE ONLY ===== */
+/* ===== PREMIUM ADVANCED FOG ===== */
 
 .advanced-fog {
   position: fixed;
-  inset: 0;
+  inset: -8% -6%; /* немного выходит за экран */
   pointer-events: none;
   z-index: 0;
 
+  border-radius: 60px; /* мягкие края */
+
   background:
-    linear-gradient(
-      to right,
-      rgba(16,185,129,0.35),
-      rgba(16,185,129,0.18) 25%,
-      transparent 60%
+    radial-gradient(
+      60% 120% at -10% 50%,
+      rgba(16,185,129,0.38),
+      rgba(16,185,129,0.18),
+      transparent 65%
     ),
-    linear-gradient(
-      to left,
-      rgba(16,185,129,0.35),
-      rgba(16,185,129,0.18) 25%,
-      transparent 60%
+    radial-gradient(
+      60% 120% at 110% 50%,
+      rgba(16,185,129,0.38),
+      rgba(16,185,129,0.18),
+      transparent 65%
     );
 
-  background-size: 28% 100%, 28% 100%;
-  background-repeat: no-repeat;
-  background-position: left center, right center;
+  filter: blur(12px);
+  opacity: 0.85;
 
-  animation: emeraldSideBreath 8s ease-in-out infinite;
+  animation:
+    fogLeftMove 12s ease-in-out infinite alternate,
+    fogBreath 7s ease-in-out infinite;
+}
+
+/* Лёгкое горизонтальное плавание */
+@keyframes fogLeftMove {
+  0% {
+    background-position:
+      -6% 50%,
+      106% 50%;
+  }
+  100% {
+    background-position:
+      0% 50%,
+      100% 50%;
+  }
+}
+
+/* Очень мягкое дыхание */
+@keyframes fogBreath {
+  0%,100% { opacity: 0.82; }
+  50% { opacity: 1; }
 }
 
 @keyframes emeraldSideBreath {
