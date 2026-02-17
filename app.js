@@ -823,9 +823,19 @@ wrap.classList.remove("show-hint"); // ← прячем при уходе
 
 /* ===== MICRO UX: HAPTIC ===== */
 function haptic(type = "light") {
-if (window.Telegram?.WebApp?.HapticFeedback) {
-Telegram.WebApp.HapticFeedback.impactOccurred(type);
-}
+  if (!window.Telegram?.WebApp?.HapticFeedback) return;
+
+  try {
+    const allowed = ["light", "medium", "heavy"];
+
+    if (!allowed.includes(type)) {
+      type = "light";
+    }
+
+    Telegram.WebApp.HapticFeedback.impactOccurred(type);
+  } catch (e) {
+    console.warn("Haptic safely ignored:", e);
+  }
 }
 /* ===== TELEGRAM USER AUTO FILL ===== */
 
