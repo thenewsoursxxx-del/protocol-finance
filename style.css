@@ -1435,3 +1435,26 @@ button {
   position: relative;
   z-index: 5;
 }
+
+/* ===== EMERALD EDGE FOG ===== */
+
+.edge-fog {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+
+  background:
+    radial-gradient(
+      120% 100% at -10% 50%,
+      rgba(16,185,129,0.28),
+      rgba(16,185,129,0.12),
+      transparent 55%
+    ),
+    radial-gradient(
+      120% 100% at 110% 50%,
+      rgba(16,185,129,0.28),
+      rgba(16,185,129,0.12),
+      transparent 55%
+    );
+}
