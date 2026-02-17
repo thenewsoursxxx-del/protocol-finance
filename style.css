@@ -1458,3 +1458,37 @@ button {
       transparent 55%
     );
 }
+
+/* ===== ADVANCED EMERALD EDGE FOG ===== */
+
+#screen-advanced {
+  position: relative;
+  overflow: hidden;
+}
+
+.advanced-fog {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+
+  background:
+    radial-gradient(
+      120% 100% at -10% 50%,
+      rgba(16,185,129,0.35),
+      rgba(16,185,129,0.15),
+      transparent 60%
+    ),
+    radial-gradient(
+      120% 100% at 110% 50%,
+      rgba(16,185,129,0.35),
+      rgba(16,185,129,0.15),
+      transparent 60%
+    );
+}
+
+/* чтобы контент был поверх тумана */
+#screen-advanced > *:not(.advanced-fog) {
+  position: relative;
+  z-index: 1;
+}
