@@ -683,10 +683,27 @@ const rightArrow = document.querySelector(".chart-arrow.right");
 
 if (leftArrow && rightArrow) {
 
+  function updateArrowVisibility() {
+    if (goals.length <= 1) {
+      leftArrow.style.opacity = "0";
+      rightArrow.style.opacity = "0";
+      leftArrow.style.pointerEvents = "none";
+      rightArrow.style.pointerEvents = "none";
+    } else {
+      leftArrow.style.opacity = activeGoalIndex > 0 ? "1" : "0.3";
+      rightArrow.style.opacity = activeGoalIndex < goals.length - 1 ? "1" : "0.3";
+      leftArrow.style.pointerEvents = "auto";
+      rightArrow.style.pointerEvents = "auto";
+    }
+  }
+
+  updateArrowVisibility();
+
   leftArrow.onclick = () => {
     if (activeGoalIndex > 0) {
       activeGoalIndex--;
       updateGoalView();
+      updateArrowVisibility();
     }
   };
 
@@ -694,6 +711,7 @@ if (leftArrow && rightArrow) {
     if (activeGoalIndex < goals.length - 1) {
       activeGoalIndex++;
       updateGoalView();
+      updateArrowVisibility();
     }
   };
 }
@@ -1195,27 +1213,34 @@ function renderGoals() {
   document.getElementById("goalPercent").innerText = percent;
   document.getElementById("goalProgressBar").style.width = percent + "%";
 
-  // ✅ verdict внутри
-  const verdict = document.getElementById("goalVerdict");
+  const list = document.getElementById("goalsList");
+  list.innerHTML = "";
 
-  if (percent >= 100) {
-    verdict.innerText = "Цель достигнута. Protocol фиксирует успех.";
-  } else if (percent >= 70) {
-    verdict.innerText = "Цель близка к завершению. Темп хороший.";
-  } else {
-    verdict.innerText = "Цель в процессе. Стабильность важнее скорости.";
-  }
+  goals.forEach((g, index) => {
 
-  // ✅ резерв внутри
-  const reserveCard = document.getElementById("goalReserveCard");
+    if (index === activeGoalIndex) return;
 
-  if (chosenPlan === "buffer") {
-    reserveCard.style.display = "block";
-    document.getElementById("goalReserveAmount").innerText =
-      accounts.reserve.toLocaleString();
-  } else {
-    reserveCard.style.display = "none";
-  }
+    const percentMini = g.amount
+      ? Math.min(100, Math.round((g.saved / g.amount) * 100))
+      : 0;
+
+    const card = document.createElement("div");
+    card.className = "goal-mini-card";
+    card.innerHTML = `
+      <div style="font-weight:600">${g.title}</div>
+      <div style="font-size:13px;opacity:.6;margin-top:4px">
+        ${g.saved.toLocaleString()} / ${g.amount.toLocaleString()} ₽
+      </div>
+    `;
+
+    card.onclick = () => {
+      activeGoalIndex = index;
+      renderGoals();
+      updateGoalView();
+    };
+
+    list.appendChild(card);
+  });
 }
 
 function fireCelebration() {
