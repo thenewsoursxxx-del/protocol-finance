@@ -1883,3 +1883,23 @@ function distributeMoney(amount) {
     goal.saved += share;
   });
   }
+  
+  const addGoalBtn = document.getElementById("addGoalBtn");
+const equalWeightBtn = document.getElementById("equalWeightBtn");
+
+if (addGoalBtn) {
+  addGoalBtn.onclick = () => {
+    haptic("light");
+    addGoal();
+  };
+}
+
+if (equalWeightBtn) {
+  equalWeightBtn.onclick = () => {
+    haptic("light");
+    if (!goals.length) return;
+
+    const weight = 1;
+    goals.forEach(g => g.weight = weight);
+  };
+}
