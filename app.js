@@ -2,6 +2,7 @@ const tg = window.Telegram?.WebApp;
 tg?.expand();
 
 const buttons = document.querySelectorAll(".nav-btn");
+const screens = document.querySelectorAll(".screen");
 const indicator = document.querySelector(".nav-indicator");
 
 if (window.Telegram?.WebApp) {
@@ -1144,21 +1145,6 @@ if (titleEl) {
 titleEl.innerText = goalMeta.title;
 }
 
-function recalcPlanAfterGoalChange() {
-const newGoal = parseNumber(goalInput.value || "0");
-if (!newGoal || !plannedMonthly) return;
-
-const remaining = Math.max(0, newGoal - accounts.main);
-const newMonths = Math.ceil(remaining / plannedMonthly);
-
-// обновляем текст над графиком
-summaryMonths.innerText = newMonths;
-
-// пересобираем график
-drawStaticLayer();
-animateFactLine();
-}
-
 // ===== ОСНОВНАЯ ЦЕЛЬ =====
 const saved = accounts.main;
 const total = parseNumber(goalInput.value || "0");
@@ -1390,10 +1376,6 @@ plannedMonthly = Math.round(plannedMonthly * 0.9);
 drawStaticLayer();
 animateFactLine();
 
-}
-
-if (newGoal > lastCalc.effectiveGoal + accounts.main) {
-showBrainMessage("Цель увеличена — план автоматически пересчитан.");
 }
 
 function updatePlanHeader() {
