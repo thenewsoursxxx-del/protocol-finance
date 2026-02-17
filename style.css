@@ -1467,69 +1467,80 @@ button {
   overflow: hidden;
 }
 
-/* ===== PREMIUM EMERALD AURA ===== */
-
+/* Горизонтальный глубокий изумрудный туман по краям — дышит и переливается */
 .advanced-fog {
   position: fixed;
   inset: 0;
   pointer-events: none;
   z-index: 0;
+  border-radius: 40px;
+  overflow: hidden;
 
+  /* Глубокий изумруд: тёмные оттенки по краям, горизонтальное распространение */
   background:
-    radial-gradient(45% 90% at -10% 45%, rgba(16,185,129,0.45), transparent 70%),
-    radial-gradient(50% 90% at 110% 60%, rgba(5,150,105,0.55), transparent 75%),
-    radial-gradient(60% 60% at 50% -20%, rgba(52,211,153,0.35), transparent 70%),
-    radial-gradient(60% 60% at 50% 120%, rgba(4,120,87,0.35), transparent 75%);
+    radial-gradient(
+      80% 80% at -20% 50%,
+      rgba(2, 44, 34, 0.7),
+      rgba(5, 46, 22, 0.45),
+      rgba(16, 185, 129, 0.2),
+      transparent 60%
+    ),
+    radial-gradient(
+      80% 80% at 120% 50%,
+      rgba(2, 44, 34, 0.7),
+      rgba(4, 47, 46, 0.45),
+      rgba(6, 95, 70, 0.2),
+      transparent 60%
+    );
 
-  background-size: 120% 120%, 120% 120%, 140% 140%, 140% 140%;
-
-  filter: blur(80px);
-
-  opacity: 0.9;
-
-  animation:
-    emeraldShift 18s ease-in-out infinite alternate,
-    emeraldBreath 8s ease-in-out infinite;
+  filter: blur(20px);
+  animation: fogBreath 6s ease-in-out infinite;
 }
 
-/* Горизонтальный перелив */
-@keyframes emeraldShift {
-  0% {
-    background-position:
-      -5% 45%,
-      105% 60%,
-      50% -15%,
-      50% 115%;
+/* Переливание: лёгкий слой поверх */
+.advanced-fog::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 40px;
+  background:
+    radial-gradient(
+      70% 70% at -15% 50%,
+      rgba(16, 185, 129, 0.25),
+      transparent 50%
+    ),
+    radial-gradient(
+      70% 70% at 115% 50%,
+      rgba(20, 184, 166, 0.2),
+      transparent 50%
+    );
+  filter: blur(12px);
+  animation: fogShimmerLayer 8s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* Дыхание: прозрачность и лёгкое размытие */
+@keyframes fogBreath {
+  0%, 100% {
+    opacity: 0.88;
+    filter: blur(18px);
   }
-  100% {
-    background-position:
-      5% 50%,
-      95% 55%,
-      50% -5%,
-      50% 105%;
+  50% {
+    opacity: 1;
+    filter: blur(24px);
   }
 }
 
-/* Дыхание */
-@keyframes emeraldBreath {
-  0%,100% { opacity: 0.85; }
-  50% { opacity: 1; }
+/* Переливание верхнего слоя (сдвиг по фазе) */
+@keyframes fogShimmerLayer {
+  0%, 100% { opacity: 0.5; }
+  50%     { opacity: 0.9; }
 }
 
-/* Включаем только в advanced */
 .advanced-fog {
   display: none;
 }
 
 body.advanced-active .advanced-fog {
   display: block;
-}
-
-@keyframes emeraldSideBreath {
-  0%,100% {
-    opacity: 0.85;
-  }
-  50% {
-    opacity: 1;
-  }
 }
