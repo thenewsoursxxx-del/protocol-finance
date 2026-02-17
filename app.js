@@ -807,6 +807,13 @@ chosenPlan = null;
 isInitialized = false;
 lastCalc = {};
 plannedMonthly = 0;
+goals = [];
+activeGoalIndex = 0;
+factHistory = [];
+accounts.main = 0;
+accounts.reserve = 0;
+goalCompleted = false;
+initialBalance = 0;
 
 calcLock.style.display = "none";
 confirmReset.style.display = "none";
@@ -1361,19 +1368,16 @@ goalCompleted = true;
 }
 
 // 4️⃣ закрываем редактор
-goalEditorOverlay.onclick = () => {
 goalEditorSheet.style.transform = "translateY(100%)";
 setTimeout(() => {
-goalEditorOverlay.style.display = "none";
+  goalEditorOverlay.style.display = "none";
 }, 550);
-};
 // 5️⃣ пересчитываем UI
 recalcPlanAfterGoalChange();
 renderGoals();
 updatePlanHeader();
 renderAccountsUI();
 
-recalcPlanAfterGoalChange();
 pulseGoalCard();
 };
 
@@ -1406,7 +1410,7 @@ card.classList.remove("pulse");
 }
 
 function recalcPlanAfterGoalChange() {
-if (!lastCalc.ok) return;
+if (!lastCalc || !lastCalc.ok) return;
 
 const goal = getActiveGoal();
 const newGoal = goal.amount;
@@ -1877,7 +1881,8 @@ if (addAccountBack) {
 }
 
 function getActiveGoal() {
-  return goals[activeGoalIndex];
+  if (!goals.length) return null;
+  return goals[activeGoalIndex] || goals[0];
 }
 
 function updateGoalView() {
@@ -1947,10 +1952,22 @@ function updateArrowVisibility() {
     rightArrow.style.opacity = "0";
     leftArrow.style.pointerEvents = "none";
     rightArrow.style.pointerEvents = "none";
-  } else {
-    leftArrow.style.opacity = activeGoalIndex > 0 ? "1" : "0.3";
-    rightArrow.style.opacity = activeGoalIndex < goals.length - 1 ? "1" : "0.3";
+    return;
+  }
+
+  if (activeGoalIndex > 0) {
+    leftArrow.style.opacity = "1";
     leftArrow.style.pointerEvents = "auto";
+  } else {
+    leftArrow.style.opacity = "0.3";
+    leftArrow.style.pointerEvents = "none";
+  }
+
+  if (activeGoalIndex < goals.length - 1) {
+    rightArrow.style.opacity = "1";
     rightArrow.style.pointerEvents = "auto";
+  } else {
+    rightArrow.style.opacity = "0.3";
+    rightArrow.style.pointerEvents = "none";
   }
 }
