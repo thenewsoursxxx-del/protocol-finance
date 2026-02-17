@@ -1012,22 +1012,30 @@ function initChart() {
   drawStaticLayer();
 
 let startX = 0;
+let currentX = 0;
 let isDragging = false;
 
-wrap.onpointerdown = e => {
+wrap.addEventListener("pointerdown", e => {
   startX = e.clientX;
   isDragging = true;
-};
+});
 
-wrap.onpointerup = e => {
+wrap.addEventListener("pointermove", e => {
+  if (!isDragging) return;
+  currentX = e.clientX;
+});
+
+wrap.addEventListener("pointerup", () => {
   if (!isDragging) return;
 
-  const diff = e.clientX - startX;
+  const diff = currentX - startX;
 
-  if (Math.abs(diff) > 60) {
+  if (Math.abs(diff) > 50) {
+
     if (diff < 0 && activeGoalIndex < goals.length - 1) {
       activeGoalIndex++;
     }
+
     if (diff > 0 && activeGoalIndex > 0) {
       activeGoalIndex--;
     }
@@ -1037,8 +1045,11 @@ wrap.onpointerup = e => {
   }
 
   isDragging = false;
-};
-}
+});
+
+wrap.addEventListener("pointercancel", () => {
+  isDragging = false;
+});
 
 function addMonths(date, n) {
 const d = new Date(date);
@@ -1476,12 +1487,11 @@ bgCtx.lineTo(x, H - pad);
 bgCtx.stroke();
 }
 
-// ОСИ
+// ОСЬ Y (только левая вертикальная)
 bgCtx.strokeStyle = "#333";
 bgCtx.beginPath();
 bgCtx.moveTo(pad, pad);
 bgCtx.lineTo(pad, H - pad);
-bgCtx.lineTo(W - pad, H - pad);
 bgCtx.stroke();
 
 drawPlanLine();
@@ -1955,4 +1965,9 @@ function updateArrowVisibility() {
 
   rightArrow.style.pointerEvents =
     activeGoalIndex < goals.length - 1 ? "auto" : "none";
+    leftArrow.style.opacity =
+  activeGoalIndex > 0 ? "1" : "0.3";
+
+rightArrow.style.opacity =
+  activeGoalIndex < goals.length - 1 ? "1" : "0.3";
 }
