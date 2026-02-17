@@ -238,7 +238,6 @@ if (advancedBtn) {
   }
 }
 }
-}
 // ===== TOP PROFILE FIX =====
 
 buttons.forEach(btn => {
