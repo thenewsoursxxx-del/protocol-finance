@@ -237,13 +237,6 @@ if (advancedBtn) {
     advancedBtn.style.display = "none";
   }
 }
-// показываем + кнопку только в accounts
-if (accountsAddBtn) {
-  if (name === "accounts" && isInitialized) {
-    accountsAddBtn.style.display = "flex";
-  } else {
-    accountsAddBtn.style.display = "none";
-  }
 }
 }
 // ===== TOP PROFILE FIX =====
@@ -1802,17 +1795,6 @@ if (advancedBack) {
 }
 
 /* ===== ADD ACCOUNT SCREEN ===== */
-
-if (accountsAddBtn) {
-  accountsAddBtn.onclick = () => {
-
-    haptic("light");
-
-    openScreen("add-account", null);
-
-    hideBottomNav();
-  };
-}
 
 if (addAccountBack) {
   addAccountBack.onclick = () => {
