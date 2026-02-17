@@ -851,12 +851,6 @@ z-index: 5;
 }
 
 /* ===== GOAL TITLE EDIT ===== */
-.goal-title-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-top: 6px;
-}
 
 .goal-title-row span {
   font-size: 20px;
@@ -914,13 +908,6 @@ z-index: 5;
 
 .goal-edit-btn:active svg {
   transform: scale(0.92);
-}
-
-.goal-title-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
 }
 
 /* ===== GOAL EDITOR SHEET ===== */
@@ -1074,11 +1061,6 @@ transition: transform 0.55s cubic-bezier(.22,1,.36,1);
   pointer-events: auto;
 }
 
-.chart-wrap {
-  width: 100%;
-  position: relative;
-}
-
 .chart-wrap canvas {
   position: absolute;
   inset: 0;
@@ -1092,11 +1074,6 @@ transition: transform 0.55s cubic-bezier(.22,1,.36,1);
 }
 
 #screen-advice .card {
-  position: relative;
-  z-index: 2;
-}
-
-.chart-wrap {
   position: relative;
   z-index: 2;
 }
@@ -1464,27 +1441,6 @@ button {
 #screen-advanced {
   position: relative;
   overflow: hidden;
-}
-
-.advanced-fog {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 0;
-
-  background:
-    radial-gradient(
-      120% 100% at -10% 50%,
-      rgba(16,185,129,0.35),
-      rgba(16,185,129,0.15),
-      transparent 60%
-    ),
-    radial-gradient(
-      120% 100% at 110% 50%,
-      rgba(16,185,129,0.35),
-      rgba(16,185,129,0.15),
-      transparent 60%
-    );
 }
 
 /* чтобы контент был поверх тумана */
