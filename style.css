@@ -1467,45 +1467,40 @@ button {
   overflow: hidden;
 }
 
-/* ===== ULTRA PREMIUM EMERALD FOG ===== */
+/* ===== CLEAN SIDE EMERALD FOG ===== */
 
 .advanced-fog {
   position: fixed;
-  inset: -10% -8%;
+  inset: 0;
   pointer-events: none;
   z-index: 0;
 
-  border-radius: 80px;
+  border-radius: 40px;
 
   background:
     radial-gradient(
-      65% 130% at -15% 50%,
-      rgba(3, 60, 45, 0.55),
-      rgba(4, 120, 87, 0.35),
-      rgba(16,185,129,0.22),
-      transparent 70%
+      45% 120% at -15% 50%,
+      rgba(6, 95, 70, 0.55),
+      rgba(16,185,129,0.35),
+      transparent 65%
     ),
     radial-gradient(
-      65% 130% at 115% 50%,
-      rgba(2, 40, 35, 0.55),
-      rgba(6, 95, 70, 0.35),
-      rgba(16,185,129,0.25),
-      transparent 70%
+      45% 120% at 115% 50%,
+      rgba(4, 120, 87, 0.55),
+      rgba(16,185,129,0.35),
+      transparent 65%
     );
 
-  background-size: 120% 120%, 120% 120%;
-
-  filter: blur(18px);
+  filter: blur(14px);
   opacity: 0.85;
 
   animation:
-    fogShift 18s ease-in-out infinite alternate,
-    fogColorFlow 22s ease-in-out infinite,
+    fogMove 14s ease-in-out infinite alternate,
     fogBreath 8s ease-in-out infinite;
 }
 
-/* Медленное смещение */
-@keyframes fogShift {
+/* лёгкое горизонтальное движение */
+@keyframes fogMove {
   0% {
     background-position:
       -10% 50%,
@@ -1513,31 +1508,17 @@ button {
   }
   100% {
     background-position:
-      5% 45%,
-      95% 55%;
+      -2% 48%,
+      102% 52%;
   }
 }
 
-/* Цветовой перелив (очень мягкий) */
-@keyframes fogColorFlow {
-  0% {
-    filter: blur(18px) hue-rotate(0deg);
-  }
-  50% {
-    filter: blur(18px) hue-rotate(6deg);
-  }
-  100% {
-    filter: blur(18px) hue-rotate(-4deg);
-  }
-}
-
-/* Лёгкое дыхание */
+/* мягкое дыхание */
 @keyframes fogBreath {
   0%,100% { opacity: 0.82; }
-  50% { opacity: 1; }
+  50% { opacity: 0.95; }
 }
 
-/* активация только на advanced */
 .advanced-fog {
   display: none;
 }
