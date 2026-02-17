@@ -1476,22 +1476,41 @@ button {
   border-radius: 40px;
   overflow: hidden;
 
-  /* Полные края по высоте: полосы от самого края, узко (≈12% ширины), без захода в центр */
+  /* Узкие полосы у краёв (≈5% ширины), слегка сужено по вертикали */
   background:
     linear-gradient(
       to right,
       rgba(1, 32, 28, 0.75),
       rgba(2, 44, 34, 0.5),
       rgba(6, 78, 59, 0.2),
-      transparent 12%
+      transparent 5%
     ),
     linear-gradient(
       to left,
       rgba(1, 32, 28, 0.75),
       rgba(2, 44, 34, 0.5),
       rgba(4, 47, 46, 0.2),
-      transparent 12%
+      transparent 5%
     );
+
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    black 5%,
+    black 95%,
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    black 5%,
+    black 95%,
+    transparent 100%
+  );
+  mask-size: 100% 100%;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
 
   filter: blur(16px);
   animation: fogBreath 6s ease-in-out infinite;
@@ -1504,15 +1523,18 @@ button {
   inset: 0;
   border-radius: 40px;
   pointer-events: none;
-  /* Левый край — пятна на разной высоте: тёмнее сверху/снизу, ярче в середине */
+  /* Левый край — пятна ближе к краю (2–4% по горизонтали) */
   background:
-    radial-gradient(35% 40% at 4% 15%, rgba(2, 44, 34, 0.55), transparent 100%),
-    radial-gradient(40% 50% at 6% 50%, rgba(16, 185, 129, 0.22), transparent 100%),
-    radial-gradient(35% 40% at 5% 85%, rgba(4, 55, 48, 0.5), transparent 100%),
-    /* Правый край */
-    radial-gradient(35% 40% at 96% 20%, rgba(3, 56, 47, 0.5), transparent 100%),
-    radial-gradient(40% 50% at 94% 55%, rgba(6, 95, 70, 0.25), transparent 100%),
-    radial-gradient(35% 40% at 96% 82%, rgba(2, 44, 34, 0.52), transparent 100%);
+    radial-gradient(35% 40% at 2% 15%, rgba(2, 44, 34, 0.55), transparent 100%),
+    radial-gradient(40% 50% at 3% 50%, rgba(16, 185, 129, 0.22), transparent 100%),
+    radial-gradient(35% 40% at 2.5% 85%, rgba(4, 55, 48, 0.5), transparent 100%),
+    radial-gradient(35% 40% at 98% 20%, rgba(3, 56, 47, 0.5), transparent 100%),
+    radial-gradient(40% 50% at 97% 55%, rgba(6, 95, 70, 0.25), transparent 100%),
+    radial-gradient(35% 40% at 98% 82%, rgba(2, 44, 34, 0.52), transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0%, black 5%, black 95%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 5%, black 95%, transparent 100%);
+  mask-size: 100% 100%;
+  -webkit-mask-size: 100% 100%;
   filter: blur(14px);
   animation: fogPatchShimmer 9s ease-in-out infinite;
 }
@@ -1523,12 +1545,15 @@ button {
   inset: 0;
   border-radius: 40px;
   pointer-events: none;
-  /* Дополнительные пятна — другие тона, сдвиг по фазе для живости */
   background:
-    radial-gradient(30% 45% at 5% 35%, rgba(20, 184, 166, 0.18), transparent 100%),
-    radial-gradient(35% 40% at 7% 70%, rgba(5, 46, 22, 0.4), transparent 100%),
-    radial-gradient(30% 45% at 95% 40%, rgba(16, 185, 129, 0.2), transparent 100%),
-    radial-gradient(35% 40% at 93% 75%, rgba(4, 47, 46, 0.38), transparent 100%);
+    radial-gradient(30% 45% at 2.5% 35%, rgba(20, 184, 166, 0.18), transparent 100%),
+    radial-gradient(35% 40% at 3.5% 70%, rgba(5, 46, 22, 0.4), transparent 100%),
+    radial-gradient(30% 45% at 97.5% 40%, rgba(16, 185, 129, 0.2), transparent 100%),
+    radial-gradient(35% 40% at 96.5% 75%, rgba(4, 47, 46, 0.38), transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0%, black 5%, black 95%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 5%, black 95%, transparent 100%);
+  mask-size: 100% 100%;
+  -webkit-mask-size: 100% 100%;
   filter: blur(18px);
   animation: fogPatchShimmer 11s ease-in-out infinite 1.5s;
 }
