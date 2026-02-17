@@ -1467,7 +1467,7 @@ button {
   overflow: hidden;
 }
 
-/* Горизонтальный глубокий изумрудный туман по краям — дышит и переливается */
+/* Туман строго по горизонтальным краям на всю высоту, узкой полосой, не вытянут к центру */
 .advanced-fog {
   position: fixed;
   inset: 0;
@@ -1476,65 +1476,80 @@ button {
   border-radius: 40px;
   overflow: hidden;
 
-  /* Глубокий изумруд: тёмные оттенки по краям, горизонтальное распространение */
+  /* Полные края по высоте: полосы от самого края, узко (≈12% ширины), без захода в центр */
   background:
-    radial-gradient(
-      80% 80% at -20% 50%,
-      rgba(2, 44, 34, 0.7),
-      rgba(5, 46, 22, 0.45),
-      rgba(16, 185, 129, 0.2),
-      transparent 60%
+    linear-gradient(
+      to right,
+      rgba(1, 32, 28, 0.75),
+      rgba(2, 44, 34, 0.5),
+      rgba(6, 78, 59, 0.2),
+      transparent 12%
     ),
-    radial-gradient(
-      80% 80% at 120% 50%,
-      rgba(2, 44, 34, 0.7),
-      rgba(4, 47, 46, 0.45),
-      rgba(6, 95, 70, 0.2),
-      transparent 60%
+    linear-gradient(
+      to left,
+      rgba(1, 32, 28, 0.75),
+      rgba(2, 44, 34, 0.5),
+      rgba(4, 47, 46, 0.2),
+      transparent 12%
     );
 
-  filter: blur(20px);
+  filter: blur(16px);
   animation: fogBreath 6s ease-in-out infinite;
 }
 
-/* Переливание: лёгкий слой поверх */
+/* Пятна переливания: разные тона изумруда в разных частях краёв */
+.advanced-fog::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 40px;
+  pointer-events: none;
+  /* Левый край — пятна на разной высоте: тёмнее сверху/снизу, ярче в середине */
+  background:
+    radial-gradient(35% 40% at 4% 15%, rgba(2, 44, 34, 0.55), transparent 100%),
+    radial-gradient(40% 50% at 6% 50%, rgba(16, 185, 129, 0.22), transparent 100%),
+    radial-gradient(35% 40% at 5% 85%, rgba(4, 55, 48, 0.5), transparent 100%),
+    /* Правый край */
+    radial-gradient(35% 40% at 96% 20%, rgba(3, 56, 47, 0.5), transparent 100%),
+    radial-gradient(40% 50% at 94% 55%, rgba(6, 95, 70, 0.25), transparent 100%),
+    radial-gradient(35% 40% at 96% 82%, rgba(2, 44, 34, 0.52), transparent 100%);
+  filter: blur(14px);
+  animation: fogPatchShimmer 9s ease-in-out infinite;
+}
+
 .advanced-fog::after {
   content: "";
   position: absolute;
   inset: 0;
   border-radius: 40px;
-  background:
-    radial-gradient(
-      70% 70% at -15% 50%,
-      rgba(16, 185, 129, 0.25),
-      transparent 50%
-    ),
-    radial-gradient(
-      70% 70% at 115% 50%,
-      rgba(20, 184, 166, 0.2),
-      transparent 50%
-    );
-  filter: blur(12px);
-  animation: fogShimmerLayer 8s ease-in-out infinite;
   pointer-events: none;
+  /* Дополнительные пятна — другие тона, сдвиг по фазе для живости */
+  background:
+    radial-gradient(30% 45% at 5% 35%, rgba(20, 184, 166, 0.18), transparent 100%),
+    radial-gradient(35% 40% at 7% 70%, rgba(5, 46, 22, 0.4), transparent 100%),
+    radial-gradient(30% 45% at 95% 40%, rgba(16, 185, 129, 0.2), transparent 100%),
+    radial-gradient(35% 40% at 93% 75%, rgba(4, 47, 46, 0.38), transparent 100%);
+  filter: blur(18px);
+  animation: fogPatchShimmer 11s ease-in-out infinite 1.5s;
 }
 
-/* Дыхание: прозрачность и лёгкое размытие */
+/* Дыхание: лёгкое изменение прозрачности и размытия */
 @keyframes fogBreath {
   0%, 100% {
-    opacity: 0.88;
-    filter: blur(18px);
+    opacity: 0.9;
+    filter: blur(14px);
   }
   50% {
     opacity: 1;
-    filter: blur(24px);
+    filter: blur(20px);
   }
 }
 
-/* Переливание верхнего слоя (сдвиг по фазе) */
-@keyframes fogShimmerLayer {
-  0%, 100% { opacity: 0.5; }
-  50%     { opacity: 0.9; }
+/* Переливание пятен: мягко то ярче, то приглушённее, не режет глаза */
+@keyframes fogPatchShimmer {
+  0%, 100% { opacity: 0.7; }
+  40%     { opacity: 1; }
+  70%     { opacity: 0.85; }
 }
 
 .advanced-fog {
