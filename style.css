@@ -1584,3 +1584,81 @@ button {
 body.advanced-active .advanced-fog {
   display: block;
 }
+
+/* ===== ADVANCED SETTINGS CARDS (глубокий изумруд, премиум) ===== */
+
+.advanced-settings {
+  padding: 20px;
+  position: relative;
+  z-index: 1;
+}
+
+.advanced-setting-card {
+  position: relative;
+  border-radius: 20px;
+  padding: 18px 20px;
+  margin-bottom: 14px;
+  color: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  overflow: hidden;
+
+  /* Глубокий изумрудный градиент как у вкладки */
+  background:
+    radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.12), transparent 45%),
+    linear-gradient(
+      135deg,
+      #021a16,
+      #063d33,
+      #047857,
+      #0d9668,
+      #047857,
+      #063d33,
+      #021a16
+    );
+  background-size: 100% 100%, 280% 280%;
+  background-position: 0 0, 0% 50%;
+  animation: advancedCardFlow 8s ease-in-out infinite;
+
+  box-shadow:
+    0 8px 32px rgba(0, 80, 60, 0.35),
+    inset 0 2px 8px rgba(255, 255, 255, 0.08);
+}
+
+@keyframes advancedCardFlow {
+  0%, 100% { background-position: 0 0, 0% 50%; }
+  50%     { background-position: 0 0, 100% 50%; }
+}
+
+.advanced-premium-badge {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(0, 0, 0, 0.35);
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+}
+
+.advanced-setting-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 4px;
+  padding-right: 75px;
+}
+
+.advanced-setting-desc {
+  font-size: 13px;
+  opacity: 0.8;
+  line-height: 1.35;
+}
+
+.advanced-setting-card[data-stub] {
+  cursor: default;
+  opacity: 0.95;
+}
