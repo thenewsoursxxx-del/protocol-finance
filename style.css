@@ -1530,3 +1530,20 @@ button {
     background-position: 0% 50%, 100% 50%;
   }
 }
+
+.chart-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: #fff;
+  font-size: 20px;
+  z-index: 10;
+}
+
+.chart-arrow.left { left: 8px; }
+.chart-arrow.right { right: 8px; }
