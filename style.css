@@ -1467,56 +1467,83 @@ button {
   overflow: hidden;
 }
 
-/* ===== PREMIUM ADVANCED FOG ===== */
+/* ===== ULTRA PREMIUM EMERALD FOG ===== */
 
 .advanced-fog {
   position: fixed;
-  inset: -8% -6%; /* немного выходит за экран */
+  inset: -10% -8%;
   pointer-events: none;
   z-index: 0;
 
-  border-radius: 60px; /* мягкие края */
+  border-radius: 80px;
 
   background:
     radial-gradient(
-      60% 120% at -10% 50%,
-      rgba(16,185,129,0.38),
-      rgba(16,185,129,0.18),
-      transparent 65%
+      65% 130% at -15% 50%,
+      rgba(3, 60, 45, 0.55),
+      rgba(4, 120, 87, 0.35),
+      rgba(16,185,129,0.22),
+      transparent 70%
     ),
     radial-gradient(
-      60% 120% at 110% 50%,
-      rgba(16,185,129,0.38),
-      rgba(16,185,129,0.18),
-      transparent 65%
+      65% 130% at 115% 50%,
+      rgba(2, 40, 35, 0.55),
+      rgba(6, 95, 70, 0.35),
+      rgba(16,185,129,0.25),
+      transparent 70%
     );
 
-  filter: blur(12px);
+  background-size: 120% 120%, 120% 120%;
+
+  filter: blur(18px);
   opacity: 0.85;
 
   animation:
-    fogLeftMove 12s ease-in-out infinite alternate,
-    fogBreath 7s ease-in-out infinite;
+    fogShift 18s ease-in-out infinite alternate,
+    fogColorFlow 22s ease-in-out infinite,
+    fogBreath 8s ease-in-out infinite;
 }
 
-/* Лёгкое горизонтальное плавание */
-@keyframes fogLeftMove {
+/* Медленное смещение */
+@keyframes fogShift {
   0% {
     background-position:
-      -6% 50%,
-      106% 50%;
+      -10% 50%,
+      110% 50%;
   }
   100% {
     background-position:
-      0% 50%,
-      100% 50%;
+      5% 45%,
+      95% 55%;
   }
 }
 
-/* Очень мягкое дыхание */
+/* Цветовой перелив (очень мягкий) */
+@keyframes fogColorFlow {
+  0% {
+    filter: blur(18px) hue-rotate(0deg);
+  }
+  50% {
+    filter: blur(18px) hue-rotate(6deg);
+  }
+  100% {
+    filter: blur(18px) hue-rotate(-4deg);
+  }
+}
+
+/* Лёгкое дыхание */
 @keyframes fogBreath {
   0%,100% { opacity: 0.82; }
   50% { opacity: 1; }
+}
+
+/* активация только на advanced */
+.advanced-fog {
+  display: none;
+}
+
+body.advanced-active .advanced-fog {
+  display: block;
 }
 
 @keyframes emeraldSideBreath {
@@ -1526,12 +1553,4 @@ button {
   50% {
     opacity: 1;
   }
-}
-
-.advanced-fog {
-  display: none;
-}
-
-body.advanced-active .advanced-fog {
-  display: block;
 }
