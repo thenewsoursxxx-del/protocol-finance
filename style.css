@@ -1493,10 +1493,25 @@ button {
   z-index: 1;
 }
 
-/* ===== FIX ADVANCED FULL HEIGHT ===== */
+/* ===== ADVANCED EDGE FOG FIXED ===== */
 
-#screen-advanced {
-  min-height: 100vh;   /* ВОТ ЭТО ГЛАВНОЕ */
-  position: relative;
-  overflow: hidden;
+.advanced-fog {
+  position: fixed;        /* ВАЖНО — не absolute */
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+
+  background:
+    radial-gradient(
+      70% 100% at 0% 50%,   /* ← от самого левого края */
+      rgba(16,185,129,0.35),
+      rgba(16,185,129,0.15),
+      transparent 45%
+    ),
+    radial-gradient(
+      70% 100% at 100% 50%,  /* ← от самого правого края */
+      rgba(16,185,129,0.35),
+      rgba(16,185,129,0.15),
+      transparent 45%
+    );
 }
