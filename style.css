@@ -19,8 +19,14 @@ padding-bottom: 220px; /* ← ВАЖНО */
 position: relative;
 }
 
-.screen { display: none; }
-.screen.active { display: block; }
+.screen {
+  display: none;
+  min-height: 100%;
+}
+
+.screen.active {
+  display: block;
+}
 
 h2 { font-size: 22px; margin-bottom: 18px; }
 
@@ -1217,8 +1223,8 @@ html, body {
 }
 
 .app {
-  height: 100vh;              /* фиксируем высоту */
-  overflow-y: auto;           /* скролл только внутри */
+  min-height: 100vh;
+  overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
 
