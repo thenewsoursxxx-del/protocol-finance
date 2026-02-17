@@ -1,6 +1,10 @@
 const tg = window.Telegram?.WebApp;
 tg?.expand();
 
+const screens = document.querySelectorAll(".screen");
+const buttons = document.querySelectorAll(".nav-btn");
+const indicator = document.querySelector(".nav-indicator");
+
 if (window.Telegram?.WebApp) {
 Telegram.WebApp.ready();
 Telegram.WebApp.expand();
@@ -109,9 +113,6 @@ const confirmYes = document.getElementById("confirmYes");
 const confirmNo = document.getElementById("confirmNo");
 
 /* ===== NAV ===== */
-const screens = document.querySelectorAll(".screen");
-const buttons = document.querySelectorAll(".nav-btn");
-const indicator = document.querySelector(".nav-indicator");
 const bottomNav = document.querySelector(".bottom-nav");
 const advancedBtn = document.getElementById("advancedBtn");
 const advancedBack = document.getElementById("advancedBack");
