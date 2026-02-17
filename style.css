@@ -1516,6 +1516,12 @@ button {
   animation: fogBreath 6s ease-in-out infinite;
 }
 
+/* При заходе в расширенные настройки: туман плавно появляется за ~1 с */
+@keyframes fogEnter {
+  from { opacity: 0; }
+  to   { opacity: 0.9; }
+}
+
 /* Пятна переливания: разные тона изумруда в разных частях краёв */
 .advanced-fog::before {
   content: "";
@@ -1583,9 +1589,11 @@ button {
 
 body.advanced-active .advanced-fog {
   display: block;
+  opacity: 0;
+  animation: fogEnter 1s ease-out forwards, fogBreath 6s ease-in-out 1s infinite;
 }
 
-/* ===== ADVANCED SETTINGS CARDS (глубокий изумруд, премиум) ===== */
+/* ===== ADVANCED SETTINGS CARDS (глубокий изумруд) ===== */
 
 .advanced-settings {
   padding: 20px;
@@ -1601,6 +1609,8 @@ body.advanced-active .advanced-fog {
   color: rgba(255, 255, 255, 0.95);
   border: 1px solid rgba(16, 185, 129, 0.25);
   overflow: hidden;
+  opacity: 0;
+  animation: advancedCardEnter 1s ease-out forwards, advancedCardFlow 8s ease-in-out 1s infinite;
 
   /* Глубокий изумрудный градиент как у вкладки */
   background:
@@ -1617,11 +1627,16 @@ body.advanced-active .advanced-fog {
     );
   background-size: 100% 100%, 280% 280%;
   background-position: 0 0, 0% 50%;
-  animation: advancedCardFlow 8s ease-in-out infinite;
 
   box-shadow:
     0 8px 32px rgba(0, 80, 60, 0.35),
     inset 0 2px 8px rgba(255, 255, 255, 0.08);
+}
+
+/* Появление заглушек вместе с туманом за ~1 с */
+@keyframes advancedCardEnter {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 @keyframes advancedCardFlow {
