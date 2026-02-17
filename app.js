@@ -1786,6 +1786,8 @@ if (advancedBtn) {
   advancedBtn.onclick = () => {
 
     haptic("light");
+    
+    renderAdvancedGoals();
 
     // скрываем все экраны
 document.querySelectorAll(".screen")
@@ -1804,7 +1806,6 @@ document.querySelectorAll(".screen")
     // скрываем кнопку
     advancedBtn.style.display = "none";
   };
-  renderAdvancedGoals();
 }
 
 if (advancedBack) {
