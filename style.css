@@ -1531,19 +1531,43 @@ button {
   }
 }
 
+.chart-wrap {
+  position: relative;
+}
+
 .chart-arrow {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  width: 40px;
-  height: 40px;
+  
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
-  background: rgba(255,255,255,0.08);
-  border: 1px solid rgba(255,255,255,0.15);
-  color: #fff;
-  font-size: 20px;
-  z-index: 10;
+
+  background: rgba(255,255,255,0.06);
+  backdrop-filter: blur(6px);
+
+  border: 1px solid rgba(255,255,255,0.12);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 18px;
+  color: white;
+
+  cursor: pointer;
+  transition: background 0.2s ease;
 }
 
-.chart-arrow.left { left: 8px; }
-.chart-arrow.right { right: 8px; }
+.chart-arrow.left {
+  left: -10px;
+}
+
+.chart-arrow.right {
+  right: -10px;
+}
+
+.chart-arrow:active {
+  background: rgba(255,255,255,0.12);
+}
