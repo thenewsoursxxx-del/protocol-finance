@@ -213,7 +213,7 @@ moveIndicator(buttons[0]);
 
 /* ===== OPEN SCREEN ===== */
 function openScreen(name, btn) {
-  document.querySelector(".app").scrollTop = 0;
+  window.scrollTo(0, 0);
 
 document.querySelectorAll(".screen")
   .forEach(s => s.classList.remove("active"));
