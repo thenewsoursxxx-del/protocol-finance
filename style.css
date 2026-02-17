@@ -1469,8 +1469,14 @@ button {
 
 /* === ADVANCED FOG FADE SYSTEM === */
 
-.advanced-fog {
-  position: fixed;
+#screen-advanced {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+#screen-advanced .advanced-fog {
+  position: absolute;
   inset: 0;
   pointer-events: none;
   z-index: 0;
@@ -1493,17 +1499,16 @@ button {
 
   filter: blur(14px);
 
-  opacity: 0;                 /* 🔥 старт без тумана */
-  transition: opacity 1s ease; /* 🔥 плавное появление */
+  opacity: 0;
+  transition: opacity 1s ease;
 
   animation:
     fogMove 14s ease-in-out infinite alternate,
     fogBreath 8s ease-in-out infinite;
 }
 
-/* когда активен advanced */
-body.advanced-active .advanced-fog {
-  opacity: 0.85;   /* плавно появляется */
+body.advanced-active #screen-advanced .advanced-fog {
+  opacity: 0.85;
 }
 
 /* лёгкое горизонтальное движение */
