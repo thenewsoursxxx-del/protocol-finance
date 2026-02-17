@@ -1587,7 +1587,8 @@ button {
 }
 
 .chart-wrap {
-  overflow: hidden;
+  position: relative;
+  overflow: visible;   /* ВОТ ЭТО КРИТИЧНО */
 }
 
 .chart-wrap {
