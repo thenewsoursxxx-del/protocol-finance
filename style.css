@@ -851,6 +851,12 @@ z-index: 5;
 }
 
 /* ===== GOAL TITLE EDIT ===== */
+.goal-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 6px;
+}
 
 .goal-title-row span {
   font-size: 20px;
@@ -908,6 +914,13 @@ z-index: 5;
 
 .goal-edit-btn:active svg {
   transform: scale(0.92);
+}
+
+.goal-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 
 /* ===== GOAL EDITOR SHEET ===== */
@@ -1061,6 +1074,11 @@ transition: transform 0.55s cubic-bezier(.22,1,.36,1);
   pointer-events: auto;
 }
 
+.chart-wrap {
+  width: 100%;
+  position: relative;
+}
+
 .chart-wrap canvas {
   position: absolute;
   inset: 0;
@@ -1074,6 +1092,11 @@ transition: transform 0.55s cubic-bezier(.22,1,.36,1);
 }
 
 #screen-advice .card {
+  position: relative;
+  z-index: 2;
+}
+
+.chart-wrap {
   position: relative;
   z-index: 2;
 }
@@ -1443,6 +1466,27 @@ button {
   overflow: hidden;
 }
 
+.advanced-fog {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+
+  background:
+    radial-gradient(
+      120% 100% at -10% 50%,
+      rgba(16,185,129,0.35),
+      rgba(16,185,129,0.15),
+      transparent 60%
+    ),
+    radial-gradient(
+      120% 100% at 110% 50%,
+      rgba(16,185,129,0.35),
+      rgba(16,185,129,0.15),
+      transparent 60%
+    );
+}
+
 /* чтобы контент был поверх тумана */
 #screen-advanced > *:not(.advanced-fog) {
   position: relative;
@@ -1485,146 +1529,4 @@ button {
   100% {
     background-position: 0% 50%, 100% 50%;
   }
-}
-
-.chart-wrap {
-  position: relative;
-}
-
-.chart-arrow {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-
-  background: rgba(255,255,255,0.06);
-  backdrop-filter: blur(6px);
-
-  border: 1px solid rgba(255,255,255,0.12);
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  font-size: 18px;
-  color: white;
-
-  cursor: pointer;
-  transition: background 0.2s ease;
-}
-
-.chart-arrow.left {
-  left: -10px;
-}
-
-.chart-arrow.right {
-  right: -10px;
-}
-
-.chart-arrow:active {
-  background: rgba(255,255,255,0.12);
-}
-
-.advanced-wrap {
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-}
-
-.adv-btn {
-  width: 100%;
-  height: 50px;
-  border-radius: 14px;
-  background: #111;
-  border: 1px solid #222;
-  color: white;
-  font-size: 15px;
-}
-
-.adv-label {
-  margin-bottom: 10px;
-  font-size: 14px;
-  opacity: 0.6;
-}
-
-.adv-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.mini-btn {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  background: #111;
-  border: 1px solid #222;
-  color: white;
-  font-size: 18px;
-}
-
-.goals-list {
-  margin-top: 18px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.goal-mini-card {
-  padding: 14px;
-  border-radius: 14px;
-  background: #111;
-  border: 1px solid #222;
-  cursor: pointer;
-}
-
-.goal-mini-card.active {
-  border: 1px solid #3a7bfd;
-}
-
-.chart-wrap {
-  position: relative;
-  overflow: visible;   /* ВОТ ЭТО КРИТИЧНО */
-}
-
-.chart-wrap {
-  position: relative;
-}
-
-.chart-arrow {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.08);
-  border: 1px solid rgba(255,255,255,0.15);
-  color: #fff;
-  font-size: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.chart-arrow.left {
-  left: -12px;
-}
-
-.chart-arrow.right {
-  right: -12px;
-}
-
-.chart-arrow:active {
-  transform: translateY(-50%) scale(0.9);
-}
-
-
-canvas {
-  background: transparent !important;
-  display: block;
 }
