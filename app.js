@@ -213,6 +213,7 @@ moveIndicator(buttons[0]);
 
 /* ===== OPEN SCREEN ===== */
 function openScreen(name, btn) {
+  document.querySelector(".app").scrollTop = 0;
 
 document.querySelectorAll(".screen")
   .forEach(s => s.classList.remove("active"));
@@ -1777,6 +1778,8 @@ if (advancedBtn) {
     document
       .getElementById("screen-advanced")
       .classList.add("active");
+      
+      document.querySelector(".app").scrollTop = 0;
 
     // скрываем nav
     hideBottomNav();
