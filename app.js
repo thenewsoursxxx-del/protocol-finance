@@ -212,10 +212,6 @@ moveIndicator(buttons[0]);
 
 /* ===== OPEN SCREEN ===== */
 function openScreen(name, btn) {
-if (!isInitialized && 
-    name !== "calc" && 
-    name !== "add-account" && 
-    name !== "advanced") return;
 
 document.querySelectorAll(".screen")
   .forEach(s => s.classList.remove("active"));
