@@ -1479,7 +1479,7 @@ button {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  z-index: 0;
+  z-index: 2;
 
   border-radius: 40px;
 
@@ -1509,6 +1509,11 @@ button {
 
 body.advanced-active #screen-advanced .advanced-fog {
   opacity: 0.85;
+}
+
+#screen-advanced > *:not(.advanced-fog) {
+  position: relative;
+  z-index: 3;
 }
 
 /* лёгкое горизонтальное движение */
