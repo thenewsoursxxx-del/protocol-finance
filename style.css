@@ -837,7 +837,7 @@ z-index: 5;
 
 .chart-card {
   margin-top: 16px;
-  margin-bottom: 0;
+  margin-bottom: 16px;
 }
 
 .fact-tooltip-container {

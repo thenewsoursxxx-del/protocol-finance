@@ -93,6 +93,7 @@ btn.classList.add("active");
 // сохранить режим
 selectedMode = btn.dataset.mode;
 saveMode = btn.dataset.mode;
+saveFullState();
 };
 });
 
@@ -224,29 +225,133 @@ function recalcPlan() {
     updatePlanHeader();
   }
 
-  // 5. Сохраняем state в localStorage
+  // 5. Сохраняем все данные в localStorage (память между входами)
+  saveFullState();
+}
+
+const STORAGE_KEY_PERSIST = "protocol_persist";
+const STORAGE_KEY_STATE = "protocol_state";
+
+/**
+ * Сохраняет все данные приложения в localStorage (память между входами).
+ */
+function saveFullState() {
   try {
-    localStorage.setItem("protocol_state", JSON.stringify(state));
+    const payload = {
+      income: incomeInput?.value?.trim() || "",
+      expenses: expensesInput?.value?.trim() || "",
+      goal: goalInput?.value?.trim() || "",
+      saved: savedInput?.value?.trim() || "",
+      saveMode: saveMode || "calm",
+      factHistory: factHistory.map(({ value, date, to }) => ({
+        value,
+        date: date instanceof Date ? date.toISOString() : date,
+        to
+      })),
+      lastCalc: lastCalc?.ok ? lastCalc : {},
+      accounts: { ...accounts },
+      chosenPlan,
+      plannedMonthly,
+      planStartValue,
+      isInitialized: !!isInitialized,
+      unplannedExpensesByMonth: { ...unplannedExpensesByMonth },
+      goalMeta: { ...goalMeta },
+      state: { ...state }
+    };
+    localStorage.setItem(STORAGE_KEY_PERSIST, JSON.stringify(payload));
+    localStorage.setItem(STORAGE_KEY_STATE, JSON.stringify(state));
   } catch (e) {
-    console.warn("Failed to save state to localStorage:", e);
+    console.warn("Failed to save full state:", e);
   }
 }
 
 /**
- * Загружает state из localStorage при инициализации
+ * Загружает все данные из localStorage при запуске приложения.
+ */
+function loadFullState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_PERSIST);
+    if (!raw) {
+      loadStateFromStorage();
+      return;
+    }
+    const p = JSON.parse(raw);
+
+    if (p.income != null && incomeInput) incomeInput.value = p.income;
+    if (p.expenses != null && expensesInput) expensesInput.value = p.expenses;
+    if (p.goal != null && goalInput) goalInput.value = p.goal;
+    if (p.saved != null && savedInput) savedInput.value = p.saved;
+
+    if (p.saveMode) {
+      saveMode = p.saveMode;
+      selectedMode = p.saveMode;
+      modeButtons.forEach(b => {
+        b.classList.toggle("active", b.dataset.mode === p.saveMode);
+      });
+    }
+
+    if (Array.isArray(p.factHistory)) {
+      factHistory = p.factHistory.map(({ value, date, to }) => ({
+        value,
+        date: date ? new Date(date) : new Date(),
+        to: to || "main"
+      }));
+    }
+
+    if (p.lastCalc && p.lastCalc.ok) lastCalc = p.lastCalc;
+    if (p.accounts) {
+      accounts.main = Number(p.accounts.main) || 0;
+      accounts.reserve = Number(p.accounts.reserve) || 0;
+    }
+    if (p.chosenPlan != null) chosenPlan = p.chosenPlan;
+    if (p.plannedMonthly != null) plannedMonthly = p.plannedMonthly;
+    if (p.planStartValue != null) planStartValue = p.planStartValue;
+    if (typeof p.isInitialized === "boolean") isInitialized = p.isInitialized;
+    if (p.unplannedExpensesByMonth && typeof p.unplannedExpensesByMonth === "object")
+      unplannedExpensesByMonth = { ...p.unplannedExpensesByMonth };
+    if (p.goalMeta && typeof p.goalMeta === "object") Object.assign(goalMeta, p.goalMeta);
+    if (p.state && typeof p.state === "object") Object.assign(state, p.state);
+
+    initialBalance = parseNumber(savedInput?.value || "0");
+
+    if (isInitialized) {
+      lockTabs(false);
+      planSummary.style.display = "block";
+      if (summaryMonthly && lastCalc.monthlySave) summaryMonthly.innerText = lastCalc.monthlySave.toLocaleString();
+      if (summaryMonths && lastCalc.months) summaryMonths.innerText = lastCalc.months;
+      if (summaryMode) summaryMode.innerText = saveMode === "calm" ? "Спокойный" : saveMode === "normal" ? "Умеренный" : "Агрессивный";
+      document.querySelectorAll("#screen-calc label, #screen-calc .input-wrap, .mode-buttons, #calculate").forEach(el => el.style.display = "none");
+      renderAccountsUI();
+      renderGoals();
+      if (lastCalc.ok && document.getElementById("chartBg")) {
+        drawStaticLayer();
+        animateFactLine();
+        updatePlanHeader();
+      }
+    } else {
+      lockTabs(true);
+      planSummary.style.display = "none";
+    }
+  } catch (e) {
+    console.warn("Failed to load full state:", e);
+    loadStateFromStorage();
+  }
+}
+
+/**
+ * Загружает только state из localStorage (совместимость со старыми сохранениями).
  */
 function loadStateFromStorage() {
   try {
-    const saved = localStorage.getItem("protocol_state");
+    const saved = localStorage.getItem(STORAGE_KEY_STATE);
     if (saved) {
       const parsed = JSON.parse(saved);
-      // Восстанавливаем только безопасные значения
-      if (parsed.goalTotal) state.goalTotal = parsed.goalTotal;
-      if (parsed.goalSaved) state.goalSaved = parsed.goalSaved;
-      if (parsed.reserveAmount) state.reserveAmount = parsed.reserveAmount;
-      if (parsed.monthlyContribution) state.monthlyContribution = parsed.monthlyContribution;
-      if (parsed.monthsLeft) state.monthsLeft = parsed.monthsLeft;
-      if (parsed.mode) state.mode = parsed.mode;
+      if (parsed.goalTotal != null) state.goalTotal = parsed.goalTotal;
+      if (parsed.goalSaved != null) state.goalSaved = parsed.goalSaved;
+      if (parsed.reserveAmount != null) state.reserveAmount = parsed.reserveAmount;
+      if (parsed.monthlyContribution != null) state.monthlyContribution = parsed.monthlyContribution;
+      if (parsed.monthsLeft != null) state.monthsLeft = parsed.monthsLeft;
+      if (parsed.mode != null) state.mode = parsed.mode;
       if (typeof parsed.hasReserve === "boolean") state.hasReserve = parsed.hasReserve;
     }
   } catch (e) {
@@ -254,8 +359,8 @@ function loadStateFromStorage() {
   }
 }
 
-// Загружаем сохранённый state при инициализации
-loadStateFromStorage();
+// Загружаем сохранённые данные при запуске
+loadFullState();
 
 /**
  * Атомарная функция применения незапланированного расхода
@@ -741,6 +846,7 @@ document.querySelectorAll(
 "#screen-calc label, #screen-calc .input-wrap, .mode-buttons, #calculate"
 ).forEach(el => el.style.display = "none");
 
+saveFullState();
 };
 
 /* ===== EDIT PLAN ===== */
@@ -847,7 +953,7 @@ ${advice.text}
 
 <div id="factTooltipContainer" class="fact-tooltip-container"></div>
 
-<div id="expenseCardSection" class="expense-card-section">
+<div id="expenseCardSection" class="expense-card-section" style="margin-top: 16px;">
 <div class="card">
 <div style="font-size:16px;font-weight:600;">Непредвиденные расходы</div>
 <div style="margin-top:8px;font-size:14px;line-height:1.45;opacity:0.8;">
@@ -1001,40 +1107,58 @@ haptic("light");
 /* ===== RESET ===== */
 resetBtn.onclick = () => confirmReset.style.display = "block";
 confirmNo.onclick = () => confirmReset.style.display = "none";
-confirmYes.onclick = () => {
-chosenPlan = null;
-isInitialized = false;
-lastCalc = {};
-plannedMonthly = 0;
-unplannedExpensesByMonth = {};
-accounts.main = 0;
-accounts.reserve = 0;
+function performFullReset() {
+  chosenPlan = null;
+  isInitialized = false;
+  lastCalc = {};
+  plannedMonthly = 0;
+  factHistory = [];
+  unplannedExpensesByMonth = {};
+  accounts.main = 0;
+  accounts.reserve = 0;
+  planStartValue = 0;
+  initialBalance = 0;
 
-// Сбрасываем state
-state.goalTotal = 0;
-state.goalSaved = 0;
-state.reserveAmount = 0;
-state.monthlyContribution = 0;
-state.monthsLeft = 0;
-state.mode = null;
-state.hasReserve = false;
+  state.goalTotal = 0;
+  state.goalSaved = 0;
+  state.reserveAmount = 0;
+  state.monthlyContribution = 0;
+  state.monthsLeft = 0;
+  state.mode = null;
+  state.hasReserve = false;
 
-// Очищаем localStorage
-try {
-  localStorage.removeItem("protocol_state");
-} catch (e) {
-  console.warn("Failed to clear state from localStorage:", e);
+  try {
+    localStorage.removeItem(STORAGE_KEY_STATE);
+    localStorage.removeItem(STORAGE_KEY_PERSIST);
+  } catch (e) {
+    console.warn("Failed to clear storage:", e);
+  }
+
+  calcLock.style.display = "none";
+  confirmReset.style.display = "none";
+  lockTabs(true);
+
+  incomeInput.value = "";
+  expensesInput.value = "";
+  goalInput.value = "";
+  if (savedInput) savedInput.value = "";
+
+  document.querySelectorAll("#screen-calc label, #screen-calc .input-wrap, .mode-buttons, #calculate").forEach(el => el.style.display = "");
+  planSummary.style.display = "none";
+  modeButtons.forEach(b => b.classList.toggle("active", b.dataset.mode === "calm"));
+  saveMode = "calm";
+  selectedMode = "calm";
+
+  openScreen("calc", buttons[0]);
+  if (bottomNav) {
+    bottomNav.style.transform = "";
+    bottomNav.style.opacity = "1";
+    bottomNav.style.pointerEvents = "";
+  }
 }
 
-calcLock.style.display = "none";
-confirmReset.style.display = "none";
-lockTabs(true);
-
-incomeInput.value = "";
-expensesInput.value = "";
-goalInput.value = "";
-
-openScreen("calc", buttons[0]);
+confirmYes.onclick = () => {
+  performFullReset();
 };
 
 /* ===== PROFILE ===== */
@@ -1043,25 +1167,22 @@ const profileBtn = document.getElementById("profileBtn");
 if (profileBtn) {
 profileBtn.onclick = () => {
 haptic("light");
-
-// закрываем клавиатуру
 document.activeElement?.blur();
-
-// туман только в расширенных настройках — при открытии профиля убираем
 document.body.classList.remove("advanced-active");
-
-// показываем профиль
-document.querySelectorAll(".screen")
-  .forEach(s => s.classList.remove("active"));
+document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
 document.getElementById("screen-profile").classList.add("active");
-
-// убираем активность навбара
 buttons.forEach(b => b.classList.remove("active"));
-
-// прячем нижний навбар (iOS-style)
 bottomNav.style.transform = "translateY(140%)";
 bottomNav.style.opacity = "0";
 bottomNav.style.pointerEvents = "none";
+};
+}
+
+const profileResetPlanBtn = document.getElementById("profileResetPlan");
+if (profileResetPlanBtn) {
+profileResetPlanBtn.onclick = () => {
+haptic("light");
+confirmReset.style.display = "block";
 };
 }
 
@@ -1071,7 +1192,7 @@ const wrap = input.closest(".input-wrap");
 
 input.addEventListener("focus", () => {
 wrap.classList.remove("error", "shake");
-wrap.classList.add("show-hint"); // ← ВОТ ЭТОГО НЕ ХВАТАЛО
+wrap.classList.add("show-hint");
 
 if (input.dataset.placeholder) {
 input.placeholder = input.dataset.placeholder;
@@ -1080,11 +1201,12 @@ input.placeholder = input.dataset.placeholder;
 
 input.addEventListener("input", () => {
 wrap.classList.remove("error", "shake");
-wrap.classList.remove("show-hint"); // ← прячем при вводе
+wrap.classList.remove("show-hint");
 });
 
 input.addEventListener("blur", () => {
-wrap.classList.remove("show-hint"); // ← прячем при уходе
+wrap.classList.remove("show-hint");
+saveFullState();
 });
 });
 
