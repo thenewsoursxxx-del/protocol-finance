@@ -977,7 +977,6 @@ ${advice.text}
 <canvas id="chartFact"></canvas>
 </div>
 </div>
-<div id="factTooltipContainer" class="fact-tooltip-container"></div>
 <div class="fact-input-row">
 <input id="factInput" inputmode="numeric"
 placeholder="Сколько вы отложили"
@@ -987,6 +986,7 @@ style="width:52px;height:52px;border-radius:50%">
 ➜
 </button>
 </div>
+<div id="factTooltipContainer" class="fact-tooltip-container"></div>
 </div>
 `;
 

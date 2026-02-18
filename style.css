@@ -861,8 +861,8 @@ z-index: 5;
 
 .fact-tooltip-container {
   min-height: 0;
-  margin-top: 12px;
-  overflow: hidden;
+  margin-top: 14px;
+  overflow: visible;
 }
 
 .protocol-verdict {
