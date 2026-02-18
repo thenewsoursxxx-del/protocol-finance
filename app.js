@@ -272,15 +272,19 @@ function saveFullState() {
       saved: savedInput?.value?.trim() || "",
       saveMode: saveMode || "calm",
       factHistory: factHistory.map(({ value, date, to }) => ({
-        value,
-        date: date instanceof Date ? date.toISOString() : date,
-        to
+        value: Number(value) || 0,
+        date: date instanceof Date ? date.toISOString() : (typeof date === "string" ? date : new Date().toISOString()),
+        to: to || "main"
       })),
       lastCalc: lastCalc?.ok ? lastCalc : {},
       accounts: { ...accounts },
       chosenPlan,
       plannedMonthly,
       planStartValue,
+      initialBalance,
+      factRatio,
+      goalCompleted,
+      selectedScenario,
       isInitialized: !!isInitialized,
       unplannedExpensesByMonth: { ...unplannedExpensesByMonth },
       goalMeta: { ...goalMeta },
@@ -319,11 +323,31 @@ function loadFullState() {
     }
 
     if (Array.isArray(p.factHistory)) {
-      factHistory = p.factHistory.map(({ value, date, to }) => ({
-        value,
-        date: date ? new Date(date) : new Date(),
-        to: to || "main"
-      }));
+      factHistory = p.factHistory.map(({ value, date, to }) => {
+        let parsedDate;
+        if (date) {
+          parsedDate = new Date(date);
+          // Проверяем валидность даты
+          if (isNaN(parsedDate.getTime())) {
+            parsedDate = new Date();
+            parsedDate.setDate(1);
+            parsedDate.setHours(0, 0, 0, 0);
+          } else {
+            // Нормализуем дату к началу месяца
+            parsedDate.setDate(1);
+            parsedDate.setHours(0, 0, 0, 0);
+          }
+        } else {
+          parsedDate = new Date();
+          parsedDate.setDate(1);
+          parsedDate.setHours(0, 0, 0, 0);
+        }
+        return {
+          value: Number(value) || 0,
+          date: parsedDate,
+          to: to || "main"
+        };
+      });
     }
 
     if (p.lastCalc && p.lastCalc.ok) lastCalc = p.lastCalc;
@@ -334,13 +358,31 @@ function loadFullState() {
     if (p.chosenPlan != null) chosenPlan = p.chosenPlan;
     if (p.plannedMonthly != null) plannedMonthly = p.plannedMonthly;
     if (p.planStartValue != null) planStartValue = p.planStartValue;
+    if (p.initialBalance != null) initialBalance = Number(p.initialBalance) || 0;
+    if (p.factRatio != null) factRatio = Number(p.factRatio) || null;
+    if (typeof p.goalCompleted === "boolean") goalCompleted = p.goalCompleted;
+    if (p.selectedScenario != null) selectedScenario = p.selectedScenario;
     if (typeof p.isInitialized === "boolean") isInitialized = p.isInitialized;
     if (p.unplannedExpensesByMonth && typeof p.unplannedExpensesByMonth === "object")
       unplannedExpensesByMonth = { ...p.unplannedExpensesByMonth };
     if (p.goalMeta && typeof p.goalMeta === "object") Object.assign(goalMeta, p.goalMeta);
     if (p.state && typeof p.state === "object") Object.assign(state, p.state);
 
-    initialBalance = parseNumber(savedInput?.value || "0");
+    // Если initialBalance не был сохранён, вычисляем из savedInput (обратная совместимость)
+    if (initialBalance === 0 && savedInput?.value) {
+      initialBalance = parseNumber(savedInput.value || "0");
+    }
+
+    // Синхронизируем planStartValue с initialBalance, если он не был сохранён
+    if (planStartValue === 0 && initialBalance > 0) {
+      planStartValue = initialBalance;
+    }
+
+    // Если accounts восстановлены, но initialBalance не был сохранён, используем accounts.main
+    if (initialBalance === 0 && accounts.main > 0) {
+      initialBalance = accounts.main;
+      planStartValue = accounts.main;
+    }
 
     if (isInitialized) {
       lockTabs(false);
@@ -354,8 +396,11 @@ function loadFullState() {
 
       // Восстановление экрана: если сценарий выбран — возвращаем на график
       if (chosenPlan && lastCalc?.ok) {
-        plannedMonthly = lastCalc.monthlySave;
-        if (chosenPlan === "buffer") plannedMonthly = Math.round(plannedMonthly * 0.9);
+        // Восстанавливаем plannedMonthly из сохранённого или пересчитываем
+        if (!plannedMonthly || plannedMonthly === 0) {
+          plannedMonthly = lastCalc.monthlySave;
+          if (chosenPlan === "buffer") plannedMonthly = Math.round(plannedMonthly * 0.9);
+        }
 
         openScreen("advice", buttons[1]);
         if (loader) loader.classList.add("hidden");
@@ -1152,11 +1197,19 @@ function protocolFlow(mode) {
 chosenPlan = mode;
 if (protocolBack) protocolBack.style.display = "none";
 // 🔥 СИНХРОНИЗАЦИЯ С УЖЕ НАКОПЛЕННЫМ
+// Если accounts уже восстановлены из сохранения, не перезаписываем их
 const initialSaved = parseNumber(savedInput?.value || "0");
-initialBalance = initialSaved;
-planStartValue = initialSaved;
-accounts.main = initialSaved;
-accounts.reserve = 0;
+if (accounts.main === 0 && accounts.reserve === 0) {
+  // Только если accounts пустые, инициализируем из savedInput
+  initialBalance = initialSaved;
+  planStartValue = initialSaved;
+  accounts.main = initialSaved;
+  accounts.reserve = 0;
+} else {
+  // Если accounts уже заполнены (из сохранения), используем их
+  initialBalance = planStartValue || accounts.main;
+  planStartValue = planStartValue || accounts.main;
+}
 
 isInitialized = true;
 renderAccountsUI();
@@ -1202,6 +1255,9 @@ function performFullReset() {
   lastCalc = {};
   plannedMonthly = 0;
   factHistory = [];
+  factRatio = null;
+  goalCompleted = false;
+  selectedScenario = null;
   unplannedExpensesByMonth = {};
   accounts.main = 0;
   accounts.reserve = 0;
