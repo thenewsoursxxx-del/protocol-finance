@@ -171,6 +171,8 @@ let initialBalance = 0;
 let goalMeta = {
 title: "Основная цель"
 };
+/** Месяцы с незапланированными расходами: ключ "yyyy-m" → сумма расхода */
+let unplannedExpensesByMonth = {};
 
 let goalEditBaseValue = null;
 let goalEditHintTimeout = null;
@@ -322,7 +324,8 @@ type === "reserve"
 .map(f => ({
 value: f.value,
 date: new Date(f.date),
-isInitial: false
+isInitial: false,
+isSpent: f.value < 0
 }));
 
 // 2️⃣ добавляем стартовый баланс как самую старую запись
@@ -359,6 +362,20 @@ list.innerHTML += `
 </div>
 <div style="font-size:13px;opacity:.6;margin-top:4px">
 Указано при создании плана
+</div>
+</div>
+`;
+} else if (e.isSpent) {
+list.innerHTML += `
+<div class="card">
+<div style="font-size:15px;font-weight:600;color:#f59e0b">
+−${Math.abs(e.value).toLocaleString()} ₽
+</div>
+<div style="font-size:13px;opacity:.6;margin-top:4px">
+${e.date.toLocaleDateString("ru-RU")}
+</div>
+<div style="font-size:12px;opacity:.7;margin-top:2px">
+Незапланированный расход
 </div>
 </div>
 `;
@@ -643,6 +660,20 @@ ${advice.text}
 <canvas id="chartFact"></canvas>
 </div>
 
+<div class="card" style="margin-top:16px;">
+<div style="font-size:16px;font-weight:600;">Непредвиденные расходы</div>
+<div style="margin-top:8px;font-size:14px;line-height:1.45;opacity:0.8;">
+Жизнь иногда вносит коррективы.
+</div>
+<div style="margin-top:6px;font-size:14px;line-height:1.45;opacity:0.8;">
+Добавьте расход, и система автоматически перераспределит средства, сохраняя устойчивость цели.
+</div>
+<div class="fact-input-row" style="margin-top:14px;">
+<input id="expenseInput" inputmode="numeric" placeholder="Расход" style="flex:1"/>
+<button id="applyExpense" type="button" style="width:52px;height:52px;border-radius:50%">➜</button>
+</div>
+</div>
+
 <div class="fact-input-row">
 <input id="factInput" inputmode="numeric"
 placeholder="Сколько вы отложили"
@@ -748,6 +779,58 @@ factInput.value = "";
 factInput.blur();
 };
 
+const expenseInput = document.getElementById("expenseInput");
+const applyExpenseBtn = document.getElementById("applyExpense");
+if (expenseInput && applyExpenseBtn) {
+expenseInput.addEventListener("input", e => {
+e.target.value = formatNumber(e.target.value);
+});
+applyExpenseBtn.onclick = () => {
+const amount = parseNumber(expenseInput.value || "0");
+if (!amount || !lastCalc.ok || !lastCalc.months) {
+expenseInput.value = "";
+return;
+}
+const monthlySave = lastCalc.monthlySave != null ? lastCalc.monthlySave : 1;
+const toSavePerMonth = chosenPlan === "buffer" ? Math.round(monthlySave * 0.9) : monthlySave;
+let extraMonths = 0;
+
+if (chosenPlan === "buffer") {
+const reserveCover = Math.min(amount, accounts.reserve);
+const amountNotCovered = amount - reserveCover;
+accounts.reserve -= reserveCover;
+if (accounts.reserve < 0) accounts.reserve = 0;
+if (reserveCover > 0) {
+const now = new Date();
+now.setDate(1);
+now.setHours(0, 0, 0, 0);
+factHistory.push({
+value: -reserveCover,
+date: now,
+to: "reserve"
+});
+}
+extraMonths = amountNotCovered <= 0 ? 0 : Math.max(1, Math.ceil(amountNotCovered / toSavePerMonth));
+renderAccountsUI();
+} else {
+extraMonths = Math.max(1, Math.ceil(amount / toSavePerMonth));
+}
+
+lastCalc.months += extraMonths;
+const mainFacts = factHistory.filter(f => f.to === "main");
+const lastFact = mainFacts[mainFacts.length - 1];
+const d = lastFact ? new Date(lastFact.date) : new Date();
+const key = `${d.getFullYear()}-${d.getMonth()}`;
+unplannedExpensesByMonth[key] = amount;
+drawStaticLayer();
+animateFactLine();
+updatePlanHeader();
+expenseInput.value = "";
+expenseInput.blur();
+haptic("light");
+};
+}
+
 }, 6000);
 }
 
@@ -759,6 +842,7 @@ chosenPlan = null;
 isInitialized = false;
 lastCalc = {};
 plannedMonthly = 0;
+unplannedExpensesByMonth = {};
 
 calcLock.style.display = "none";
 confirmReset.style.display = "none";
@@ -982,18 +1066,22 @@ const distance = Math.sqrt(dx * dx + dy * dy);
 
 if (distance <= 25) {
 
+animateDotScale(1.8);
+
+if (lastFactPoint.isUnplannedMonth && lastFactPoint.unplannedAmount != null) {
+showFactTooltip({
+unplannedAmount: lastFactPoint.unplannedAmount,
+onHide: () => animateDotScale(1)
+});
+} else {
 const total = factHistory
 .filter(f => f.to === "main")
 .reduce((s, f) => s + f.value, 0);
-
-animateDotScale(1.8);
-
 showFactTooltip({
 value: total,
-onHide: () => {
-animateDotScale(1);
-}
+onHide: () => animateDotScale(1)
 });
+}
 }
 });
 }
@@ -1080,21 +1168,30 @@ block.innerText = text;
 adviceCard.appendChild(block);
 }
 
-function showFactTooltip({ value, onHide }) {
+function showFactTooltip({ value, onHide, unplannedAmount }) {
 const old = adviceCard.querySelector(".fact-tooltip");
 if (old) old.remove();
 
 const block = document.createElement("div");
-block.className = "fact-tooltip";
+block.className = "fact-tooltip" + (unplannedAmount != null ? " fact-tooltip-unplanned" : "");
 
 const date = new Date().toLocaleDateString("ru-RU");
 
+if (unplannedAmount != null) {
+block.innerHTML = `
+<div class="fact-date">${date}</div>
+<div class="fact-value">
+В этом месяце был незапланированный расход ${unplannedAmount.toLocaleString()} ₽
+</div>
+`;
+} else {
 block.innerHTML = `
 <div class="fact-date">${date}</div>
 <div class="fact-value">
 Отложено: ${value.toLocaleString()} ₽
 </div>
 `;
+}
 
 adviceCard.appendChild(block);
 
@@ -1671,9 +1768,16 @@ H - pad -
 (H - pad * 2) *
 progress;
 
-lastFactPoint = { x, y };
+const lastFact = mainFacts[mainFacts.length - 1];
+const factMonthKey = lastFact
+? `${new Date(lastFact.date).getFullYear()}-${new Date(lastFact.date).getMonth()}`
+: null;
+const unplannedAmount = factMonthKey ? unplannedExpensesByMonth[factMonthKey] : 0;
+const isUnplannedMonth = unplannedAmount > 0;
 
-factCtx.strokeStyle = "#2563eb";
+lastFactPoint = { x, y, isUnplannedMonth, unplannedAmount };
+
+factCtx.strokeStyle = isUnplannedMonth ? "#eab308" : "#2563eb";
 factCtx.lineWidth = 2;
 
 factCtx.beginPath();
@@ -1685,14 +1789,17 @@ if (progress === 1) {
 
 const radius = 5 * dotScale;
 
-// ===== PREMIUM FILL (вертикальный градиент) =====
 const fillGrad = factCtx.createLinearGradient(
 x, y - radius,
 x, y + radius
 );
-
-fillGrad.addColorStop(0, "#60a5fa"); // свет сверху
-fillGrad.addColorStop(1, "#2563eb"); // глубина снизу
+if (isUnplannedMonth) {
+fillGrad.addColorStop(0, "#fde047");
+fillGrad.addColorStop(1, "#eab308");
+} else {
+fillGrad.addColorStop(0, "#60a5fa");
+fillGrad.addColorStop(1, "#2563eb");
+}
 
 factCtx.beginPath();
 factCtx.arc(x, y, radius, 0, Math.PI * 2);
@@ -1704,19 +1811,21 @@ factCtx.lineWidth = 1.2;
 factCtx.strokeStyle = "rgba(255,255,255,0.45)";
 factCtx.stroke();
 
-// ===== Glow ТОЛЬКО если точка увеличена (нажата) =====
 if (dotScale > 1.05) {
 const glowRadius = radius * 2.8;
-
 const glow = factCtx.createRadialGradient(
 x, y, 0,
 x, y, glowRadius
 );
-
+if (isUnplannedMonth) {
+glow.addColorStop(0, "rgba(234,179,8,0.35)");
+glow.addColorStop(0.4, "rgba(234,179,8,0.18)");
+glow.addColorStop(1, "rgba(234,179,8,0)");
+} else {
 glow.addColorStop(0, "rgba(37,99,235,0.35)");
 glow.addColorStop(0.4, "rgba(37,99,235,0.18)");
 glow.addColorStop(1, "rgba(37,99,235,0)");
-
+}
 factCtx.beginPath();
 factCtx.arc(x, y, glowRadius, 0, Math.PI * 2);
 factCtx.fillStyle = glow;
