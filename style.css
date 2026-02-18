@@ -836,6 +836,20 @@ z-index: 5;
     transform 0.28s ease;
 }
 
+/* Блок графика: обводка только вокруг графика и поля «Сколько вы отложили» */
+.graph-block {
+  margin-top: 16px;
+  margin-bottom: 0;
+  border: 1px solid #333;
+  border-radius: 22px;
+  padding: 20px;
+}
+
+.graph-block .chart-card {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
 .chart-card {
   margin-top: 16px;
   margin-bottom: 0;
@@ -846,6 +860,7 @@ z-index: 5;
   overflow: hidden;
 }
 
+/* Блок расхода — отдельно под обводкой графика */
 .below-chart {
   margin-top: 16px;
 }

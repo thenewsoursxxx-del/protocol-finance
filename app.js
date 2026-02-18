@@ -1061,6 +1061,7 @@ font-size:14px;
 ${advice.text}
 </div>
 
+<div class="graph-block">
 <div class="chart-card">
 <div class="chart-wrap" style="width:100%; height:260px; margin:0; position:relative;">
 <canvas id="chartBg"></canvas>
@@ -1068,7 +1069,6 @@ ${advice.text}
 </div>
 <div id="factTooltipContainer" class="fact-tooltip-container"></div>
 </div>
-
 <div class="fact-input-row">
 <input id="factInput" inputmode="numeric"
 placeholder="Сколько вы отложили"
@@ -1077,6 +1077,7 @@ style="flex:1"/>
 style="width:52px;height:52px;border-radius:50%">
 ➜
 </button>
+</div>
 </div>
 
 <div class="below-chart">
