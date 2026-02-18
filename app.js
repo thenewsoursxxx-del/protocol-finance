@@ -986,6 +986,7 @@ style="width:52px;height:52px;border-radius:50%">
 ➜
 </button>
 </div>
+<div id="brainMessageContainer"></div>
 <div id="factTooltipContainer" class="fact-tooltip-container"></div>
 </div>
 `;
@@ -1474,21 +1475,21 @@ showBrainMessage(text);
 }
 
 function showBrainMessage(text) {
-const old = adviceCard.querySelector(".brain-message");
-if (old) old.remove();
+  const container = document.getElementById("brainMessageContainer");
+  if (!container) return;
+  container.innerHTML = "";
 
-const block = document.createElement("div");
-block.className = "brain-message";
+  const block = document.createElement("div");
+  block.className = "brain-message";
+  block.style.marginTop = "12px";
+  block.style.padding = "12px";
+  block.style.borderRadius = "12px";
+  block.style.background = "#0e0e0e";
+  block.style.border = "1px solid #222";
+  block.style.fontSize = "14px";
+  block.innerText = text;
 
-block.style.marginTop = "12px";
-block.style.padding = "12px";
-block.style.borderRadius = "12px";
-block.style.background = "#0e0e0e";
-block.style.border = "1px solid #222";
-block.style.fontSize = "14px";
-block.innerText = text;
-
-adviceCard.appendChild(block);
+  container.appendChild(block);
 }
 
 function showFactTooltip({ value, onHide }) {
