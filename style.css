@@ -239,12 +239,15 @@ transform: translate(-50%, -50%);
 }
 .confirmCard button { margin-top: 12px; }
 
-/* ===== TOP PROFILE AVATAR ===== */
+/* ===== TOP PROFILE AVATAR (зафиксирован справа сверху, не скроллится) ===== */
 .top-profile {
   position: fixed;
   top: 16px;
   right: 16px;
-  z-index: 1000;
+  z-index: 9999;
+  pointer-events: auto;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
 }
 
 #profileBtn {
@@ -858,6 +861,7 @@ z-index: 5;
 
 .fact-tooltip-container {
   min-height: 0;
+  margin-top: 12px;
   overflow: hidden;
 }
 
@@ -1248,10 +1252,12 @@ transition: transform 0.55s cubic-bezier(.22,1,.36,1);
 
 html, body {
   height: 100%;
+  overflow: hidden;
 }
 
 .app {
   min-height: 100vh;
+  height: 100%;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
