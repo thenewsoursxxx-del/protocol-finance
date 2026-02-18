@@ -1049,11 +1049,11 @@ ${advice.text}
 <canvas id="chartBg"></canvas>
 <canvas id="chartFact"></canvas>
 </div>
+<div id="factTooltipContainer" class="fact-tooltip-container"></div>
 </div>
 
-<div id="factTooltipContainer" class="fact-tooltip-container"></div>
-
-<div id="expenseCardSection" class="expense-card-section" style="margin-top: 16px;">
+<div class="below-chart">
+<div id="expenseCardSection" class="expense-card-section">
 <div class="card">
 <div style="font-size:16px;font-weight:600;">Непредвиденные расходы</div>
 <div style="margin-top:8px;font-size:14px;line-height:1.45;opacity:0.8;">
@@ -1077,6 +1077,7 @@ style="flex:1"/>
 style="width:52px;height:52px;border-radius:50%">
 ➜
 </button>
+</div>
 </div>
 `;
 
@@ -1242,7 +1243,7 @@ adviceCard.innerText = "Готово.";
 setTimeout(() => {
 loader.classList.add("hidden");
 renderProtocolAdviceGraph();
-
+saveFullState();
 }, 6000);
 }
 
@@ -1295,11 +1296,7 @@ function performFullReset() {
   selectedMode = "calm";
 
   openScreen("calc", buttons[0]);
-  if (bottomNav) {
-    bottomNav.style.transform = "";
-    bottomNav.style.opacity = "1";
-    bottomNav.style.pointerEvents = "";
-  }
+  hideBottomNav();
 }
 
 confirmYes.onclick = () => {
@@ -1518,12 +1515,6 @@ if (distance <= 25) {
 
 animateDotScale(1.8);
 
-if (lastFactPoint.isUnplannedMonth && lastFactPoint.unplannedAmount != null) {
-showFactTooltip({
-unplannedAmount: lastFactPoint.unplannedAmount,
-onHide: () => animateDotScale(1)
-});
-} else {
 const total = factHistory
 .filter(f => f.to === "main")
 .reduce((s, f) => s + f.value, 0);
@@ -2245,15 +2236,10 @@ H - pad -
 progress;
 
 const lastFact = mainFacts[mainFacts.length - 1];
-const factMonthKey = lastFact
-? `${new Date(lastFact.date).getFullYear()}-${new Date(lastFact.date).getMonth()}`
-: null;
-const unplannedAmount = factMonthKey ? unplannedExpensesByMonth[factMonthKey] : 0;
-const isUnplannedMonth = unplannedAmount > 0;
 
-lastFactPoint = { x, y, isUnplannedMonth, unplannedAmount };
+lastFactPoint = { x, y };
 
-factCtx.strokeStyle = isUnplannedMonth ? "#eab308" : "#2563eb";
+factCtx.strokeStyle = "#2563eb";
 factCtx.lineWidth = 2;
 
 factCtx.beginPath();
@@ -2269,13 +2255,8 @@ const fillGrad = factCtx.createLinearGradient(
 x, y - radius,
 x, y + radius
 );
-if (isUnplannedMonth) {
-fillGrad.addColorStop(0, "#fde047");
-fillGrad.addColorStop(1, "#eab308");
-} else {
 fillGrad.addColorStop(0, "#60a5fa");
 fillGrad.addColorStop(1, "#2563eb");
-}
 
 factCtx.beginPath();
 factCtx.arc(x, y, radius, 0, Math.PI * 2);
@@ -2293,15 +2274,9 @@ const glow = factCtx.createRadialGradient(
 x, y, 0,
 x, y, glowRadius
 );
-if (isUnplannedMonth) {
-glow.addColorStop(0, "rgba(234,179,8,0.35)");
-glow.addColorStop(0.4, "rgba(234,179,8,0.18)");
-glow.addColorStop(1, "rgba(234,179,8,0)");
-} else {
 glow.addColorStop(0, "rgba(37,99,235,0.35)");
 glow.addColorStop(0.4, "rgba(37,99,235,0.18)");
 glow.addColorStop(1, "rgba(37,99,235,0)");
-}
 factCtx.beginPath();
 factCtx.arc(x, y, glowRadius, 0, Math.PI * 2);
 factCtx.fillStyle = glow;

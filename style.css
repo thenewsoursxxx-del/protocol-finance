@@ -838,7 +838,7 @@ z-index: 5;
 
 .chart-card {
   margin-top: 16px;
-  margin-bottom: 16px;
+  margin-bottom: 0;
 }
 
 .fact-tooltip-container {
@@ -846,8 +846,13 @@ z-index: 5;
   overflow: hidden;
 }
 
-.expense-card-section {
+.below-chart {
   margin-top: 16px;
+}
+
+.expense-card-section {
+  margin-top: 0;
+  margin-bottom: 16px;
   transition: margin-top 0.35s ease;
 }
 
