@@ -413,6 +413,13 @@ function loadFullState() {
             buttons[1].classList.add("active");
             moveIndicator(buttons[1]);
           }
+          // Повторно включить клики по навбару после отрисовки (исправляет баг «обновить страницу»)
+          requestAnimationFrame(() => {
+            bottomNav.style.pointerEvents = "auto";
+            buttons.forEach((b, i) => {
+              b.style.pointerEvents = i === 0 && !isInitialized ? "none" : "auto";
+            });
+          });
         };
 
         if (typeof requestAnimationFrame !== "undefined") {
@@ -640,9 +647,14 @@ bottomNav.style.pointerEvents = "none";
 }
 
 function showBottomNav() {
-bottomNav.style.transform = "translateY(0)";
-bottomNav.style.opacity = "1";
-bottomNav.style.pointerEvents = "auto";
+  bottomNav.style.transform = "translateY(0)";
+  bottomNav.style.opacity = "1";
+  bottomNav.style.pointerEvents = "auto";
+  bottomNav.style.visibility = "visible";
+  // После «обновить страницу» навбар может не реагировать — принудительно включаем клики по кнопкам
+  buttons.forEach((b, i) => {
+    b.style.pointerEvents = i === 0 && !isInitialized ? "none" : "auto";
+  });
 }
 
 /* ===== TAB LOCK ===== */
