@@ -1523,7 +1523,6 @@ value: total,
 onHide: () => animateDotScale(1)
 });
 }
-}
 });
 }
 
