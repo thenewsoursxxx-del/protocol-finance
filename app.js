@@ -140,9 +140,37 @@ indicator.style.transform = `translateX(${x}px)`;
 
 /* ===== NAV NEVER MOVES ===== */
 bottomNav.style.position = "fixed";
-bottomNav.style.bottom = "26px";
+const NAV_BASE_BOTTOM_PX = 26;
+bottomNav.style.bottom = `${NAV_BASE_BOTTOM_PX}px`;
 bottomNav.style.left = "20px";
 bottomNav.style.right = "20px";
+
+// Не даём bottom-nav "подпрыгивать" над клавиатурой (mobile webview)
+let layoutViewportHeight = window.innerHeight;
+function updateBottomNavForKeyboard() {
+  if (!bottomNav) return;
+  const vv = window.visualViewport;
+  if (!vv) return;
+
+  const keyboardOffset = Math.max(
+    0,
+    layoutViewportHeight - vv.height - (vv.offsetTop || 0)
+  );
+
+  // Компенсируем уменьшение visual viewport отрицательным bottom,
+  // чтобы панель оставалась на месте и могла быть перекрыта клавиатурой.
+  bottomNav.style.bottom = `${NAV_BASE_BOTTOM_PX - keyboardOffset}px`;
+}
+
+if (window.visualViewport) {
+  window.visualViewport.addEventListener("resize", updateBottomNavForKeyboard);
+  window.visualViewport.addEventListener("scroll", updateBottomNavForKeyboard);
+  window.addEventListener("orientationchange", () => {
+    layoutViewportHeight = window.innerHeight;
+    setTimeout(updateBottomNavForKeyboard, 50);
+  });
+  updateBottomNavForKeyboard();
+}
 
 const PROTOCOL_COLORS = [
 "#3a7bfd", // основной синий
@@ -323,10 +351,76 @@ function loadFullState() {
       document.querySelectorAll("#screen-calc label, #screen-calc .input-wrap, .mode-buttons, #calculate").forEach(el => el.style.display = "none");
       renderAccountsUI();
       renderGoals();
-      if (lastCalc.ok && document.getElementById("chartBg")) {
-        drawStaticLayer();
-        animateFactLine();
-        updatePlanHeader();
+
+      // Восстановление экрана: если сценарий выбран — возвращаем на график
+      if (chosenPlan && lastCalc?.ok) {
+        plannedMonthly = lastCalc.monthlySave;
+        if (chosenPlan === "buffer") plannedMonthly = Math.round(plannedMonthly * 0.9);
+
+        openScreen("advice", buttons[1]);
+        if (loader) loader.classList.add("hidden");
+        renderProtocolAdviceGraph();
+      } else if (lastCalc?.ok) {
+        // если план посчитан, но сценарий не выбран — возвращаем к выбору сценария
+        const advice = ProtocolCore.buildAdvice(lastCalc);
+        const baseMonthly = lastCalc.monthlySave;
+        const bufferRate = 0.1;
+        const scenarios = [
+          {
+            id: "direct",
+            title: "Всё в цель",
+            toGoal: baseMonthly,
+            toBuffer: 0,
+            months: lastCalc.months,
+            risk: "Выше"
+          },
+          {
+            id: "buffer",
+            title: "С резервом",
+            toGoal: Math.round(baseMonthly * (1 - bufferRate)),
+            toBuffer: Math.round(baseMonthly * bufferRate),
+            months: Math.ceil(
+              lastCalc.effectiveGoal /
+              Math.round(baseMonthly * (1 - bufferRate))
+            ),
+            risk: "Ниже"
+          }
+        ];
+        const scenariosHTML = scenarios.map(s => `
+<div class="card scenario-card" data-id="${s.id}">
+<div style="color:#fff;font-weight:600;font-size:19px;margin-bottom:12px">
+${s.title}
+</div>
+
+В цель: ${s.toGoal.toLocaleString()} ₽ / мес<br>
+${s.toBuffer ? `В резерв: ${s.toBuffer.toLocaleString()} ₽<br>` : ""}
+Срок: ~${s.months} мес<br>
+
+<span style="opacity:.6">Риск: ${s.risk}</span>
+
+${
+s.id === "buffer"
+? `
+<div class="reserve-info reserve-ui">
+<b>Резерв</b><br>
+Это ваша подушка безопасности.
+Эти средства можно откладывать на отдельный накопительный
+или инвестиционный счёт.<br><br>
+Резерв защищает от непредвиденных расходов
+и снижает риск срыва цели.
+</div>
+`
+: ""
+}
+</div>
+`).join("");
+        openScreen("advice", null);
+        hideBottomNav();
+        if (protocolBack) protocolBack.style.display = "block";
+        renderProtocolResult({ scenariosHTML, advice });
+      } else {
+        openScreen("calc", buttons[0]);
+        hideBottomNav();
       }
     } else {
       lockTabs(true);
@@ -504,6 +598,9 @@ moveIndicator(buttons[0]);
 /* ===== OPEN SCREEN ===== */
 function openScreen(name, btn) {
   window.scrollTo(0, 0);
+
+  // закрываем модалки при любой навигации
+  if (confirmReset) confirmReset.style.display = "none";
 
 document.querySelectorAll(".screen")
   .forEach(s => s.classList.remove("active"));
@@ -870,52 +967,10 @@ d.setMonth(d.getMonth() + n);
 return d;
 }
 
-/* ===== STAGED FLOW ===== */
-function protocolFlow(mode) {
-chosenPlan = mode;
-if (protocolBack) protocolBack.style.display = "none";
-// 🔥 СИНХРОНИЗАЦИЯ С УЖЕ НАКОПЛЕННЫМ
-const initialSaved = parseNumber(savedInput?.value || "0");
-initialBalance = initialSaved;
-planStartValue = initialSaved;
-accounts.main = initialSaved;
-accounts.reserve = 0;
+function renderProtocolAdviceGraph() {
+  const advice = ProtocolCore.buildAdvice(lastCalc);
 
-isInitialized = true;
-renderAccountsUI();
-lockTabs(false);
-
-openScreen("advice", null);
-const backBtn = document.getElementById("protocolBack");
-if (backBtn) backBtn.style.display = "none";
-hideBottomNav();
-adviceCard.innerHTML = "";
-loader.classList.remove("hidden");
-
-plannedMonthly = lastCalc.monthlySave;
-
-if (mode === "buffer") plannedMonthly = Math.round(plannedMonthly * 0.9);
-
-adviceCard.innerText = "Protocol анализирует данные…";
-
-setTimeout(() => {
-adviceCard.innerText =
-mode === "buffer"
-? "Часть средств будет направляться в резерв."
-: "Все средства идут напрямую в цель.";
-}, 2000);
-
-setTimeout(() => {
-adviceCard.innerText = "Готово.";
-}, 4000);
-
-setTimeout(() => {
-loader.classList.add("hidden");
-
-const explanation = ProtocolCore.explain(lastCalc);
-const advice = ProtocolCore.buildAdvice(lastCalc);
-
-adviceCard.innerHTML = `
+  adviceCard.innerHTML = `
 <div id="planHeader">
 <div
 id="planMonthly"
@@ -980,126 +1035,160 @@ style="width:52px;height:52px;border-radius:50%">
 </div>
 `;
 
-initChart();
-animateFactLine();
+  initChart();
+  animateFactLine();
+  if (protocolBack) protocolBack.style.display = "none";
+  showBottomNav();
+  buttons.forEach(b => b.classList.remove("active"));
+  buttons[1].classList.add("active");
+  moveIndicator(buttons[1]);
+  updatePlanHeader();
+
+  const factInput = document.getElementById("factInput");
+  const applyBtn = document.getElementById("applyFact");
+
+  if (factInput) {
+    factInput.addEventListener("input", e => {
+      e.target.value = formatNumber(e.target.value);
+      factInput.classList.remove("error", "shake");
+    });
+
+    factInput.addEventListener("focus", () => {
+      factInput.classList.remove("error", "shake");
+    });
+  }
+
+  if (applyBtn && factInput) {
+    applyBtn.onclick = () => {
+      const fact = parseNumber(factInput.value || "0");
+      factInput.classList.remove("error", "shake");
+
+      if (!fact) {
+        factInput.classList.add("error");
+        void factInput.offsetWidth;
+        factInput.classList.add("shake");
+        haptic("error");
+        return;
+      }
+
+      let toMain = fact;
+      let toReserve = 0;
+
+      if (chosenPlan === "buffer") {
+        toReserve = Math.round(fact * 0.1);
+        toMain = fact - toReserve;
+        accounts.reserve += toReserve;
+      }
+
+      accounts.main += toMain;
+
+      const now = new Date();
+      now.setDate(1);
+      now.setHours(0, 0, 0, 0);
+
+      factHistory.push({
+        value: toMain,
+        date: now,
+        to: "main"
+      });
+
+      if (toReserve > 0) {
+        factHistory.push({
+          value: toReserve,
+          date: now,
+          to: "reserve"
+        });
+      }
+
+      factRatio = fact / plannedMonthly;
+
+      drawStaticLayer();
+      animateFactLine();
+      runBrain();
+      renderAccountsUI();
+      renderGoals();
+      const goalTotal = parseNumber(goalInput.value || "0");
+
+      if (!goalCompleted && goalTotal > 0 && accounts.main >= goalTotal) {
+        goalCompleted = true;
+        setTimeout(fireCelebration, 120);
+      }
+
+      factInput.value = "";
+      factInput.blur();
+      recalcPlan();
+    };
+  }
+
+  const expenseInput = document.getElementById("expenseInput");
+  const applyExpenseBtn = document.getElementById("applyExpense");
+  if (expenseInput && applyExpenseBtn) {
+    expenseInput.addEventListener("input", e => {
+      e.target.value = formatNumber(e.target.value);
+    });
+    applyExpenseBtn.onclick = () => {
+      const amount = parseNumber(expenseInput.value || "0");
+      if (!amount) {
+        expenseInput.value = "";
+        return;
+      }
+
+      const result = applyUnexpectedExpense(amount);
+      if (!result.success) {
+        expenseInput.value = "";
+        return;
+      }
+
+      expenseInput.value = "";
+      expenseInput.blur();
+      haptic("light");
+      recalcPlan();
+    };
+  }
+}
+
+/* ===== STAGED FLOW ===== */
+function protocolFlow(mode) {
+chosenPlan = mode;
 if (protocolBack) protocolBack.style.display = "none";
-showBottomNav();
-buttons.forEach(b => b.classList.remove("active"));
-buttons[1].classList.add("active");
-moveIndicator(buttons[1]);
-updatePlanHeader();
+// 🔥 СИНХРОНИЗАЦИЯ С УЖЕ НАКОПЛЕННЫМ
+const initialSaved = parseNumber(savedInput?.value || "0");
+initialBalance = initialSaved;
+planStartValue = initialSaved;
+accounts.main = initialSaved;
+accounts.reserve = 0;
 
-const factInput = document.getElementById("factInput");
-const applyBtn = document.getElementById("applyFact");
-
-factInput.addEventListener("input", e => {
-e.target.value = formatNumber(e.target.value);
-
-// 🔥 убираем ошибку как только начали ввод
-factInput.classList.remove("error", "shake");
-});
-
-factInput.addEventListener("focus", () => {
-factInput.classList.remove("error", "shake");
-});
-
-applyBtn.onclick = () => {
-
-const fact = parseNumber(factInput.value || "0");
-
-// 🔥 ВСЕГДА сначала очищаем ошибку
-factInput.classList.remove("error", "shake");
-
-if (!fact) {
-
-factInput.classList.add("error");
-
-void factInput.offsetWidth;
-factInput.classList.add("shake");
-
-haptic("error");
-return;
-}
-
-// дальше твоя логика без изменений
-
-let toMain = fact;
-let toReserve = 0;
-
-if (chosenPlan === "buffer") {
-toReserve = Math.round(fact * 0.1);
-toMain = fact - toReserve;
-accounts.reserve += toReserve;
-}
-
-accounts.main += toMain;
-
-const now = new Date();
-now.setDate(1);
-now.setHours(0, 0, 0, 0);
-
-factHistory.push({
-value: toMain,
-date: now,
-to: "main"
-});
-
-if (toReserve > 0) {
-factHistory.push({
-value: toReserve,
-date: now,
-to: "reserve"
-});
-}
-
-factRatio = fact / plannedMonthly;
-
-drawStaticLayer(); // ← ДОБАВИТЬ ЭТУ СТРОКУ
-animateFactLine();
-runBrain();
+isInitialized = true;
 renderAccountsUI();
-renderGoals();
-const goalTotal = parseNumber(goalInput.value || "0");
+lockTabs(false);
 
-if (
-!goalCompleted &&
-goalTotal > 0 &&
-accounts.main >= goalTotal
-) {
-goalCompleted = true;
-setTimeout(fireCelebration, 120);
-}
+openScreen("advice", null);
+const backBtn = document.getElementById("protocolBack");
+if (backBtn) backBtn.style.display = "none";
+hideBottomNav();
+adviceCard.innerHTML = "";
+loader.classList.remove("hidden");
 
-factInput.value = "";
-factInput.blur();
-};
+plannedMonthly = lastCalc.monthlySave;
 
-const expenseInput = document.getElementById("expenseInput");
-const applyExpenseBtn = document.getElementById("applyExpense");
-if (expenseInput && applyExpenseBtn) {
-expenseInput.addEventListener("input", e => {
-e.target.value = formatNumber(e.target.value);
-});
-applyExpenseBtn.onclick = () => {
-const amount = parseNumber(expenseInput.value || "0");
-if (!amount) {
-expenseInput.value = "";
-return;
-}
+if (mode === "buffer") plannedMonthly = Math.round(plannedMonthly * 0.9);
 
-// Используем централизованную функцию applyUnexpectedExpense()
-const result = applyUnexpectedExpense(amount);
+adviceCard.innerText = "Protocol анализирует данные…";
 
-if (!result.success) {
-expenseInput.value = "";
-return;
-}
+setTimeout(() => {
+adviceCard.innerText =
+mode === "buffer"
+? "Часть средств будет направляться в резерв."
+: "Все средства идут напрямую в цель.";
+}, 2000);
 
-expenseInput.value = "";
-expenseInput.blur();
-haptic("light");
-};
-}
+setTimeout(() => {
+adviceCard.innerText = "Готово.";
+}, 4000);
+
+setTimeout(() => {
+loader.classList.add("hidden");
+renderProtocolAdviceGraph();
 
 }, 6000);
 }
@@ -1168,6 +1257,7 @@ if (profileBtn) {
 profileBtn.onclick = () => {
 haptic("light");
 document.activeElement?.blur();
+if (confirmReset) confirmReset.style.display = "none";
 document.body.classList.remove("advanced-active");
 document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
 document.getElementById("screen-profile").classList.add("active");
