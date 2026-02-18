@@ -200,8 +200,6 @@ let initialBalance = 0;
 let goalMeta = {
 title: "Основная цель"
 };
-/** Месяцы с незапланированными расходами: ключ "yyyy-m" → сумма расхода */
-let unplannedExpensesByMonth = {};
 
 /* ===== CENTRALIZED STATE MANAGEMENT ===== */
 
@@ -286,7 +284,6 @@ function saveFullState() {
       goalCompleted,
       selectedScenario,
       isInitialized: !!isInitialized,
-      unplannedExpensesByMonth: { ...unplannedExpensesByMonth },
       goalMeta: { ...goalMeta },
       state: { ...state }
     };
@@ -363,8 +360,6 @@ function loadFullState() {
     if (typeof p.goalCompleted === "boolean") goalCompleted = p.goalCompleted;
     if (p.selectedScenario != null) selectedScenario = p.selectedScenario;
     if (typeof p.isInitialized === "boolean") isInitialized = p.isInitialized;
-    if (p.unplannedExpensesByMonth && typeof p.unplannedExpensesByMonth === "object")
-      unplannedExpensesByMonth = { ...p.unplannedExpensesByMonth };
     if (p.goalMeta && typeof p.goalMeta === "object") Object.assign(goalMeta, p.goalMeta);
     if (p.state && typeof p.state === "object") Object.assign(state, p.state);
 
@@ -526,106 +521,6 @@ function loadStateFromStorage() {
 
 // Загружаем сохранённые данные при запуске
 loadFullState();
-
-/**
- * Атомарная функция применения незапланированного расхода
- * Использует transactional подход: работает через копию state,
- * проверяет корректность, только после успешной проверки применяет изменения
- * 
- * @param {number} amount - Сумма незапланированного расхода
- * @returns {{success: boolean, extraMonths?: number, reserveSpent?: number}} - Результат операции
- */
-function applyUnexpectedExpense(amount) {
-  // 1. Валидация
-  if (typeof amount !== "number" || isNaN(amount) || amount <= 0) {
-    console.warn("applyUnexpectedExpense: invalid amount", amount);
-    return { success: false };
-  }
-
-  // 2. Проверяем что план инициализирован
-  if (!lastCalc.ok || !lastCalc.months || !lastCalc.monthlySave) {
-    console.warn("applyUnexpectedExpense: plan not initialized");
-    return { success: false };
-  }
-
-  // 3. Создаём копию текущего состояния для проверки
-  const newAccounts = {
-    main: accounts.main,
-    reserve: accounts.reserve
-  };
-
-  // 4. Рассчитываем сколько нужно откладывать в месяц (с учётом резерва)
-  const monthlySave = lastCalc.monthlySave;
-  const toSavePerMonth = state.hasReserve ? Math.round(monthlySave * 0.9) : monthlySave;
-
-  // 5. Логика списания и расчёт дополнительных месяцев
-  let reserveSpent = 0;
-  let amountNotCovered = amount;
-  let extraMonths = 0;
-
-  if (state.hasReserve) {
-    // Есть резерв: сначала списываем из резерва
-    const reserveCover = Math.min(amount, newAccounts.reserve);
-    reserveSpent = reserveCover;
-    amountNotCovered = amount - reserveCover;
-    
-    if (reserveCover > 0) {
-      newAccounts.reserve -= reserveCover;
-    }
-    
-    // Остаток списываем с цели
-    if (amountNotCovered > 0) {
-      newAccounts.main = Math.max(0, newAccounts.main - amountNotCovered);
-    }
-    
-    // Рассчитываем дополнительные месяцы только для непокрытой части
-    extraMonths = amountNotCovered <= 0 ? 0 : Math.max(1, Math.ceil(amountNotCovered / toSavePerMonth));
-  } else {
-    // Резерва нет: списываем напрямую с цели
-    newAccounts.main = Math.max(0, newAccounts.main - amount);
-    // Рассчитываем дополнительные месяцы для всей суммы
-    extraMonths = Math.max(1, Math.ceil(amount / toSavePerMonth));
-  }
-
-  // 6. Проверка: балансы не могут уйти в минус
-  if (newAccounts.main < 0 || newAccounts.reserve < 0) {
-    console.warn("applyUnexpectedExpense: negative balance detected");
-    return { success: false };
-  }
-
-  // 7. Применяем изменения к реальному state
-  accounts.main = newAccounts.main;
-  accounts.reserve = newAccounts.reserve;
-
-  // 8. Если было списание из резерва, добавляем запись в историю
-  if (reserveSpent > 0) {
-    const now = new Date();
-    now.setDate(1);
-    now.setHours(0, 0, 0, 0);
-    factHistory.push({
-      value: -reserveSpent,
-      date: now,
-      to: "reserve"
-    });
-  }
-
-  // 9. Добавляем месяцы к плану
-  if (extraMonths > 0 && lastCalc.months) {
-    lastCalc.months += extraMonths;
-  }
-
-  // 10. Записываем незапланированный расход в месяц текущего факта
-  const mainFacts = factHistory.filter(f => f.to === "main");
-  const lastFact = mainFacts[mainFacts.length - 1];
-  const d = lastFact ? new Date(lastFact.date) : new Date();
-  const key = `${d.getFullYear()}-${d.getMonth()}`;
-  unplannedExpensesByMonth[key] = amount;
-
-  // 11. Пересчитываем план (обновит UI и сохранит state)
-  recalcPlan();
-
-  return { success: true, extraMonths, reserveSpent };
-}
 
 let goalEditBaseValue = null;
 let goalEditHintTimeout = null;
@@ -1093,24 +988,6 @@ style="width:52px;height:52px;border-radius:50%">
 </button>
 </div>
 </div>
-
-<div class="below-chart">
-<div id="expenseCardSection" class="expense-card-section">
-<div class="card">
-<div style="font-size:16px;font-weight:600;">Непредвиденные расходы</div>
-<div style="margin-top:8px;font-size:14px;line-height:1.45;opacity:0.8;">
-Жизнь иногда вносит коррективы.
-</div>
-<div style="margin-top:6px;font-size:14px;line-height:1.45;opacity:0.8;">
-Добавьте расход, и система автоматически перераспределит средства, сохраняя устойчивость цели.
-</div>
-<div class="fact-input-row" style="margin-top:14px;">
-<input id="expenseInput" inputmode="numeric" placeholder="Расход" style="flex:1"/>
-<button id="applyExpense" type="button" style="width:52px;height:52px;border-radius:50%">➜</button>
-</div>
-</div>
-</div>
-</div>
 `;
 
   initChart();
@@ -1198,31 +1075,6 @@ style="width:52px;height:52px;border-radius:50%">
     };
   }
 
-  const expenseInput = document.getElementById("expenseInput");
-  const applyExpenseBtn = document.getElementById("applyExpense");
-  if (expenseInput && applyExpenseBtn) {
-    expenseInput.addEventListener("input", e => {
-      e.target.value = formatNumber(e.target.value);
-    });
-    applyExpenseBtn.onclick = () => {
-      const amount = parseNumber(expenseInput.value || "0");
-      if (!amount) {
-        expenseInput.value = "";
-        return;
-      }
-
-      const result = applyUnexpectedExpense(amount);
-      if (!result.success) {
-        expenseInput.value = "";
-        return;
-      }
-
-      expenseInput.value = "";
-      expenseInput.blur();
-      haptic("light");
-      recalcPlan();
-    };
-  }
 }
 
 /* ===== STAGED FLOW ===== */
@@ -1291,7 +1143,6 @@ function performFullReset() {
   factRatio = null;
   goalCompleted = false;
   selectedScenario = null;
-  unplannedExpensesByMonth = {};
   accounts.main = 0;
   accounts.reserve = 0;
   planStartValue = 0;
@@ -1640,59 +1491,40 @@ block.innerText = text;
 adviceCard.appendChild(block);
 }
 
-function showFactTooltip({ value, onHide, unplannedAmount }) {
-const container = document.getElementById("factTooltipContainer");
-const expenseSection = document.getElementById("expenseCardSection");
-if (container) {
-const old = container.querySelector(".fact-tooltip");
-if (old) old.remove();
-container.innerHTML = "";
-}
+function showFactTooltip({ value, onHide }) {
+  const container = document.getElementById("factTooltipContainer");
+  if (container) {
+    const old = container.querySelector(".fact-tooltip");
+    if (old) old.remove();
+    container.innerHTML = "";
+  }
 
-const block = document.createElement("div");
-block.className = "fact-tooltip" + (unplannedAmount != null ? " fact-tooltip-unplanned" : "");
+  const block = document.createElement("div");
+  block.className = "fact-tooltip";
 
-const date = new Date().toLocaleDateString("ru-RU");
-
-if (unplannedAmount != null) {
-block.innerHTML = `
-<div class="fact-date">${date}</div>
-<div class="fact-value">
-В этом месяце был незапланированный расход ${unplannedAmount.toLocaleString()} ₽
-</div>
-`;
-} else {
-block.innerHTML = `
+  const date = new Date().toLocaleDateString("ru-RU");
+  block.innerHTML = `
 <div class="fact-date">${date}</div>
 <div class="fact-value">
 Отложено: ${value.toLocaleString()} ₽
 </div>
 `;
-}
 
-if (container) {
-container.appendChild(block);
-if (expenseSection) {
-const h = block.offsetHeight;
-expenseSection.style.setProperty("--tooltip-height", (h + 12) + "px");
-expenseSection.classList.add("tooltip-visible");
-}
-} else {
-adviceCard.appendChild(block);
-}
+  if (container) {
+    container.appendChild(block);
+  } else {
+    adviceCard.appendChild(block);
+  }
 
-setTimeout(() => {
-block.classList.add("hide");
-
-if (onHide) onHide();
-
-setTimeout(() => {
-if (expenseSection) expenseSection.classList.remove("tooltip-visible");
-block.remove();
-if (container) container.innerHTML = "";
-activeFactDot = null;
-}, 280);
-}, 4000);
+  setTimeout(() => {
+    block.classList.add("hide");
+    if (onHide) onHide();
+    setTimeout(() => {
+      block.remove();
+      if (container) container.innerHTML = "";
+      activeFactDot = null;
+    }, 280);
+  }, 4000);
 }
 
 /**

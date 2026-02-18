@@ -861,43 +861,6 @@ z-index: 5;
   overflow: hidden;
 }
 
-/* Блок «Непредвиденные расходы» — отдельный блок ниже графика */
-.below-chart {
-  margin-top: 24px;
-  padding-top: 24px;
-  border-top: 1px solid #2a2a2a;
-}
-
-.expense-card-section {
-  margin-top: 0;
-  margin-bottom: 16px;
-  transition: margin-top 0.35s ease;
-}
-
-.expense-card-section .card {
-  border: 1px solid #333;
-  border-radius: 22px;
-  padding: 20px;
-  background: #0a0a0a;
-}
-
-.expense-card-section.tooltip-visible {
-  margin-top: var(--tooltip-height, 90px);
-}
-
-/* Жёлтая подсказка для месяца с незапланированным расходом */
-.fact-tooltip-unplanned {
-  background: linear-gradient(
-    180deg,
-    rgba(234, 179, 8, 0.26),
-    rgba(234, 179, 8, 0.10)
-  ) !important;
-  border-color: rgba(234, 179, 8, 0.65) !important;
-  box-shadow:
-    0 0 0 1px rgba(234, 179, 8, 0.35),
-    0 18px 45px rgba(234, 179, 8, 0.45) !important;
-}
-
 .protocol-verdict {
   animation: verdict-pop 0.35s ease;
 }
