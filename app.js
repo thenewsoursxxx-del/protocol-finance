@@ -407,17 +407,19 @@ function loadFullState() {
 
         const restoreGraph = () => {
           renderProtocolAdviceGraph();
+          lockTabs(false);
           showBottomNav();
           if (buttons[1]) {
             buttons.forEach(b => b.classList.remove("active"));
             buttons[1].classList.add("active");
             moveIndicator(buttons[1]);
           }
-          // Повторно включить клики по навбару после отрисовки (исправляет баг «обновить страницу»)
           requestAnimationFrame(() => {
+            lockTabs(false);
             bottomNav.style.pointerEvents = "auto";
             buttons.forEach((b, i) => {
               b.style.pointerEvents = i === 0 && !isInitialized ? "none" : "auto";
+              b.style.opacity = i === 0 && !isInitialized ? "0.35" : "1";
             });
           });
         };
