@@ -174,6 +174,189 @@ title: "Основная цель"
 /** Месяцы с незапланированными расходами: ключ "yyyy-m" → сумма расхода */
 let unplannedExpensesByMonth = {};
 
+/* ===== CENTRALIZED STATE MANAGEMENT ===== */
+
+/**
+ * Единый объект состояния приложения
+ * Все изменения состояния должны проходить через recalcPlan()
+ */
+const state = {
+  goalTotal: 0,
+  goalSaved: 0,
+  reserveAmount: 0,
+  monthlyContribution: 0,
+  monthsLeft: 0,
+  mode: null, // "buffer" | null
+  hasReserve: false
+};
+
+/**
+ * Централизованная функция перерасчёта плана
+ * Обновляет все UI элементы на основе текущего state
+ * 
+ * ⚠️ ВАЖНО: Любое изменение данных должно вызывать ТОЛЬКО recalcPlan(),
+ * а не обновлять UI вручную в разных местах.
+ */
+function recalcPlan() {
+  // 1. Синхронизируем state с текущими данными
+  state.goalTotal = parseNumber(document.getElementById("goal")?.value || "0");
+  state.goalSaved = accounts.main;
+  state.reserveAmount = accounts.reserve;
+  state.monthlyContribution = plannedMonthly;
+  state.monthsLeft = lastCalc.months || 0;
+  state.mode = chosenPlan;
+  state.hasReserve = chosenPlan === "buffer";
+
+  // 2. Обновляем UI через существующие функции (для совместимости)
+  renderGoals();
+  renderAccountsUI();
+
+  // 3. Обновляем summaryMonths если элемент существует
+  const summaryMonthsEl = document.getElementById("summaryMonths");
+  if (summaryMonthsEl && lastCalc.months) {
+    summaryMonthsEl.innerText = state.monthsLeft;
+  }
+
+  // 4. Обновляем график и план
+  if (lastCalc.ok) {
+    drawStaticLayer();
+    animateFactLine();
+    updatePlanHeader();
+  }
+
+  // 5. Сохраняем state в localStorage
+  try {
+    localStorage.setItem("protocol_state", JSON.stringify(state));
+  } catch (e) {
+    console.warn("Failed to save state to localStorage:", e);
+  }
+}
+
+/**
+ * Загружает state из localStorage при инициализации
+ */
+function loadStateFromStorage() {
+  try {
+    const saved = localStorage.getItem("protocol_state");
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      // Восстанавливаем только безопасные значения
+      if (parsed.goalTotal) state.goalTotal = parsed.goalTotal;
+      if (parsed.goalSaved) state.goalSaved = parsed.goalSaved;
+      if (parsed.reserveAmount) state.reserveAmount = parsed.reserveAmount;
+      if (parsed.monthlyContribution) state.monthlyContribution = parsed.monthlyContribution;
+      if (parsed.monthsLeft) state.monthsLeft = parsed.monthsLeft;
+      if (parsed.mode) state.mode = parsed.mode;
+      if (typeof parsed.hasReserve === "boolean") state.hasReserve = parsed.hasReserve;
+    }
+  } catch (e) {
+    console.warn("Failed to load state from localStorage:", e);
+  }
+}
+
+// Загружаем сохранённый state при инициализации
+loadStateFromStorage();
+
+/**
+ * Атомарная функция применения незапланированного расхода
+ * Использует transactional подход: работает через копию state,
+ * проверяет корректность, только после успешной проверки применяет изменения
+ * 
+ * @param {number} amount - Сумма незапланированного расхода
+ * @returns {{success: boolean, extraMonths?: number, reserveSpent?: number}} - Результат операции
+ */
+function applyUnexpectedExpense(amount) {
+  // 1. Валидация
+  if (typeof amount !== "number" || isNaN(amount) || amount <= 0) {
+    console.warn("applyUnexpectedExpense: invalid amount", amount);
+    return { success: false };
+  }
+
+  // 2. Проверяем что план инициализирован
+  if (!lastCalc.ok || !lastCalc.months || !lastCalc.monthlySave) {
+    console.warn("applyUnexpectedExpense: plan not initialized");
+    return { success: false };
+  }
+
+  // 3. Создаём копию текущего состояния для проверки
+  const newAccounts = {
+    main: accounts.main,
+    reserve: accounts.reserve
+  };
+
+  // 4. Рассчитываем сколько нужно откладывать в месяц (с учётом резерва)
+  const monthlySave = lastCalc.monthlySave;
+  const toSavePerMonth = state.hasReserve ? Math.round(monthlySave * 0.9) : monthlySave;
+
+  // 5. Логика списания и расчёт дополнительных месяцев
+  let reserveSpent = 0;
+  let amountNotCovered = amount;
+  let extraMonths = 0;
+
+  if (state.hasReserve) {
+    // Есть резерв: сначала списываем из резерва
+    const reserveCover = Math.min(amount, newAccounts.reserve);
+    reserveSpent = reserveCover;
+    amountNotCovered = amount - reserveCover;
+    
+    if (reserveCover > 0) {
+      newAccounts.reserve -= reserveCover;
+    }
+    
+    // Остаток списываем с цели
+    if (amountNotCovered > 0) {
+      newAccounts.main = Math.max(0, newAccounts.main - amountNotCovered);
+    }
+    
+    // Рассчитываем дополнительные месяцы только для непокрытой части
+    extraMonths = amountNotCovered <= 0 ? 0 : Math.max(1, Math.ceil(amountNotCovered / toSavePerMonth));
+  } else {
+    // Резерва нет: списываем напрямую с цели
+    newAccounts.main = Math.max(0, newAccounts.main - amount);
+    // Рассчитываем дополнительные месяцы для всей суммы
+    extraMonths = Math.max(1, Math.ceil(amount / toSavePerMonth));
+  }
+
+  // 6. Проверка: балансы не могут уйти в минус
+  if (newAccounts.main < 0 || newAccounts.reserve < 0) {
+    console.warn("applyUnexpectedExpense: negative balance detected");
+    return { success: false };
+  }
+
+  // 7. Применяем изменения к реальному state
+  accounts.main = newAccounts.main;
+  accounts.reserve = newAccounts.reserve;
+
+  // 8. Если было списание из резерва, добавляем запись в историю
+  if (reserveSpent > 0) {
+    const now = new Date();
+    now.setDate(1);
+    now.setHours(0, 0, 0, 0);
+    factHistory.push({
+      value: -reserveSpent,
+      date: now,
+      to: "reserve"
+    });
+  }
+
+  // 9. Добавляем месяцы к плану
+  if (extraMonths > 0 && lastCalc.months) {
+    lastCalc.months += extraMonths;
+  }
+
+  // 10. Записываем незапланированный расход в месяц текущего факта
+  const mainFacts = factHistory.filter(f => f.to === "main");
+  const lastFact = mainFacts[mainFacts.length - 1];
+  const d = lastFact ? new Date(lastFact.date) : new Date();
+  const key = `${d.getFullYear()}-${d.getMonth()}`;
+  unplannedExpensesByMonth[key] = amount;
+
+  // 11. Пересчитываем план (обновит UI и сохранит state)
+  recalcPlan();
+
+  return { success: true, extraMonths, reserveSpent };
+}
+
 let goalEditBaseValue = null;
 let goalEditHintTimeout = null;
 
@@ -655,12 +838,17 @@ font-size:14px;
 ${advice.text}
 </div>
 
-<div class="chart-wrap" style="width:100%; height:260px; margin:16px 0; position:relative;">
+<div class="chart-card">
+<div class="chart-wrap" style="width:100%; height:260px; margin:0; position:relative;">
 <canvas id="chartBg"></canvas>
 <canvas id="chartFact"></canvas>
 </div>
+</div>
 
-<div class="card" style="margin-top:16px;">
+<div id="factTooltipContainer" class="fact-tooltip-container"></div>
+
+<div id="expenseCardSection" class="expense-card-section">
+<div class="card">
 <div style="font-size:16px;font-weight:600;">Непредвиденные расходы</div>
 <div style="margin-top:8px;font-size:14px;line-height:1.45;opacity:0.8;">
 Жизнь иногда вносит коррективы.
@@ -671,6 +859,7 @@ ${advice.text}
 <div class="fact-input-row" style="margin-top:14px;">
 <input id="expenseInput" inputmode="numeric" placeholder="Расход" style="flex:1"/>
 <button id="applyExpense" type="button" style="width:52px;height:52px;border-radius:50%">➜</button>
+</div>
 </div>
 </div>
 
@@ -787,44 +976,19 @@ e.target.value = formatNumber(e.target.value);
 });
 applyExpenseBtn.onclick = () => {
 const amount = parseNumber(expenseInput.value || "0");
-if (!amount || !lastCalc.ok || !lastCalc.months) {
+if (!amount) {
 expenseInput.value = "";
 return;
 }
-const monthlySave = lastCalc.monthlySave != null ? lastCalc.monthlySave : 1;
-const toSavePerMonth = chosenPlan === "buffer" ? Math.round(monthlySave * 0.9) : monthlySave;
-let extraMonths = 0;
 
-if (chosenPlan === "buffer") {
-const reserveCover = Math.min(amount, accounts.reserve);
-const amountNotCovered = amount - reserveCover;
-accounts.reserve -= reserveCover;
-if (accounts.reserve < 0) accounts.reserve = 0;
-if (reserveCover > 0) {
-const now = new Date();
-now.setDate(1);
-now.setHours(0, 0, 0, 0);
-factHistory.push({
-value: -reserveCover,
-date: now,
-to: "reserve"
-});
-}
-extraMonths = amountNotCovered <= 0 ? 0 : Math.max(1, Math.ceil(amountNotCovered / toSavePerMonth));
-renderAccountsUI();
-} else {
-extraMonths = Math.max(1, Math.ceil(amount / toSavePerMonth));
+// Используем централизованную функцию applyUnexpectedExpense()
+const result = applyUnexpectedExpense(amount);
+
+if (!result.success) {
+expenseInput.value = "";
+return;
 }
 
-lastCalc.months += extraMonths;
-const mainFacts = factHistory.filter(f => f.to === "main");
-const lastFact = mainFacts[mainFacts.length - 1];
-const d = lastFact ? new Date(lastFact.date) : new Date();
-const key = `${d.getFullYear()}-${d.getMonth()}`;
-unplannedExpensesByMonth[key] = amount;
-drawStaticLayer();
-animateFactLine();
-updatePlanHeader();
 expenseInput.value = "";
 expenseInput.blur();
 haptic("light");
@@ -843,6 +1007,24 @@ isInitialized = false;
 lastCalc = {};
 plannedMonthly = 0;
 unplannedExpensesByMonth = {};
+accounts.main = 0;
+accounts.reserve = 0;
+
+// Сбрасываем state
+state.goalTotal = 0;
+state.goalSaved = 0;
+state.reserveAmount = 0;
+state.monthlyContribution = 0;
+state.monthsLeft = 0;
+state.mode = null;
+state.hasReserve = false;
+
+// Очищаем localStorage
+try {
+  localStorage.removeItem("protocol_state");
+} catch (e) {
+  console.warn("Failed to clear state from localStorage:", e);
+}
 
 calcLock.style.display = "none";
 confirmReset.style.display = "none";
@@ -1169,8 +1351,13 @@ adviceCard.appendChild(block);
 }
 
 function showFactTooltip({ value, onHide, unplannedAmount }) {
-const old = adviceCard.querySelector(".fact-tooltip");
+const container = document.getElementById("factTooltipContainer");
+const expenseSection = document.getElementById("expenseCardSection");
+if (container) {
+const old = container.querySelector(".fact-tooltip");
 if (old) old.remove();
+container.innerHTML = "";
+}
 
 const block = document.createElement("div");
 block.className = "fact-tooltip" + (unplannedAmount != null ? " fact-tooltip-unplanned" : "");
@@ -1193,7 +1380,16 @@ block.innerHTML = `
 `;
 }
 
+if (container) {
+container.appendChild(block);
+if (expenseSection) {
+const h = block.offsetHeight;
+expenseSection.style.setProperty("--tooltip-height", (h + 12) + "px");
+expenseSection.classList.add("tooltip-visible");
+}
+} else {
 adviceCard.appendChild(block);
+}
 
 setTimeout(() => {
 block.classList.add("hide");
@@ -1201,12 +1397,19 @@ block.classList.add("hide");
 if (onHide) onHide();
 
 setTimeout(() => {
+if (expenseSection) expenseSection.classList.remove("tooltip-visible");
 block.remove();
+if (container) container.innerHTML = "";
 activeFactDot = null;
 }, 280);
 }, 4000);
 }
 
+/**
+ * Обновляет UI элементов счетов
+ * ⚠️ ВАЖНО: Эта функция вызывается из recalcPlan().
+ * Не вызывайте её напрямую - используйте recalcPlan() для обновления состояния.
+ */
 function renderAccountsUI() {
 console.log("chosenPlan:", chosenPlan);
 const mainEl = document.getElementById("mainAmount");
@@ -1234,6 +1437,11 @@ reserveBlock.classList.remove("show-reserve");
 }
 }
 
+/**
+ * Обновляет UI элементов цели
+ * ⚠️ ВАЖНО: Эта функция вызывается из recalcPlan().
+ * Не вызывайте её напрямую - используйте recalcPlan() для обновления состояния.
+ */
 function renderGoals() {
 if (!lastCalc.ok) return;
 

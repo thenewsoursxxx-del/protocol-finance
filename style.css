@@ -835,6 +835,25 @@ z-index: 5;
     transform 0.28s ease;
 }
 
+.chart-card {
+  margin-top: 16px;
+  margin-bottom: 0;
+}
+
+.fact-tooltip-container {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.expense-card-section {
+  margin-top: 16px;
+  transition: margin-top 0.35s ease;
+}
+
+.expense-card-section.tooltip-visible {
+  margin-top: var(--tooltip-height, 90px);
+}
+
 /* Жёлтая подсказка для месяца с незапланированным расходом */
 .fact-tooltip-unplanned {
   background: linear-gradient(
