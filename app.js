@@ -395,8 +395,8 @@ function loadFullState() {
       renderGoals();
 
       // Восстановление экрана: если сценарий выбран — возвращаем на график
+      // Откладываем на следующий тик, чтобы после "обновить страницу" DOM и экран успели отрисоваться
       if (chosenPlan && lastCalc?.ok) {
-        // Восстанавливаем plannedMonthly из сохранённого или пересчитываем
         if (!plannedMonthly || plannedMonthly === 0) {
           plannedMonthly = lastCalc.monthlySave;
           if (chosenPlan === "buffer") plannedMonthly = Math.round(plannedMonthly * 0.9);
@@ -404,7 +404,24 @@ function loadFullState() {
 
         openScreen("advice", buttons[1]);
         if (loader) loader.classList.add("hidden");
-        renderProtocolAdviceGraph();
+
+        const restoreGraph = () => {
+          renderProtocolAdviceGraph();
+          showBottomNav();
+          if (buttons[1]) {
+            buttons.forEach(b => b.classList.remove("active"));
+            buttons[1].classList.add("active");
+            moveIndicator(buttons[1]);
+          }
+        };
+
+        if (typeof requestAnimationFrame !== "undefined") {
+          requestAnimationFrame(() => {
+            restoreGraph();
+          });
+        } else {
+          setTimeout(restoreGraph, 0);
+        }
       } else if (lastCalc?.ok) {
         // если план посчитан, но сценарий не выбран — возвращаем к выбору сценария
         const advice = ProtocolCore.buildAdvice(lastCalc);
@@ -1052,6 +1069,16 @@ ${advice.text}
 <div id="factTooltipContainer" class="fact-tooltip-container"></div>
 </div>
 
+<div class="fact-input-row">
+<input id="factInput" inputmode="numeric"
+placeholder="Сколько вы отложили"
+style="flex:1"/>
+<button id="applyFact"
+style="width:52px;height:52px;border-radius:50%">
+➜
+</button>
+</div>
+
 <div class="below-chart">
 <div id="expenseCardSection" class="expense-card-section">
 <div class="card">
@@ -1067,16 +1094,6 @@ ${advice.text}
 <button id="applyExpense" type="button" style="width:52px;height:52px;border-radius:50%">➜</button>
 </div>
 </div>
-</div>
-
-<div class="fact-input-row">
-<input id="factInput" inputmode="numeric"
-placeholder="Сколько вы отложили"
-style="flex:1"/>
-<button id="applyFact"
-style="width:52px;height:52px;border-radius:50%">
-➜
-</button>
 </div>
 </div>
 `;
