@@ -286,23 +286,23 @@ margin-bottom: 12px;
   opacity: 0.95;
 }
 
-/* ===== TOP PROFILE AVATAR (справа сверху в углу, фиксирован) ===== */
+/* ===== TOP PROFILE AVATAR (в header-right или фиксирован на экране профиля) ===== */
 .top-profile-fixed {
   position: fixed;
-  top: 0;
+  top: 20px;
   left: 0;
   right: 0;
   height: 44px;
   padding-top: env(safe-area-inset-top, 0);
   z-index: 9999;
   pointer-events: none;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding-right: 20px;
 }
 
 .top-profile-fixed .top-profile {
-  position: absolute;
-  top: 50%;
-  right: 16px;
-  transform: translateY(-50%);
   pointer-events: auto;
   display: flex;
   align-items: center;
@@ -1286,6 +1286,10 @@ transition: transform 0.55s cubic-bezier(.22,1,.36,1);
   width: 60px; /* баланс */
   display: flex;
   align-items: center;
+}
+
+.header-right {
+  justify-content: flex-end;
 }
 
 .header-center {

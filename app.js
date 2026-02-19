@@ -578,6 +578,8 @@ document.querySelectorAll(".screen")
   .forEach(s => s.classList.remove("active"));
 document.getElementById("screen-" + name).classList.add("active");
 
+moveProfileToActiveHeader();
+
 buttons.forEach(b => b.classList.remove("active"));
 if (btn) btn.classList.add("active");
 
@@ -1190,20 +1192,34 @@ confirmYes.onclick = () => {
 
 /* ===== PROFILE ===== */
 const profileBtn = document.getElementById("profileBtn");
+const topProfileFixed = document.querySelector(".top-profile-fixed");
+
+function moveProfileToActiveHeader() {
+  if (!profileBtn) return;
+  const activeScreen = document.querySelector(".screen.active");
+  const headerRight = activeScreen?.querySelector(".header-right");
+  if (headerRight) {
+    headerRight.appendChild(profileBtn);
+  } else if (topProfileFixed) {
+    topProfileFixed.appendChild(profileBtn);
+  }
+}
 
 if (profileBtn) {
-profileBtn.onclick = () => {
-haptic("light");
-document.activeElement?.blur();
-if (confirmReset) confirmReset.style.display = "none";
-document.body.classList.remove("advanced-active");
-document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
-document.getElementById("screen-profile").classList.add("active");
-buttons.forEach(b => b.classList.remove("active"));
-bottomNav.style.transform = "translateY(140%)";
-bottomNav.style.opacity = "0";
-bottomNav.style.pointerEvents = "none";
-};
+  moveProfileToActiveHeader();
+  profileBtn.onclick = () => {
+    haptic("light");
+    document.activeElement?.blur();
+    if (confirmReset) confirmReset.style.display = "none";
+    document.body.classList.remove("advanced-active");
+    document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+    document.getElementById("screen-profile").classList.add("active");
+    buttons.forEach(b => b.classList.remove("active"));
+    bottomNav.style.transform = "translateY(140%)";
+    bottomNav.style.opacity = "0";
+    bottomNav.style.pointerEvents = "none";
+    moveProfileToActiveHeader();
+  };
 }
 
 const profileResetPlanBtn = document.getElementById("profileResetPlan");
