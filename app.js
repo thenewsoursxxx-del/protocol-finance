@@ -349,12 +349,15 @@ function loadFullState() {
         openScreen(targetScreen, buttons[navIdx]);
         if (loader) loader.classList.add("hidden");
 
-        const restoreGraph = () => {
+        // Сразу подменяем «загрузку» на график, чтобы не зависеть от rAF (важно при повторном входе в мини-апп)
+        if (targetScreen === "advice") {
           renderProtocolAdviceGraph();
           if (factHistory.length) runBrain();
+        }
+
+        const finishRestore = () => {
           lockTabs(false);
           showBottomNav();
-
           if (buttons[navIdx]) {
             buttons.forEach(b => b.classList.remove("active"));
             buttons[navIdx].classList.add("active");
@@ -371,9 +374,9 @@ function loadFullState() {
         };
 
         if (typeof requestAnimationFrame !== "undefined") {
-          requestAnimationFrame(() => { restoreGraph(); });
+          requestAnimationFrame(finishRestore);
         } else {
-          setTimeout(restoreGraph, 0);
+          setTimeout(finishRestore, 0);
         }
       } else if (lastCalc?.ok) {
         const advice = ProtocolCore.buildAdvice(lastCalc);
@@ -447,6 +450,25 @@ s.id === "buffer"
 
 // Загружаем сохранённые данные при запуске
 loadFullState();
+
+// При возврате в мини-апп без перезагрузки — убираем зависший экран «Protocol анализирует данные…»
+function repairAdviceScreenIfStuck() {
+  const adviceScreen = document.getElementById("screen-advice");
+  if (!adviceScreen || !adviceScreen.classList.contains("active")) return;
+  if (!isInitialized || !chosenPlan || !lastCalc?.ok) return;
+  const card = document.getElementById("adviceCard");
+  if (!card || !card.innerHTML.includes("Protocol анализирует")) return;
+  if (loader) loader.classList.add("hidden");
+  renderProtocolAdviceGraph();
+  if (factHistory.length) runBrain();
+  showBottomNav();
+}
+document.addEventListener("visibilitychange", function () {
+  if (document.visibilityState === "visible") repairAdviceScreenIfStuck();
+});
+window.addEventListener("pageshow", function (e) {
+  if (e.persisted) repairAdviceScreenIfStuck();
+});
 
 let goalEditBaseValue = null;
 let goalEditHintTimeout = null;
