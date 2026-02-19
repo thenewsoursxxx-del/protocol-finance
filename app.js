@@ -2283,7 +2283,7 @@ if (addAccountBack) {
     if (!swiping) return;
     dx = e.touches[0].clientX - startX;
     const base = inner.classList.contains("flipped") ? 180 : 0;
-    const angle = base + (dx / wrapper.offsetWidth) * -90;
+    const angle = base + (dx / wrapper.offsetWidth) * 90;
     inner.style.transform = "rotateY(" + angle + "deg)";
   }, { passive: true });
 
@@ -2291,8 +2291,10 @@ if (addAccountBack) {
     if (!swiping) return;
     swiping = false;
     inner.style.transition = "";
-    if (Math.abs(dx) > THRESHOLD) {
-      inner.classList.toggle("flipped");
+    if (dx < -THRESHOLD) {
+      inner.classList.add("flipped");
+    } else if (dx > THRESHOLD) {
+      inner.classList.remove("flipped");
     }
     inner.style.transform = "";
   });
