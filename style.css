@@ -239,24 +239,31 @@ transform: translate(-50%, -50%);
 }
 .confirmCard button { margin-top: 12px; }
 
-/* ===== TOP PROFILE AVATAR (липкий блок — остаётся сверху при скролле) ===== */
-.top-profile-wrap {
-  position: sticky;
+/* ===== TOP PROFILE AVATAR (фиксирован справа сверху, не скроллится, по высоте как заголовок) ===== */
+.top-profile-fixed {
+  position: fixed;
   top: 0;
   left: 0;
   right: 0;
-  height: 0;
-  overflow: visible;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 16px;
+  padding-top: env(safe-area-inset-top, 0);
   z-index: 9999;
   pointer-events: none;
 }
 
-.top-profile-wrap .top-profile {
+.top-profile-fixed .top-profile {
   pointer-events: auto;
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  z-index: 9999;
+}
+
+.top-profile-fixed .top-profile,
+.top-profile {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 #profileBtn {

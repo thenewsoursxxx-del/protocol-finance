@@ -402,6 +402,7 @@ function loadFullState() {
 
         const restoreGraph = () => {
           renderProtocolAdviceGraph();
+          if (factHistory.length) runBrain();
           lockTabs(false);
           showBottomNav();
           if (buttons[1]) {
