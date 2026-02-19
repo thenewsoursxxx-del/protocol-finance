@@ -2282,9 +2282,11 @@ if (addAccountBack) {
   wrapper.addEventListener("touchmove", function (e) {
     if (!swiping) return;
     dx = e.touches[0].clientX - startX;
-    const base = inner.classList.contains("flipped") ? 180 : 0;
-    // Ось по центру — карточка переворачивается на месте. Свайп влево (dx<0) → угол растёт → правая половина к пользователю (справа налево)
-    const angle = base - (dx / wrapper.offsetWidth) * 90;
+    const flipped = inner.classList.contains("flipped");
+    const base = flipped ? 180 : 0;
+    // Справа налево в обоих случаях: лицевая — dx<0 → угол растёт (0→90); оборотная — dx<0 → угол падает (180→90)
+    const sign = flipped ? 1 : -1;
+    const angle = base + sign * (dx / wrapper.offsetWidth) * 90;
     inner.style.transform = "rotateY(" + angle + "deg)";
   }, { passive: true });
 
