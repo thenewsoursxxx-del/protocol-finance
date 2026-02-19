@@ -1817,5 +1817,5 @@ body.advanced-active .advanced-fog {
 }
 
 .flip-inner.flipped {
-  transform: rotateY(180deg);
+  transform: rotateY(-180deg); /* в паре с rotateY(-angle) при свайпе — разворот справа налево */
 }

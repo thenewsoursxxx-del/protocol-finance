@@ -2284,10 +2284,10 @@ if (addAccountBack) {
     dx = e.touches[0].clientX - startX;
     const flipped = inner.classList.contains("flipped");
     const base = flipped ? 180 : 0;
-    // Справа налево в обоих случаях: лицевая — dx<0 → угол растёт (0→90); оборотная — dx<0 → угол падает (180→90)
     const sign = flipped ? 1 : -1;
     const angle = base + sign * (dx / wrapper.offsetWidth) * 90;
-    inner.style.transform = "rotateY(" + angle + "deg)";
+    // В WebView rotateY(+) даёт «слева направо» — инвертируем угол, чтобы получить «справа налево»
+    inner.style.transform = "rotateY(" + (-angle) + "deg)";
   }, { passive: true });
 
   wrapper.addEventListener("touchend", function () {
