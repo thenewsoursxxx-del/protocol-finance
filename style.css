@@ -1781,6 +1781,7 @@ body.advanced-active .advanced-fog {
   position: relative;
   width: 100%;
   transform-style: preserve-3d;
+  transform-origin: left center; /* ось слева → при повороте двигается правая часть (справа налево) */
   transition: transform 0.6s cubic-bezier(0.4, 0.0, 0.2, 1);
 }
 

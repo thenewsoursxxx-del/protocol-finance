@@ -2282,9 +2282,10 @@ if (addAccountBack) {
   wrapper.addEventListener("touchmove", function (e) {
     if (!swiping) return;
     dx = e.touches[0].clientX - startX;
-    const base = inner.classList.contains("flipped") ? 180 : 0;
-    // Свайп влево → поворот влево (правая грань к пользователю); свайп вправо — обратно
-    const angle = base - (dx / wrapper.offsetWidth) * 90;
+    const flipped = inner.classList.contains("flipped");
+    const base = flipped ? 180 : 0;
+    const coef = flipped ? -1 : 1; // лицевая: свайп влево (dx<0) → угол в минус; оборотная: свайп вправо (dx>0) → угол к 0
+    const angle = base + coef * (dx / wrapper.offsetWidth) * 90;
     inner.style.transform = "rotateY(" + angle + "deg)";
   }, { passive: true });
 
