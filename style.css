@@ -221,23 +221,70 @@ margin-bottom: 12px;
 
 /* ===== CONFIRM RESET ===== */
 #confirmReset {
-display: none;
-position: fixed;
-inset: 0;
-background: rgba(0,0,0,.7);
-z-index: 5000;
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  z-index: 5000;
 }
+
 .confirmCard {
-background: #000;
-border: 1px solid #333;
-border-radius: 22px;
-padding: 24px;
-position: absolute;
-top: 50%;
-left: 50%;
-transform: translate(-50%, -50%);
+  background: #0a0a0a;
+  border: 1px solid #333;
+  border-radius: 24px;
+  padding: 28px 32px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: calc(100vw - 48px);
+  max-width: 360px;
+  box-sizing: border-box;
 }
-.confirmCard button { margin-top: 12px; }
+
+.confirmCard-text {
+  margin: 0 0 24px 0;
+  font-size: 16px;
+  line-height: 1.45;
+  opacity: 0.9;
+}
+
+.confirmCard-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.confirmBtn {
+  width: 100%;
+  padding: 14px 20px;
+  border-radius: 14px;
+  font-size: 17px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, opacity 0.2s;
+}
+
+.confirmBtn--cancel {
+  background: transparent;
+  border: 1px solid #444;
+  color: #fff;
+}
+
+.confirmBtn--cancel:active {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.confirmBtn--danger {
+  background: #b91c1c;
+  border: 1px solid #dc2626;
+  color: #fff;
+}
+
+.confirmBtn--danger:active {
+  background: #991b1b;
+  opacity: 0.95;
+}
 
 /* ===== TOP PROFILE AVATAR (фиксирован справа сверху, не скроллится, по высоте как заголовок) ===== */
 .top-profile-fixed {
