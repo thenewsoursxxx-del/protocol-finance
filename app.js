@@ -255,129 +255,73 @@ function recalcPlan() {
   saveFullState();
 }
 
-const STORAGE_KEY_PERSIST = "protocol_persist";
-const STORAGE_KEY_STATE = "protocol_state";
-
 /**
- * Сохраняет все данные приложения в localStorage (память между входами).
+ * Сохраняет все данные приложения через storage layer.
+ * Синхронизирует глобальные переменные → appState → storage.
  */
 function saveFullState() {
-  try {
-    const payload = {
-      income: incomeInput?.value?.trim() || "",
-      expenses: expensesInput?.value?.trim() || "",
-      goal: goalInput?.value?.trim() || "",
-      saved: savedInput?.value?.trim() || "",
-      saveMode: saveMode || "calm",
-      factHistory: factHistory.map(({ value, date, to }) => ({
-        value: Number(value) || 0,
-        date: date instanceof Date ? date.toISOString() : (typeof date === "string" ? date : new Date().toISOString()),
-        to: to || "main"
-      })),
-      lastCalc: lastCalc?.ok ? lastCalc : {},
-      accounts: { ...accounts },
-      chosenPlan,
-      plannedMonthly,
-      planStartValue,
-      initialBalance,
-      factRatio,
-      goalCompleted,
-      selectedScenario,
-      isInitialized: !!isInitialized,
-      goalMeta: { ...goalMeta },
-      state: { ...state }
-    };
-    localStorage.setItem(STORAGE_KEY_PERSIST, JSON.stringify(payload));
-    localStorage.setItem(STORAGE_KEY_STATE, JSON.stringify(state));
-  } catch (e) {
-    console.warn("Failed to save full state:", e);
-  }
+  updateState({
+    income: incomeInput?.value?.trim() || "",
+    expenses: expensesInput?.value?.trim() || "",
+    goal: goalInput?.value?.trim() || "",
+    saved: savedInput?.value?.trim() || "",
+    saveMode: saveMode || "calm",
+    factHistory: factHistory,
+    lastCalc: lastCalc?.ok ? lastCalc : {},
+    accounts: { ...accounts },
+    chosenPlan,
+    plannedMonthly,
+    planStartValue,
+    initialBalance,
+    factRatio,
+    goalCompleted,
+    selectedScenario,
+    isInitialized: !!isInitialized,
+    goalMeta: { ...goalMeta },
+    uiState: { ...state }
+  });
+  saveState();
 }
 
 /**
- * Загружает все данные из localStorage при запуске приложения.
+ * Загружает все данные из storage layer при запуске приложения.
+ * Читает appState (заполнен через initState()) → синхронизирует глобальные переменные → восстанавливает UI.
  */
 function loadFullState() {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY_PERSIST);
-    if (!raw) {
-      loadStateFromStorage();
-      return;
-    }
-    const p = JSON.parse(raw);
+    const s = initState();
 
-    if (p.income != null && incomeInput) incomeInput.value = p.income;
-    if (p.expenses != null && expensesInput) expensesInput.value = p.expenses;
-    if (p.goal != null && goalInput) goalInput.value = p.goal;
-    if (p.saved != null && savedInput) savedInput.value = p.saved;
+    // Синхронизируем глобальные переменные ← appState
+    if (s.income && incomeInput) incomeInput.value = s.income;
+    if (s.expenses && expensesInput) expensesInput.value = s.expenses;
+    if (s.goal && goalInput) goalInput.value = s.goal;
+    if (s.saved && savedInput) savedInput.value = s.saved;
 
-    if (p.saveMode) {
-      saveMode = p.saveMode;
-      selectedMode = p.saveMode;
+    if (s.saveMode) {
+      saveMode = s.saveMode;
+      selectedMode = s.saveMode;
       modeButtons.forEach(b => {
-        b.classList.toggle("active", b.dataset.mode === p.saveMode);
+        b.classList.toggle("active", b.dataset.mode === s.saveMode);
       });
     }
 
-    if (Array.isArray(p.factHistory)) {
-      factHistory = p.factHistory.map(({ value, date, to }) => {
-        let parsedDate;
-        if (date) {
-          parsedDate = new Date(date);
-          // Проверяем валидность даты
-          if (isNaN(parsedDate.getTime())) {
-            parsedDate = new Date();
-            parsedDate.setDate(1);
-            parsedDate.setHours(0, 0, 0, 0);
-          } else {
-            // Нормализуем дату к началу месяца
-            parsedDate.setDate(1);
-            parsedDate.setHours(0, 0, 0, 0);
-          }
-        } else {
-          parsedDate = new Date();
-          parsedDate.setDate(1);
-          parsedDate.setHours(0, 0, 0, 0);
-        }
-        return {
-          value: Number(value) || 0,
-          date: parsedDate,
-          to: to || "main"
-        };
-      });
-    }
+    factHistory = s.factHistory || [];
 
-    if (p.lastCalc && p.lastCalc.ok) lastCalc = p.lastCalc;
-    if (p.accounts) {
-      accounts.main = Number(p.accounts.main) || 0;
-      accounts.reserve = Number(p.accounts.reserve) || 0;
+    if (s.lastCalc && s.lastCalc.ok) lastCalc = s.lastCalc;
+    if (s.accounts) {
+      accounts.main = Number(s.accounts.main) || 0;
+      accounts.reserve = Number(s.accounts.reserve) || 0;
     }
-    if (p.chosenPlan != null) chosenPlan = p.chosenPlan;
-    if (p.plannedMonthly != null) plannedMonthly = p.plannedMonthly;
-    if (p.planStartValue != null) planStartValue = p.planStartValue;
-    if (p.initialBalance != null) initialBalance = Number(p.initialBalance) || 0;
-    if (p.factRatio != null) factRatio = Number(p.factRatio) || null;
-    if (typeof p.goalCompleted === "boolean") goalCompleted = p.goalCompleted;
-    if (p.selectedScenario != null) selectedScenario = p.selectedScenario;
-    if (typeof p.isInitialized === "boolean") isInitialized = p.isInitialized;
-    if (p.goalMeta && typeof p.goalMeta === "object") Object.assign(goalMeta, p.goalMeta);
-    if (p.state && typeof p.state === "object") Object.assign(state, p.state);
-
-    // Если initialBalance не был сохранён, вычисляем из savedInput (обратная совместимость)
-    if (initialBalance === 0 && savedInput?.value) {
-      initialBalance = parseNumber(savedInput.value || "0");
-    }
-
-    // Синхронизируем planStartValue с initialBalance, если он не был сохранён
-    if (planStartValue === 0 && initialBalance > 0) {
-      planStartValue = initialBalance;
-    }
-
-    // Если accounts восстановлены, но initialBalance не был сохранён, используем accounts.main
-    if (initialBalance === 0 && accounts.main > 0) {
-      initialBalance = accounts.main;
-      planStartValue = accounts.main;
-    }
+    if (s.chosenPlan != null) chosenPlan = s.chosenPlan;
+    if (s.plannedMonthly != null) plannedMonthly = s.plannedMonthly;
+    if (s.planStartValue != null) planStartValue = s.planStartValue;
+    if (s.initialBalance != null) initialBalance = Number(s.initialBalance) || 0;
+    if (s.factRatio != null) factRatio = Number(s.factRatio) || null;
+    if (typeof s.goalCompleted === "boolean") goalCompleted = s.goalCompleted;
+    if (s.selectedScenario != null) selectedScenario = s.selectedScenario;
+    if (typeof s.isInitialized === "boolean") isInitialized = s.isInitialized;
+    if (s.goalMeta && typeof s.goalMeta === "object") Object.assign(goalMeta, s.goalMeta);
+    if (s.uiState && typeof s.uiState === "object") Object.assign(state, s.uiState);
 
     if (isInitialized) {
       lockTabs(false);
@@ -389,15 +333,20 @@ function loadFullState() {
       renderAccountsUI();
       renderGoals();
 
-      // Восстановление экрана: если сценарий выбран — возвращаем на график
-      // Откладываем на следующий тик, чтобы после "обновить страницу" DOM и экран успели отрисоваться
       if (chosenPlan && lastCalc?.ok) {
         if (!plannedMonthly || plannedMonthly === 0) {
           plannedMonthly = lastCalc.monthlySave;
           if (chosenPlan === "buffer") plannedMonthly = Math.round(plannedMonthly * 0.9);
         }
 
-        openScreen("advice", buttons[1]);
+        // Восстанавливаем последнюю активную вкладку
+        const targetScreen = s.lastActiveScreen || "advice";
+        const screenToNavIndex = { calc: 0, advice: 1, accounts: 2, goals: 3, ai: 4 };
+        const navIdx = screenToNavIndex[targetScreen] != null
+          ? screenToNavIndex[targetScreen]
+          : 1;
+
+        openScreen(targetScreen, buttons[navIdx]);
         if (loader) loader.classList.add("hidden");
 
         const restoreGraph = () => {
@@ -405,10 +354,11 @@ function loadFullState() {
           if (factHistory.length) runBrain();
           lockTabs(false);
           showBottomNav();
-          if (buttons[1]) {
+
+          if (buttons[navIdx]) {
             buttons.forEach(b => b.classList.remove("active"));
-            buttons[1].classList.add("active");
-            moveIndicator(buttons[1]);
+            buttons[navIdx].classList.add("active");
+            moveIndicator(buttons[navIdx]);
           }
           requestAnimationFrame(() => {
             lockTabs(false);
@@ -421,14 +371,11 @@ function loadFullState() {
         };
 
         if (typeof requestAnimationFrame !== "undefined") {
-          requestAnimationFrame(() => {
-            restoreGraph();
-          });
+          requestAnimationFrame(() => { restoreGraph(); });
         } else {
           setTimeout(restoreGraph, 0);
         }
       } else if (lastCalc?.ok) {
-        // если план посчитан, но сценарий не выбран — возвращаем к выбору сценария
         const advice = ProtocolCore.buildAdvice(lastCalc);
         const baseMonthly = lastCalc.monthlySave;
         const bufferRate = 0.1;
@@ -494,29 +441,7 @@ s.id === "buffer"
       planSummary.style.display = "none";
     }
   } catch (e) {
-    console.warn("Failed to load full state:", e);
-    loadStateFromStorage();
-  }
-}
-
-/**
- * Загружает только state из localStorage (совместимость со старыми сохранениями).
- */
-function loadStateFromStorage() {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY_STATE);
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      if (parsed.goalTotal != null) state.goalTotal = parsed.goalTotal;
-      if (parsed.goalSaved != null) state.goalSaved = parsed.goalSaved;
-      if (parsed.reserveAmount != null) state.reserveAmount = parsed.reserveAmount;
-      if (parsed.monthlyContribution != null) state.monthlyContribution = parsed.monthlyContribution;
-      if (parsed.monthsLeft != null) state.monthsLeft = parsed.monthsLeft;
-      if (parsed.mode != null) state.mode = parsed.mode;
-      if (typeof parsed.hasReserve === "boolean") state.hasReserve = parsed.hasReserve;
-    }
-  } catch (e) {
-    console.warn("Failed to load state from localStorage:", e);
+    console.warn("Failed to load state:", e);
   }
 }
 
@@ -602,6 +527,14 @@ if (advancedBtn) {
   } else {
     advancedBtn.style.display = "none";
   }
+}
+
+// Сохраняем последнюю активную вкладку в appState
+const navScreens = ["calc", "advice", "accounts", "goals", "ai"];
+if (navScreens.includes(name) && isInitialized) {
+  const navIndex = navScreens.indexOf(name);
+  updateState({ lastActiveScreen: name, lastActiveNavIndex: navIndex });
+  saveState();
 }
 }
 // ===== TOP PROFILE FIX =====
@@ -1160,12 +1093,7 @@ function performFullReset() {
   state.mode = null;
   state.hasReserve = false;
 
-  try {
-    localStorage.removeItem(STORAGE_KEY_STATE);
-    localStorage.removeItem(STORAGE_KEY_PERSIST);
-  } catch (e) {
-    console.warn("Failed to clear storage:", e);
-  }
+  clearState();
 
   calcLock.style.display = "none";
   confirmReset.style.display = "none";

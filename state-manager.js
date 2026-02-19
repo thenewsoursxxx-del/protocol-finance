@@ -1,0 +1,308 @@
+/**
+ * Protocol Finance — State Management & Storage Layer
+ *
+ * Единый слой управления состоянием.
+ * Сейчас использует localStorage, но спроектирован так,
+ * чтобы заменить адаптер на backend / Telegram Cloud Storage
+ * без переписывания логики приложения.
+ *
+ * Загружается ПОСЛЕ core.js и ДО app.js.
+ */
+
+const STATE_VERSION = 1;
+const STORAGE_KEY = "protocol_app_state";
+
+// ─── Default State ────────────────────────────────────────────
+
+function getDefaultState() {
+  return {
+    stateVersion: STATE_VERSION,
+    lastActiveScreen: "calc",
+    lastActiveNavIndex: 0,
+
+    income: "",
+    expenses: "",
+    goal: "",
+    saved: "",
+
+    saveMode: "calm",
+
+    lastCalc: {},
+    chosenPlan: null,
+    plannedMonthly: 0,
+    planStartValue: 0,
+    initialBalance: 0,
+    factRatio: null,
+    goalCompleted: false,
+    selectedScenario: null,
+    isInitialized: false,
+
+    accounts: { main: 0, reserve: 0 },
+
+    factHistory: [],
+
+    goalMeta: { title: "Основная цель" },
+
+    uiState: {
+      goalTotal: 0,
+      goalSaved: 0,
+      reserveAmount: 0,
+      monthlyContribution: 0,
+      monthsLeft: 0,
+      mode: null,
+      hasReserve: false
+    }
+  };
+}
+
+// ─── Storage Adapters ─────────────────────────────────────────
+
+const localStorageAdapter = {
+  save(data) {
+    try {
+      const serialized = JSON.stringify(data);
+      localStorage.setItem(STORAGE_KEY, serialized);
+      return true;
+    } catch (e) {
+      console.warn("[Storage] save failed:", e);
+      return false;
+    }
+  },
+
+  load() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return null;
+      return JSON.parse(raw);
+    } catch (e) {
+      console.warn("[Storage] load failed:", e);
+      return null;
+    }
+  },
+
+  clear() {
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+      // Совместимость: удаляем старые ключи
+      localStorage.removeItem("protocol_persist");
+      localStorage.removeItem("protocol_state");
+      return true;
+    } catch (e) {
+      console.warn("[Storage] clear failed:", e);
+      return false;
+    }
+  }
+};
+
+// ─── Abstract Storage (swappable) ─────────────────────────────
+
+const storage = {
+  _adapter: localStorageAdapter,
+
+  setAdapter(adapter) {
+    this._adapter = adapter;
+  },
+
+  save(data) {
+    return this._adapter.save(data);
+  },
+
+  load() {
+    return this._adapter.load();
+  },
+
+  clear() {
+    return this._adapter.clear();
+  }
+};
+
+// ─── App State (единственный источник истины) ─────────────────
+
+let appState = getDefaultState();
+
+// ─── Migration ────────────────────────────────────────────────
+
+function migrateState(saved) {
+  if (!saved || typeof saved !== "object") return getDefaultState();
+
+  const version = saved.stateVersion || 0;
+
+  // v0 → v1: старый формат (protocol_persist) — конвертируем
+  if (version < 1) {
+    saved.stateVersion = STATE_VERSION;
+    if (!saved.lastActiveScreen) saved.lastActiveScreen = "calc";
+    if (!saved.lastActiveNavIndex) saved.lastActiveNavIndex = 0;
+    if (!saved.uiState && saved.state) {
+      saved.uiState = { ...saved.state };
+      delete saved.state;
+    }
+    if (!saved.uiState) {
+      saved.uiState = getDefaultState().uiState;
+    }
+  }
+
+  // Будущие миграции: if (version < 2) { ... }
+
+  return saved;
+}
+
+// ─── Serialization Helpers ────────────────────────────────────
+
+function serializeFactHistory(history) {
+  return history.map(({ value, date, to }) => ({
+    value: Number(value) || 0,
+    date: date instanceof Date
+      ? date.toISOString()
+      : (typeof date === "string" ? date : new Date().toISOString()),
+    to: to || "main"
+  }));
+}
+
+function deserializeFactHistory(arr) {
+  if (!Array.isArray(arr)) return [];
+  return arr.map(({ value, date, to }) => {
+    let parsedDate;
+    if (date) {
+      parsedDate = new Date(date);
+      if (isNaN(parsedDate.getTime())) {
+        parsedDate = new Date();
+      }
+      parsedDate.setDate(1);
+      parsedDate.setHours(0, 0, 0, 0);
+    } else {
+      parsedDate = new Date();
+      parsedDate.setDate(1);
+      parsedDate.setHours(0, 0, 0, 0);
+    }
+    return {
+      value: Number(value) || 0,
+      date: parsedDate,
+      to: to || "main"
+    };
+  });
+}
+
+// ─── Public API ───────────────────────────────────────────────
+
+function initState() {
+  let saved = storage.load();
+
+  // Совместимость со старым форматом (protocol_persist)
+  if (!saved) {
+    try {
+      const legacyRaw = localStorage.getItem("protocol_persist");
+      if (legacyRaw) {
+        saved = JSON.parse(legacyRaw);
+        saved.stateVersion = 0; // помечаем как старый формат
+      }
+    } catch (e) { /* ignore */ }
+  }
+
+  if (saved) {
+    saved = migrateState(saved);
+    applyState(saved);
+  } else {
+    appState = getDefaultState();
+  }
+
+  return appState;
+}
+
+function updateState(partial) {
+  if (!partial || typeof partial !== "object") return;
+  Object.keys(partial).forEach(key => {
+    if (key === "accounts" || key === "goalMeta" || key === "uiState") {
+      appState[key] = { ...appState[key], ...partial[key] };
+    } else {
+      appState[key] = partial[key];
+    }
+  });
+}
+
+function saveState() {
+  const toSave = {
+    ...appState,
+    factHistory: serializeFactHistory(appState.factHistory)
+  };
+  storage.save(toSave);
+}
+
+function loadState() {
+  const saved = storage.load();
+  if (!saved) return null;
+  return migrateState(saved);
+}
+
+function applyState(saved) {
+  const defaults = getDefaultState();
+
+  appState.stateVersion = saved.stateVersion || defaults.stateVersion;
+  appState.lastActiveScreen = saved.lastActiveScreen || defaults.lastActiveScreen;
+  appState.lastActiveNavIndex = saved.lastActiveNavIndex != null
+    ? saved.lastActiveNavIndex
+    : defaults.lastActiveNavIndex;
+
+  appState.income = saved.income ?? defaults.income;
+  appState.expenses = saved.expenses ?? defaults.expenses;
+  appState.goal = saved.goal ?? defaults.goal;
+  appState.saved = saved.saved ?? defaults.saved;
+
+  appState.saveMode = saved.saveMode || defaults.saveMode;
+
+  appState.lastCalc = (saved.lastCalc && saved.lastCalc.ok)
+    ? saved.lastCalc
+    : defaults.lastCalc;
+  appState.chosenPlan = saved.chosenPlan ?? defaults.chosenPlan;
+  appState.plannedMonthly = saved.plannedMonthly ?? defaults.plannedMonthly;
+  appState.planStartValue = saved.planStartValue ?? defaults.planStartValue;
+  appState.initialBalance = Number(saved.initialBalance) || defaults.initialBalance;
+  appState.factRatio = saved.factRatio != null
+    ? (Number(saved.factRatio) || null)
+    : defaults.factRatio;
+  appState.goalCompleted = typeof saved.goalCompleted === "boolean"
+    ? saved.goalCompleted
+    : defaults.goalCompleted;
+  appState.selectedScenario = saved.selectedScenario ?? defaults.selectedScenario;
+  appState.isInitialized = typeof saved.isInitialized === "boolean"
+    ? saved.isInitialized
+    : defaults.isInitialized;
+
+  appState.accounts = {
+    main: Number(saved.accounts?.main) || 0,
+    reserve: Number(saved.accounts?.reserve) || 0
+  };
+
+  appState.factHistory = deserializeFactHistory(saved.factHistory);
+
+  appState.goalMeta = saved.goalMeta && typeof saved.goalMeta === "object"
+    ? { ...defaults.goalMeta, ...saved.goalMeta }
+    : { ...defaults.goalMeta };
+
+  if (saved.uiState && typeof saved.uiState === "object") {
+    appState.uiState = { ...defaults.uiState, ...saved.uiState };
+  } else {
+    appState.uiState = { ...defaults.uiState };
+  }
+
+  // Обратная совместимость: initialBalance / planStartValue
+  if (appState.initialBalance === 0 && appState.saved) {
+    const parsed = Number(String(appState.saved).replace(/\./g, "")) || 0;
+    if (parsed > 0) appState.initialBalance = parsed;
+  }
+  if (appState.planStartValue === 0 && appState.initialBalance > 0) {
+    appState.planStartValue = appState.initialBalance;
+  }
+  if (appState.initialBalance === 0 && appState.accounts.main > 0) {
+    appState.initialBalance = appState.accounts.main;
+    appState.planStartValue = appState.accounts.main;
+  }
+}
+
+function clearState() {
+  storage.clear();
+  appState = getDefaultState();
+}
+
+function getState() {
+  return appState;
+}
