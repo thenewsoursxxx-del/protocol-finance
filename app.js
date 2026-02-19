@@ -2258,3 +2258,49 @@ if (addAccountBack) {
     showBottomNav();
   };
 }
+
+/* ===== FLIP CARD SWIPE ===== */
+(function initFlipSwipe() {
+  const wrapper = document.getElementById("flipWrapper");
+  if (!wrapper) return;
+  const inner = wrapper.querySelector(".flip-inner");
+  if (!inner) return;
+
+  let startX = 0;
+  let dx = 0;
+  let swiping = false;
+  const THRESHOLD = 60;
+
+  wrapper.addEventListener("touchstart", function (e) {
+    const t = e.touches[0];
+    startX = t.clientX;
+    dx = 0;
+    swiping = true;
+    inner.style.transition = "none";
+  }, { passive: true });
+
+  wrapper.addEventListener("touchmove", function (e) {
+    if (!swiping) return;
+    dx = e.touches[0].clientX - startX;
+    const base = inner.classList.contains("flipped") ? 180 : 0;
+    const angle = base + (dx / wrapper.offsetWidth) * -90;
+    inner.style.transform = "rotateY(" + angle + "deg)";
+  }, { passive: true });
+
+  wrapper.addEventListener("touchend", function () {
+    if (!swiping) return;
+    swiping = false;
+    inner.style.transition = "";
+    if (Math.abs(dx) > THRESHOLD) {
+      inner.classList.toggle("flipped");
+    }
+    inner.style.transform = "";
+  });
+
+  wrapper.addEventListener("touchcancel", function () {
+    if (!swiping) return;
+    swiping = false;
+    inner.style.transition = "";
+    inner.style.transform = "";
+  });
+})();

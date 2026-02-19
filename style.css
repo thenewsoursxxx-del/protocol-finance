@@ -1771,3 +1771,47 @@ body.advanced-active .advanced-fog {
   cursor: default;
   opacity: 0.95;
 }
+
+/* ===== FLIP CARD ===== */
+.flip-wrapper {
+  perspective: 1200px;
+}
+
+.flip-inner {
+  position: relative;
+  width: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.6s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+.flip-front,
+.flip-back {
+  width: 100%;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.flip-front {
+  position: relative;
+  z-index: 2;
+}
+
+.flip-back {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  transform: rotateY(180deg);
+  z-index: 1;
+}
+
+.flip-back-card {
+  min-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flip-inner.flipped {
+  transform: rotateY(180deg);
+}
