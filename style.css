@@ -1801,12 +1801,16 @@ body.advanced-active .advanced-fog {
   top: 0;
   left: 0;
   right: 0;
+  bottom: 0;
   transform: rotateY(180deg);
   z-index: 1;
 }
 
 .flip-back-card {
-  min-height: 200px;
+  width: 100%;
+  min-height: 100%;
+  height: 100%;
+  box-sizing: border-box;
   display: flex;
   align-items: center;
   justify-content: center;

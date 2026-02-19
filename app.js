@@ -2283,7 +2283,8 @@ if (addAccountBack) {
     if (!swiping) return;
     dx = e.touches[0].clientX - startX;
     const base = inner.classList.contains("flipped") ? 180 : 0;
-    const angle = base + (dx / wrapper.offsetWidth) * 90;
+    // Свайп влево → поворот влево (правая грань к пользователю); свайп вправо — обратно
+    const angle = base - (dx / wrapper.offsetWidth) * 90;
     inner.style.transform = "rotateY(" + angle + "deg)";
   }, { passive: true });
 
