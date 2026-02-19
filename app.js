@@ -1198,10 +1198,14 @@ function moveProfileToActiveHeader() {
   if (!profileBtn) return;
   const activeScreen = document.querySelector(".screen.active");
   const headerRight = activeScreen?.querySelector(".header-right");
+  const isProfileScreen = activeScreen?.id === "screen-profile";
   if (headerRight) {
     headerRight.appendChild(profileBtn);
+    if (topProfileFixed) topProfileFixed.style.display = "";
   } else if (topProfileFixed) {
     topProfileFixed.appendChild(profileBtn);
+    // На экране профиля скрываем полосу с иконкой, чтобы не перекрывать кнопку «Назад»
+    topProfileFixed.style.display = isProfileScreen ? "none" : "";
   }
 }
 
