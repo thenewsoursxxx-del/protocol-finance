@@ -373,6 +373,7 @@ function loadFullState() {
         requestAnimationFrame(() => {
           lockTabs(false);
           showBottomNav();
+          ensureNavVisibleAfterRestore();
         });
       } else if (lastCalc?.ok) {
         const advice = ProtocolCore.buildAdvice(lastCalc);
@@ -469,7 +470,10 @@ function repairAdviceScreenIfStuck() {
   }
 }
 
-// После повторного входа — показываем навбар и сбрасываем «серые» иконки на любой вкладке
+// Соответствие id экрана и индекса кнопки в навбаре
+const SCREEN_TO_NAV_INDEX = { "screen-calc": 0, "screen-advice": 1, "screen-accounts": 2, "screen-goals": 3, "screen-ai": 4 };
+
+// После повторного входа — показываем навбар, синхронизируем белый круг с открытой вкладкой, показываем зелёную кнопку на «Цели»
 function ensureNavVisibleAfterRestore() {
   if (!isInitialized || !bottomNav) return;
   const activeScreen = document.querySelector(".screen.active");
@@ -478,6 +482,17 @@ function ensureNavVisibleAfterRestore() {
   if (!isMainTab) return;
   showBottomNav();
   lockTabs(false);
+  // Синхронизируем активную кнопку и индикатор с реально открытым экраном (исправляет «белый круг на Расчёте при открытых Целях»)
+  const navIdx = SCREEN_TO_NAV_INDEX[id];
+  if (navIdx != null && buttons[navIdx]) {
+    buttons.forEach(b => b.classList.remove("active"));
+    buttons[navIdx].classList.add("active");
+    moveIndicator(buttons[navIdx]);
+  }
+  // Зелёная кнопка расширенных настроек — показывать только на вкладке «Цели»
+  if (advancedBtn) {
+    advancedBtn.style.display = id === "screen-goals" ? "flex" : "none";
+  }
 }
 
 // После загрузки страницы — отложенная проверка (Telegram WebView может отрисовать DOM с задержкой)
