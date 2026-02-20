@@ -349,7 +349,16 @@ function loadFullState() {
         openScreen(targetScreen, buttons[navIdx]);
         if (loader) loader.classList.add("hidden");
 
-        // Сразу подменяем «загрузку» на график (важно при повторном входе в мини-апп)
+        // Навбар и стили кнопок — сразу, без rAF, чтобы не пропадал при восстановлении на любой вкладке
+        lockTabs(false);
+        showBottomNav();
+        if (buttons[navIdx]) {
+          buttons.forEach(b => b.classList.remove("active"));
+          buttons[navIdx].classList.add("active");
+          moveIndicator(buttons[navIdx]);
+        }
+
+        // Сразу подменяем «загрузку» на график, если восстановились на вкладку графика
         if (targetScreen === "advice") {
           try {
             renderProtocolAdviceGraph();
@@ -361,29 +370,10 @@ function loadFullState() {
           }
         }
 
-        const finishRestore = () => {
+        requestAnimationFrame(() => {
           lockTabs(false);
           showBottomNav();
-          if (buttons[navIdx]) {
-            buttons.forEach(b => b.classList.remove("active"));
-            buttons[navIdx].classList.add("active");
-            moveIndicator(buttons[navIdx]);
-          }
-          requestAnimationFrame(() => {
-            lockTabs(false);
-            bottomNav.style.pointerEvents = "auto";
-            buttons.forEach((b, i) => {
-              b.style.pointerEvents = i === 0 && !isInitialized ? "none" : "auto";
-              b.style.opacity = i === 0 && !isInitialized ? "0.35" : "1";
-            });
-          });
-        };
-
-        if (typeof requestAnimationFrame !== "undefined") {
-          requestAnimationFrame(finishRestore);
-        } else {
-          setTimeout(finishRestore, 0);
-        }
+        });
       } else if (lastCalc?.ok) {
         const advice = ProtocolCore.buildAdvice(lastCalc);
         const baseMonthly = lastCalc.monthlySave;
@@ -479,18 +469,41 @@ function repairAdviceScreenIfStuck() {
   }
 }
 
+// После повторного входа — показываем навбар и сбрасываем «серые» иконки на любой вкладке
+function ensureNavVisibleAfterRestore() {
+  if (!isInitialized || !bottomNav) return;
+  const activeScreen = document.querySelector(".screen.active");
+  const id = activeScreen?.id;
+  const isMainTab = id && ["screen-calc", "screen-advice", "screen-accounts", "screen-goals", "screen-ai"].includes(id);
+  if (!isMainTab) return;
+  showBottomNav();
+  lockTabs(false);
+}
+
 // После загрузки страницы — отложенная проверка (Telegram WebView может отрисовать DOM с задержкой)
-setTimeout(repairAdviceScreenIfStuck, 350);
-setTimeout(repairAdviceScreenIfStuck, 1000);
+setTimeout(function () {
+  repairAdviceScreenIfStuck();
+  ensureNavVisibleAfterRestore();
+}, 350);
+setTimeout(function () {
+  repairAdviceScreenIfStuck();
+  ensureNavVisibleAfterRestore();
+}, 1000);
 
 document.addEventListener("visibilitychange", function () {
   if (document.visibilityState === "visible") {
     setTimeout(repairAdviceScreenIfStuck, 100);
+    setTimeout(ensureNavVisibleAfterRestore, 100);
   }
 });
 window.addEventListener("pageshow", function (e) {
-  if (e.persisted) setTimeout(repairAdviceScreenIfStuck, 100);
-  else setTimeout(repairAdviceScreenIfStuck, 350);
+  if (e.persisted) {
+    setTimeout(repairAdviceScreenIfStuck, 100);
+    setTimeout(ensureNavVisibleAfterRestore, 100);
+  } else {
+    setTimeout(repairAdviceScreenIfStuck, 350);
+    setTimeout(ensureNavVisibleAfterRestore, 350);
+  }
 });
 
 let goalEditBaseValue = null;
@@ -519,9 +532,10 @@ function showBottomNav() {
   bottomNav.style.opacity = "1";
   bottomNav.style.pointerEvents = "auto";
   bottomNav.style.visibility = "visible";
-  // После «обновить страницу» навбар может не реагировать — принудительно включаем клики по кнопкам
+  // Чтобы иконки не выглядели «заблокированными» после повторного входа
   buttons.forEach((b, i) => {
     b.style.pointerEvents = i === 0 && !isInitialized ? "none" : "auto";
+    b.style.opacity = isInitialized ? "1" : (i === 0 ? "1" : "0.35");
   });
 }
 
