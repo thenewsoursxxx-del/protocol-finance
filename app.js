@@ -1010,6 +1010,10 @@ style="width:52px;height:52px;border-radius:50%">
 <div id="brainMessageContainer"></div>
 <div id="factTooltipContainer" class="fact-tooltip-container"></div>
 </div>
+
+<button id="unexpectedExpenseBtn" class="unexpected-expense-trigger" type="button">
+Непредвиденный расход
+</button>
 `;
 
   initChart();
@@ -1094,6 +1098,15 @@ style="width:52px;height:52px;border-radius:50%">
       factInput.value = "";
       factInput.blur();
       recalcPlan();
+    };
+  }
+
+  // Кнопка «Непредвиденный расход»
+  const unexpBtn = document.getElementById("unexpectedExpenseBtn");
+  if (unexpBtn) {
+    unexpBtn.onclick = () => {
+      haptic("light");
+      openUnexpectedExpenseScreen();
     };
   }
 
@@ -2322,3 +2335,203 @@ if (addAccountBack) {
     inner.style.transform = "";
   });
 })();
+
+/* ===== UNEXPECTED EXPENSE SYSTEM ===== */
+
+let selectedExpenseSource = null;
+
+function openUnexpectedExpenseScreen() {
+  selectedExpenseSource = null;
+
+  const options = document.querySelectorAll(".unexpected-option");
+  options.forEach(o => o.classList.remove("selected"));
+
+  const amountBlock = document.getElementById("unexpectedAmountBlock");
+  const skipBlock = document.getElementById("unexpectedSkipBlock");
+  const amountInput = document.getElementById("unexpectedAmount");
+  if (amountBlock) amountBlock.style.display = "none";
+  if (skipBlock) skipBlock.style.display = "none";
+  if (amountInput) amountInput.value = "";
+
+  // Скрываем «Потратил из резерва» если нет резерва
+  const reserveOption = document.querySelector('.unexpected-option[data-source="reserve"]');
+  if (reserveOption) {
+    reserveOption.style.display = chosenPlan === "buffer" ? "flex" : "none";
+  }
+
+  openScreen("unexpected", null);
+  hideBottomNav();
+}
+
+// Выбор варианта
+document.querySelectorAll(".unexpected-option").forEach(opt => {
+  opt.addEventListener("click", function () {
+    haptic("light");
+
+    document.querySelectorAll(".unexpected-option").forEach(o => o.classList.remove("selected"));
+    this.classList.add("selected");
+
+    selectedExpenseSource = this.dataset.source;
+
+    const amountBlock = document.getElementById("unexpectedAmountBlock");
+    const skipBlock = document.getElementById("unexpectedSkipBlock");
+
+    if (selectedExpenseSource === "skip") {
+      if (amountBlock) amountBlock.style.display = "none";
+      if (skipBlock) skipBlock.style.display = "block";
+    } else {
+      if (skipBlock) skipBlock.style.display = "none";
+      if (amountBlock) amountBlock.style.display = "block";
+      const amountInput = document.getElementById("unexpectedAmount");
+      if (amountInput) {
+        amountInput.value = "";
+        amountInput.focus();
+      }
+    }
+  });
+});
+
+// Форматирование ввода суммы
+const unexpectedAmountInput = document.getElementById("unexpectedAmount");
+if (unexpectedAmountInput) {
+  unexpectedAmountInput.addEventListener("input", function (e) {
+    const p = e.target.selectionStart;
+    const b = e.target.value.length;
+    e.target.value = formatNumber(e.target.value);
+    const a = e.target.value.length;
+    e.target.selectionEnd = p + (a - b);
+  });
+}
+
+// Подтверждение расхода из цели/резерва
+const unexpectedConfirmBtn = document.getElementById("unexpectedConfirm");
+if (unexpectedConfirmBtn) {
+  unexpectedConfirmBtn.addEventListener("click", function () {
+    const input = document.getElementById("unexpectedAmount");
+    const amount = parseNumber(input?.value || "0");
+
+    if (!amount || amount <= 0) {
+      haptic("error");
+      const wrap = input?.closest(".input-wrap");
+      if (wrap) {
+        wrap.classList.add("error");
+        wrap.classList.remove("shake");
+        void wrap.offsetWidth;
+        wrap.classList.add("shake");
+      }
+      return;
+    }
+
+    // Проверяем что не списываем больше, чем есть
+    if (selectedExpenseSource === "goal" && amount > accounts.main) {
+      haptic("error");
+      const wrap = input?.closest(".input-wrap");
+      if (wrap) {
+        wrap.classList.add("error");
+        wrap.classList.remove("shake");
+        void wrap.offsetWidth;
+        wrap.classList.add("shake");
+      }
+      return;
+    }
+    if (selectedExpenseSource === "reserve" && amount > accounts.reserve) {
+      haptic("error");
+      const wrap = input?.closest(".input-wrap");
+      if (wrap) {
+        wrap.classList.add("error");
+        wrap.classList.remove("shake");
+        void wrap.offsetWidth;
+        wrap.classList.add("shake");
+      }
+      return;
+    }
+
+    haptic("medium");
+    applyFinancialEvent(selectedExpenseSource, amount);
+  });
+}
+
+// Подтверждение пропуска месяца
+const unexpectedSkipConfirmBtn = document.getElementById("unexpectedSkipConfirm");
+if (unexpectedSkipConfirmBtn) {
+  unexpectedSkipConfirmBtn.addEventListener("click", function () {
+    haptic("medium");
+    applyFinancialEvent("skip", 0);
+  });
+}
+
+// Кнопка «Назад»
+const unexpectedBackBtn = document.getElementById("unexpectedBack");
+if (unexpectedBackBtn) {
+  unexpectedBackBtn.addEventListener("click", function () {
+    haptic("light");
+    openScreen("advice", buttons[1]);
+    showBottomNav();
+  });
+}
+
+/**
+ * Создаёт финансовое событие, пересчитывает план через event engine,
+ * обновляет UI (счета, график, brain, цели).
+ */
+function applyFinancialEvent(source, amount) {
+  // 1. Создаём событие
+  FinancialEvents.createEvent({
+    type: FinancialEvents.EVENT_TYPES.UNEXPECTED_EXPENSE,
+    amount: amount,
+    source: source,
+    date: new Date()
+  });
+
+  // 2. Пересчитываем состояние из событий
+  const goal = parseNumber(goalInput.value || "0");
+  const result = FinancialEvents.recalculatePlanFromEvents({
+    initialBalance: initialBalance,
+    factHistory: factHistory,
+    goal: goal,
+    plannedMonthly: plannedMonthly
+  });
+
+  // 3. Применяем результат к глобальным переменным (синхронизация)
+  accounts.main = result.goalBalance;
+  accounts.reserve = result.reserveBalance;
+
+  // 4. Обновляем lastCalc.months с учётом пропущенных
+  if (lastCalc.ok) {
+    lastCalc.months = result.months;
+    lastCalc.effectiveGoal = result.remaining;
+  }
+
+  // 5. Добавляем запись в factHistory для отображения в истории (отрицательные значения = расходы)
+  if (source !== "skip") {
+    const now = new Date();
+    now.setDate(1);
+    now.setHours(0, 0, 0, 0);
+    factHistory.push({
+      value: -amount,
+      date: now,
+      to: source === "reserve" ? "reserve" : "main"
+    });
+  }
+
+  // 6. Обновляем UI
+  drawStaticLayer();
+  animateFactLine();
+  runBrain();
+  renderAccountsUI();
+  renderGoals();
+  updatePlanHeader();
+
+  // 7. Brain-анализ расходов
+  const analysis = FinancialEvents.buildExpenseAnalysis();
+  if (analysis) {
+    showBrainMessage(analysis.message);
+  }
+
+  // 8. Сохраняем
+  recalcPlan();
+
+  // 9. Возвращаемся к графику
+  openScreen("advice", buttons[1]);
+  showBottomNav();
+}

@@ -9,7 +9,7 @@
  * Загружается ПОСЛЕ core.js и ДО app.js.
  */
 
-const STATE_VERSION = 1;
+const STATE_VERSION = 2;
 const STORAGE_KEY = "protocol_app_state";
 
 // ─── Default State ────────────────────────────────────────────
@@ -40,6 +40,7 @@ function getDefaultState() {
     accounts: { main: 0, reserve: 0 },
 
     factHistory: [],
+    financialEvents: [],
 
     goalMeta: { title: "Основная цель" },
 
@@ -141,7 +142,13 @@ function migrateState(saved) {
     }
   }
 
-  // Будущие миграции: if (version < 2) { ... }
+  // v1 → v2: добавлен financialEvents
+  if (version < 2) {
+    saved.stateVersion = 2;
+    if (!Array.isArray(saved.financialEvents)) {
+      saved.financialEvents = [];
+    }
+  }
 
   return saved;
 }
@@ -222,7 +229,10 @@ function updateState(partial) {
 function saveState() {
   const toSave = {
     ...appState,
-    factHistory: serializeFactHistory(appState.factHistory)
+    factHistory: serializeFactHistory(appState.factHistory),
+    financialEvents: typeof FinancialEvents !== "undefined"
+      ? FinancialEvents.serialize()
+      : (appState.financialEvents || [])
   };
   storage.save(toSave);
 }
@@ -274,6 +284,12 @@ function applyState(saved) {
 
   appState.factHistory = deserializeFactHistory(saved.factHistory);
 
+  // Восстанавливаем финансовые события в движок
+  appState.financialEvents = Array.isArray(saved.financialEvents) ? saved.financialEvents : [];
+  if (typeof FinancialEvents !== "undefined") {
+    FinancialEvents.setEvents(FinancialEvents.deserialize(appState.financialEvents));
+  }
+
   appState.goalMeta = saved.goalMeta && typeof saved.goalMeta === "object"
     ? { ...defaults.goalMeta, ...saved.goalMeta }
     : { ...defaults.goalMeta };
@@ -301,6 +317,9 @@ function applyState(saved) {
 function clearState() {
   storage.clear();
   appState = getDefaultState();
+  if (typeof FinancialEvents !== "undefined") {
+    FinancialEvents.clearEvents();
+  }
 }
 
 function getState() {
