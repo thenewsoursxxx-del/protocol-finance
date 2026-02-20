@@ -276,14 +276,16 @@ margin-bottom: 12px;
 }
 
 .confirmBtn--danger {
-  background: #b91c1c;
-  border: 1px solid #dc2626;
+  background: linear-gradient(135deg, #7f1d1d 0%, #991b1b 35%, #b91c1c 70%, #dc2626 100%);
+  border: 1px solid rgba(220, 38, 38, 0.6);
   color: #fff;
+  box-shadow: 0 4px 20px rgba(127, 29, 29, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 .confirmBtn--danger:active {
-  background: #991b1b;
+  background: linear-gradient(135deg, #991b1b 0%, #b91c1c 100%);
   opacity: 0.95;
+  box-shadow: 0 2px 12px rgba(127, 29, 29, 0.5), inset 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 /* ===== TOP PROFILE AVATAR (в header-right или фиксирован на экране профиля) ===== */
@@ -1970,6 +1972,7 @@ body.advanced-active .advanced-fog {
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.3s ease, transform 0.3s ease;
+  background: #d1d5db;
 }
 
 .toast.toast--visible {
@@ -1983,7 +1986,7 @@ body.advanced-active .advanced-fog {
 }
 
 .toast--error {
-  background: #e5e7eb;
+  background: #d1d5db;
   color: #b91c1c;
   border: 1.5px solid #dc2626;
 }
