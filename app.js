@@ -603,6 +603,17 @@ if (advancedBtn) {
   }
 }
 
+// Если перешли на вкладку графика, а там ещё «загрузка» (например после восстановления на Счета/Цели) — сразу рендерим график
+if (name === "advice" && isInitialized && chosenPlan && lastCalc?.ok && adviceCard && adviceCard.innerHTML.includes("Protocol анализирует")) {
+  try {
+    if (loader) loader.classList.add("hidden");
+    renderProtocolAdviceGraph();
+    if (factHistory.length) runBrain();
+  } catch (e) {
+    console.warn("openScreen advice render:", e);
+  }
+}
+
 // Сохраняем последнюю активную вкладку в appState
 const navScreens = ["calc", "advice", "accounts", "goals", "ai"];
 if (navScreens.includes(name) && isInitialized) {
