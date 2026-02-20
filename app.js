@@ -349,10 +349,16 @@ function loadFullState() {
         openScreen(targetScreen, buttons[navIdx]);
         if (loader) loader.classList.add("hidden");
 
-        // Сразу подменяем «загрузку» на график, чтобы не зависеть от rAF (важно при повторном входе в мини-апп)
+        // Сразу подменяем «загрузку» на график (важно при повторном входе в мини-апп)
         if (targetScreen === "advice") {
-          renderProtocolAdviceGraph();
-          if (factHistory.length) runBrain();
+          try {
+            renderProtocolAdviceGraph();
+            if (factHistory.length) runBrain();
+          } catch (err) {
+            console.warn("Restore graph error:", err);
+            if (adviceCard) adviceCard.innerHTML = "<p style='padding:20px'>Не удалось загрузить график.</p>";
+            if (loader) loader.classList.add("hidden");
+          }
         }
 
         const finishRestore = () => {
@@ -451,7 +457,7 @@ s.id === "buffer"
 // Загружаем сохранённые данные при запуске
 loadFullState();
 
-// При возврате в мини-апп без перезагрузки — убираем зависший экран «Protocol анализирует данные…»
+// Убираем зависший экран «Protocol анализирует данные…» (при повторном входе и при возврате без перезагрузки)
 function repairAdviceScreenIfStuck() {
   const adviceScreen = document.getElementById("screen-advice");
   if (!adviceScreen || !adviceScreen.classList.contains("active")) return;
@@ -459,15 +465,32 @@ function repairAdviceScreenIfStuck() {
   const card = document.getElementById("adviceCard");
   if (!card || !card.innerHTML.includes("Protocol анализирует")) return;
   if (loader) loader.classList.add("hidden");
-  renderProtocolAdviceGraph();
-  if (factHistory.length) runBrain();
-  showBottomNav();
+  try {
+    renderProtocolAdviceGraph();
+    if (factHistory.length) runBrain();
+    showBottomNav();
+  } catch (e) {
+    console.warn("repairAdviceScreenIfStuck:", e);
+    card.innerHTML = "<p style='padding:20px'>Ошибка загрузки графика.</p><button type='button' id='repairGoToCalc'>К расчёту</button>";
+    document.getElementById("repairGoToCalc")?.addEventListener("click", function () {
+      openScreen("calc", buttons[0]);
+      hideBottomNav();
+    });
+  }
 }
+
+// После загрузки страницы — отложенная проверка (Telegram WebView может отрисовать DOM с задержкой)
+setTimeout(repairAdviceScreenIfStuck, 350);
+setTimeout(repairAdviceScreenIfStuck, 1000);
+
 document.addEventListener("visibilitychange", function () {
-  if (document.visibilityState === "visible") repairAdviceScreenIfStuck();
+  if (document.visibilityState === "visible") {
+    setTimeout(repairAdviceScreenIfStuck, 100);
+  }
 });
 window.addEventListener("pageshow", function (e) {
-  if (e.persisted) repairAdviceScreenIfStuck();
+  if (e.persisted) setTimeout(repairAdviceScreenIfStuck, 100);
+  else setTimeout(repairAdviceScreenIfStuck, 350);
 });
 
 let goalEditBaseValue = null;
