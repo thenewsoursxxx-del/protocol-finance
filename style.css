@@ -276,16 +276,16 @@ margin-bottom: 12px;
 }
 
 .confirmBtn--danger {
-  background: linear-gradient(135deg, #7f1d1d 0%, #991b1b 35%, #b91c1c 70%, #dc2626 100%);
-  border: 1px solid rgba(220, 38, 38, 0.6);
+  background: linear-gradient(135deg, #450a0a 0%, #7f1d1d 40%, #991b1b 75%, #b91c1c 100%);
+  border: 1px solid rgba(185, 28, 28, 0.6);
   color: #fff;
-  box-shadow: 0 4px 20px rgba(127, 29, 29, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 20px rgba(69, 10, 10, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .confirmBtn--danger:active {
-  background: linear-gradient(135deg, #991b1b 0%, #b91c1c 100%);
+  background: linear-gradient(135deg, #7f1d1d 0%, #991b1b 100%);
   opacity: 0.95;
-  box-shadow: 0 2px 12px rgba(127, 29, 29, 0.5), inset 0 2px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 12px rgba(69, 10, 10, 0.6), inset 0 2px 8px rgba(0, 0, 0, 0.25);
 }
 
 /* ===== TOP PROFILE AVATAR (в header-right или фиксирован на экране профиля) ===== */
@@ -1972,7 +1972,6 @@ body.advanced-active .advanced-fog {
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.3s ease, transform 0.3s ease;
-  background: #d1d5db;
 }
 
 .toast.toast--visible {
@@ -1986,8 +1985,8 @@ body.advanced-active .advanced-fog {
 }
 
 .toast--error {
-  background: #d1d5db;
-  color: #b91c1c;
+  background: #111;
+  color: #fca5a5;
   border: 1.5px solid #dc2626;
 }
 
