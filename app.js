@@ -2353,10 +2353,11 @@ function openUnexpectedExpenseScreen() {
   if (skipBlock) skipBlock.style.display = "none";
   if (amountInput) amountInput.value = "";
 
-  // Скрываем «Потратил из резерва» если нет резерва
+  // Показываем «Потратил из резерва» только при плане с резервом; при резерве 0 — визуально блокируем
   const reserveOption = document.querySelector('.unexpected-option[data-source="reserve"]');
   if (reserveOption) {
     reserveOption.style.display = chosenPlan === "buffer" ? "flex" : "none";
+    reserveOption.classList.toggle("disabled", accounts.reserve === 0);
   }
 
   openScreen("unexpected", null);
@@ -2366,6 +2367,10 @@ function openUnexpectedExpenseScreen() {
 // Выбор варианта
 document.querySelectorAll(".unexpected-option").forEach(opt => {
   opt.addEventListener("click", function () {
+    if (this.classList.contains("disabled")) {
+      haptic("error");
+      return;
+    }
     haptic("light");
 
     document.querySelectorAll(".unexpected-option").forEach(o => o.classList.remove("selected"));

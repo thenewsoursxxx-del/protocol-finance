@@ -1851,6 +1851,18 @@ body.advanced-active .advanced-fog {
   transform: scale(0.98);
 }
 
+.unexpected-option.disabled {
+  opacity: 0.45;
+  pointer-events: none;
+  border-color: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.unexpected-option.disabled .unexpected-option-title,
+.unexpected-option.disabled .unexpected-option-desc {
+  color: rgba(255, 255, 255, 0.5);
+}
+
 .unexpected-option.selected {
   border-color: #3a7bfd;
   background: radial-gradient(
