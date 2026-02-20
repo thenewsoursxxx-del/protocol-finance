@@ -1539,6 +1539,40 @@ function showBrainMessage(text) {
   container.appendChild(block);
 }
 
+/**
+ * Всплывающая toast-подсказка сверху экрана.
+ * @param {string} message - Текст сообщения
+ * @param {string} type - "error" | "success" | "info"
+ */
+function showToast(message, type) {
+  type = type === "error" || type === "success" || type === "info" ? type : "info";
+
+  const existing = document.getElementById("protocol-toast");
+  if (existing) {
+    clearTimeout(existing._toastTimeout);
+    existing.remove();
+  }
+
+  const el = document.createElement("div");
+  el.id = "protocol-toast";
+  el.className = "toast toast--" + type;
+  el.textContent = message;
+  document.body.appendChild(el);
+
+  requestAnimationFrame(() => {
+    el.classList.add("toast--visible");
+  });
+
+  const duration = 3000;
+  el._toastTimeout = setTimeout(() => {
+    el.classList.remove("toast--visible");
+    el.classList.add("toast--hiding");
+    setTimeout(() => {
+      el.remove();
+    }, 300);
+  }, duration);
+}
+
 function showFactTooltip({ value, onHide }) {
   const container = document.getElementById("factTooltipContainer");
   if (container) {
@@ -2368,6 +2402,9 @@ function openUnexpectedExpenseScreen() {
 document.querySelectorAll(".unexpected-option").forEach(opt => {
   opt.addEventListener("click", function () {
     if (this.classList.contains("disabled")) {
+      if (this.dataset.source === "reserve") {
+        showToast("Недостаточно средств в резерве.", "error");
+      }
       haptic("error");
       return;
     }

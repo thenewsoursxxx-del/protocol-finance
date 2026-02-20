@@ -1853,9 +1853,9 @@ body.advanced-active .advanced-fog {
 
 .unexpected-option.disabled {
   opacity: 0.45;
-  pointer-events: none;
   border-color: rgba(255, 255, 255, 0.06);
   background: rgba(255, 255, 255, 0.02);
+  cursor: default;
 }
 
 .unexpected-option.disabled .unexpected-option-title,
@@ -1948,4 +1948,54 @@ body.advanced-active .advanced-fog {
 .unexpected-expense-trigger:active {
   background: rgba(245, 158, 11, 0.2);
   transform: scale(0.97);
+}
+
+/* ===== TOAST ===== */
+
+.toast {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-20px);
+  z-index: 100000;
+  min-width: 280px;
+  max-width: calc(100vw - 40px);
+  padding: 14px 20px;
+  border-radius: 14px;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.35;
+  text-align: center;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.35);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.toast.toast--visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.toast.toast--hiding {
+  opacity: 0;
+  transform: translateX(-50%) translateY(-12px);
+}
+
+.toast--error {
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1.5px solid #dc2626;
+}
+
+.toast--success {
+  background: #f0fdf4;
+  color: #15803d;
+  border: 1.5px solid #22c55e;
+}
+
+.toast--info {
+  background: #f8fafc;
+  color: #334155;
+  border: 1.5px solid #94a3b8;
 }
