@@ -257,13 +257,19 @@ function recalcPlan() {
   // ── Engine recalculation (когда план активен) ──
   if (isInitialized && chosenPlan && typeof CashflowEngine !== "undefined") {
     var goalVal = parseNumber(goalInput?.value || "0");
+    var s = getState();
+    var modelType = s.financialModel || "simple";
     var incomeVal = parseNumber(incomeInput?.value || "0");
     var expensesVal = parseNumber(expensesInput?.value || "0");
-
-    if (goalVal > 0 && incomeVal > expensesVal) {
+    if (modelType === "cashflow") {
+      if (s.incomeType === "variable") incomeVal = 0;
+      if (s.expenseType === "variable") expensesVal = 0;
+    }
+    var canRecalc = goalVal > 0 && (incomeVal > expensesVal || modelType === "cashflow");
+    if (canRecalc) {
       var events = assembleCashflowEvents();
       var engine = new CashflowEngine({
-        modelType: getState().financialModel || "simple",
+        modelType: modelType,
         baseConfig: {
           goal: goalVal,
           income: incomeVal,
@@ -1245,6 +1251,11 @@ function performFullReset() {
   state.hasReserve = false;
 
   clearState();
+
+  var flexContent = document.getElementById("flexibleContent");
+  var flexToggle = document.getElementById("flexibleToggle");
+  if (flexContent) flexContent.classList.remove("open");
+  if (flexToggle) flexToggle.classList.remove("open");
 
   calcLock.style.display = "none";
   confirmReset.style.display = "none";
