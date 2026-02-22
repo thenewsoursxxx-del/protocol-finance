@@ -9,7 +9,7 @@
  * Загружается ПОСЛЕ core.js и ДО app.js.
  */
 
-const STATE_VERSION = 3;
+const STATE_VERSION = 4;
 const STORAGE_KEY = "protocol_app_state";
 
 // ─── Default State ────────────────────────────────────────────
@@ -53,6 +53,9 @@ function getDefaultState() {
     incomeType: "fixed",
     expenseType: "fixed",
     frequency: "monthly",
+
+    // ── Premium (v4) ──
+    isPremium: false,
 
     uiState: {
       goalTotal: 0,
@@ -169,6 +172,12 @@ function migrateState(saved) {
     if (!saved.incomeType) saved.incomeType = "fixed";
     if (!saved.expenseType) saved.expenseType = "fixed";
     if (!saved.frequency) saved.frequency = "monthly";
+  }
+
+  // v3 → v4: isPremium
+  if (version < 4) {
+    saved.stateVersion = 4;
+    if (typeof saved.isPremium !== "boolean") saved.isPremium = false;
   }
 
   return saved;
@@ -328,6 +337,9 @@ function applyState(saved) {
   appState.incomeType = saved.incomeType || defaults.incomeType;
   appState.expenseType = saved.expenseType || defaults.expenseType;
   appState.frequency = saved.frequency || defaults.frequency;
+
+  // ── Premium (v4) ──
+  appState.isPremium = typeof saved.isPremium === "boolean" ? saved.isPremium : defaults.isPremium;
 
   if (saved.uiState && typeof saved.uiState === "object") {
     appState.uiState = { ...defaults.uiState, ...saved.uiState };

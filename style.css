@@ -2177,3 +2177,34 @@ body.advanced-active .advanced-fog {
 .sheet.event-editor input[type="date"] {
   min-width: 0;
 }
+
+/* ===== PREMIUM LOCK ===== */
+
+.premium-badge {
+  display: none;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  padding: 2px 5px;
+  border-radius: 4px;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #000;
+  vertical-align: middle;
+  margin-left: 4px;
+}
+
+.premium-locked .premium-badge {
+  display: inline;
+}
+
+.premium-locked {
+  opacity: 0.35 !important;
+  pointer-events: none;
+  position: relative;
+}
+
+.premium-locked.active {
+  background: #000 !important;
+  color: #fff !important;
+  opacity: 0.35 !important;
+}

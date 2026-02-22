@@ -1,13 +1,15 @@
 /**
- * Protocol Finance — Time-Based Cashflow Engine (Domain Layer)
+ * Protocol Finance — CashflowEngine (Domain Layer)
  *
- * Единое ядро расчёта: events → balances, months, projection, derivedState.
- * Режимы: "simple" (фиксированный ежемесячный взнос) и "cashflow" (полный event-based).
+ * Единственное вычислительное ядро приложения.
+ * Два режима: "simple" (фиксированный взнос) и "cashflow" (event-based с frequency).
  *
  * Загружается ПОСЛЕ financial-events.js и ДО app.js.
  */
 (function (global) {
   "use strict";
+
+  // ─── Constants ────────────────────────────────────────────
 
   var EVENT_TYPE = {
     INCOME: "income",
@@ -16,9 +18,20 @@
     UNEXPECTED_EXPENSE: "unexpected_expense"
   };
 
-  var FREQUENCY = { ONCE: "once", MONTHLY: "monthly" };
+  var FREQUENCY = {
+    ONCE: "once",
+    MONTHLY: "monthly",
+    WEEKLY: "weekly",
+    BIWEEKLY: "biweekly",
+    CUSTOM: "custom"
+  };
 
   var PACE_MAP = { calm: 0.4, normal: 0.6, aggressive: 0.8 };
+
+  var WEEKLY_PER_MONTH = 4.33;
+  var BIWEEKLY_PER_MONTH = 2.16;
+
+  // ─── Helpers ──────────────────────────────────────────────
 
   function generateId() {
     return Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 8);
@@ -29,6 +42,26 @@
     r.setDate(1);
     r.setHours(0, 0, 0, 0);
     return r;
+  }
+
+  /**
+   * Converts event amount to a monthly equivalent based on frequency.
+   */
+  function frequencyToMonthly(amount, frequency, meta) {
+    switch (frequency) {
+      case FREQUENCY.WEEKLY:
+        return amount * WEEKLY_PER_MONTH;
+      case FREQUENCY.BIWEEKLY:
+        return amount * BIWEEKLY_PER_MONTH;
+      case FREQUENCY.CUSTOM:
+        var days = (meta && Number(meta.intervalDays)) || 30;
+        return amount * (30 / days);
+      case FREQUENCY.MONTHLY:
+        return amount;
+      case FREQUENCY.ONCE:
+      default:
+        return 0;
+    }
   }
 
   // ─── Event Normalization ──────────────────────────────────
@@ -51,16 +84,11 @@
 
   // ─── Legacy Adapters ──────────────────────────────────────
 
-  /**
-   * factHistory[] → FinancialEvent[]
-   * Positive value → contribution; negative → unexpected_expense.
-   */
   function factHistoryToEvents(factHistory) {
     if (!Array.isArray(factHistory)) return [];
     return factHistory
       .map(function (f) {
-        var d =
-          f.date instanceof Date ? new Date(f.date) : new Date(f.date || Date.now());
+        var d = f.date instanceof Date ? new Date(f.date) : new Date(f.date || Date.now());
         var isExpense = f.value < 0;
         return normalizeEvent({
           type: isExpense ? EVENT_TYPE.UNEXPECTED_EXPENSE : EVENT_TYPE.CONTRIBUTION,
@@ -68,21 +96,13 @@
           startDate: d,
           meta: {
             to: f.to || "main",
-            source: isExpense
-              ? f.to === "reserve"
-                ? "reserve"
-                : "goal"
-              : undefined
+            source: isExpense ? (f.to === "reserve" ? "reserve" : "goal") : undefined
           }
         });
       })
       .filter(Boolean);
   }
 
-  /**
-   * FinancialEvents.getEvents() (old module) → FinancialEvent[]
-   * Используется только для skip-событий (остальные уже в factHistory).
-   */
   function legacySkipEventsOnly(legacyEvents) {
     if (!Array.isArray(legacyEvents)) return [];
     return legacyEvents
@@ -124,10 +144,8 @@
     this._derived = null;
   }
 
-  /**
-   * Planned monthly contribution (simple mode formula).
-   * Идентична ProtocolCore.calculateBase по логике.
-   */
+  // ─── Simple: planned monthly ──────────────────────────────
+
   CashflowEngine.prototype._getPlannedMonthly = function () {
     var bc = this.baseConfig;
     var free = bc.income - bc.expenses;
@@ -150,10 +168,8 @@
     };
   };
 
-  /**
-   * Вычисляет текущие балансы из saved + events.
-   * Не мутирует ничего.
-   */
+  // ─── Shared: compute balances from events ─────────────────
+
   CashflowEngine.prototype._computeBalances = function () {
     var goalBal = Number(this.baseConfig.saved) || 0;
     var reserveBal = 0;
@@ -180,14 +196,48 @@
     };
   };
 
-  /**
-   * Полный пересчёт → derivedState.
-   */
+  // ─── Cashflow: monthly aggregate from recurring events ────
+
+  CashflowEngine.prototype._getRecurringMonthlyNet = function () {
+    var monthlyIncome = 0;
+    var monthlyExpense = 0;
+
+    for (var i = 0; i < this.events.length; i++) {
+      var e = this.events[i];
+      if (e.frequency === FREQUENCY.ONCE) continue;
+
+      var monthly = frequencyToMonthly(e.amount, e.frequency, e.meta);
+
+      if (e.type === EVENT_TYPE.INCOME) {
+        monthlyIncome += monthly;
+      } else if (e.type === EVENT_TYPE.EXPENSE) {
+        monthlyExpense += monthly;
+      }
+    }
+
+    return {
+      monthlyIncome: Math.round(monthlyIncome),
+      monthlyExpense: Math.round(monthlyExpense),
+      monthlyNet: Math.round(monthlyIncome - monthlyExpense)
+    };
+  };
+
+  // ─── recalculate() ────────────────────────────────────────
+
   CashflowEngine.prototype.recalculate = function () {
+    if (this.modelType === "cashflow") {
+      return this._recalculateCashflow();
+    }
+    return this._recalculateSimple();
+  };
+
+  /**
+   * SIMPLE: free × pace, ceil(remaining / toGoal). Fast path.
+   */
+  CashflowEngine.prototype._recalculateSimple = function () {
     var bc = this.baseConfig;
     var planned = this._getPlannedMonthly();
     var balances = this._computeBalances();
-
     var remaining = Math.max(0, bc.goal - balances.goalBalance);
 
     var monthsLeft = 0;
@@ -199,50 +249,185 @@
 
     this._derived = {
       ok: ok,
+      modelType: "simple",
       currentGoalBalance: balances.goalBalance,
       reserveBalance: balances.reserveBalance,
       remainingGoal: remaining,
       monthsLeft: monthsLeft,
       monthlySave: planned.total,
+      plannedToGoal: planned.toGoal,
+      plannedToReserve: planned.toReserve,
       free: planned.free,
       pace: planned.pace,
-      riskScore:
-        planned.free > 0 ? Math.min(1, planned.total / planned.free) : 1,
+      riskScore: planned.free > 0 ? Math.min(1, planned.total / planned.free) : 1,
       totalSkips: balances.totalSkips,
       projectedCompletionDate: ok && monthsLeft > 0
         ? (function () { var d = new Date(); d.setMonth(d.getMonth() + monthsLeft); return d; })()
-        : null
+        : null,
+      averageMonthlyContribution: planned.toGoal,
+      timeline: null
     };
 
     return this._derived;
   };
 
   /**
-   * Проекция будущего: массив точек { date, goalBalance, reserveBalance }.
-   * Текущий график пока использует legacy buildPlanTimeline, но timeline
-   * доступен для будущих улучшений.
+   * CASHFLOW: event-based with frequency aggregation + timeline.
    */
-  CashflowEngine.prototype.generateTimeline = function () {
+  CashflowEngine.prototype._recalculateCashflow = function () {
+    var bc = this.baseConfig;
+    var balances = this._computeBalances();
+    var recurring = this._getRecurringMonthlyNet();
+
+    var baseIncome = bc.income || 0;
+    var baseExpenses = bc.expenses || 0;
+    var totalMonthlyIncome = baseIncome + recurring.monthlyIncome;
+    var totalMonthlyExpense = baseExpenses + recurring.monthlyExpense;
+    var free = totalMonthlyIncome - totalMonthlyExpense;
+
+    var pace = PACE_MAP[bc.mode] || 0.6;
+    var monthlySave = free > 0 ? Math.round(free * pace) : 0;
+
+    var toGoal = monthlySave;
+    var toReserve = 0;
+    if (bc.hasReserve && monthlySave > 0) {
+      toReserve = Math.round(monthlySave * 0.1);
+      toGoal = monthlySave - toReserve;
+    }
+
+    var remaining = Math.max(0, bc.goal - balances.goalBalance);
+
+    var monthsLeft = 0;
+    if (remaining > 0 && toGoal > 0) {
+      monthsLeft = Math.ceil(remaining / toGoal) + balances.totalSkips;
+    }
+
+    var ok = free > 0 && bc.goal > 0;
+
+    this._derived = {
+      ok: ok,
+      modelType: "cashflow",
+      currentGoalBalance: balances.goalBalance,
+      reserveBalance: balances.reserveBalance,
+      remainingGoal: remaining,
+      monthsLeft: monthsLeft,
+      monthlySave: monthlySave,
+      plannedToGoal: toGoal,
+      plannedToReserve: toReserve,
+      free: free,
+      pace: pace,
+      riskScore: free > 0 ? Math.min(1, monthlySave / free) : 1,
+      totalSkips: balances.totalSkips,
+      projectedCompletionDate: ok && monthsLeft > 0
+        ? (function () { var d = new Date(); d.setMonth(d.getMonth() + monthsLeft); return d; })()
+        : null,
+      averageMonthlyContribution: toGoal,
+      recurringIncome: recurring.monthlyIncome,
+      recurringExpense: recurring.monthlyExpense,
+      timeline: null
+    };
+
+    return this._derived;
+  };
+
+  // ─── generateTimeline ─────────────────────────────────────
+
+  /**
+   * Builds a month-by-month projection.
+   * For "simple" — flat planned amounts per month.
+   * For "cashflow" — aggregates recurring events per month.
+   *
+   * @param {number} [horizonMonths] — max months to project (default: monthsLeft + 6)
+   * @returns {Array<{date, goalBalance, reserveBalance, income, expense}>}
+   */
+  CashflowEngine.prototype.generateTimeline = function (horizonMonths) {
     if (!this._derived) this.recalculate();
     var d = this._derived;
-    var planned = this._getPlannedMonthly();
+
+    var toGoal = d.plannedToGoal || 0;
+    var toReserve = d.plannedToReserve || 0;
+    var horizon = horizonMonths || (d.monthsLeft > 0 ? d.monthsLeft + 6 : 24);
+    if (horizon > 120) horizon = 120;
+
     var points = [];
     var bal = d.currentGoalBalance;
     var resBal = d.reserveBalance;
+    var goal = this.baseConfig.goal;
     var now = startOfMonth();
 
-    points.push({ date: new Date(now), goalBalance: bal, reserveBalance: resBal });
+    points.push({
+      date: new Date(now),
+      goalBalance: bal,
+      reserveBalance: resBal,
+      income: 0,
+      expense: 0
+    });
 
-    for (var i = 1; i <= d.monthsLeft; i++) {
+    for (var m = 1; m <= horizon; m++) {
       var date = new Date(now);
-      date.setMonth(date.getMonth() + i);
-      bal += planned.toGoal;
-      resBal += planned.toReserve;
-      points.push({ date: date, goalBalance: bal, reserveBalance: resBal });
+      date.setMonth(date.getMonth() + m);
+
+      bal += toGoal;
+      resBal += toReserve;
+
+      if (bal >= goal && goal > 0) {
+        bal = goal;
+      }
+
+      points.push({
+        date: date,
+        goalBalance: Math.round(bal),
+        reserveBalance: Math.round(resBal),
+        income: d.modelType === "cashflow" ? (d.recurringIncome || 0) : 0,
+        expense: d.modelType === "cashflow" ? (d.recurringExpense || 0) : 0
+      });
+
+      if (bal >= goal && goal > 0) break;
     }
 
+    this._derived.timeline = points;
     return points;
   };
+
+  // ─── buildAdvice (static) ─────────────────────────────────
+
+  /**
+   * Generates advice text from derivedState.
+   * Replaces ProtocolCore.buildAdvice — single source of truth.
+   */
+  CashflowEngine.buildAdvice = function (derived) {
+    if (!derived || !derived.ok) {
+      return {
+        tone: "warning",
+        text: "Сначала нужно привести расходы и доходы в баланс."
+      };
+    }
+
+    var advice = [];
+
+    if (derived.monthsLeft > 36) {
+      advice.push("Цель долгосрочная — подумайте, готовы ли вы ждать так долго.");
+    }
+
+    if (derived.pace >= 0.8) {
+      advice.push("Агрессивный режим требует дисциплины и стабильного дохода.");
+    }
+
+    if (derived.monthlySave < 0.15 * derived.free) {
+      advice.push("Вы откладываете слишком мало — цель будет достигаться медленно.");
+    }
+
+    if (advice.length === 0) {
+      advice.push("План выглядит устойчивым и реалистичным.");
+    }
+
+    return {
+      tone: "neutral",
+      text: advice.join(" ")
+    };
+  };
+
+  // ─── getDerivedState ──────────────────────────────────────
 
   CashflowEngine.prototype.getDerivedState = function () {
     return this._derived;
@@ -258,6 +443,7 @@
     normalizeEvent: normalizeEvent,
     factHistoryToEvents: factHistoryToEvents,
     legacySkipEventsOnly: legacySkipEventsOnly,
+    frequencyToMonthly: frequencyToMonthly,
     startOfMonth: startOfMonth,
     generateId: generateId
   };

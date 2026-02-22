@@ -281,10 +281,7 @@ function recalcPlan() {
 
         accounts.main = derived.currentGoalBalance;
         accounts.reserve = derived.reserveBalance;
-
-        plannedMonthly = chosenPlan === "buffer"
-          ? Math.round(derived.monthlySave * 0.9)
-          : derived.monthlySave;
+        plannedMonthly = derived.plannedToGoal;
 
         updateState({ derivedState: derived });
       }
@@ -438,7 +435,7 @@ function loadFullState() {
           ensureNavVisibleAfterRestore();
         });
       } else if (lastCalc?.ok) {
-        const advice = ProtocolCore.buildAdvice(lastCalc);
+        const advice = CashflowEngine.buildAdvice(lastCalc);
         const baseMonthly = lastCalc.monthlySave;
         const bufferRate = 0.1;
         const scenarios = [
@@ -929,7 +926,7 @@ lastCalc = {
   effectiveGoal: derived.remainingGoal
 };
 
-const advice = ProtocolCore.buildAdvice(lastCalc);
+const advice = CashflowEngine.buildAdvice(lastCalc);
 
 // ===== BUILD 2 SCENARIOS (DIRECT vs BUFFER) =====
 const baseMonthly = lastCalc.monthlySave;
@@ -1023,7 +1020,7 @@ return d;
 }
 
 function renderProtocolAdviceGraph() {
-  const advice = ProtocolCore.buildAdvice(lastCalc);
+  const advice = CashflowEngine.buildAdvice(lastCalc);
 
   adviceCard.innerHTML = `
 <div id="planHeader">
@@ -1915,9 +1912,13 @@ if (!monthlyEl || !explainEl) return;
 monthlyEl.innerText =
 `План: ${plannedMonthly.toLocaleString()} ₽ / месяц`;
 
-explainEl.innerHTML = ProtocolCore
-.explain(lastCalc)
-.replace(/\n/g, "<br>");
+var explainText = lastCalc.ok
+  ? "Свободно в месяц: " + (lastCalc.free || 0).toLocaleString() + " ₽\n"
+    + "Откладываете: " + (lastCalc.monthlySave || 0).toLocaleString() + " ₽\n"
+    + "Это ~" + Math.round((lastCalc.pace || 0) * 100) + "% от свободных средств\n"
+    + "Цель будет достигнута примерно за " + (lastCalc.months || 0) + " мес"
+  : "Когда расходы больше доходов, любой план будет нестабильным.";
+explainEl.innerHTML = explainText.replace(/\n/g, "<br>");
 }
 
 function handleGoalEditHint(ratio) {
@@ -2565,6 +2566,49 @@ function applyFinancialEvent(source, amount) {
 
 /* ===== CASHFLOW SETTINGS ===== */
 
+/**
+ * Premium gate: если cashflow выбран, но подписки нет — откат в simple.
+ */
+function checkPremiumGate() {
+  var s = getState();
+  if (s.financialModel === "cashflow" && !s.isPremium) {
+    updateState({
+      financialModel: "simple",
+      incomeType: "fixed",
+      expenseType: "fixed"
+    });
+    recalcPlan();
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Обновляет disabled/lock состояние элементов cashflow settings.
+ */
+function applyPremiumUI(isPremium) {
+  var variableBtns = document.querySelectorAll(
+    '#incomeToggle .mode-btn[data-value="variable"], #expenseToggle .mode-btn[data-value="variable"]'
+  );
+  var freqBtns = document.querySelectorAll(
+    '#frequencySelector .freq-btn:not([data-freq="monthly"])'
+  );
+  var addEventBtn = document.getElementById("addFinancialEvent");
+
+  for (var i = 0; i < variableBtns.length; i++) {
+    variableBtns[i].classList.toggle("premium-locked", !isPremium);
+    variableBtns[i].disabled = !isPremium;
+  }
+  for (var j = 0; j < freqBtns.length; j++) {
+    freqBtns[j].classList.toggle("premium-locked", !isPremium);
+    freqBtns[j].disabled = !isPremium;
+  }
+  if (addEventBtn) {
+    addEventBtn.classList.toggle("premium-locked", !isPremium);
+    addEventBtn.disabled = !isPremium;
+  }
+}
+
 function initCashflowSettings() {
   var incomeToggle = document.getElementById("incomeToggle");
   var expenseToggle = document.getElementById("expenseToggle");
@@ -2574,10 +2618,18 @@ function initCashflowSettings() {
   if (!incomeToggle || !expenseToggle) return;
 
   var currentState = getState();
+  var isPremium = !!currentState.isPremium;
   var incomeType = currentState.incomeType || "fixed";
   var expenseType = currentState.expenseType || "fixed";
   var frequency = currentState.frequency || "monthly";
 
+  if (!isPremium && (incomeType === "variable" || expenseType === "variable")) {
+    incomeType = "fixed";
+    expenseType = "fixed";
+    updateState({ incomeType: "fixed", expenseType: "fixed", financialModel: "simple" });
+  }
+
+  applyPremiumUI(isPremium);
   syncToggleUI(incomeToggle, incomeType);
   syncToggleUI(expenseToggle, expenseType);
   syncFreqUI(frequency);
@@ -2585,7 +2637,7 @@ function initCashflowSettings() {
 
   incomeToggle.addEventListener("click", function (e) {
     var btn = e.target.closest(".mode-btn");
-    if (!btn) return;
+    if (!btn || btn.disabled) return;
     haptic("light");
     incomeType = btn.dataset.value;
     syncToggleUI(incomeToggle, incomeType);
@@ -2594,7 +2646,7 @@ function initCashflowSettings() {
 
   expenseToggle.addEventListener("click", function (e) {
     var btn = e.target.closest(".mode-btn");
-    if (!btn) return;
+    if (!btn || btn.disabled) return;
     haptic("light");
     expenseType = btn.dataset.value;
     syncToggleUI(expenseToggle, expenseType);
@@ -2604,17 +2656,18 @@ function initCashflowSettings() {
   if (freqSelector) {
     freqSelector.addEventListener("click", function (e) {
       var btn = e.target.closest(".freq-btn");
-      if (!btn) return;
+      if (!btn || btn.disabled) return;
       haptic("light");
       frequency = btn.dataset.freq;
       syncFreqUI(frequency);
       updateState({ frequency: frequency });
-      saveFullState();
+      recalcPlan();
     });
   }
 
   if (addEventBtn) {
     addEventBtn.addEventListener("click", function () {
+      if (addEventBtn.disabled) return;
       haptic("light");
       openEventEditor();
     });
