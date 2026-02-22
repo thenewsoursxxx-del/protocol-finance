@@ -2618,18 +2618,11 @@ function initCashflowSettings() {
   if (!incomeToggle || !expenseToggle) return;
 
   var currentState = getState();
-  var isPremium = !!currentState.isPremium;
   var incomeType = currentState.incomeType || "fixed";
   var expenseType = currentState.expenseType || "fixed";
   var frequency = currentState.frequency || "monthly";
 
-  if (!isPremium && (incomeType === "variable" || expenseType === "variable")) {
-    incomeType = "fixed";
-    expenseType = "fixed";
-    updateState({ incomeType: "fixed", expenseType: "fixed", financialModel: "simple" });
-  }
-
-  applyPremiumUI(isPremium);
+  applyPremiumUI(true);
   syncToggleUI(incomeToggle, incomeType);
   syncToggleUI(expenseToggle, expenseType);
   syncFreqUI(frequency);

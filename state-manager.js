@@ -6,7 +6,7 @@
  * чтобы заменить адаптер на backend / Telegram Cloud Storage
  * без переписывания логики приложения.
  *
- * Загружается ПОСЛЕ core.js и ДО app.js.
+ * Загружается ДО app.js.
  */
 
 const STATE_VERSION = 4;
