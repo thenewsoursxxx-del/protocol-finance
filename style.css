@@ -493,24 +493,42 @@ color: #f55;
 }
 
 .profile-header {
-display: flex;
-align-items: center;
-gap: 12px;
-margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.profile-header--with-icon .profile-title {
+  flex: 1;
+  min-width: 0;
+  padding-right: 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-header--with-icon .header-right {
+  width: 60px;
+  flex-shrink: 0;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
 }
 
 #profileBack {
-width: auto;
-padding: 6px 10px;
-font-size: 22px;
-background: transparent;
-color: #fff;
-border: none;
+  width: auto;
+  padding: 6px 10px;
+  font-size: 22px;
+  background: transparent;
+  color: #fff;
+  border: none;
+  flex-shrink: 0;
 }
 
 .profile-title {
-font-size: 22px;
-font-weight: 600;
+  font-size: 22px;
+  font-weight: 600;
 }
 
 /* ===== INPUT ERROR (INLINE) ===== */
@@ -1932,7 +1950,7 @@ body.advanced-active .advanced-fog {
   cursor: pointer;
 }
 
-/* Кнопка на вкладке Protocol */
+/* Кнопка на вкладке Protocol — изумрудная, в стиле расширенных настроек */
 .unexpected-expense-trigger {
   width: 100%;
   margin-top: 16px;
@@ -1940,16 +1958,25 @@ body.advanced-active .advanced-fog {
   font-size: 15px;
   font-weight: 600;
   border-radius: 16px;
-  border: 1px solid rgba(245, 158, 11, 0.45);
-  background: rgba(245, 158, 11, 0.1);
-  color: #f59e0b;
+  border: 1px solid rgba(16, 185, 129, 0.45);
+  background: linear-gradient(
+    135deg,
+    #021a16,
+    #063d33,
+    #047857,
+    #063d33,
+    #021a16
+  );
+  color: #6ee7b7;
   cursor: pointer;
-  transition: background 0.2s, border-color 0.2s;
+  transition: background 0.2s, border-color 0.2s, transform 0.12s;
+  box-shadow: 0 8px 24px rgba(4, 120, 87, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .unexpected-expense-trigger:active {
-  background: rgba(245, 158, 11, 0.2);
+  background: linear-gradient(135deg, #063d33, #047857);
   transform: scale(0.97);
+  box-shadow: 0 4px 16px rgba(4, 120, 87, 0.45), inset 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 
 /* ===== TOAST ===== */
