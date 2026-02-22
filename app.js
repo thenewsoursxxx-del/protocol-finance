@@ -2884,8 +2884,15 @@ function initCashflowSettings() {
       return;
     }
 
-    flexContent.classList.toggle("open");
-    flexToggle.classList.toggle("open");
+    if (flexContent.classList.contains("open")) {
+      flexContent.classList.remove("open");
+      flexToggle.classList.remove("open");
+    } else {
+      requestAnimationFrame(function () {
+        flexContent.classList.add("open");
+        flexToggle.classList.add("open");
+      });
+    }
   });
 
   if (onboardConfirm) {

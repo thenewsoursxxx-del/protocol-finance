@@ -2087,6 +2087,8 @@ body.advanced-active .advanced-fog {
 .flexible-content.open {
   max-height: 900px;
   padding: 0 16px 16px;
+  transition: max-height 0.45s cubic-bezier(.22,1,.36,1),
+              padding 0.35s ease;
 }
 
 /* ── MonthDays (date input как в «Добавить событие») ── */
@@ -2337,13 +2339,32 @@ body.advanced-active .advanced-fog {
   max-width: 100%;
 }
 
+.sheet.event-editor .input-wrap {
+  min-width: 0;
+}
+
 .sheet.event-editor .input-wrap input {
   max-width: 100%;
+  width: 100%;
   box-sizing: border-box;
 }
 
 .sheet.event-editor input[type="date"] {
   min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.sheet.event-editor #eventSubmit {
+  background: #3a7bfd;
+  color: #fff;
+  border: 1px solid rgba(58, 123, 253, 0.6);
+}
+
+.sheet.event-editor #eventSubmit:active {
+  background: #2563eb;
+  opacity: 0.95;
 }
 
 /* ===== PREMIUM LOCK ===== */
