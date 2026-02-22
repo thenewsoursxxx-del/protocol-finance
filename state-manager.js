@@ -9,7 +9,7 @@
  * Загружается ПОСЛЕ core.js и ДО app.js.
  */
 
-const STATE_VERSION = 2;
+const STATE_VERSION = 3;
 const STORAGE_KEY = "protocol_app_state";
 
 // ─── Default State ────────────────────────────────────────────
@@ -43,6 +43,11 @@ function getDefaultState() {
     financialEvents: [],
 
     goalMeta: { title: "Основная цель" },
+
+    // ── Engine (v3) ──
+    financialModel: "simple",
+    cashflowEvents: [],
+    derivedState: {},
 
     uiState: {
       goalTotal: 0,
@@ -150,6 +155,14 @@ function migrateState(saved) {
     }
   }
 
+  // v2 → v3: CashflowEngine fields
+  if (version < 3) {
+    saved.stateVersion = 3;
+    if (!saved.financialModel) saved.financialModel = "simple";
+    if (!Array.isArray(saved.cashflowEvents)) saved.cashflowEvents = [];
+    if (!saved.derivedState || typeof saved.derivedState !== "object") saved.derivedState = {};
+  }
+
   return saved;
 }
 
@@ -232,7 +245,9 @@ function saveState() {
     factHistory: serializeFactHistory(appState.factHistory),
     financialEvents: typeof FinancialEvents !== "undefined"
       ? FinancialEvents.serialize()
-      : (appState.financialEvents || [])
+      : (appState.financialEvents || []),
+    cashflowEvents: serializeCashflowEvents(appState.cashflowEvents),
+    derivedState: appState.derivedState || {}
   };
   storage.save(toSave);
 }
@@ -294,6 +309,13 @@ function applyState(saved) {
     ? { ...defaults.goalMeta, ...saved.goalMeta }
     : { ...defaults.goalMeta };
 
+  // ── Engine (v3) ──
+  appState.financialModel = saved.financialModel || defaults.financialModel;
+  appState.cashflowEvents = Array.isArray(saved.cashflowEvents) ? saved.cashflowEvents : [];
+  appState.derivedState = (saved.derivedState && typeof saved.derivedState === "object")
+    ? saved.derivedState
+    : {};
+
   if (saved.uiState && typeof saved.uiState === "object") {
     appState.uiState = { ...defaults.uiState, ...saved.uiState };
   } else {
@@ -320,6 +342,19 @@ function clearState() {
   if (typeof FinancialEvents !== "undefined") {
     FinancialEvents.clearEvents();
   }
+}
+
+function serializeCashflowEvents(events) {
+  if (!Array.isArray(events)) return [];
+  return events.map(function (e) {
+    var copy = {};
+    for (var k in e) {
+      if (e.hasOwnProperty(k)) copy[k] = e[k];
+    }
+    if (copy.startDate instanceof Date) copy.startDate = copy.startDate.toISOString();
+    if (copy.endDate instanceof Date) copy.endDate = copy.endDate.toISOString();
+    return copy;
+  });
 }
 
 function getState() {

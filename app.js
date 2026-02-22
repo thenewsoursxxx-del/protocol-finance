@@ -218,14 +218,81 @@ const state = {
 };
 
 /**
- * Централизованная функция перерасчёта плана
- * Обновляет все UI элементы на основе текущего state
- * 
- * ⚠️ ВАЖНО: Любое изменение данных должно вызывать ТОЛЬКО recalcPlan(),
- * а не обновлять UI вручную в разных местах.
+ * Собирает FinancialEvent[] из legacy-источников (factHistory + skip из FinancialEvents).
+ * Используется движком для расчёта балансов и проекций.
+ */
+function assembleCashflowEvents() {
+  var H = CashflowEngineHelpers;
+  var events = H.factHistoryToEvents(factHistory);
+
+  if (typeof FinancialEvents !== "undefined") {
+    var legacy = FinancialEvents.getEvents();
+    for (var i = 0; i < legacy.length; i++) {
+      var e = legacy[i];
+      if (e.type === "unexpected_expense" && e.source === "skip") {
+        events.push(H.normalizeEvent({
+          id: e.id,
+          type: H.EVENT_TYPE.UNEXPECTED_EXPENSE,
+          amount: 0,
+          startDate: e.date,
+          meta: { source: "skip" }
+        }));
+      }
+    }
+  }
+
+  return events;
+}
+
+/**
+ * Централизованная функция перерасчёта плана.
+ * При активном плане использует CashflowEngine для пересчёта балансов,
+ * месяцев и derivedState. Маппит результат в legacy-глобалы для UI.
  */
 function recalcPlan() {
-  // 1. Синхронизируем state с текущими данными
+  // ── Engine recalculation (когда план активен) ──
+  if (isInitialized && chosenPlan && typeof CashflowEngine !== "undefined") {
+    var goalVal = parseNumber(goalInput?.value || "0");
+    var incomeVal = parseNumber(incomeInput?.value || "0");
+    var expensesVal = parseNumber(expensesInput?.value || "0");
+
+    if (goalVal > 0 && incomeVal > expensesVal) {
+      var events = assembleCashflowEvents();
+      var engine = new CashflowEngine({
+        modelType: getState().financialModel || "simple",
+        baseConfig: {
+          goal: goalVal,
+          income: incomeVal,
+          expenses: expensesVal,
+          saved: initialBalance,
+          mode: saveMode,
+          hasReserve: chosenPlan === "buffer"
+        },
+        events: events
+      });
+      var derived = engine.recalculate();
+
+      if (derived.ok) {
+        lastCalc.ok = true;
+        lastCalc.free = derived.free;
+        lastCalc.pace = derived.pace;
+        lastCalc.monthlySave = derived.monthlySave;
+        lastCalc.months = derived.monthsLeft;
+        lastCalc.effectiveGoal = derived.remainingGoal;
+
+        accounts.main = derived.currentGoalBalance;
+        accounts.reserve = derived.reserveBalance;
+
+        plannedMonthly = chosenPlan === "buffer"
+          ? Math.round(derived.monthlySave * 0.9)
+          : derived.monthlySave;
+
+        updateState({ derivedState: derived });
+      }
+    }
+  }
+
+  // ── Sync UI state ──
   state.goalTotal = parseNumber(document.getElementById("goal")?.value || "0");
   state.goalSaved = accounts.main;
   state.reserveAmount = accounts.reserve;
@@ -234,24 +301,20 @@ function recalcPlan() {
   state.mode = chosenPlan;
   state.hasReserve = chosenPlan === "buffer";
 
-  // 2. Обновляем UI через существующие функции (для совместимости)
   renderGoals();
   renderAccountsUI();
 
-  // 3. Обновляем summaryMonths если элемент существует
   const summaryMonthsEl = document.getElementById("summaryMonths");
   if (summaryMonthsEl && lastCalc.months) {
     summaryMonthsEl.innerText = state.monthsLeft;
   }
 
-  // 4. Обновляем график и план
   if (lastCalc.ok) {
     drawStaticLayer();
     animateFactLine();
     updatePlanHeader();
   }
 
-  // 5. Сохраняем все данные в localStorage (память между входами)
   saveFullState();
 }
 
@@ -838,22 +901,36 @@ const validGoal = validateRequired(goalInput);
 
 if (!validIncome || !validExpenses || !validGoal) return;
 
-const baseResult = ProtocolCore.calculateBase({
-income: parseNumber(incomeInput.value),
-expenses: parseNumber(expensesInput.value),
-goal: parseNumber(goalInput.value),
-saved: parseNumber(savedInput?.value || "0"),
-mode: saveMode
+// ── CashflowEngine: initial calculation ──
+const engine = new CashflowEngine({
+  modelType: "simple",
+  baseConfig: {
+    goal: parseNumber(goalInput.value),
+    income: parseNumber(incomeInput.value),
+    expenses: parseNumber(expensesInput.value),
+    saved: parseNumber(savedInput?.value || "0"),
+    mode: saveMode,
+    hasReserve: false
+  },
+  events: []
 });
+const derived = engine.recalculate();
 
-if (!baseResult.ok) {
-alert(baseResult.message);
-return;
+if (!derived.ok) {
+  alert("Расходы превышают доходы");
+  return;
 }
 
-const advice = ProtocolCore.buildAdvice(baseResult);
+lastCalc = {
+  ok: true,
+  free: derived.free,
+  pace: derived.pace,
+  monthlySave: derived.monthlySave,
+  months: derived.monthsLeft,
+  effectiveGoal: derived.remainingGoal
+};
 
-lastCalc = baseResult;
+const advice = ProtocolCore.buildAdvice(lastCalc);
 
 // ===== BUILD 2 SCENARIOS (DIRECT vs BUFFER) =====
 const baseMonthly = lastCalc.monthlySave;
@@ -1058,38 +1135,23 @@ style="width:52px;height:52px;border-radius:50%">
       if (chosenPlan === "buffer") {
         toReserve = Math.round(fact * 0.1);
         toMain = fact - toReserve;
-        accounts.reserve += toReserve;
       }
-
-      accounts.main += toMain;
 
       const now = new Date();
       now.setDate(1);
       now.setHours(0, 0, 0, 0);
 
-      factHistory.push({
-        value: toMain,
-        date: now,
-        to: "main"
-      });
-
+      factHistory.push({ value: toMain, date: now, to: "main" });
       if (toReserve > 0) {
-        factHistory.push({
-          value: toReserve,
-          date: now,
-          to: "reserve"
-        });
+        factHistory.push({ value: toReserve, date: now, to: "reserve" });
       }
 
       factRatio = fact / plannedMonthly;
 
-      drawStaticLayer();
-      animateFactLine();
+      recalcPlan();
       runBrain();
-      renderAccountsUI();
-      renderGoals();
-      const goalTotal = parseNumber(goalInput.value || "0");
 
+      const goalTotal = parseNumber(goalInput.value || "0");
       if (!goalCompleted && goalTotal > 0 && accounts.main >= goalTotal) {
         goalCompleted = true;
         setTimeout(fireCelebration, 120);
@@ -1097,7 +1159,6 @@ style="width:52px;height:52px;border-radius:50%">
 
       factInput.value = "";
       factInput.blur();
-      recalcPlan();
     };
   }
 
@@ -1811,13 +1872,7 @@ setTimeout(() => {
 goalEditorOverlay.style.display = "none";
 }, 550);
 };
-// 5️⃣ пересчитываем UI
-recalcPlanAfterGoalChange();
-renderGoals();
-updatePlanHeader();
-renderAccountsUI();
-
-recalcPlanAfterGoalChange();
+recalcPlan();
 pulseGoalCard();
 };
 
@@ -1860,31 +1915,7 @@ card.classList.remove("pulse");
 }
 
 function recalcPlanAfterGoalChange() {
-if (!lastCalc.ok) return;
-
-const newGoal = parseNumber(goalInput.value || "0");
-if (!newGoal) return;
-
-const baseResult = ProtocolCore.calculateBase({
-income: parseNumber(incomeInput.value),
-expenses: parseNumber(expensesInput.value),
-goal: newGoal,
-saved: accounts.main,
-mode: saveMode
-});
-
-if (!baseResult.ok) return;
-
-lastCalc = baseResult;
-
-plannedMonthly = baseResult.monthlySave;
-if (chosenPlan === "buffer") {
-plannedMonthly = Math.round(plannedMonthly * 0.9);
-}
-
-drawStaticLayer();
-animateFactLine();
-
+  recalcPlan();
 }
 
 function updatePlanHeader() {
@@ -2517,7 +2548,6 @@ if (unexpectedBackBtn) {
  * обновляет UI (счета, график, brain, цели).
  */
 function applyFinancialEvent(source, amount) {
-  // 1. Создаём событие
   FinancialEvents.createEvent({
     type: FinancialEvents.EVENT_TYPES.UNEXPECTED_EXPENSE,
     amount: amount,
@@ -2525,26 +2555,6 @@ function applyFinancialEvent(source, amount) {
     date: new Date()
   });
 
-  // 2. Пересчитываем состояние из событий
-  const goal = parseNumber(goalInput.value || "0");
-  const result = FinancialEvents.recalculatePlanFromEvents({
-    initialBalance: initialBalance,
-    factHistory: factHistory,
-    goal: goal,
-    plannedMonthly: plannedMonthly
-  });
-
-  // 3. Применяем результат к глобальным переменным (синхронизация)
-  accounts.main = result.goalBalance;
-  accounts.reserve = result.reserveBalance;
-
-  // 4. Обновляем lastCalc.months с учётом пропущенных
-  if (lastCalc.ok) {
-    lastCalc.months = result.months;
-    lastCalc.effectiveGoal = result.remaining;
-  }
-
-  // 5. Добавляем запись в factHistory для отображения в истории (отрицательные значения = расходы)
   if (source !== "skip") {
     const now = new Date();
     now.setDate(1);
@@ -2556,24 +2566,13 @@ function applyFinancialEvent(source, amount) {
     });
   }
 
-  // 6. Обновляем UI
-  drawStaticLayer();
-  animateFactLine();
-  runBrain();
-  renderAccountsUI();
-  renderGoals();
-  updatePlanHeader();
+  recalcPlan();
 
-  // 7. Brain-анализ расходов
   const analysis = FinancialEvents.buildExpenseAnalysis();
   if (analysis) {
     showBrainMessage(analysis.message);
   }
 
-  // 8. Сохраняем
-  recalcPlan();
-
-  // 9. Возвращаемся к графику
   openScreen("advice", buttons[1]);
   showBottomNav();
 }
