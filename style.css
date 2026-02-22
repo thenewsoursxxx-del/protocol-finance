@@ -2214,6 +2214,32 @@ body.advanced-active .advanced-fog {
   white-space: nowrap;
 }
 
+.cf-group .toggle-group .mode-btn.active {
+  background: #fff;
+  color: #000;
+  opacity: 1;
+}
+
+.cf-fixed-amount-wrap {
+  margin-top: 12px;
+}
+
+.cf-fixed-amount-wrap .cf-label {
+  margin-bottom: 6px;
+}
+
+.cf-amount-input {
+  width: 100%;
+  padding: 14px;
+  font-size: 18px;
+  border-radius: 18px;
+  background: #000;
+  border: 1px solid #333;
+  color: #fff;
+  margin-bottom: 0;
+  box-sizing: border-box;
+}
+
 /* ── Frequency selector ── */
 
 .frequency-selector {

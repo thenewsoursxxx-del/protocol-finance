@@ -263,7 +263,9 @@ function recalcPlan() {
     var expensesVal = parseNumber(expensesInput?.value || "0");
     if (modelType === "cashflow") {
       if (s.incomeType === "variable") incomeVal = 0;
+      else if (s.incomeType === "fixed") incomeVal = parseNumber(s.fixedIncomeAmount || "0");
       if (s.expenseType === "variable") expensesVal = 0;
+      else if (s.expenseType === "fixed") expensesVal = parseNumber(s.fixedExpenseAmount || "0");
     }
     var canRecalc = goalVal > 0 && (incomeVal > expensesVal || modelType === "cashflow");
     if (canRecalc) {
@@ -331,6 +333,8 @@ function recalcPlan() {
  * Синхронизирует глобальные переменные → appState → storage.
  */
 function saveFullState() {
+  var fixedIncomeEl = document.getElementById("fixedIncomeInput");
+  var fixedExpenseEl = document.getElementById("fixedExpenseInput");
   updateState({
     income: incomeInput?.value?.trim() || "",
     expenses: expensesInput?.value?.trim() || "",
@@ -349,7 +353,9 @@ function saveFullState() {
     selectedScenario,
     isInitialized: !!isInitialized,
     goalMeta: { ...goalMeta },
-    uiState: { ...state }
+    uiState: { ...state },
+    fixedIncomeAmount: fixedIncomeEl ? fixedIncomeEl.value.trim() : (getState().fixedIncomeAmount || ""),
+    fixedExpenseAmount: fixedExpenseEl ? fixedExpenseEl.value.trim() : (getState().fixedExpenseAmount || "")
   });
   saveState();
 }
@@ -367,6 +373,10 @@ function loadFullState() {
     if (s.expenses && expensesInput) expensesInput.value = s.expenses;
     if (s.goal && goalInput) goalInput.value = s.goal;
     if (s.saved && savedInput) savedInput.value = s.saved;
+    var fixedIncomeInputEl = document.getElementById("fixedIncomeInput");
+    var fixedExpenseInputEl = document.getElementById("fixedExpenseInput");
+    if (fixedIncomeInputEl && (s.fixedIncomeAmount != null && s.fixedIncomeAmount !== "")) fixedIncomeInputEl.value = s.fixedIncomeAmount;
+    if (fixedExpenseInputEl && (s.fixedExpenseAmount != null && s.fixedExpenseAmount !== "")) fixedExpenseInputEl.value = s.fixedExpenseAmount;
 
     if (s.saveMode) {
       saveMode = s.saveMode;
@@ -2832,6 +2842,10 @@ function initCashflowSettings() {
   var addEventBtn = document.getElementById("addFinancialEvent");
   var incomeMonthDaysWrap = document.getElementById("incomeMonthDaysWrap");
   var expenseMonthDaysWrap = document.getElementById("expenseMonthDaysWrap");
+  var fixedIncomeWrap = document.getElementById("fixedIncomeWrap");
+  var fixedExpenseWrap = document.getElementById("fixedExpenseWrap");
+  var fixedIncomeInput = document.getElementById("fixedIncomeInput");
+  var fixedExpenseInput = document.getElementById("fixedExpenseInput");
 
   var onboardingModal = document.getElementById("flexibleOnboarding");
   var onboardConfirm = document.getElementById("flexOnboardConfirm");
@@ -2854,6 +2868,9 @@ function initCashflowSettings() {
 
   syncToggleUI(incomeToggle, incomeType);
   syncToggleUI(expenseToggle, expenseType);
+  updateFixedAmountVisibility(incomeType, expenseType);
+  if (fixedIncomeInput && (currentState.fixedIncomeAmount != null)) fixedIncomeInput.value = currentState.fixedIncomeAmount;
+  if (fixedExpenseInput && (currentState.fixedExpenseAmount != null)) fixedExpenseInput.value = currentState.fixedExpenseAmount;
   syncFreqUIBlock(incomeFreqBlock, incomeFrequency);
   syncFreqUIBlock(expenseFreqBlock, expenseFrequency);
   updateFrequencyVisibility(incomeType, expenseType);
@@ -2897,9 +2914,11 @@ function initCashflowSettings() {
     incomeToggle.addEventListener("click", function (e) {
       var btn = e.target.closest(".mode-btn");
       if (!btn || btn.disabled) return;
+      e.stopPropagation();
       haptic("light");
       incomeType = btn.dataset.value;
       syncToggleUI(incomeToggle, incomeType);
+      updateFixedAmountVisibility(incomeType, expenseType);
       applySettingsChange();
     });
   }
@@ -2908,11 +2927,38 @@ function initCashflowSettings() {
     expenseToggle.addEventListener("click", function (e) {
       var btn = e.target.closest(".mode-btn");
       if (!btn || btn.disabled) return;
+      e.stopPropagation();
       haptic("light");
       expenseType = btn.dataset.value;
       syncToggleUI(expenseToggle, expenseType);
+      updateFixedAmountVisibility(incomeType, expenseType);
       applySettingsChange();
     });
+  }
+
+  if (fixedIncomeInput) {
+    fixedIncomeInput.addEventListener("input", function () {
+      var p = this.selectionStart;
+      var b = this.value.length;
+      this.value = formatNumber(this.value);
+      var a = this.value.length;
+      this.selectionEnd = p + (a - b);
+      updateState({ fixedIncomeAmount: this.value.trim() });
+      recalcPlan();
+    });
+    fixedIncomeInput.addEventListener("blur", function () { saveFullState(); });
+  }
+  if (fixedExpenseInput) {
+    fixedExpenseInput.addEventListener("input", function () {
+      var p = this.selectionStart;
+      var b = this.value.length;
+      this.value = formatNumber(this.value);
+      var a = this.value.length;
+      this.selectionEnd = p + (a - b);
+      updateState({ fixedExpenseAmount: this.value.trim() });
+      recalcPlan();
+    });
+    fixedExpenseInput.addEventListener("blur", function () { saveFullState(); });
   }
 
   function onFreqClick(block, e) {
@@ -2970,10 +3016,17 @@ function initCashflowSettings() {
     if (wrap) wrap.style.display = freq === "custom" ? "block" : "none";
   }
 
+  function updateFixedAmountVisibility(inc, exp) {
+    if (fixedIncomeWrap) fixedIncomeWrap.style.display = (inc === "fixed") ? "block" : "none";
+    if (fixedExpenseWrap) fixedExpenseWrap.style.display = (exp === "fixed") ? "block" : "none";
+  }
+
   function syncToggleUI(container, value) {
     if (!container) return;
-    var btns = container.querySelectorAll(".mode-btn");
-    for (var i = 0; i < btns.length; i++) btns[i].classList.toggle("active", btns[i].dataset.value === value);
+    var btns = container.querySelectorAll("button.mode-btn");
+    for (var i = 0; i < btns.length; i++) {
+      btns[i].classList.toggle("active", btns[i].getAttribute("data-value") === value);
+    }
   }
 
   function syncFreqUIBlock(block, value) {

@@ -108,17 +108,29 @@ viewport-fit=cover" />
 
     <div class="cf-group">
       <div class="cf-label">Тип дохода</div>
-      <div class="toggle-group" id="incomeToggle">
+      <div class="toggle-group cf-toggle-income" id="incomeToggle">
         <button class="mode-btn active" data-value="fixed">Фиксированный</button>
         <button class="mode-btn" data-value="variable">Нефиксированный</button>
+      </div>
+      <div id="fixedIncomeWrap" class="cf-fixed-amount-wrap" style="display:none">
+        <label class="cf-label">Сумма дохода, ₽</label>
+        <div class="input-wrap">
+          <input id="fixedIncomeInput" type="text" inputmode="numeric" placeholder="0" class="cf-amount-input" />
+        </div>
       </div>
     </div>
 
     <div class="cf-group">
       <div class="cf-label">Тип расхода</div>
-      <div class="toggle-group" id="expenseToggle">
+      <div class="toggle-group cf-toggle-expense" id="expenseToggle">
         <button class="mode-btn active" data-value="fixed">Фиксированный</button>
         <button class="mode-btn" data-value="variable">Нефиксированный</button>
+      </div>
+      <div id="fixedExpenseWrap" class="cf-fixed-amount-wrap" style="display:none">
+        <label class="cf-label">Сумма расхода, ₽</label>
+        <div class="input-wrap">
+          <input id="fixedExpenseInput" type="text" inputmode="numeric" placeholder="0" class="cf-amount-input" />
+        </div>
       </div>
     </div>
 

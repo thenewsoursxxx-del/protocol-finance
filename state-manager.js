@@ -55,6 +55,8 @@ function getDefaultState() {
     frequency: "monthly",
     incomeFrequency: "monthly",
     expenseFrequency: "monthly",
+    fixedIncomeAmount: "",
+    fixedExpenseAmount: "",
 
     // ── Premium (v4) ──
     isPremium: false,
@@ -356,6 +358,8 @@ function applyState(saved) {
   appState.frequency = saved.frequency || defaults.frequency;
   appState.incomeFrequency = saved.incomeFrequency || defaults.incomeFrequency;
   appState.expenseFrequency = saved.expenseFrequency || defaults.expenseFrequency;
+  appState.fixedIncomeAmount = saved.fixedIncomeAmount ?? defaults.fixedIncomeAmount;
+  appState.fixedExpenseAmount = saved.fixedExpenseAmount ?? defaults.fixedExpenseAmount;
 
   // ── Premium (v4) ──
   appState.isPremium = typeof saved.isPremium === "boolean" ? saved.isPremium : defaults.isPremium;
