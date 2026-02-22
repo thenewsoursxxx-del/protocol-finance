@@ -2772,41 +2772,54 @@ function enableFlexibleMode() {
   recalcPlan();
 }
 
-function renderMonthDaysPicker(containerId, stateKey) {
-  var container = document.getElementById(containerId);
-  if (!container) return;
-  container.innerHTML = "";
-
-  var now = new Date();
-  var daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+function renderMonthDaysList(listId, stateKey) {
+  var listEl = document.getElementById(listId);
+  if (!listEl) return;
+  listEl.innerHTML = "";
   var selected = getState()[stateKey] || [];
+  selected.forEach(function (day) {
+    var chip = document.createElement("button");
+    chip.type = "button";
+    chip.className = "monthday-chip";
+    chip.textContent = day;
+    chip.dataset.day = day;
+    chip.addEventListener("click", function () {
+      haptic("light");
+      var cur = (getState()[stateKey] || []).slice();
+      var idx = cur.indexOf(day);
+      if (idx !== -1) cur.splice(idx, 1);
+      var patch = {};
+      patch[stateKey] = cur;
+      updateState(patch);
+      renderMonthDaysList(listId, stateKey);
+      recalcPlan();
+    });
+    listEl.appendChild(chip);
+  });
+}
 
-  for (var d = 1; d <= daysInMonth; d++) {
-    var btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "monthday-btn" + (selected.indexOf(d) !== -1 ? " selected" : "");
-    btn.textContent = d;
-    btn.dataset.day = d;
-    btn.addEventListener("click", (function (day) {
-      return function () {
-        haptic("light");
-        var cur = getState()[stateKey] || [];
-        var idx = cur.indexOf(day);
-        if (idx !== -1) {
-          cur.splice(idx, 1);
-        } else {
-          cur.push(day);
-          cur.sort(function (a, b) { return a - b; });
-        }
-        var patch = {};
-        patch[stateKey] = cur;
-        updateState(patch);
-        renderMonthDaysPicker(containerId, stateKey);
-        recalcPlan();
-      };
-    })(d));
-    container.appendChild(btn);
-  }
+function setupMonthDaysDateInput(dateInputId, listId, stateKey) {
+  var dateInput = document.getElementById(dateInputId);
+  if (!dateInput) return;
+  dateInput.value = "";
+  dateInput.addEventListener("change", function () {
+    var val = this.value;
+    if (!val) return;
+    var d = new Date(val);
+    if (isNaN(d.getTime())) return;
+    var day = d.getDate();
+    var cur = (getState()[stateKey] || []).slice();
+    if (cur.indexOf(day) !== -1) { this.value = ""; return; }
+    cur.push(day);
+    cur.sort(function (a, b) { return a - b; });
+    var patch = {};
+    patch[stateKey] = cur;
+    updateState(patch);
+    renderMonthDaysList(listId, stateKey);
+    recalcPlan();
+    this.value = "";
+  });
+  renderMonthDaysList(listId, stateKey);
 }
 
 function initCashflowSettings() {
@@ -2847,8 +2860,8 @@ function initCashflowSettings() {
   updateMonthDaysVisibility(incomeFrequency, "income");
   updateMonthDaysVisibility(expenseFrequency, "expense");
 
-  renderMonthDaysPicker("incomeMonthDaysPicker", "incomeMonthDays");
-  renderMonthDaysPicker("expenseMonthDaysPicker", "expenseMonthDays");
+  setupMonthDaysDateInput("incomeMonthDaysDate", "incomeMonthDaysList", "incomeMonthDays");
+  setupMonthDaysDateInput("expenseMonthDaysDate", "expenseMonthDaysList", "expenseMonthDays");
 
   flexToggle.addEventListener("click", function () {
     haptic("light");
