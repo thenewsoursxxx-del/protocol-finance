@@ -71,7 +71,6 @@ hideBottomNav();
 
 // ===== PLAN SUMMARY ELEMENTS =====
 const planSummary = document.getElementById("planSummary");
-const editPlanBtn = document.getElementById("editPlan");
 
 const summaryMonthly = document.getElementById("summaryMonthly");
 const summaryMonths = document.getElementById("summaryMonths");
@@ -1013,19 +1012,6 @@ document.querySelectorAll(
 ).forEach(el => el.style.display = "none");
 
 saveFullState();
-};
-
-/* ===== EDIT PLAN ===== */
-editPlanBtn.onclick = () => {
-haptic("light");
-
-// показать форму обратно
-document.querySelectorAll(
-"#screen-calc label, #screen-calc .input-wrap, .mode-buttons, #calculate"
-).forEach(el => el.style.display = "");
-
-// спрятать summary
-planSummary.style.display = "none";
 };
 
 /* ===== TIME HELPERS ===== */
