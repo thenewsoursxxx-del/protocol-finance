@@ -78,18 +78,13 @@ const summaryMode = document.getElementById("summaryMode");
 
 let selectedMode = "calm"; // calm | medium | aggressive
 
-const modeButtons = document.querySelectorAll(".mode-btn");
+const modeButtons = document.querySelectorAll(".mode-buttons .mode-btn");
 
 modeButtons.forEach(btn => {
 btn.onclick = () => {
 haptic("light");
-// снять активность со всех
 modeButtons.forEach(b => b.classList.remove("active"));
-
-// активировать текущую
 btn.classList.add("active");
-
-// сохранить режим
 selectedMode = btn.dataset.mode;
 saveMode = btn.dataset.mode;
 saveFullState();
