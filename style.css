@@ -2326,6 +2326,8 @@ body.advanced-active .advanced-fog {
   left: 0;
   right: 0;
   bottom: 0;
+  width: 100%;
+  max-width: 100vw;
   background: #000;
   border-top-left-radius: 28px;
   border-top-right-radius: 28px;
@@ -2335,7 +2337,6 @@ body.advanced-active .advanced-fog {
   transition: transform 0.55s cubic-bezier(.22,1,.36,1);
   will-change: transform;
   box-sizing: border-box;
-  max-width: 100vw;
   overflow-x: hidden;
 }
 
@@ -2363,16 +2364,17 @@ body.advanced-active .advanced-fog {
 }
 
 .sheet.event-editor .event-date-wrap {
+  width: 100%;
   max-width: 100%;
   min-width: 0;
   overflow: hidden;
   box-sizing: border-box;
 }
 
-.sheet.event-editor input[type="date"] {
-  min-width: 0 !important;
+.sheet.event-editor .event-date-wrap input {
   width: 100% !important;
   max-width: 100% !important;
+  min-width: 0 !important;
   box-sizing: border-box !important;
 }
 
