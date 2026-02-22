@@ -2327,11 +2327,15 @@ body.advanced-active .advanced-fog {
   right: 0;
   bottom: 0;
   width: 100%;
+  /* На мобильных 100vw может давать overflow; 100dvw = видимая область */
   max-width: 100vw;
+  max-width: 100dvw;
   background: #000;
   border-top-left-radius: 28px;
   border-top-right-radius: 28px;
   padding: 24px;
+  padding-left: max(24px, env(safe-area-inset-left));
+  padding-right: max(24px, env(safe-area-inset-right));
   z-index: 31;
   transform: translateY(100%);
   transition: transform 0.55s cubic-bezier(.22,1,.36,1);
@@ -2346,7 +2350,6 @@ body.advanced-active .advanced-fog {
 
 .sheet.event-editor {
   width: 100%;
-  padding: 24px;
   box-sizing: border-box;
 }
 
@@ -2363,9 +2366,11 @@ body.advanced-active .advanced-fog {
   box-sizing: border-box;
 }
 
+/* Поле даты: жёстко ограничено видимой шириной экрана (мобильные) */
 .sheet.event-editor .event-date-wrap {
   width: 100%;
   max-width: 100%;
+  max-width: min(100%, calc(100dvw - 48px));
   min-width: 0;
   overflow: hidden;
   box-sizing: border-box;
