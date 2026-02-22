@@ -53,6 +53,8 @@ function getDefaultState() {
     incomeType: "fixed",
     expenseType: "fixed",
     frequency: "monthly",
+    incomeFrequency: "monthly",
+    expenseFrequency: "monthly",
 
     // ── Premium (v4) ──
     isPremium: false,
@@ -172,6 +174,8 @@ function migrateState(saved) {
     if (!saved.incomeType) saved.incomeType = "fixed";
     if (!saved.expenseType) saved.expenseType = "fixed";
     if (!saved.frequency) saved.frequency = "monthly";
+    if (!saved.incomeFrequency) saved.incomeFrequency = "monthly";
+    if (!saved.expenseFrequency) saved.expenseFrequency = "monthly";
   }
 
   // v3 → v4: isPremium
@@ -337,6 +341,8 @@ function applyState(saved) {
   appState.incomeType = saved.incomeType || defaults.incomeType;
   appState.expenseType = saved.expenseType || defaults.expenseType;
   appState.frequency = saved.frequency || defaults.frequency;
+  appState.incomeFrequency = saved.incomeFrequency || defaults.incomeFrequency;
+  appState.expenseFrequency = saved.expenseFrequency || defaults.expenseFrequency;
 
   // ── Premium (v4) ──
   appState.isPremium = typeof saved.isPremium === "boolean" ? saved.isPremium : defaults.isPremium;

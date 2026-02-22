@@ -224,10 +224,15 @@ function assembleCashflowEvents() {
   var H = CashflowEngineHelpers;
   var events = H.factHistoryToEvents(factHistory);
 
+  var fromState = getState().cashflowEvents || [];
+  for (var i = 0; i < fromState.length; i++) {
+    events.push(H.normalizeEvent(fromState[i]));
+  }
+
   if (typeof FinancialEvents !== "undefined") {
     var legacy = FinancialEvents.getEvents();
-    for (var i = 0; i < legacy.length; i++) {
-      var e = legacy[i];
+    for (var j = 0; j < legacy.length; j++) {
+      var e = legacy[j];
       if (e.type === "unexpected_expense" && e.source === "skip") {
         events.push(H.normalizeEvent({
           id: e.id,
@@ -2591,7 +2596,7 @@ function applyPremiumUI(isPremium) {
     '#incomeToggle .mode-btn[data-value="variable"], #expenseToggle .mode-btn[data-value="variable"]'
   );
   var freqBtns = document.querySelectorAll(
-    '#frequencySelector .freq-btn:not([data-freq="monthly"])'
+    '#incomeFrequencySelector .freq-btn:not([data-freq="monthly"]), #expenseFrequencySelector .freq-btn:not([data-freq="monthly"])'
   );
   var addEventBtn = document.getElementById("addFinancialEvent");
 
@@ -2612,7 +2617,8 @@ function applyPremiumUI(isPremium) {
 function initCashflowSettings() {
   var incomeToggle = document.getElementById("incomeToggle");
   var expenseToggle = document.getElementById("expenseToggle");
-  var freqSelector = document.getElementById("frequencySelector");
+  var incomeFreqBlock = document.getElementById("incomeFrequencySelector");
+  var expenseFreqBlock = document.getElementById("expenseFrequencySelector");
   var addEventBtn = document.getElementById("addFinancialEvent");
 
   if (!incomeToggle || !expenseToggle) return;
@@ -2620,12 +2626,14 @@ function initCashflowSettings() {
   var currentState = getState();
   var incomeType = currentState.incomeType || "fixed";
   var expenseType = currentState.expenseType || "fixed";
-  var frequency = currentState.frequency || "monthly";
+  var incomeFrequency = currentState.incomeFrequency || "monthly";
+  var expenseFrequency = currentState.expenseFrequency || "monthly";
 
   applyPremiumUI(true);
   syncToggleUI(incomeToggle, incomeType);
   syncToggleUI(expenseToggle, expenseType);
-  syncFreqUI(frequency);
+  syncFreqUIBlock(incomeFreqBlock, incomeFrequency);
+  syncFreqUIBlock(expenseFreqBlock, expenseFrequency);
   updateFrequencyVisibility(incomeType, expenseType);
 
   incomeToggle.addEventListener("click", function (e) {
@@ -2634,7 +2642,7 @@ function initCashflowSettings() {
     haptic("light");
     incomeType = btn.dataset.value;
     syncToggleUI(incomeToggle, incomeType);
-    applySettingsChange(incomeType, expenseType, frequency);
+    applySettingsChange(incomeType, expenseType, incomeFrequency, expenseFrequency);
   });
 
   expenseToggle.addEventListener("click", function (e) {
@@ -2643,19 +2651,32 @@ function initCashflowSettings() {
     haptic("light");
     expenseType = btn.dataset.value;
     syncToggleUI(expenseToggle, expenseType);
-    applySettingsChange(incomeType, expenseType, frequency);
+    applySettingsChange(incomeType, expenseType, incomeFrequency, expenseFrequency);
   });
 
-  if (freqSelector) {
-    freqSelector.addEventListener("click", function (e) {
-      var btn = e.target.closest(".freq-btn");
-      if (!btn || btn.disabled) return;
-      haptic("light");
-      frequency = btn.dataset.freq;
-      syncFreqUI(frequency);
-      updateState({ frequency: frequency });
-      recalcPlan();
-    });
+  function onFreqClick(block, e) {
+    var btn = e.target.closest(".freq-btn");
+    if (!btn || btn.disabled) return;
+    haptic("light");
+    var freq = btn.dataset.freq;
+    var forIncome = block && block.getAttribute("data-for") === "income";
+    if (forIncome) {
+      incomeFrequency = freq;
+      updateState({ incomeFrequency: incomeFrequency });
+      syncFreqUIBlock(incomeFreqBlock, incomeFrequency);
+    } else {
+      expenseFrequency = freq;
+      updateState({ expenseFrequency: expenseFrequency });
+      syncFreqUIBlock(expenseFreqBlock, expenseFrequency);
+    }
+    recalcPlan();
+  }
+
+  if (incomeFreqBlock) {
+    incomeFreqBlock.addEventListener("click", function (e) { onFreqClick(incomeFreqBlock, e); });
+  }
+  if (expenseFreqBlock) {
+    expenseFreqBlock.addEventListener("click", function (e) { onFreqClick(expenseFreqBlock, e); });
   }
 
   if (addEventBtn) {
@@ -2666,12 +2687,13 @@ function initCashflowSettings() {
     });
   }
 
-  function applySettingsChange(inc, exp, freq) {
+  function applySettingsChange(inc, exp, incFreq, expFreq) {
     var model = (inc === "variable" || exp === "variable") ? "cashflow" : "simple";
     updateState({
       incomeType: inc,
       expenseType: exp,
-      frequency: freq,
+      incomeFrequency: incFreq,
+      expenseFrequency: expFreq,
       financialModel: model
     });
     updateFrequencyVisibility(inc, exp);
@@ -2679,23 +2701,25 @@ function initCashflowSettings() {
   }
 
   function updateFrequencyVisibility(inc, exp) {
-    if (!freqSelector) return;
-    if (inc === "variable" || exp === "variable") {
-      freqSelector.classList.add("visible");
-    } else {
-      freqSelector.classList.remove("visible");
+    if (incomeFreqBlock) {
+      incomeFreqBlock.classList.toggle("visible", inc === "variable");
+    }
+    if (expenseFreqBlock) {
+      expenseFreqBlock.classList.toggle("visible", exp === "variable");
     }
   }
 
   function syncToggleUI(container, value) {
+    if (!container) return;
     var btns = container.querySelectorAll(".mode-btn");
     for (var i = 0; i < btns.length; i++) {
       btns[i].classList.toggle("active", btns[i].dataset.value === value);
     }
   }
 
-  function syncFreqUI(value) {
-    var btns = document.querySelectorAll("#frequencySelector .freq-btn");
+  function syncFreqUIBlock(block, value) {
+    if (!block) return;
+    var btns = block.querySelectorAll(".freq-btn");
     for (var i = 0; i < btns.length; i++) {
       btns[i].classList.toggle("active", btns[i].dataset.freq === value);
     }
@@ -2778,32 +2802,39 @@ if (eventSubmitBtn) {
 
     var H = CashflowEngineHelpers;
     var isExpense = selectedEventType === "expense";
+    var isIncome = selectedEventType === "income";
+    var state = getState();
+    var incomeFreq = state.incomeFrequency || "monthly";
+    var expenseFreq = state.expenseFrequency || "monthly";
 
-    var normalized = H.normalizeEvent({
-      type: isExpense ? H.EVENT_TYPE.UNEXPECTED_EXPENSE : H.EVENT_TYPE.CONTRIBUTION,
-      amount: rawAmount,
-      frequency: H.FREQUENCY.ONCE,
-      startDate: eventDate,
-      meta: {
-        to: "main",
-        source: isExpense ? "goal" : undefined,
-        userCreated: true
-      }
-    });
+    if (isIncome) {
+      var normalized = H.normalizeEvent({
+        type: H.EVENT_TYPE.INCOME,
+        amount: rawAmount,
+        frequency: incomeFreq,
+        startDate: eventDate,
+        meta: { userCreated: true }
+      });
+      var cashflowEvents = state.cashflowEvents || [];
+      cashflowEvents.push(normalized);
+      updateState({ cashflowEvents: cashflowEvents });
+    } else {
+      var normalizedExp = H.normalizeEvent({
+        type: H.EVENT_TYPE.UNEXPECTED_EXPENSE,
+        amount: rawAmount,
+        frequency: H.FREQUENCY.ONCE,
+        startDate: eventDate,
+        meta: { to: "main", source: "goal", userCreated: true }
+      });
+      var cashflowEventsExp = state.cashflowEvents || [];
+      cashflowEventsExp.push(normalizedExp);
+      updateState({ cashflowEvents: cashflowEventsExp });
 
-    var cashflowEvents = getState().cashflowEvents || [];
-    cashflowEvents.push(normalized);
-    updateState({ cashflowEvents: cashflowEvents });
-
-    var now = new Date(eventDate);
-    now.setDate(1);
-    now.setHours(0, 0, 0, 0);
-
-    factHistory.push({
-      value: isExpense ? -rawAmount : rawAmount,
-      date: now,
-      to: "main"
-    });
+      var now = new Date(eventDate);
+      now.setDate(1);
+      now.setHours(0, 0, 0, 0);
+      factHistory.push({ value: -rawAmount, date: now, to: "main" });
+    }
 
     haptic("success");
     closeEventEditor();

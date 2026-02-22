@@ -113,8 +113,20 @@ viewport-fit=cover" />
     </div>
   </div>
 
-  <div id="frequencySelector" class="frequency-selector">
-    <div class="cf-label">Частота</div>
+  <div id="incomeFrequencySelector" class="frequency-selector" data-for="income">
+    <div class="cf-label">Частота дохода</div>
+    <div class="cf-hint">Как часто вы получаете этот доход — столько раз в месяц нужно будет вводить его в «Добавить событие».</div>
+    <div class="freq-grid">
+      <button class="freq-btn active" data-freq="monthly">Ежемесячно</button>
+      <button class="freq-btn" data-freq="weekly">Раз в неделю</button>
+      <button class="freq-btn" data-freq="biweekly">Раз в 2 нед.</button>
+      <button class="freq-btn" data-freq="custom">Свой график</button>
+    </div>
+  </div>
+
+  <div id="expenseFrequencySelector" class="frequency-selector" data-for="expense">
+    <div class="cf-label">Частота расхода</div>
+    <div class="cf-hint">Как часто вы фиксируете этот расход.</div>
     <div class="freq-grid">
       <button class="freq-btn active" data-freq="monthly">Ежемесячно</button>
       <button class="freq-btn" data-freq="weekly">Раз в неделю</button>

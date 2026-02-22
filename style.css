@@ -2059,6 +2059,13 @@ body.advanced-active .advanced-fog {
   font-weight: 500;
 }
 
+.cf-hint {
+  font-size: 11px;
+  opacity: 0.5;
+  margin-bottom: 8px;
+  line-height: 1.35;
+}
+
 .toggle-group {
   display: flex;
   gap: 8px;
