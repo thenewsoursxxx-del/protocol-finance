@@ -94,48 +94,65 @@ viewport-fit=cover" />
 </div>
 </div>
 
-<!-- ===== CASHFLOW SETTINGS ===== -->
+<!-- ===== FLEXIBLE MODEL ===== -->
 <section id="cashflowSettings" class="cashflow-settings">
 
-  <div class="cf-group">
-    <div class="cf-label">Тип дохода</div>
-    <div class="toggle-group" id="incomeToggle">
-      <button class="mode-btn active" data-value="fixed">Фиксированный</button>
-      <button class="mode-btn" data-value="variable">Нефиксированный</button>
-    </div>
-  </div>
+  <button type="button" id="flexibleToggle" class="flexible-toggle">
+    Гибкая финансовая модель
+    <span class="chevron">&#9656;</span>
+  </button>
 
-  <div class="cf-group">
-    <div class="cf-label">Тип расхода</div>
-    <div class="toggle-group" id="expenseToggle">
-      <button class="mode-btn active" data-value="fixed">Фиксированный</button>
-      <button class="mode-btn" data-value="variable">Нефиксированный</button>
-    </div>
-  </div>
+  <div id="flexibleContent" class="flexible-content">
 
-  <div id="incomeFrequencySelector" class="frequency-selector" data-for="income">
-    <div class="cf-label">Частота дохода</div>
-    <div class="cf-hint">Как часто вы получаете этот доход — столько раз в месяц нужно будет вводить его в «Добавить событие».</div>
-    <div class="freq-grid">
-      <button class="freq-btn active" data-freq="monthly">Ежемесячно</button>
-      <button class="freq-btn" data-freq="weekly">Раз в неделю</button>
-      <button class="freq-btn" data-freq="biweekly">Раз в 2 нед.</button>
-      <button class="freq-btn" data-freq="custom">Свой график</button>
+    <div class="cf-group">
+      <div class="cf-label">Тип дохода</div>
+      <div class="toggle-group" id="incomeToggle">
+        <button class="mode-btn active" data-value="fixed">Фиксированный</button>
+        <button class="mode-btn" data-value="variable">Нефиксированный</button>
+      </div>
     </div>
-  </div>
 
-  <div id="expenseFrequencySelector" class="frequency-selector" data-for="expense">
-    <div class="cf-label">Частота расхода</div>
-    <div class="cf-hint">Как часто вы фиксируете этот расход.</div>
-    <div class="freq-grid">
-      <button class="freq-btn active" data-freq="monthly">Ежемесячно</button>
-      <button class="freq-btn" data-freq="weekly">Раз в неделю</button>
-      <button class="freq-btn" data-freq="biweekly">Раз в 2 нед.</button>
-      <button class="freq-btn" data-freq="custom">Свой график</button>
+    <div class="cf-group">
+      <div class="cf-label">Тип расхода</div>
+      <div class="toggle-group" id="expenseToggle">
+        <button class="mode-btn active" data-value="fixed">Фиксированный</button>
+        <button class="mode-btn" data-value="variable">Нефиксированный</button>
+      </div>
     </div>
-  </div>
 
-  <button id="addFinancialEvent" class="add-event-btn">+ Добавить событие</button>
+    <div id="incomeFrequencySelector" class="frequency-selector" data-for="income">
+      <div class="cf-label">Частота дохода</div>
+      <div class="cf-hint">Как часто вы получаете этот доход — столько раз в месяц нужно будет вводить его в «Добавить событие».</div>
+      <div class="freq-grid">
+        <button class="freq-btn active" data-freq="monthly">Ежемесячно</button>
+        <button class="freq-btn" data-freq="weekly">Раз в неделю</button>
+        <button class="freq-btn" data-freq="biweekly">Раз в 2 нед.</button>
+        <button class="freq-btn" data-freq="custom">Свой график</button>
+      </div>
+      <div class="monthdays-input" id="incomeMonthDaysWrap" style="display:none">
+        <div class="cf-hint" style="margin-top:8px">Укажите числа месяца через запятую, например: 5, 20</div>
+        <input id="incomeMonthDaysInput" class="monthdays-field" placeholder="5, 20" inputmode="numeric" />
+      </div>
+    </div>
+
+    <div id="expenseFrequencySelector" class="frequency-selector" data-for="expense">
+      <div class="cf-label">Частота расхода</div>
+      <div class="cf-hint">Как часто вы фиксируете этот расход.</div>
+      <div class="freq-grid">
+        <button class="freq-btn active" data-freq="monthly">Ежемесячно</button>
+        <button class="freq-btn" data-freq="weekly">Раз в неделю</button>
+        <button class="freq-btn" data-freq="biweekly">Раз в 2 нед.</button>
+        <button class="freq-btn" data-freq="custom">Свой график</button>
+      </div>
+      <div class="monthdays-input" id="expenseMonthDaysWrap" style="display:none">
+        <div class="cf-hint" style="margin-top:8px">Укажите числа месяца через запятую, например: 1, 15</div>
+        <input id="expenseMonthDaysInput" class="monthdays-field" placeholder="1, 15" inputmode="numeric" />
+      </div>
+    </div>
+
+    <button id="addFinancialEvent" class="add-event-btn">+ Добавить событие</button>
+
+  </div>
 
 </section>
 
@@ -551,6 +568,21 @@ Protocol анализирует цель…
 <div class="confirmCard-actions">
 <button id="confirmNo" class="confirmBtn confirmBtn--cancel">Отменить</button>
 <button id="confirmYes" class="confirmBtn confirmBtn--danger">Начать сначала</button>
+</div>
+</div>
+</div>
+
+<!-- ===== FLEXIBLE ONBOARDING ===== -->
+<div id="flexibleOnboarding">
+<div class="confirmCard">
+<p class="confirmCard-text">
+В этом разделе можно указать нефиксированный доход и расход.<br><br>
+При переходе в гибкий режим текущий расчёт будет сброшен.
+Доход, расход, цель и график будут очищены.
+</p>
+<div class="confirmCard-actions">
+<button id="flexOnboardCancel" class="confirmBtn confirmBtn--cancel">Отмена</button>
+<button id="flexOnboardConfirm" class="confirmBtn confirmBtn--danger">Перейти в гибкий режим</button>
 </div>
 </div>
 </div>

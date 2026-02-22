@@ -2571,26 +2571,16 @@ function applyFinancialEvent(source, amount) {
 
 /* ===== CASHFLOW SETTINGS ===== */
 
-/**
- * Premium gate: если cashflow выбран, но подписки нет — откат в simple.
- */
 function checkPremiumGate() {
   var s = getState();
   if (s.financialModel === "cashflow" && !s.isPremium) {
-    updateState({
-      financialModel: "simple",
-      incomeType: "fixed",
-      expenseType: "fixed"
-    });
+    updateState({ financialModel: "simple", incomeType: "fixed", expenseType: "fixed" });
     recalcPlan();
     return true;
   }
   return false;
 }
 
-/**
- * Обновляет disabled/lock состояние элементов cashflow settings.
- */
 function applyPremiumUI(isPremium) {
   var variableBtns = document.querySelectorAll(
     '#incomeToggle .mode-btn[data-value="variable"], #expenseToggle .mode-btn[data-value="variable"]'
@@ -2599,7 +2589,6 @@ function applyPremiumUI(isPremium) {
     '#incomeFrequencySelector .freq-btn:not([data-freq="monthly"]), #expenseFrequencySelector .freq-btn:not([data-freq="monthly"])'
   );
   var addEventBtn = document.getElementById("addFinancialEvent");
-
   for (var i = 0; i < variableBtns.length; i++) {
     variableBtns[i].classList.toggle("premium-locked", !isPremium);
     variableBtns[i].disabled = !isPremium;
@@ -2614,14 +2603,71 @@ function applyPremiumUI(isPremium) {
   }
 }
 
+function parseMonthDays(str) {
+  if (!str) return [];
+  return str.split(",")
+    .map(function (s) { return parseInt(s.trim(), 10); })
+    .filter(function (n) { return n >= 1 && n <= 31; });
+}
+
+function resetToFlexibleMode() {
+  if (incomeInput) incomeInput.value = "";
+  if (expensesInput) expensesInput.value = "";
+  if (goalInput) goalInput.value = "";
+  if (savedInput) savedInput.value = "";
+
+  factHistory.length = 0;
+  chosenPlan = null;
+  plannedMonthly = 0;
+  accounts.main = 0;
+  accounts.reserve = 0;
+  lastCalc = {};
+  goalCompleted = false;
+  isInitialized = false;
+  initialBalance = 0;
+
+  updateState({
+    financialModel: "cashflow",
+    hasSeenFlexibleOnboarding: true,
+    income: "", expenses: "", goal: "", saved: "",
+    factHistory: [], cashflowEvents: [],
+    chosenPlan: null, plannedMonthly: 0,
+    accounts: { main: 0, reserve: 0 },
+    derivedState: {},
+    lastCalc: {},
+    goalCompleted: false,
+    isInitialized: false,
+    initialBalance: 0
+  });
+  saveFullState();
+
+  if (planSummary) planSummary.style.display = "none";
+  document.querySelectorAll(
+    "#screen-calc label, #screen-calc .input-wrap, .mode-buttons, #calculate"
+  ).forEach(function (el) { el.style.display = ""; });
+
+  openScreen("calc", buttons[0]);
+  hideBottomNav();
+}
+
 function initCashflowSettings() {
+  var flexToggle = document.getElementById("flexibleToggle");
+  var flexContent = document.getElementById("flexibleContent");
   var incomeToggle = document.getElementById("incomeToggle");
   var expenseToggle = document.getElementById("expenseToggle");
   var incomeFreqBlock = document.getElementById("incomeFrequencySelector");
   var expenseFreqBlock = document.getElementById("expenseFrequencySelector");
   var addEventBtn = document.getElementById("addFinancialEvent");
+  var incomeMonthDaysWrap = document.getElementById("incomeMonthDaysWrap");
+  var expenseMonthDaysWrap = document.getElementById("expenseMonthDaysWrap");
+  var incomeMonthDaysInput = document.getElementById("incomeMonthDaysInput");
+  var expenseMonthDaysInput = document.getElementById("expenseMonthDaysInput");
 
-  if (!incomeToggle || !expenseToggle) return;
+  var onboardingModal = document.getElementById("flexibleOnboarding");
+  var onboardConfirm = document.getElementById("flexOnboardConfirm");
+  var onboardCancel = document.getElementById("flexOnboardCancel");
+
+  if (!flexToggle || !flexContent) return;
 
   var currentState = getState();
   var incomeType = currentState.incomeType || "fixed";
@@ -2630,29 +2676,78 @@ function initCashflowSettings() {
   var expenseFrequency = currentState.expenseFrequency || "monthly";
 
   applyPremiumUI(true);
+
+  if (currentState.financialModel === "cashflow" || currentState.hasSeenFlexibleOnboarding) {
+    flexContent.classList.add("open");
+    flexToggle.classList.add("open");
+  }
+
   syncToggleUI(incomeToggle, incomeType);
   syncToggleUI(expenseToggle, expenseType);
   syncFreqUIBlock(incomeFreqBlock, incomeFrequency);
   syncFreqUIBlock(expenseFreqBlock, expenseFrequency);
   updateFrequencyVisibility(incomeType, expenseType);
+  updateMonthDaysVisibility(incomeFrequency, "income");
+  updateMonthDaysVisibility(expenseFrequency, "expense");
 
-  incomeToggle.addEventListener("click", function (e) {
-    var btn = e.target.closest(".mode-btn");
-    if (!btn || btn.disabled) return;
+  if (incomeMonthDaysInput && Array.isArray(currentState.incomeMonthDays) && currentState.incomeMonthDays.length) {
+    incomeMonthDaysInput.value = currentState.incomeMonthDays.join(", ");
+  }
+  if (expenseMonthDaysInput && Array.isArray(currentState.expenseMonthDays) && currentState.expenseMonthDays.length) {
+    expenseMonthDaysInput.value = currentState.expenseMonthDays.join(", ");
+  }
+
+  flexToggle.addEventListener("click", function () {
     haptic("light");
-    incomeType = btn.dataset.value;
-    syncToggleUI(incomeToggle, incomeType);
-    applySettingsChange(incomeType, expenseType, incomeFrequency, expenseFrequency);
+    var s = getState();
+
+    if (s.financialModel === "simple" && !s.hasSeenFlexibleOnboarding) {
+      if (onboardingModal) onboardingModal.classList.add("visible");
+      return;
+    }
+
+    flexContent.classList.toggle("open");
+    flexToggle.classList.toggle("open");
   });
 
-  expenseToggle.addEventListener("click", function (e) {
-    var btn = e.target.closest(".mode-btn");
-    if (!btn || btn.disabled) return;
-    haptic("light");
-    expenseType = btn.dataset.value;
-    syncToggleUI(expenseToggle, expenseType);
-    applySettingsChange(incomeType, expenseType, incomeFrequency, expenseFrequency);
-  });
+  if (onboardConfirm) {
+    onboardConfirm.addEventListener("click", function () {
+      haptic("medium");
+      if (onboardingModal) onboardingModal.classList.remove("visible");
+      resetToFlexibleMode();
+      flexContent.classList.add("open");
+      flexToggle.classList.add("open");
+    });
+  }
+
+  if (onboardCancel) {
+    onboardCancel.addEventListener("click", function () {
+      haptic("light");
+      if (onboardingModal) onboardingModal.classList.remove("visible");
+    });
+  }
+
+  if (incomeToggle) {
+    incomeToggle.addEventListener("click", function (e) {
+      var btn = e.target.closest(".mode-btn");
+      if (!btn || btn.disabled) return;
+      haptic("light");
+      incomeType = btn.dataset.value;
+      syncToggleUI(incomeToggle, incomeType);
+      applySettingsChange();
+    });
+  }
+
+  if (expenseToggle) {
+    expenseToggle.addEventListener("click", function (e) {
+      var btn = e.target.closest(".mode-btn");
+      if (!btn || btn.disabled) return;
+      haptic("light");
+      expenseType = btn.dataset.value;
+      syncToggleUI(expenseToggle, expenseType);
+      applySettingsChange();
+    });
+  }
 
   function onFreqClick(block, e) {
     var btn = e.target.closest(".freq-btn");
@@ -2662,21 +2757,34 @@ function initCashflowSettings() {
     var forIncome = block && block.getAttribute("data-for") === "income";
     if (forIncome) {
       incomeFrequency = freq;
-      updateState({ incomeFrequency: incomeFrequency });
-      syncFreqUIBlock(incomeFreqBlock, incomeFrequency);
+      updateState({ incomeFrequency: freq });
+      syncFreqUIBlock(incomeFreqBlock, freq);
+      updateMonthDaysVisibility(freq, "income");
     } else {
       expenseFrequency = freq;
-      updateState({ expenseFrequency: expenseFrequency });
-      syncFreqUIBlock(expenseFreqBlock, expenseFrequency);
+      updateState({ expenseFrequency: freq });
+      syncFreqUIBlock(expenseFreqBlock, freq);
+      updateMonthDaysVisibility(freq, "expense");
     }
     recalcPlan();
   }
 
-  if (incomeFreqBlock) {
-    incomeFreqBlock.addEventListener("click", function (e) { onFreqClick(incomeFreqBlock, e); });
+  if (incomeFreqBlock) incomeFreqBlock.addEventListener("click", function (e) { onFreqClick(incomeFreqBlock, e); });
+  if (expenseFreqBlock) expenseFreqBlock.addEventListener("click", function (e) { onFreqClick(expenseFreqBlock, e); });
+
+  if (incomeMonthDaysInput) {
+    incomeMonthDaysInput.addEventListener("change", function () {
+      var days = parseMonthDays(incomeMonthDaysInput.value);
+      updateState({ incomeMonthDays: days });
+      recalcPlan();
+    });
   }
-  if (expenseFreqBlock) {
-    expenseFreqBlock.addEventListener("click", function (e) { onFreqClick(expenseFreqBlock, e); });
+  if (expenseMonthDaysInput) {
+    expenseMonthDaysInput.addEventListener("change", function () {
+      var days = parseMonthDays(expenseMonthDaysInput.value);
+      updateState({ expenseMonthDays: days });
+      recalcPlan();
+    });
   }
 
   if (addEventBtn) {
@@ -2687,42 +2795,39 @@ function initCashflowSettings() {
     });
   }
 
-  function applySettingsChange(inc, exp, incFreq, expFreq) {
-    var model = (inc === "variable" || exp === "variable") ? "cashflow" : "simple";
+  function applySettingsChange() {
+    var model = (incomeType === "variable" || expenseType === "variable") ? "cashflow" : "simple";
     updateState({
-      incomeType: inc,
-      expenseType: exp,
-      incomeFrequency: incFreq,
-      expenseFrequency: expFreq,
+      incomeType: incomeType,
+      expenseType: expenseType,
+      incomeFrequency: incomeFrequency,
+      expenseFrequency: expenseFrequency,
       financialModel: model
     });
-    updateFrequencyVisibility(inc, exp);
+    updateFrequencyVisibility(incomeType, expenseType);
     recalcPlan();
   }
 
   function updateFrequencyVisibility(inc, exp) {
-    if (incomeFreqBlock) {
-      incomeFreqBlock.classList.toggle("visible", inc === "variable");
-    }
-    if (expenseFreqBlock) {
-      expenseFreqBlock.classList.toggle("visible", exp === "variable");
-    }
+    if (incomeFreqBlock) incomeFreqBlock.classList.toggle("visible", inc === "variable");
+    if (expenseFreqBlock) expenseFreqBlock.classList.toggle("visible", exp === "variable");
+  }
+
+  function updateMonthDaysVisibility(freq, type) {
+    var wrap = type === "income" ? incomeMonthDaysWrap : expenseMonthDaysWrap;
+    if (wrap) wrap.style.display = freq === "custom" ? "block" : "none";
   }
 
   function syncToggleUI(container, value) {
     if (!container) return;
     var btns = container.querySelectorAll(".mode-btn");
-    for (var i = 0; i < btns.length; i++) {
-      btns[i].classList.toggle("active", btns[i].dataset.value === value);
-    }
+    for (var i = 0; i < btns.length; i++) btns[i].classList.toggle("active", btns[i].dataset.value === value);
   }
 
   function syncFreqUIBlock(block, value) {
     if (!block) return;
     var btns = block.querySelectorAll(".freq-btn");
-    for (var i = 0; i < btns.length; i++) {
-      btns[i].classList.toggle("active", btns[i].dataset.freq === value);
-    }
+    for (var i = 0; i < btns.length; i++) btns[i].classList.toggle("active", btns[i].dataset.freq === value);
   }
 }
 
@@ -2747,9 +2852,7 @@ function openEventEditor() {
   }
   if (eventEditorOverlay) eventEditorOverlay.style.display = "block";
   if (eventEditorSheet) {
-    requestAnimationFrame(function () {
-      eventEditorSheet.classList.add("open");
-    });
+    requestAnimationFrame(function () { eventEditorSheet.classList.add("open"); });
   }
 }
 
@@ -2763,9 +2866,7 @@ function closeEventEditor() {
 function syncEventTypeUI(value) {
   if (!eventTypeToggle) return;
   var btns = eventTypeToggle.querySelectorAll(".mode-btn");
-  for (var i = 0; i < btns.length; i++) {
-    btns[i].classList.toggle("active", btns[i].dataset.value === value);
-  }
+  for (var i = 0; i < btns.length; i++) btns[i].classList.toggle("active", btns[i].dataset.value === value);
 }
 
 if (eventTypeToggle) {
@@ -2779,9 +2880,7 @@ if (eventTypeToggle) {
 }
 
 if (eventEditorOverlay) {
-  eventEditorOverlay.addEventListener("click", function () {
-    closeEventEditor();
-  });
+  eventEditorOverlay.addEventListener("click", function () { closeEventEditor(); });
 }
 
 if (eventSubmitBtn) {
@@ -2801,34 +2900,41 @@ if (eventSubmitBtn) {
     if (isNaN(eventDate.getTime())) eventDate = new Date();
 
     var H = CashflowEngineHelpers;
-    var isExpense = selectedEventType === "expense";
     var isIncome = selectedEventType === "income";
-    var state = getState();
-    var incomeFreq = state.incomeFrequency || "monthly";
-    var expenseFreq = state.expenseFrequency || "monthly";
+    var s = getState();
 
     if (isIncome) {
+      var incFreq = s.incomeFrequency || "monthly";
+      var meta = { userCreated: true };
+      if (incFreq === "custom" && Array.isArray(s.incomeMonthDays) && s.incomeMonthDays.length) {
+        meta.monthDays = s.incomeMonthDays;
+      }
       var normalized = H.normalizeEvent({
         type: H.EVENT_TYPE.INCOME,
         amount: rawAmount,
-        frequency: incomeFreq,
+        frequency: incFreq,
         startDate: eventDate,
-        meta: { userCreated: true }
+        meta: meta
       });
-      var cashflowEvents = state.cashflowEvents || [];
-      cashflowEvents.push(normalized);
-      updateState({ cashflowEvents: cashflowEvents });
+      var evts = s.cashflowEvents || [];
+      evts.push(normalized);
+      updateState({ cashflowEvents: evts });
     } else {
+      var expFreq = s.expenseFrequency || "monthly";
+      var expMeta = { to: "main", source: "goal", userCreated: true };
+      if (expFreq === "custom" && Array.isArray(s.expenseMonthDays) && s.expenseMonthDays.length) {
+        expMeta.monthDays = s.expenseMonthDays;
+      }
       var normalizedExp = H.normalizeEvent({
-        type: H.EVENT_TYPE.UNEXPECTED_EXPENSE,
+        type: H.EVENT_TYPE.EXPENSE,
         amount: rawAmount,
-        frequency: H.FREQUENCY.ONCE,
+        frequency: expFreq,
         startDate: eventDate,
-        meta: { to: "main", source: "goal", userCreated: true }
+        meta: expMeta
       });
-      var cashflowEventsExp = state.cashflowEvents || [];
-      cashflowEventsExp.push(normalizedExp);
-      updateState({ cashflowEvents: cashflowEventsExp });
+      var evtsExp = s.cashflowEvents || [];
+      evtsExp.push(normalizedExp);
+      updateState({ cashflowEvents: evtsExp });
 
       var now = new Date(eventDate);
       now.setDate(1);

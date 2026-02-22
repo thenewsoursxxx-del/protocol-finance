@@ -9,7 +9,7 @@
  * Загружается ДО app.js.
  */
 
-const STATE_VERSION = 4;
+const STATE_VERSION = 5;
 const STORAGE_KEY = "protocol_app_state";
 
 // ─── Default State ────────────────────────────────────────────
@@ -58,6 +58,11 @@ function getDefaultState() {
 
     // ── Premium (v4) ──
     isPremium: false,
+
+    // ── Flexible onboarding (v5) ──
+    hasSeenFlexibleOnboarding: false,
+    incomeMonthDays: [],
+    expenseMonthDays: [],
 
     uiState: {
       goalTotal: 0,
@@ -182,6 +187,14 @@ function migrateState(saved) {
   if (version < 4) {
     saved.stateVersion = 4;
     if (typeof saved.isPremium !== "boolean") saved.isPremium = false;
+  }
+
+  // v4 → v5: flexible onboarding + monthDays
+  if (version < 5) {
+    saved.stateVersion = 5;
+    if (typeof saved.hasSeenFlexibleOnboarding !== "boolean") saved.hasSeenFlexibleOnboarding = false;
+    if (!Array.isArray(saved.incomeMonthDays)) saved.incomeMonthDays = [];
+    if (!Array.isArray(saved.expenseMonthDays)) saved.expenseMonthDays = [];
   }
 
   return saved;
@@ -346,6 +359,12 @@ function applyState(saved) {
 
   // ── Premium (v4) ──
   appState.isPremium = typeof saved.isPremium === "boolean" ? saved.isPremium : defaults.isPremium;
+
+  // ── Flexible onboarding (v5) ──
+  appState.hasSeenFlexibleOnboarding = typeof saved.hasSeenFlexibleOnboarding === "boolean"
+    ? saved.hasSeenFlexibleOnboarding : defaults.hasSeenFlexibleOnboarding;
+  appState.incomeMonthDays = Array.isArray(saved.incomeMonthDays) ? saved.incomeMonthDays : [];
+  appState.expenseMonthDays = Array.isArray(saved.expenseMonthDays) ? saved.expenseMonthDays : [];
 
   if (saved.uiState && typeof saved.uiState === "object") {
     appState.uiState = { ...defaults.uiState, ...saved.uiState };

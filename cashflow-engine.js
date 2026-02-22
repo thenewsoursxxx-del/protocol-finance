@@ -54,8 +54,8 @@
       case FREQUENCY.BIWEEKLY:
         return amount * BIWEEKLY_PER_MONTH;
       case FREQUENCY.CUSTOM:
-        var days = (meta && Number(meta.intervalDays)) || 30;
-        return amount * (30 / days);
+        var md = (meta && Array.isArray(meta.monthDays)) ? meta.monthDays.length : 1;
+        return amount * md;
       case FREQUENCY.MONTHLY:
         return amount;
       case FREQUENCY.ONCE:
