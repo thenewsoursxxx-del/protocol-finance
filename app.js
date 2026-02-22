@@ -3059,7 +3059,24 @@ function openEventEditor() {
   }
   if (eventEditorOverlay) eventEditorOverlay.style.display = "block";
   if (eventEditorSheet) {
-    requestAnimationFrame(function () { eventEditorSheet.classList.add("open"); });
+    requestAnimationFrame(function () {
+      eventEditorSheet.classList.add("open");
+      requestAnimationFrame(function () { constrainEventDateInputWidth(); });
+    });
+  }
+}
+
+function constrainEventDateInputWidth() {
+  var wrap = document.querySelector(".event-date-wrap");
+  var input = document.getElementById("eventDate");
+  if (!wrap || !input) return;
+  var w = wrap.offsetWidth;
+  if (w > 0) input.style.maxWidth = w + "px";
+}
+
+function onEventEditorResize() {
+  if (eventEditorSheet && eventEditorSheet.classList.contains("open")) {
+    constrainEventDateInputWidth();
   }
 }
 
@@ -3088,6 +3105,12 @@ if (eventTypeToggle) {
 
 if (eventEditorOverlay) {
   eventEditorOverlay.addEventListener("click", function () { closeEventEditor(); });
+}
+
+window.addEventListener("resize", onEventEditorResize);
+window.addEventListener("orientationchange", function () { setTimeout(onEventEditorResize, 100); });
+if (typeof window !== "undefined" && window.visualViewport) {
+  window.visualViewport.addEventListener("resize", onEventEditorResize);
 }
 
 if (eventSubmitBtn) {

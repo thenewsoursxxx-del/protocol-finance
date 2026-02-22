@@ -2362,10 +2362,16 @@ body.advanced-active .advanced-fog {
   box-sizing: border-box;
 }
 
+.sheet.event-editor .event-date-wrap {
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+
 .sheet.event-editor input[type="date"] {
   min-width: 0 !important;
   width: 100% !important;
-  max-width: calc(100vw - 48px) !important;
+  max-width: 100%;
   box-sizing: border-box;
 }
 
