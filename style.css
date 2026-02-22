@@ -2033,3 +2033,131 @@ body.advanced-active .advanced-fog {
   color: #334155;
   border: 1.5px solid #94a3b8;
 }
+
+/* ===== CASHFLOW SETTINGS ===== */
+
+.cashflow-settings {
+  margin-top: 16px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+}
+
+.cf-group {
+  margin-bottom: 16px;
+}
+
+.cf-group:last-of-type {
+  margin-bottom: 0;
+}
+
+.cf-label {
+  font-size: 13px;
+  opacity: 0.6;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.toggle-group {
+  display: flex;
+  gap: 8px;
+}
+
+.toggle-group .mode-btn {
+  flex: 1;
+  padding: 10px 0;
+  font-size: 13px;
+  border-radius: 12px;
+  white-space: nowrap;
+}
+
+/* ── Frequency selector ── */
+
+.frequency-selector {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-height 0.4s cubic-bezier(.22,1,.36,1),
+              opacity 0.3s ease,
+              margin 0.3s ease;
+  margin-top: 0;
+}
+
+.frequency-selector.visible {
+  max-height: 200px;
+  opacity: 1;
+  margin-top: 16px;
+}
+
+.freq-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.freq-btn {
+  padding: 10px 0;
+  border-radius: 12px;
+  background: #000;
+  color: #fff;
+  border: 1px solid #333;
+  font-size: 13px;
+  opacity: 0.7;
+  transition: transform 0.14s ease, background 0.2s ease, color 0.2s ease, opacity 0.2s ease;
+  cursor: pointer;
+}
+
+.freq-btn.active {
+  background: #fff;
+  color: #000;
+  opacity: 1;
+}
+
+.freq-btn:active {
+  transform: scale(0.96);
+}
+
+/* ── Add event button ── */
+
+.add-event-btn {
+  display: block;
+  width: 100%;
+  margin-top: 16px;
+  padding: 14px 0;
+  border-radius: 14px;
+  border: 1.5px dashed rgba(16, 185, 129, 0.4);
+  background: rgba(16, 185, 129, 0.06);
+  color: #6ee7b7;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.12s ease;
+}
+
+.add-event-btn:active {
+  transform: scale(0.97);
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.6);
+}
+
+/* ===== EVENT EDITOR SHEET ===== */
+
+.sheet.event-editor {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #000;
+  border-top-left-radius: 28px;
+  border-top-right-radius: 28px;
+  padding: 24px;
+  z-index: 31;
+  transform: translateY(100%);
+  transition: transform 0.55s cubic-bezier(.22,1,.36,1);
+  will-change: transform;
+}
+
+.sheet.event-editor.open {
+  transform: translateY(0);
+}

@@ -49,6 +49,11 @@ function getDefaultState() {
     cashflowEvents: [],
     derivedState: {},
 
+    // ── Cashflow settings (v3) ──
+    incomeType: "fixed",
+    expenseType: "fixed",
+    frequency: "monthly",
+
     uiState: {
       goalTotal: 0,
       goalSaved: 0,
@@ -161,6 +166,9 @@ function migrateState(saved) {
     if (!saved.financialModel) saved.financialModel = "simple";
     if (!Array.isArray(saved.cashflowEvents)) saved.cashflowEvents = [];
     if (!saved.derivedState || typeof saved.derivedState !== "object") saved.derivedState = {};
+    if (!saved.incomeType) saved.incomeType = "fixed";
+    if (!saved.expenseType) saved.expenseType = "fixed";
+    if (!saved.frequency) saved.frequency = "monthly";
   }
 
   return saved;
@@ -315,6 +323,11 @@ function applyState(saved) {
   appState.derivedState = (saved.derivedState && typeof saved.derivedState === "object")
     ? saved.derivedState
     : {};
+
+  // ── Cashflow settings ──
+  appState.incomeType = saved.incomeType || defaults.incomeType;
+  appState.expenseType = saved.expenseType || defaults.expenseType;
+  appState.frequency = saved.frequency || defaults.frequency;
 
   if (saved.uiState && typeof saved.uiState === "object") {
     appState.uiState = { ...defaults.uiState, ...saved.uiState };

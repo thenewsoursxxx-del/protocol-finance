@@ -94,6 +94,39 @@ viewport-fit=cover" />
 </div>
 </div>
 
+<!-- ===== CASHFLOW SETTINGS ===== -->
+<section id="cashflowSettings" class="cashflow-settings">
+
+  <div class="cf-group">
+    <div class="cf-label">Тип дохода</div>
+    <div class="toggle-group" id="incomeToggle">
+      <button class="mode-btn active" data-value="fixed">Фиксированный</button>
+      <button class="mode-btn" data-value="variable">Нефиксированный</button>
+    </div>
+  </div>
+
+  <div class="cf-group">
+    <div class="cf-label">Тип расхода</div>
+    <div class="toggle-group" id="expenseToggle">
+      <button class="mode-btn active" data-value="fixed">Фиксированный</button>
+      <button class="mode-btn" data-value="variable">Нефиксированный</button>
+    </div>
+  </div>
+
+  <div id="frequencySelector" class="frequency-selector">
+    <div class="cf-label">Частота</div>
+    <div class="freq-grid">
+      <button class="freq-btn active" data-freq="monthly">Ежемесячно</button>
+      <button class="freq-btn" data-freq="weekly">Раз в неделю</button>
+      <button class="freq-btn" data-freq="biweekly">Раз в 2 недели</button>
+      <button class="freq-btn" data-freq="custom">Свой график</button>
+    </div>
+  </div>
+
+  <button id="addFinancialEvent" class="add-event-btn">+ Добавить событие</button>
+
+</section>
+
 <button id="editPlan">Изменить расчёт</button>
 </div>
 
@@ -549,6 +582,31 @@ z-index:30;
 
 <button id="goalEditSave">Готово</button>
 </div>
+</div>
+
+<!-- ===== EVENT EDITOR SHEET ===== -->
+<div id="eventEditorOverlay" class="sheet-overlay"></div>
+<div id="eventEditorSheet" class="sheet event-editor">
+
+  <h2 style="margin-bottom:18px">Новое событие</h2>
+
+  <div class="cf-label" style="margin-bottom:8px">Тип</div>
+  <div class="toggle-group" id="eventTypeToggle">
+    <button class="mode-btn active" data-value="income">Доход</button>
+    <button class="mode-btn" data-value="expense">Расход</button>
+  </div>
+
+  <div class="input-wrap" style="margin-top:16px">
+    <label>Сумма</label>
+    <input id="eventAmount" inputmode="numeric" placeholder="10.000" />
+  </div>
+
+  <div class="input-wrap" style="margin-top:12px">
+    <label>Дата</label>
+    <input id="eventDate" type="date" />
+  </div>
+
+  <button id="eventSubmit" class="unexpected-confirm-btn" style="margin-top:20px">Добавить</button>
 </div>
 
 <!-- Иконка профиля: фиксирована справа сверху, выровнена по высоте с названием вкладки -->

@@ -2576,3 +2576,213 @@ function applyFinancialEvent(source, amount) {
   openScreen("advice", buttons[1]);
   showBottomNav();
 }
+
+/* ===== CASHFLOW SETTINGS ===== */
+
+function initCashflowSettings() {
+  var incomeToggle = document.getElementById("incomeToggle");
+  var expenseToggle = document.getElementById("expenseToggle");
+  var freqSelector = document.getElementById("frequencySelector");
+  var addEventBtn = document.getElementById("addFinancialEvent");
+
+  if (!incomeToggle || !expenseToggle) return;
+
+  var currentState = getState();
+  var incomeType = currentState.incomeType || "fixed";
+  var expenseType = currentState.expenseType || "fixed";
+  var frequency = currentState.frequency || "monthly";
+
+  syncToggleUI(incomeToggle, incomeType);
+  syncToggleUI(expenseToggle, expenseType);
+  syncFreqUI(frequency);
+  updateFrequencyVisibility(incomeType, expenseType);
+
+  incomeToggle.addEventListener("click", function (e) {
+    var btn = e.target.closest(".mode-btn");
+    if (!btn) return;
+    haptic("light");
+    incomeType = btn.dataset.value;
+    syncToggleUI(incomeToggle, incomeType);
+    applySettingsChange(incomeType, expenseType, frequency);
+  });
+
+  expenseToggle.addEventListener("click", function (e) {
+    var btn = e.target.closest(".mode-btn");
+    if (!btn) return;
+    haptic("light");
+    expenseType = btn.dataset.value;
+    syncToggleUI(expenseToggle, expenseType);
+    applySettingsChange(incomeType, expenseType, frequency);
+  });
+
+  if (freqSelector) {
+    freqSelector.addEventListener("click", function (e) {
+      var btn = e.target.closest(".freq-btn");
+      if (!btn) return;
+      haptic("light");
+      frequency = btn.dataset.freq;
+      syncFreqUI(frequency);
+      updateState({ frequency: frequency });
+      saveFullState();
+    });
+  }
+
+  if (addEventBtn) {
+    addEventBtn.addEventListener("click", function () {
+      haptic("light");
+      openEventEditor();
+    });
+  }
+
+  function applySettingsChange(inc, exp, freq) {
+    var model = (inc === "variable" || exp === "variable") ? "cashflow" : "simple";
+    updateState({
+      incomeType: inc,
+      expenseType: exp,
+      frequency: freq,
+      financialModel: model
+    });
+    updateFrequencyVisibility(inc, exp);
+    recalcPlan();
+  }
+
+  function updateFrequencyVisibility(inc, exp) {
+    if (!freqSelector) return;
+    if (inc === "variable" || exp === "variable") {
+      freqSelector.classList.add("visible");
+    } else {
+      freqSelector.classList.remove("visible");
+    }
+  }
+
+  function syncToggleUI(container, value) {
+    var btns = container.querySelectorAll(".mode-btn");
+    for (var i = 0; i < btns.length; i++) {
+      btns[i].classList.toggle("active", btns[i].dataset.value === value);
+    }
+  }
+
+  function syncFreqUI(value) {
+    var btns = document.querySelectorAll("#frequencySelector .freq-btn");
+    for (var i = 0; i < btns.length; i++) {
+      btns[i].classList.toggle("active", btns[i].dataset.freq === value);
+    }
+  }
+}
+
+/* ===== EVENT EDITOR ===== */
+
+var eventEditorOverlay = document.getElementById("eventEditorOverlay");
+var eventEditorSheet = document.getElementById("eventEditorSheet");
+var eventTypeToggle = document.getElementById("eventTypeToggle");
+var eventAmountInput = document.getElementById("eventAmount");
+var eventDateInput = document.getElementById("eventDate");
+var eventSubmitBtn = document.getElementById("eventSubmit");
+
+var selectedEventType = "income";
+
+function openEventEditor() {
+  selectedEventType = "income";
+  if (eventTypeToggle) syncEventTypeUI("income");
+  if (eventAmountInput) eventAmountInput.value = "";
+  if (eventDateInput) {
+    var today = new Date();
+    eventDateInput.value = today.toISOString().slice(0, 10);
+  }
+  if (eventEditorOverlay) eventEditorOverlay.style.display = "block";
+  if (eventEditorSheet) {
+    requestAnimationFrame(function () {
+      eventEditorSheet.classList.add("open");
+    });
+  }
+}
+
+function closeEventEditor() {
+  if (eventEditorSheet) eventEditorSheet.classList.remove("open");
+  setTimeout(function () {
+    if (eventEditorOverlay) eventEditorOverlay.style.display = "none";
+  }, 550);
+}
+
+function syncEventTypeUI(value) {
+  if (!eventTypeToggle) return;
+  var btns = eventTypeToggle.querySelectorAll(".mode-btn");
+  for (var i = 0; i < btns.length; i++) {
+    btns[i].classList.toggle("active", btns[i].dataset.value === value);
+  }
+}
+
+if (eventTypeToggle) {
+  eventTypeToggle.addEventListener("click", function (e) {
+    var btn = e.target.closest(".mode-btn");
+    if (!btn) return;
+    haptic("light");
+    selectedEventType = btn.dataset.value;
+    syncEventTypeUI(selectedEventType);
+  });
+}
+
+if (eventEditorOverlay) {
+  eventEditorOverlay.addEventListener("click", function () {
+    closeEventEditor();
+  });
+}
+
+if (eventSubmitBtn) {
+  eventSubmitBtn.addEventListener("click", function () {
+    var rawAmount = parseNumber(eventAmountInput?.value || "0");
+    if (!rawAmount) {
+      haptic("error");
+      if (eventAmountInput) {
+        eventAmountInput.classList.add("error", "shake");
+        setTimeout(function () { eventAmountInput.classList.remove("error", "shake"); }, 400);
+      }
+      return;
+    }
+
+    var dateVal = eventDateInput?.value;
+    var eventDate = dateVal ? new Date(dateVal) : new Date();
+    if (isNaN(eventDate.getTime())) eventDate = new Date();
+
+    var H = CashflowEngineHelpers;
+    var isExpense = selectedEventType === "expense";
+
+    var normalized = H.normalizeEvent({
+      type: isExpense ? H.EVENT_TYPE.UNEXPECTED_EXPENSE : H.EVENT_TYPE.CONTRIBUTION,
+      amount: rawAmount,
+      frequency: H.FREQUENCY.ONCE,
+      startDate: eventDate,
+      meta: {
+        to: "main",
+        source: isExpense ? "goal" : undefined,
+        userCreated: true
+      }
+    });
+
+    var cashflowEvents = getState().cashflowEvents || [];
+    cashflowEvents.push(normalized);
+    updateState({ cashflowEvents: cashflowEvents });
+
+    var now = new Date(eventDate);
+    now.setDate(1);
+    now.setHours(0, 0, 0, 0);
+
+    factHistory.push({
+      value: isExpense ? -rawAmount : rawAmount,
+      date: now,
+      to: "main"
+    });
+
+    haptic("success");
+    closeEventEditor();
+    recalcPlan();
+  });
+}
+
+if (eventAmountInput) {
+  eventAmountInput.addEventListener("input", function (e) {
+    e.target.value = formatNumber(e.target.value);
+  });
+}
+
+initCashflowSettings();
