@@ -2366,13 +2366,14 @@ body.advanced-active .advanced-fog {
   max-width: 100%;
   min-width: 0;
   overflow: hidden;
+  box-sizing: border-box;
 }
 
 .sheet.event-editor input[type="date"] {
   min-width: 0 !important;
   width: 100% !important;
-  max-width: 100%;
-  box-sizing: border-box;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
 }
 
 

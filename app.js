@@ -3061,17 +3061,30 @@ function openEventEditor() {
   if (eventEditorSheet) {
     requestAnimationFrame(function () {
       eventEditorSheet.classList.add("open");
-      requestAnimationFrame(function () { constrainEventDateInputWidth(); });
+      requestAnimationFrame(function () {
+        constrainEventDateInputWidth();
+        setTimeout(constrainEventDateInputWidth, 50);
+        setTimeout(constrainEventDateInputWidth, 200);
+      });
     });
   }
 }
 
 function constrainEventDateInputWidth() {
+  var sheet = document.getElementById("eventEditorSheet");
   var wrap = document.querySelector(".event-date-wrap");
   var input = document.getElementById("eventDate");
-  if (!wrap || !input) return;
-  var w = wrap.offsetWidth;
-  if (w > 0) input.style.maxWidth = w + "px";
+  if (!sheet || !wrap || !input) return;
+  var paddingPx = 48;
+  var viewportW = window.innerWidth || document.documentElement.clientWidth || 320;
+  var available = (sheet.clientWidth > 0 ? sheet.clientWidth : viewportW) - paddingPx;
+  if (available > viewportW - paddingPx) available = viewportW - paddingPx;
+  if (available < 200) available = 200;
+  wrap.style.maxWidth = available + "px";
+  wrap.style.width = available + "px";
+  input.style.maxWidth = available + "px";
+  input.style.width = available + "px";
+  input.style.boxSizing = "border-box";
 }
 
 function onEventEditorResize() {
