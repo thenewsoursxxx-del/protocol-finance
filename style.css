@@ -2289,3 +2289,26 @@ body.advanced-active .advanced-fog {
   color: #fff !important;
   opacity: 0.35 !important;
 }
+
+/* ===== FLEXIBLE MODE: DISABLED FACT INPUT ===== */
+
+.fact-row-disabled {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.flex-hint {
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  background: #0e0e0e;
+  border: 1px solid #222;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.4;
+  display: none;
+}
+
+.flex-hint.visible {
+  display: block;
+}

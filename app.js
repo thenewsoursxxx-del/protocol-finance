@@ -313,9 +313,10 @@ function recalcPlan() {
   if (lastCalc.ok) {
     drawStaticLayer();
     animateFactLine();
-    updatePlanHeader();
   }
 
+  updatePlanHeader();
+  syncFlexibleUI();
   saveFullState();
 }
 
@@ -685,6 +686,8 @@ if (navScreens.includes(name) && isInitialized) {
   updateState({ lastActiveScreen: name, lastActiveNavIndex: navIndex });
   saveState();
 }
+
+if (name === "advice") syncFlexibleUI();
 }
 // ===== TOP PROFILE FIX =====
 
@@ -1159,6 +1162,7 @@ style="width:52px;height:52px;border-radius:50%">
     };
   }
 
+  syncFlexibleUI();
 }
 
 /* ===== STAGED FLOW ===== */
@@ -1907,15 +1911,21 @@ function recalcPlanAfterGoalChange() {
 }
 
 function updatePlanHeader() {
-if (!lastCalc.ok) return;
-
 const monthlyEl = document.getElementById("planMonthly");
 const explainEl = document.getElementById("planExplanation");
 
 if (!monthlyEl || !explainEl) return;
 
+if (isFlexibleUnconfigured()) {
+  monthlyEl.innerText = "Заполните гибкую финансовую модель";
+  explainEl.innerHTML = "";
+  return;
+}
+
+if (!lastCalc.ok) return;
+
 monthlyEl.innerText =
-`План: ${plannedMonthly.toLocaleString()} ₽ / месяц`;
+  `План: ${plannedMonthly.toLocaleString()} ₽ / месяц`;
 
 var explainText = lastCalc.ok
   ? "Свободно в месяц: " + (lastCalc.free || 0).toLocaleString() + " ₽\n"
@@ -2581,6 +2591,53 @@ function checkPremiumGate() {
   return false;
 }
 
+function isFlexibleUnconfigured() {
+  var s = getState();
+  if (s.financialModel !== "cashflow") return false;
+  var events = s.cashflowEvents || [];
+  for (var i = 0; i < events.length; i++) {
+    var freq = events[i].frequency || "once";
+    if (freq !== "once") return false;
+  }
+  return true;
+}
+
+function syncFlexibleUI() {
+  var unconfigured = isFlexibleUnconfigured();
+  var isCashflow = (getState().financialModel === "cashflow");
+
+  var factRow = document.querySelector(".fact-input-row");
+  var factInput = document.getElementById("factInput");
+  var applyBtn = document.getElementById("applyFact");
+
+  if (factRow) factRow.classList.toggle("fact-row-disabled", unconfigured);
+  if (factInput) factInput.disabled = unconfigured;
+  if (applyBtn) applyBtn.disabled = unconfigured;
+
+  var hint = document.getElementById("flexHint");
+  if (!hint && factRow && factRow.parentNode) {
+    hint = document.createElement("div");
+    hint.id = "flexHint";
+    hint.className = "flex-hint";
+    hint.textContent = "Сначала настройте гибкий доход и расход";
+    factRow.parentNode.insertBefore(hint, factRow.nextSibling);
+  }
+  if (hint) hint.classList.toggle("visible", unconfigured);
+
+  var summaryMonthlyEl = document.getElementById("summaryMonthly");
+  var summaryMonthsEl = document.getElementById("summaryMonths");
+  var summaryModeEl = document.getElementById("summaryMode");
+
+  if (unconfigured) {
+    if (summaryMonthlyEl) summaryMonthlyEl.innerText = "—";
+    if (summaryMonthsEl) summaryMonthsEl.innerText = "—";
+    if (summaryModeEl) summaryModeEl.innerText = "Гибкий (не настроен)";
+  } else if (isCashflow && lastCalc.ok) {
+    if (summaryMonthlyEl) summaryMonthlyEl.innerText = lastCalc.monthlySave.toLocaleString();
+    if (summaryMonthsEl) summaryMonthsEl.innerText = lastCalc.months;
+  }
+}
+
 function applyPremiumUI(isPremium) {
   var variableBtns = document.querySelectorAll(
     '#incomeToggle .mode-btn[data-value="variable"], #expenseToggle .mode-btn[data-value="variable"]'
@@ -2650,6 +2707,14 @@ function resetToFlexibleMode() {
   hideBottomNav();
 }
 
+function enableFlexibleMode() {
+  updateState({
+    financialModel: "cashflow",
+    hasSeenFlexibleOnboarding: true
+  });
+  recalcPlan();
+}
+
 function initCashflowSettings() {
   var flexToggle = document.getElementById("flexibleToggle");
   var flexContent = document.getElementById("flexibleContent");
@@ -2714,7 +2779,7 @@ function initCashflowSettings() {
     onboardConfirm.addEventListener("click", function () {
       haptic("medium");
       if (onboardingModal) onboardingModal.classList.remove("visible");
-      resetToFlexibleMode();
+      enableFlexibleMode();
       flexContent.classList.add("open");
       flexToggle.classList.add("open");
     });
