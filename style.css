@@ -2024,8 +2024,8 @@ body.advanced-active .advanced-fog {
 }
 
 .toast--success {
-  background: #f0fdf4;
-  color: #15803d;
+  background: #111;
+  color: #22c55e;
   border: 1.5px solid #22c55e;
 }
 
@@ -2089,18 +2089,64 @@ body.advanced-active .advanced-fog {
   padding: 0 16px 16px;
 }
 
-/* ── MonthDays input ── */
+/* ── MonthDays picker ── */
 
-.monthdays-field {
+.monthday-picker {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.monthday-btn {
   width: 100%;
-  padding: 10px 14px;
-  font-size: 15px;
-  border-radius: 12px;
+  aspect-ratio: 1;
+  border-radius: 10px;
+  background: #111;
   border: 1px solid #333;
-  background: #000;
-  color: #fff;
-  box-sizing: border-box;
-  margin-top: 4px;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.monthday-btn.selected {
+  background: #fff;
+  color: #000;
+  border-color: #fff;
+  font-weight: 600;
+}
+
+.monthday-btn:active {
+  transform: scale(0.92);
+}
+
+/* ── Summary freq hint ── */
+
+.summary-freq-hint {
+  margin-top: 2px;
+  font-size: 14px;
+  opacity: 0.55;
+  font-weight: 400;
+}
+
+/* ── Summary model report ── */
+
+.summary-model-report {
+  margin-top: 8px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 13px;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.65);
 }
 
 /* ── Flexible onboarding modal ── */

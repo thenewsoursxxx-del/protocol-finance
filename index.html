@@ -84,6 +84,7 @@ viewport-fit=cover" />
 <div style="margin-top:8px;font-size:18px;font-weight:600">
 <span id="summaryMonthly">—</span> ₽ / месяц
 </div>
+<div id="summaryFreqHint" class="summary-freq-hint" style="display:none"></div>
 
 <div style="margin-top:4px;font-size:14px;opacity:.7">
 Примерно <span id="summaryMonths">—</span> месяцев
@@ -92,6 +93,7 @@ viewport-fit=cover" />
 <div style="margin-top:8px;font-size:13px;opacity:.6">
 Режим: <span id="summaryMode">—</span>
 </div>
+<div id="summaryModelReport" class="summary-model-report" style="display:none"></div>
 </div>
 
 <!-- ===== FLEXIBLE MODEL ===== -->
@@ -130,8 +132,8 @@ viewport-fit=cover" />
         <button class="freq-btn" data-freq="custom">Свой график</button>
       </div>
       <div class="monthdays-input" id="incomeMonthDaysWrap" style="display:none">
-        <div class="cf-hint" style="margin-top:8px">Укажите числа месяца через запятую, например: 5, 20</div>
-        <input id="incomeMonthDaysInput" class="monthdays-field" placeholder="5, 20" inputmode="numeric" />
+        <div class="cf-hint" style="margin-top:8px">Выберите дни месяца</div>
+        <div class="monthday-picker" id="incomeMonthDaysPicker"></div>
       </div>
     </div>
 
@@ -145,8 +147,8 @@ viewport-fit=cover" />
         <button class="freq-btn" data-freq="custom">Свой график</button>
       </div>
       <div class="monthdays-input" id="expenseMonthDaysWrap" style="display:none">
-        <div class="cf-hint" style="margin-top:8px">Укажите числа месяца через запятую, например: 1, 15</div>
-        <input id="expenseMonthDaysInput" class="monthdays-field" placeholder="1, 15" inputmode="numeric" />
+        <div class="cf-hint" style="margin-top:8px">Выберите дни месяца</div>
+        <div class="monthday-picker" id="expenseMonthDaysPicker"></div>
       </div>
     </div>
 

@@ -641,7 +641,9 @@ moveIndicator(buttons[0]);
 function openScreen(name, btn) {
   window.scrollTo(0, 0);
 
-  // закрываем модалки при любой навигации
+  var toast = document.getElementById("protocol-toast");
+  if (toast) { clearTimeout(toast._toastTimeout); toast.remove(); }
+
   if (confirmReset) confirmReset.style.display = "none";
 
 document.querySelectorAll(".screen")
@@ -1627,7 +1629,7 @@ function showToast(message, type) {
     el.classList.add("toast--visible");
   });
 
-  const duration = 3000;
+  const duration = 2000;
   el._toastTimeout = setTimeout(() => {
     el.classList.remove("toast--visible");
     el.classList.add("toast--hiding");
@@ -2613,9 +2615,21 @@ function isFlexibleUnconfigured() {
   return true;
 }
 
+function freqLabel(freq, days) {
+  switch (freq) {
+    case "weekly": return "раз в неделю";
+    case "biweekly": return "раз в 2 недели";
+    case "custom":
+      var daysStr = Array.isArray(days) && days.length ? days.join(", ") : "—";
+      return "свой график (" + daysStr + ")";
+    default: return "фиксированный";
+  }
+}
+
 function syncFlexibleUI() {
   var unconfigured = isFlexibleUnconfigured();
-  var isCashflow = (getState().financialModel === "cashflow");
+  var s = getState();
+  var isCashflow = (s.financialModel === "cashflow");
 
   var factRow = document.querySelector(".fact-input-row");
   var factInput = document.getElementById("factInput");
@@ -2646,6 +2660,38 @@ function syncFlexibleUI() {
   } else if (isCashflow && lastCalc.ok) {
     if (summaryMonthlyEl) summaryMonthlyEl.innerText = lastCalc.monthlySave.toLocaleString();
     if (summaryMonthsEl) summaryMonthsEl.innerText = lastCalc.months;
+  }
+
+  // ── Weekly/biweekly hint ──
+  var freqHintEl = document.getElementById("summaryFreqHint");
+  if (freqHintEl) {
+    var incFreq = s.incomeFrequency || "monthly";
+    if (isCashflow && lastCalc.ok && lastCalc.monthlySave && !unconfigured) {
+      if (incFreq === "weekly") {
+        freqHintEl.innerText = "≈ " + Math.round(lastCalc.monthlySave / 4.33).toLocaleString() + " ₽ в неделю";
+        freqHintEl.style.display = "";
+      } else if (incFreq === "biweekly") {
+        freqHintEl.innerText = "≈ " + Math.round(lastCalc.monthlySave / 2.16).toLocaleString() + " ₽ раз в 2 недели";
+        freqHintEl.style.display = "";
+      } else {
+        freqHintEl.style.display = "none";
+      }
+    } else {
+      freqHintEl.style.display = "none";
+    }
+  }
+
+  // ── Model report ──
+  var reportEl = document.getElementById("summaryModelReport");
+  if (reportEl) {
+    if (isCashflow && !unconfigured) {
+      var incLabel = freqLabel(s.incomeFrequency, s.incomeMonthDays);
+      var expLabel = freqLabel(s.expenseFrequency, s.expenseMonthDays);
+      reportEl.innerHTML = "Доход: " + incLabel + "<br>Расход: " + expLabel;
+      reportEl.style.display = "";
+    } else {
+      reportEl.style.display = "none";
+    }
   }
 }
 
@@ -2726,6 +2772,43 @@ function enableFlexibleMode() {
   recalcPlan();
 }
 
+function renderMonthDaysPicker(containerId, stateKey) {
+  var container = document.getElementById(containerId);
+  if (!container) return;
+  container.innerHTML = "";
+
+  var now = new Date();
+  var daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  var selected = getState()[stateKey] || [];
+
+  for (var d = 1; d <= daysInMonth; d++) {
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "monthday-btn" + (selected.indexOf(d) !== -1 ? " selected" : "");
+    btn.textContent = d;
+    btn.dataset.day = d;
+    btn.addEventListener("click", (function (day) {
+      return function () {
+        haptic("light");
+        var cur = getState()[stateKey] || [];
+        var idx = cur.indexOf(day);
+        if (idx !== -1) {
+          cur.splice(idx, 1);
+        } else {
+          cur.push(day);
+          cur.sort(function (a, b) { return a - b; });
+        }
+        var patch = {};
+        patch[stateKey] = cur;
+        updateState(patch);
+        renderMonthDaysPicker(containerId, stateKey);
+        recalcPlan();
+      };
+    })(d));
+    container.appendChild(btn);
+  }
+}
+
 function initCashflowSettings() {
   var flexToggle = document.getElementById("flexibleToggle");
   var flexContent = document.getElementById("flexibleContent");
@@ -2736,8 +2819,6 @@ function initCashflowSettings() {
   var addEventBtn = document.getElementById("addFinancialEvent");
   var incomeMonthDaysWrap = document.getElementById("incomeMonthDaysWrap");
   var expenseMonthDaysWrap = document.getElementById("expenseMonthDaysWrap");
-  var incomeMonthDaysInput = document.getElementById("incomeMonthDaysInput");
-  var expenseMonthDaysInput = document.getElementById("expenseMonthDaysInput");
 
   var onboardingModal = document.getElementById("flexibleOnboarding");
   var onboardConfirm = document.getElementById("flexOnboardConfirm");
@@ -2766,12 +2847,8 @@ function initCashflowSettings() {
   updateMonthDaysVisibility(incomeFrequency, "income");
   updateMonthDaysVisibility(expenseFrequency, "expense");
 
-  if (incomeMonthDaysInput && Array.isArray(currentState.incomeMonthDays) && currentState.incomeMonthDays.length) {
-    incomeMonthDaysInput.value = currentState.incomeMonthDays.join(", ");
-  }
-  if (expenseMonthDaysInput && Array.isArray(currentState.expenseMonthDays) && currentState.expenseMonthDays.length) {
-    expenseMonthDaysInput.value = currentState.expenseMonthDays.join(", ");
-  }
+  renderMonthDaysPicker("incomeMonthDaysPicker", "incomeMonthDays");
+  renderMonthDaysPicker("expenseMonthDaysPicker", "expenseMonthDays");
 
   flexToggle.addEventListener("click", function () {
     haptic("light");
@@ -2848,20 +2925,6 @@ function initCashflowSettings() {
   if (incomeFreqBlock) incomeFreqBlock.addEventListener("click", function (e) { onFreqClick(incomeFreqBlock, e); });
   if (expenseFreqBlock) expenseFreqBlock.addEventListener("click", function (e) { onFreqClick(expenseFreqBlock, e); });
 
-  if (incomeMonthDaysInput) {
-    incomeMonthDaysInput.addEventListener("change", function () {
-      var days = parseMonthDays(incomeMonthDaysInput.value);
-      updateState({ incomeMonthDays: days });
-      recalcPlan();
-    });
-  }
-  if (expenseMonthDaysInput) {
-    expenseMonthDaysInput.addEventListener("change", function () {
-      var days = parseMonthDays(expenseMonthDaysInput.value);
-      updateState({ expenseMonthDays: days });
-      recalcPlan();
-    });
-  }
 
   if (addEventBtn) {
     addEventBtn.addEventListener("click", function () {
@@ -3021,6 +3084,7 @@ if (eventSubmitBtn) {
     haptic("success");
     closeEventEditor();
     recalcPlan();
+    showToast(isIncome ? "Доход добавлен" : "Расход добавлен", "success");
   });
 }
 
