@@ -2294,21 +2294,29 @@ body.advanced-active .advanced-fog {
   display: block;
   width: 100%;
   margin-top: 16px;
-  padding: 14px 0;
-  border-radius: 14px;
-  border: 1px solid rgba(58, 123, 253, 0.5);
-  background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 40%, #3a7bfd 70%, #1e40af 100%);
-  color: #fff;
+  padding: 16px 18px;
+  border-radius: 20px;
+  border: 1px solid rgba(58, 123, 253, 0.65);
+  background: linear-gradient(
+    180deg,
+    rgba(58, 123, 253, 0.28),
+    rgba(58, 123, 253, 0.1)
+  );
+  color: #ffffff;
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
   transition: background 0.2s ease, border-color 0.2s ease, transform 0.12s ease, box-shadow 0.2s ease;
-  box-shadow: 0 4px 20px rgba(58, 123, 253, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  box-shadow:
+    0 0 0 1px rgba(58, 123, 253, 0.35),
+    0 20px 55px rgba(58, 123, 253, 0.45);
 }
 
 .add-event-btn:active {
   transform: scale(0.97);
-  box-shadow: 0 2px 12px rgba(58, 123, 253, 0.45), inset 0 2px 8px rgba(0, 0, 0, 0.2);
+  box-shadow:
+    0 0 0 1px rgba(58, 123, 253, 0.4),
+    0 12px 32px rgba(58, 123, 253, 0.5);
 }
 
 /* ===== EVENT EDITOR SHEET ===== */
@@ -2345,6 +2353,7 @@ body.advanced-active .advanced-fog {
   max-width: 100%;
   min-width: 0;
   overflow: hidden;
+  width: 100%;
 }
 
 .sheet.event-editor .input-wrap input {
@@ -2354,11 +2363,10 @@ body.advanced-active .advanced-fog {
 }
 
 .sheet.event-editor input[type="date"] {
-  min-width: 0;
-  width: 100%;
-  max-width: 100%;
+  min-width: 0 !important;
+  width: 100% !important;
+  max-width: calc(100vw - 48px) !important;
   box-sizing: border-box;
-  overflow: hidden;
 }
 
 
