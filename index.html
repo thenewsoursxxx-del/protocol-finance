@@ -655,14 +655,15 @@ z-index:30;
     <button class="mode-btn" data-value="expense">Расход</button>
   </div>
 
-  <div class="input-wrap" style="margin-top:16px">
-    <label>Сумма</label>
-    <input id="eventAmount" inputmode="numeric" placeholder="10.000" />
-  </div>
-
-  <div class="input-wrap event-date-wrap" style="margin-top:12px">
-    <label>Дата</label>
-    <input id="eventDate" type="date" />
+  <div class="event-editor-fields">
+    <div class="input-wrap" style="margin-top:16px">
+      <label>Сумма</label>
+      <input id="eventAmount" inputmode="numeric" placeholder="10.000" />
+    </div>
+    <div class="input-wrap event-date-wrap" style="margin-top:12px">
+      <label>Дата</label>
+      <input id="eventDate" type="date" />
+    </div>
   </div>
 
   <button id="eventSubmit" class="unexpected-confirm-btn" style="margin-top:20px">Добавить</button>

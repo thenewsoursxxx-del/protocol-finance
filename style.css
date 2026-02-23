@@ -2348,6 +2348,26 @@ body.advanced-active .advanced-fog {
   transform: translateY(0);
 }
 
+/* Общий контейнер для «Сумма» и «Дата» — одна ширина, поле даты не выезжает вправо */
+.sheet.event-editor .event-editor-fields {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.sheet.event-editor .event-editor-fields .input-wrap {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  width: 100%;
+}
+
+.sheet.event-editor .event-editor-fields .input-wrap.event-date-wrap {
+  overflow: visible;
+}
+
 .sheet.event-editor .input-wrap {
   max-width: 100%;
   min-width: 0;
@@ -2355,7 +2375,6 @@ body.advanced-active .advanced-fog {
   width: 100%;
 }
 
-/* Контейнер даты имеет и input-wrap — у него overflow: visible, иначе обрезается правый край поля */
 .sheet.event-editor .input-wrap.event-date-wrap {
   overflow: visible;
 }
@@ -2369,6 +2388,7 @@ body.advanced-active .advanced-fog {
 .sheet.event-editor .event-date-wrap {
   width: 100%;
   max-width: 100%;
+  max-width: min(100%, var(--event-field-width, 100%));
   min-width: 0;
   box-sizing: border-box;
 }
@@ -2376,6 +2396,7 @@ body.advanced-active .advanced-fog {
 .sheet.event-editor .event-date-wrap input {
   width: 100% !important;
   max-width: 100% !important;
+  max-width: min(100%, var(--event-field-width, 100%)) !important;
   min-width: 0 !important;
   box-sizing: border-box !important;
   display: block;

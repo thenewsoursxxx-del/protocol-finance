@@ -3081,29 +3081,26 @@ function constrainEventDateInputWidth() {
   var wrap = document.querySelector(".event-date-wrap");
   var input = document.getElementById("eventDate");
   var amountInput = document.getElementById("eventAmount");
+  var fieldsContainer = document.querySelector(".event-editor-fields");
   if (!sheet || !wrap || !input) return;
   var vv = window.visualViewport;
   var visibleW = (vv && typeof vv.width === "number") ? vv.width : (window.innerWidth || document.documentElement.clientWidth || 320);
   sheet.style.width = visibleW + "px";
   sheet.style.maxWidth = visibleW + "px";
-  // Ширина поля даты = точная ширина инпута «Сумма» (getBoundingClientRect), с запасом чтобы не вылезало вправо
-  var targetWidth;
-  if (amountInput) {
-    var amountRect = amountInput.getBoundingClientRect();
-    var amountW = amountRect.width;
-    if (amountW > 0) {
-      targetWidth = Math.floor(amountW) - 2;
-      if (targetWidth < 180) targetWidth = Math.floor(amountW);
+  wrap.style.width = "";
+  wrap.style.maxWidth = "";
+  input.style.width = "";
+  input.style.maxWidth = "";
+  input.style.boxSizing = "";
+  // Ограничиваем поле даты по ширине поля «Сумма» через CSS-переменную (нативный date может игнорировать min-width)
+  if (fieldsContainer && amountInput) {
+    var w = amountInput.getBoundingClientRect().width;
+    if (w > 0) {
+      fieldsContainer.style.setProperty("--event-field-width", Math.floor(w) + "px");
+    } else {
+      fieldsContainer.style.removeProperty("--event-field-width");
     }
   }
-  if (typeof targetWidth !== "number" || targetWidth < 180) {
-    targetWidth = Math.max(180, Math.floor(visibleW) - 56);
-  }
-  wrap.style.width = targetWidth + "px";
-  wrap.style.maxWidth = targetWidth + "px";
-  input.style.width = targetWidth + "px";
-  input.style.maxWidth = targetWidth + "px";
-  input.style.boxSizing = "border-box";
 }
 
 function onEventEditorResize() {
@@ -3120,8 +3117,10 @@ function closeEventEditor() {
   }
   var wrap = document.querySelector(".event-date-wrap");
   var input = document.getElementById("eventDate");
+  var fieldsContainer = document.querySelector(".event-editor-fields");
   if (wrap) { wrap.style.maxWidth = ""; wrap.style.width = ""; }
   if (input) { input.style.maxWidth = ""; input.style.width = ""; input.style.boxSizing = ""; }
+  if (fieldsContainer) { fieldsContainer.style.removeProperty("--event-field-width"); }
   setTimeout(function () {
     if (eventEditorOverlay) eventEditorOverlay.style.display = "none";
   }, 550);
