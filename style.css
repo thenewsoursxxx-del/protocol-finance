@@ -2458,3 +2458,8 @@ body.advanced-active .advanced-fog {
 .flex-hint.visible {
   display: block;
 }
+
+.flex-hint--alert {
+  color: #ef4444;
+  border-color: #ef4444;
+}

@@ -1935,7 +1935,7 @@ const explainEl = document.getElementById("planExplanation");
 if (!monthlyEl || !explainEl) return;
 
 if (isFlexibleUnconfigured()) {
-  monthlyEl.innerText = "Заполните гибкую финансовую модель";
+  monthlyEl.innerText = "";
   explainEl.innerHTML = "";
   return;
 }
@@ -2648,11 +2648,15 @@ function syncFlexibleUI() {
   if (!hint && factRow && factRow.parentNode) {
     hint = document.createElement("div");
     hint.id = "flexHint";
-    hint.className = "flex-hint";
-    hint.textContent = "Сначала настройте гибкий доход и расход";
+    hint.className = "flex-hint flex-hint--alert";
+    hint.textContent = "Сначала настройте гибкую финансовую модель";
     factRow.parentNode.insertBefore(hint, factRow.nextSibling);
   }
-  if (hint) hint.classList.toggle("visible", unconfigured);
+  if (hint) {
+    hint.classList.add("flex-hint--alert");
+    hint.textContent = "Сначала настройте гибкую финансовую модель";
+    hint.classList.toggle("visible", unconfigured);
+  }
 
   var summaryMonthlyEl = document.getElementById("summaryMonthly");
   var summaryMonthsEl = document.getElementById("summaryMonths");
