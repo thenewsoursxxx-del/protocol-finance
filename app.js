@@ -1166,10 +1166,15 @@ style="width:52px;height:52px;border-radius:50%">
     };
   }
 
-  // Кнопка «Непредвиденный расход»
+  // Кнопка «Непредвиденный расход» — при ненастроенной гибкой модели только трясём подсказку, визуально кнопка не меняется
   const unexpBtn = document.getElementById("unexpectedExpenseBtn");
   if (unexpBtn) {
     unexpBtn.onclick = () => {
+      if (isFlexibleUnconfigured()) {
+        shakeFlexHint();
+        haptic("error");
+        return;
+      }
       haptic("light");
       openUnexpectedExpenseScreen();
     };
@@ -2631,6 +2636,16 @@ function freqLabel(freq, days) {
   }
 }
 
+function shakeFlexHint() {
+  var hint = document.getElementById("flexHint");
+  if (!hint) return;
+  hint.classList.add("visible");
+  hint.classList.remove("shake");
+  void hint.offsetWidth;
+  hint.classList.add("shake");
+  setTimeout(function () { hint.classList.remove("shake"); }, 400);
+}
+
 function syncFlexibleUI() {
   var unconfigured = isFlexibleUnconfigured();
   var s = getState();
@@ -2643,6 +2658,16 @@ function syncFlexibleUI() {
   if (factRow) factRow.classList.toggle("fact-row-disabled", unconfigured);
   if (factInput) factInput.disabled = unconfigured;
   if (applyBtn) applyBtn.disabled = unconfigured;
+
+  if (factRow && !factRow.dataset.flexShakeBound) {
+    factRow.dataset.flexShakeBound = "1";
+    factRow.addEventListener("click", function () {
+      if (isFlexibleUnconfigured()) {
+        shakeFlexHint();
+        haptic("error");
+      }
+    });
+  }
 
   var hint = document.getElementById("flexHint");
   if (!hint && factRow && factRow.parentNode) {

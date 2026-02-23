@@ -2440,6 +2440,10 @@ body.advanced-active .advanced-fog {
 
 .fact-row-disabled {
   opacity: 0.45;
+  pointer-events: auto;
+}
+.fact-row-disabled input,
+.fact-row-disabled button {
   pointer-events: none;
 }
 
@@ -2462,4 +2466,8 @@ body.advanced-active .advanced-fog {
 .flex-hint--alert {
   color: #ef4444;
   border-color: #ef4444;
+}
+
+.flex-hint.shake {
+  animation: input-shake 0.35s ease;
 }
