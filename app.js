@@ -3076,22 +3076,16 @@ function openEventEditor() {
 }
 
 function constrainEventDateInputWidth() {
-  var sheet = document.getElementById("eventEditorSheet");
   var wrap = document.querySelector(".event-date-wrap");
   var input = document.getElementById("eventDate");
-  if (!sheet || !wrap || !input) return;
-  var paddingPx = 48;
-  // На телефоне используем видимую ширину (visualViewport), иначе поле уезжает вправо
-  var vv = window.visualViewport;
-  var viewportW = (vv && typeof vv.width === "number") ? vv.width : (window.innerWidth || document.documentElement.clientWidth || 320);
-  var sheetW = sheet.clientWidth;
-  var available = (sheetW > 0 ? Math.min(sheetW, viewportW) : viewportW) - paddingPx;
-  if (available < 200) available = 200;
-  wrap.style.maxWidth = available + "px";
-  wrap.style.width = available + "px";
-  input.style.maxWidth = available + "px";
-  input.style.width = available + "px";
-  input.style.boxSizing = "border-box";
+  if (!wrap || !input) return;
+  // Не задаём ширину в px — она переопределяла CSS и на телефоне поле уезжало вправо.
+  // Сбрасываем инлайн-стили, чтобы работали только правила из CSS (шит 100dvw, поле 100%).
+  wrap.style.maxWidth = "";
+  wrap.style.width = "";
+  input.style.maxWidth = "";
+  input.style.width = "";
+  input.style.boxSizing = "";
 }
 
 function onEventEditorResize() {
