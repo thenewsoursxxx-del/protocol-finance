@@ -3063,13 +3063,14 @@ function openEventEditor() {
       eventEditorSheet.classList.add("open");
       requestAnimationFrame(function () {
         constrainEventDateInputWidth();
-        setTimeout(constrainEventDateInputWidth, 50);
-        setTimeout(constrainEventDateInputWidth, 200);
+        setTimeout(constrainEventDateInputWidth, 80);
+        setTimeout(constrainEventDateInputWidth, 250);
+        setTimeout(constrainEventDateInputWidth, 500);
       });
-      // На мобильных — пересчитать после окончания анимации шита (layout уже финальный)
       eventEditorSheet.addEventListener("transitionend", function onOpen() {
         eventEditorSheet.removeEventListener("transitionend", onOpen);
         constrainEventDateInputWidth();
+        setTimeout(constrainEventDateInputWidth, 100);
       }, { once: true });
     });
   }
@@ -3085,9 +3086,19 @@ function constrainEventDateInputWidth() {
   var visibleW = (vv && typeof vv.width === "number") ? vv.width : (window.innerWidth || document.documentElement.clientWidth || 320);
   sheet.style.width = visibleW + "px";
   sheet.style.maxWidth = visibleW + "px";
-  // Ширина поля даты = ширина поля «Сумма», чтобы они были одинаковой длины
-  var amountWrap = amountInput ? amountInput.closest(".input-wrap") : null;
-  var targetWidth = amountWrap && amountWrap.offsetWidth > 0 ? amountWrap.offsetWidth : Math.max(200, visibleW - 48 - 10);
+  // Ширина поля даты = точная ширина инпута «Сумма» (getBoundingClientRect), с запасом чтобы не вылезало вправо
+  var targetWidth;
+  if (amountInput) {
+    var amountRect = amountInput.getBoundingClientRect();
+    var amountW = amountRect.width;
+    if (amountW > 0) {
+      targetWidth = Math.floor(amountW) - 2;
+      if (targetWidth < 180) targetWidth = Math.floor(amountW);
+    }
+  }
+  if (typeof targetWidth !== "number" || targetWidth < 180) {
+    targetWidth = Math.max(180, Math.floor(visibleW) - 56);
+  }
   wrap.style.width = targetWidth + "px";
   wrap.style.maxWidth = targetWidth + "px";
   input.style.width = targetWidth + "px";
