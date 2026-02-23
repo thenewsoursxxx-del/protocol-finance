@@ -2388,19 +2388,20 @@ body.advanced-active .advanced-fog {
 .sheet.event-editor .event-date-wrap {
   width: 100%;
   max-width: 100%;
-  max-width: min(100%, var(--event-field-width, 100%));
   min-width: 0;
   box-sizing: border-box;
+  /* жёсткий предел по экрану, чтобы не залезало за край на телефоне */
+  max-width: min(100%, calc(100dvw - 56px));
 }
 
 .sheet.event-editor .event-date-wrap input {
   width: 100% !important;
   max-width: 100% !important;
-  max-width: min(100%, var(--event-field-width, 100%)) !important;
   min-width: 0 !important;
   box-sizing: border-box !important;
   display: block;
   text-align: left;
+  max-width: min(100%, calc(100dvw - 56px)) !important;
 }
 
 

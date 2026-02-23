@@ -3063,14 +3063,16 @@ function openEventEditor() {
       eventEditorSheet.classList.add("open");
       requestAnimationFrame(function () {
         constrainEventDateInputWidth();
-        setTimeout(constrainEventDateInputWidth, 80);
-        setTimeout(constrainEventDateInputWidth, 250);
-        setTimeout(constrainEventDateInputWidth, 500);
+        setTimeout(constrainEventDateInputWidth, 100);
+        setTimeout(constrainEventDateInputWidth, 300);
+        setTimeout(constrainEventDateInputWidth, 600);
+        setTimeout(constrainEventDateInputWidth, 900);
       });
       eventEditorSheet.addEventListener("transitionend", function onOpen() {
         eventEditorSheet.removeEventListener("transitionend", onOpen);
         constrainEventDateInputWidth();
-        setTimeout(constrainEventDateInputWidth, 100);
+        setTimeout(constrainEventDateInputWidth, 150);
+        setTimeout(constrainEventDateInputWidth, 400);
       }, { once: true });
     });
   }
@@ -3080,27 +3082,27 @@ function constrainEventDateInputWidth() {
   var sheet = document.getElementById("eventEditorSheet");
   var wrap = document.querySelector(".event-date-wrap");
   var input = document.getElementById("eventDate");
-  var amountInput = document.getElementById("eventAmount");
+  var amountWrap = document.getElementById("eventAmount") && document.getElementById("eventAmount").closest(".input-wrap");
   var fieldsContainer = document.querySelector(".event-editor-fields");
   if (!sheet || !wrap || !input) return;
   var vv = window.visualViewport;
   var visibleW = (vv && typeof vv.width === "number") ? vv.width : (window.innerWidth || document.documentElement.clientWidth || 320);
+  var safeFallback = Math.max(200, Math.floor(visibleW) - 56);
   sheet.style.width = visibleW + "px";
   sheet.style.maxWidth = visibleW + "px";
-  wrap.style.width = "";
-  wrap.style.maxWidth = "";
-  input.style.width = "";
-  input.style.maxWidth = "";
-  input.style.boxSizing = "";
-  // Ограничиваем поле даты по ширине поля «Сумма» через CSS-переменную (нативный date может игнорировать min-width)
-  if (fieldsContainer && amountInput) {
-    var w = amountInput.getBoundingClientRect().width;
-    if (w > 0) {
-      fieldsContainer.style.setProperty("--event-field-width", Math.floor(w) + "px");
-    } else {
-      fieldsContainer.style.removeProperty("--event-field-width");
-    }
+  var targetPx = safeFallback;
+  if (amountWrap && amountWrap.offsetWidth > 0) {
+    targetPx = amountWrap.offsetWidth - 2;
+    if (targetPx < 180) targetPx = amountWrap.offsetWidth;
   }
+  if (fieldsContainer) {
+    fieldsContainer.style.setProperty("--event-field-width", targetPx + "px");
+  }
+  wrap.style.width = targetPx + "px";
+  wrap.style.maxWidth = targetPx + "px";
+  input.style.width = targetPx + "px";
+  input.style.maxWidth = targetPx + "px";
+  input.style.boxSizing = "border-box";
 }
 
 function onEventEditorResize() {
