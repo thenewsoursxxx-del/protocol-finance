@@ -2105,8 +2105,9 @@ body.advanced-active .advanced-fog {
 .flexible-content.open {
   max-height: 900px;
   padding: 0 16px 16px;
-  transition: max-height 0.45s cubic-bezier(.22,1,.36,1),
-              padding 0.35s ease;
+  /* разворот плавный: дольше и ease-out, чтобы не было резкого «дожатия» в конец */
+  transition: max-height 0.6s cubic-bezier(.22,1,.36,1),
+              padding 0.5s ease;
 }
 
 /* ── MonthDays (date input как в «Добавить событие») ── */
