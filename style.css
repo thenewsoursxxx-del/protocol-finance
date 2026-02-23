@@ -2094,20 +2094,26 @@ body.advanced-active .advanced-fog {
   transform: rotate(90deg);
 }
 
+/* Плавное сворачивание/разворачивание по высоте контента (grid 0fr → 1fr) */
 .flexible-content {
-  max-height: 0;
+  display: grid;
+  grid-template-rows: 0fr;
   overflow: hidden;
   padding: 0 16px;
-  transition: max-height 0.45s cubic-bezier(.22,1,.36,1),
+  transition: grid-template-rows 0.45s cubic-bezier(.22,1,.36,1),
               padding 0.35s ease;
 }
 
 .flexible-content.open {
-  max-height: 900px;
+  grid-template-rows: 1fr;
   padding: 0 16px 16px;
-  /* разворот плавный: дольше и ease-out, чтобы не было резкого «дожатия» в конец */
-  transition: max-height 0.6s cubic-bezier(.22,1,.36,1),
-              padding 0.5s ease;
+  transition: grid-template-rows 0.45s cubic-bezier(.22,1,.36,1),
+              padding 0.35s ease;
+}
+
+.flexible-content-inner {
+  min-height: 0;
+  overflow: hidden;
 }
 
 /* ── MonthDays (date input как в «Добавить событие») ── */
