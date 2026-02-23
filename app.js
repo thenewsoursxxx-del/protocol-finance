@@ -3079,18 +3079,19 @@ function constrainEventDateInputWidth() {
   var sheet = document.getElementById("eventEditorSheet");
   var wrap = document.querySelector(".event-date-wrap");
   var input = document.getElementById("eventDate");
+  var amountInput = document.getElementById("eventAmount");
   if (!sheet || !wrap || !input) return;
   var vv = window.visualViewport;
   var visibleW = (vv && typeof vv.width === "number") ? vv.width : (window.innerWidth || document.documentElement.clientWidth || 320);
-  var paddingPx = 48;
-  var safetyPx = 10; // запас, чтобы правый край поля не уходил за экран на телефоне
-  var contentMaxW = Math.max(200, visibleW - paddingPx - safetyPx);
   sheet.style.width = visibleW + "px";
   sheet.style.maxWidth = visibleW + "px";
-  wrap.style.width = contentMaxW + "px";
-  wrap.style.maxWidth = contentMaxW + "px";
-  input.style.width = contentMaxW + "px";
-  input.style.maxWidth = contentMaxW + "px";
+  // Ширина поля даты = ширина поля «Сумма», чтобы они были одинаковой длины
+  var amountWrap = amountInput ? amountInput.closest(".input-wrap") : null;
+  var targetWidth = amountWrap && amountWrap.offsetWidth > 0 ? amountWrap.offsetWidth : Math.max(200, visibleW - 48 - 10);
+  wrap.style.width = targetWidth + "px";
+  wrap.style.maxWidth = targetWidth + "px";
+  input.style.width = targetWidth + "px";
+  input.style.maxWidth = targetWidth + "px";
   input.style.boxSizing = "border-box";
 }
 
