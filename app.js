@@ -1042,6 +1042,15 @@ return d;
 
 function renderProtocolAdviceGraph() {
   const advice = CashflowEngine.buildAdvice(lastCalc);
+  const unconfigured = isFlexibleUnconfigured();
+  const adviceBlockHtml = unconfigured ? "" : `<div style="
+margin-top:10px;
+padding:10px 12px;
+border-radius:14px;
+background:#111;
+border:1px solid #222;
+font-size:14px;
+">${advice.text}</div>`;
 
   adviceCard.innerHTML = `
 <div id="planHeader">
@@ -1061,16 +1070,7 @@ opacity:0.75;
 ></div>
 </div>
 
-<div style="
-margin-top:10px;
-padding:10px 12px;
-border-radius:14px;
-background:#111;
-border:1px solid #222;
-font-size:14px;
-">
-${advice.text}
-</div>
+${adviceBlockHtml}
 
 <div class="graph-block">
 <div class="chart-card">
