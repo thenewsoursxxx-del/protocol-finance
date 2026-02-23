@@ -3076,16 +3076,22 @@ function openEventEditor() {
 }
 
 function constrainEventDateInputWidth() {
+  var sheet = document.getElementById("eventEditorSheet");
   var wrap = document.querySelector(".event-date-wrap");
   var input = document.getElementById("eventDate");
-  if (!wrap || !input) return;
-  // Не задаём ширину в px — она переопределяла CSS и на телефоне поле уезжало вправо.
-  // Сбрасываем инлайн-стили, чтобы работали только правила из CSS (шит 100dvw, поле 100%).
-  wrap.style.maxWidth = "";
-  wrap.style.width = "";
-  input.style.maxWidth = "";
-  input.style.width = "";
-  input.style.boxSizing = "";
+  if (!sheet || !wrap || !input) return;
+  var vv = window.visualViewport;
+  var visibleW = (vv && typeof vv.width === "number") ? vv.width : (window.innerWidth || document.documentElement.clientWidth || 320);
+  var paddingPx = 48;
+  var contentMaxW = Math.max(200, visibleW - paddingPx);
+  // На телефоне 100dvw в WebView часто не совпадает с видимой областью — задаём ширину в px из visualViewport
+  sheet.style.width = visibleW + "px";
+  sheet.style.maxWidth = visibleW + "px";
+  wrap.style.maxWidth = contentMaxW + "px";
+  wrap.style.width = "100%";
+  input.style.maxWidth = "100%";
+  input.style.width = "100%";
+  input.style.boxSizing = "border-box";
 }
 
 function onEventEditorResize() {
@@ -3095,7 +3101,15 @@ function onEventEditorResize() {
 }
 
 function closeEventEditor() {
-  if (eventEditorSheet) eventEditorSheet.classList.remove("open");
+  if (eventEditorSheet) {
+    eventEditorSheet.classList.remove("open");
+    eventEditorSheet.style.width = "";
+    eventEditorSheet.style.maxWidth = "";
+  }
+  var wrap = document.querySelector(".event-date-wrap");
+  var input = document.getElementById("eventDate");
+  if (wrap) { wrap.style.maxWidth = ""; wrap.style.width = ""; }
+  if (input) { input.style.maxWidth = ""; input.style.width = ""; input.style.boxSizing = ""; }
   setTimeout(function () {
     if (eventEditorOverlay) eventEditorOverlay.style.display = "none";
   }, 550);
