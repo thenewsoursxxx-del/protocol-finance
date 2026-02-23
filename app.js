@@ -3083,12 +3083,12 @@ function constrainEventDateInputWidth() {
   var vv = window.visualViewport;
   var visibleW = (vv && typeof vv.width === "number") ? vv.width : (window.innerWidth || document.documentElement.clientWidth || 320);
   var paddingPx = 48;
-  var contentMaxW = Math.max(200, visibleW - paddingPx);
+  var safetyPx = 10; // запас, чтобы правый край поля не уходил за экран на телефоне
+  var contentMaxW = Math.max(200, visibleW - paddingPx - safetyPx);
   sheet.style.width = visibleW + "px";
   sheet.style.maxWidth = visibleW + "px";
   wrap.style.width = contentMaxW + "px";
   wrap.style.maxWidth = contentMaxW + "px";
-  // У контейнера даты был класс input-wrap → overflow:hidden обрезал правый край; ширина инпута в px, чтобы не вылезал
   input.style.width = contentMaxW + "px";
   input.style.maxWidth = contentMaxW + "px";
   input.style.boxSizing = "border-box";
