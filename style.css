@@ -2355,13 +2355,17 @@ body.advanced-active .advanced-fog {
   width: 100%;
 }
 
+/* Контейнер даты имеет и input-wrap — у него overflow: visible, иначе обрезается правый край поля */
+.sheet.event-editor .input-wrap.event-date-wrap {
+  overflow: visible;
+}
+
 .sheet.event-editor .input-wrap input {
   max-width: 100%;
   width: 100%;
   box-sizing: border-box;
 }
 
-/* Поле даты: без overflow hidden, чтобы не обрезало правую границу; ширина только от родителя */
 .sheet.event-editor .event-date-wrap {
   width: 100%;
   max-width: 100%;

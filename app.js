@@ -3084,13 +3084,13 @@ function constrainEventDateInputWidth() {
   var visibleW = (vv && typeof vv.width === "number") ? vv.width : (window.innerWidth || document.documentElement.clientWidth || 320);
   var paddingPx = 48;
   var contentMaxW = Math.max(200, visibleW - paddingPx);
-  // На телефоне 100dvw в WebView часто не совпадает с видимой областью — задаём ширину в px из visualViewport
   sheet.style.width = visibleW + "px";
   sheet.style.maxWidth = visibleW + "px";
+  wrap.style.width = contentMaxW + "px";
   wrap.style.maxWidth = contentMaxW + "px";
-  wrap.style.width = "100%";
-  input.style.maxWidth = "100%";
-  input.style.width = "100%";
+  // У контейнера даты был класс input-wrap → overflow:hidden обрезал правый край; ширина инпута в px, чтобы не вылезал
+  input.style.width = contentMaxW + "px";
+  input.style.maxWidth = contentMaxW + "px";
   input.style.boxSizing = "border-box";
 }
 
