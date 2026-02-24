@@ -756,13 +756,52 @@ border-top: 1px dashed rgba(255,255,255,0.15);
 border-top: 1px dashed rgba(58,123,253,0.45);
 }
 
-/* Flip-свайп у блоков счетов: не обрезать 3D-разворот */
+/* Flip-свайп: разворачивается весь блок, обратная сторона — заглушка в цвет счёта */
 .account-block.flip-wrapper {
   overflow: visible;
+  background: transparent;
+  border: none;
+  box-shadow: none;
 }
 .account-block.flip-wrapper .flip-inner {
   border-radius: 22px;
   overflow: hidden;
+}
+/* Лицевая сторона — фон как у блока счёта */
+.account-flip-front.account-flip-front--main {
+  min-height: 100%;
+  background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.015));
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 22px;
+  box-sizing: border-box;
+}
+.account-flip-front.account-flip-front--reserve {
+  min-height: 100%;
+  background: linear-gradient(180deg, rgba(58,123,253,0.18), rgba(58,123,253,0.06));
+  border: 1px solid rgba(58,123,253,0.65);
+  border-radius: 22px;
+  box-sizing: border-box;
+  box-shadow: 0 0 0 1px rgba(58,123,253,0.35), 0 18px 50px rgba(58,123,253,0.25);
+}
+/* Обратная сторона — пустая заглушка в цвет счёта */
+.account-flip-back {
+  border-radius: 22px;
+  box-sizing: border-box;
+}
+.account-flip-back--main {
+  background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.015));
+  border: 1px solid rgba(255,255,255,0.12);
+}
+.account-flip-back--reserve {
+  background: linear-gradient(180deg, rgba(58,123,253,0.18), rgba(58,123,253,0.06));
+  border: 1px solid rgba(58,123,253,0.65);
+  box-shadow: 0 0 0 1px rgba(58,123,253,0.35), 0 18px 50px rgba(58,123,253,0.25);
+}
+
+.account-block.reserve.flip-wrapper {
+  background: transparent;
+  border: none;
+  box-shadow: none;
 }
 
 /* ===== ACCOUNT HINT TYPOGRAPHY FIX ===== */
