@@ -753,6 +753,7 @@ document.querySelectorAll(".account-block").forEach(block => {
 
     const accountsScreen = document.getElementById("screen-accounts");
     if (!accountsScreen.classList.contains("active")) return;
+    if (block._flipJustSwiped) return;
 
     const type = block.dataset.account;
     openAccountHistory(type);
@@ -2376,8 +2377,7 @@ if (addAccountBack) {
 }
 
 /* ===== FLIP CARD SWIPE ===== */
-(function initFlipSwipe() {
-  const wrapper = document.getElementById("flipWrapper");
+function setupFlipSwipe(wrapper) {
   if (!wrapper) return;
   const inner = wrapper.querySelector(".flip-inner");
   if (!inner) return;
@@ -2402,7 +2402,6 @@ if (addAccountBack) {
     const base = flipped ? 180 : 0;
     const sign = flipped ? 1 : -1;
     const angle = base + sign * (dx / wrapper.offsetWidth) * 90;
-    // В WebView rotateY(+) даёт «слева направо» — инвертируем угол, чтобы получить «справа налево»
     inner.style.transform = "rotateY(" + (-angle) + "deg)";
   }, { passive: true });
 
@@ -2412,8 +2411,12 @@ if (addAccountBack) {
     inner.style.transition = "";
     if (dx < -THRESHOLD) {
       inner.classList.add("flipped");
+      wrapper._flipJustSwiped = true;
+      setTimeout(function () { wrapper._flipJustSwiped = false; }, 300);
     } else if (dx > THRESHOLD) {
       inner.classList.remove("flipped");
+      wrapper._flipJustSwiped = true;
+      setTimeout(function () { wrapper._flipJustSwiped = false; }, 300);
     }
     inner.style.transform = "";
   });
@@ -2423,6 +2426,15 @@ if (addAccountBack) {
     swiping = false;
     inner.style.transition = "";
     inner.style.transform = "";
+  });
+}
+
+(function initFlipSwipe() {
+  const graphWrapper = document.getElementById("flipWrapper");
+  setupFlipSwipe(graphWrapper);
+
+  document.querySelectorAll(".account-block.flip-wrapper").forEach(function (wrapper) {
+    setupFlipSwipe(wrapper);
   });
 })();
 

@@ -756,6 +756,15 @@ border-top: 1px dashed rgba(255,255,255,0.15);
 border-top: 1px dashed rgba(58,123,253,0.45);
 }
 
+/* Flip-свайп у блоков счетов: не обрезать 3D-разворот */
+.account-block.flip-wrapper {
+  overflow: visible;
+}
+.account-block.flip-wrapper .flip-inner {
+  border-radius: 22px;
+  overflow: hidden;
+}
+
 /* ===== ACCOUNT HINT TYPOGRAPHY FIX ===== */
 .account-hint {
 font-size: 14px; /* меньше базового */

@@ -263,7 +263,9 @@ Protocol анализирует данные…
 </div>
 
 <!-- ОСНОВНОЙ СЧЁТ -->
-<div class="account-block" data-account="main">
+<div class="account-block flip-wrapper" data-account="main">
+<div class="flip-inner">
+<div class="flip-front">
 <div class="card">
 <div style="font-size:17px;font-weight:600">Основной счёт</div>
 <div style="opacity:.6;font-size:14px;margin-top:4px">Накоплено</div>
@@ -271,18 +273,22 @@ Protocol анализирует данные…
 <span id="mainAmount">0</span> ₽
 </div>
 </div>
-
-
 <div class="account-hint neutral">
 Этот счёт отражает ваши накопления по плану Protocol.
 Это может быть банковский или инвестиционный счёт
 либо наличные — главное, чтобы сумма соответствовала расчётам.
 </div>
 </div>
+<div class="flip-back">
+<div class="card flip-back-card"></div>
+</div>
+</div>
+</div>
 
-
-<!-- РЕЗЕРВ (ИСПРАВЛЕНО) -->
-<div class="account-block reserve" data-account="reserve">
+<!-- РЕЗЕРВ -->
+<div class="account-block reserve flip-wrapper" data-account="reserve">
+<div class="flip-inner">
+<div class="flip-front">
 <div class="card">
 <div style="font-size:17px;font-weight:600">Резерв</div>
 <div style="opacity:.6;font-size:14px;margin-top:4px">
@@ -292,11 +298,14 @@ Protocol анализирует данные…
 <span id="reserveAmount">0</span> ₽
 </div>
 </div>
-
 <div class="account-hint">
 Резерв — это средства для экстренных ситуаций.
 Эти деньги не участвуют в достижении цели и
 используются только при необходимости.
+</div>
+</div>
+<div class="flip-back">
+<div class="card flip-back-card"></div>
 </div>
 </div>
 </div>
