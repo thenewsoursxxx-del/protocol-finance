@@ -789,13 +789,14 @@ border-top: 1px dashed rgba(58,123,253,0.45);
   box-sizing: border-box;
   box-shadow: 0 0 0 1px rgba(58,123,253,0.35), 0 18px 50px rgba(58,123,253,0.25);
 }
-/* Обратная сторона — пустая заглушка в цвет счёта */
+/* Обратная сторона — пустой блок в цвет счёта (полностью перекрывает, без текста) */
 .account-flip-back {
   border-radius: 22px;
   box-sizing: border-box;
   display: flex;
   align-items: stretch;
   padding: 20px;
+  min-height: 100%;
 }
 .account-flip-back--main {
   background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.015));
@@ -807,18 +808,23 @@ border-top: 1px dashed rgba(58,123,253,0.45);
   box-shadow: 0 0 0 1px rgba(58,123,253,0.35), 0 18px 50px rgba(58,123,253,0.25);
 }
 
-/* Задняя сторона карточки счёта — тот же фон и размеры, что и front */
+/* Пустой блок на обороте — явный непрозрачный фон, без надписей */
 .account-back-card {
   flex: 1;
   min-height: 120px;
   width: 100%;
   border-radius: 22px;
-  background: inherit;
-  box-shadow: inherit;
   display: flex;
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
+}
+.account-flip-back--main .account-back-card {
+  background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.015));
+}
+.account-flip-back--reserve .account-back-card {
+  background: linear-gradient(180deg, rgba(58,123,253,0.18), rgba(58,123,253,0.06));
+  box-shadow: 0 0 0 1px rgba(58,123,253,0.35), 0 18px 50px rgba(58,123,253,0.25);
 }
 
 .account-block.reserve.flip-wrapper {
