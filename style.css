@@ -810,7 +810,7 @@ border-top: 1px dashed rgba(58,123,253,0.45);
 /* Задняя сторона карточки счёта — тот же фон и размеры, что и front */
 .account-back-card {
   flex: 1;
-  min-height: 0;
+  min-height: 120px;
   width: 100%;
   border-radius: 22px;
   background: inherit;
@@ -1873,6 +1873,7 @@ body.advanced-active .advanced-fog {
   position: relative;
   width: 100%;
   transform-style: preserve-3d;
+  will-change: transform;
   transition: transform 0.6s cubic-bezier(0.4, 0.0, 0.2, 1);
 }
 
@@ -1881,6 +1882,7 @@ body.advanced-active .advanced-fog {
   width: 100%;
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
+  transform: translateZ(0);
 }
 
 .flip-front {
@@ -1894,7 +1896,7 @@ body.advanced-active .advanced-fog {
   left: 0;
   right: 0;
   bottom: 0;
-  transform: rotateY(180deg);
+  transform: rotateY(180deg) translateZ(0);
   z-index: 1;
 }
 

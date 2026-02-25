@@ -10,6 +10,7 @@ if (window.Telegram?.WebApp) {
   Telegram.WebApp.expand();
   Telegram.WebApp.onEvent("viewportChanged", function () {
     Telegram.WebApp.expand();
+    setTimeout(fixFlipRendering, 50);
   });
 }
 
@@ -39,6 +40,18 @@ document.addEventListener("touchmove", function (e) {
 
 document.addEventListener("touchend", function () { _isHorizontalSwipe = false; }, { passive: true });
 document.addEventListener("touchcancel", function () { _isHorizontalSwipe = false; }, { passive: true });
+
+function fixFlipRendering() {
+  var flippedCards = document.querySelectorAll(".flip-inner");
+  flippedCards.forEach(function (card) {
+    var currentTransform = card.style.transform;
+    card.style.transform = "none";
+    void card.offsetHeight;
+    requestAnimationFrame(function () {
+      card.style.transform = currentTransform;
+    });
+  });
+}
 
 document.addEventListener("pointerdown", e => {
   if (
@@ -613,11 +626,13 @@ setTimeout(function () {
 
 document.addEventListener("visibilitychange", function () {
   if (document.visibilityState === "visible") {
+    setTimeout(fixFlipRendering, 50);
     setTimeout(repairAdviceScreenIfStuck, 100);
     setTimeout(ensureNavVisibleAfterRestore, 100);
   }
 });
 window.addEventListener("pageshow", function (e) {
+  setTimeout(fixFlipRendering, 50);
   if (e.persisted) {
     setTimeout(repairAdviceScreenIfStuck, 100);
     setTimeout(ensureNavVisibleAfterRestore, 100);
