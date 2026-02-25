@@ -6,9 +6,39 @@ const screens = document.querySelectorAll(".screen");
 const indicator = document.querySelector(".nav-indicator");
 
 if (window.Telegram?.WebApp) {
-Telegram.WebApp.ready();
-Telegram.WebApp.expand();
+  Telegram.WebApp.ready();
+  Telegram.WebApp.expand();
+  Telegram.WebApp.onEvent("viewportChanged", function () {
+    Telegram.WebApp.expand();
+  });
 }
+
+/* Защита от вертикального смещения во время горизонтального flip-свайпа */
+var _startX = 0;
+var _startY = 0;
+var _isHorizontalSwipe = false;
+
+document.addEventListener("touchstart", function (e) {
+  if (!e.touches || !e.touches.length) return;
+  _startX = e.touches[0].clientX;
+  _startY = e.touches[0].clientY;
+  _isHorizontalSwipe = false;
+}, { passive: true });
+
+document.addEventListener("touchmove", function (e) {
+  if (!e.touches || !e.touches.length) return;
+  var deltaX = e.touches[0].clientX - _startX;
+  var deltaY = e.touches[0].clientY - _startY;
+  if (Math.abs(deltaX) > Math.abs(deltaY)) {
+    _isHorizontalSwipe = true;
+  }
+  if (_isHorizontalSwipe) {
+    e.preventDefault();
+  }
+}, { passive: false });
+
+document.addEventListener("touchend", function () { _isHorizontalSwipe = false; }, { passive: true });
+document.addEventListener("touchcancel", function () { _isHorizontalSwipe = false; }, { passive: true });
 
 document.addEventListener("pointerdown", e => {
   if (

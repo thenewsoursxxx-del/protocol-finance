@@ -11,12 +11,18 @@ background: #000;
 color: #fff;
 font-family: system-ui, -apple-system;
 font-size: 18px;
+overscroll-behavior: none;
+}
+
+body {
+touch-action: pan-x;
 }
 
 .app {
 padding: 20px;
 padding-bottom: 220px; /* ← ВАЖНО */
 position: relative;
+overscroll-behavior: contain;
 }
 
 .screen {
