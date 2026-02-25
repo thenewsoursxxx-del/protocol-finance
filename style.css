@@ -1875,6 +1875,11 @@ body.advanced-active .advanced-fog {
   perspective: 1200px;
 }
 
+/* Скрываем flip-карточки при возврате из фона, пока не пересчитаем рендер (убирает зеркальный глитч) */
+body.flip-fix-pending .flip-wrapper {
+  visibility: hidden !important;
+}
+
 .flip-inner {
   position: relative;
   width: 100%;

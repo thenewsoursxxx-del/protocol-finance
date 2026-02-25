@@ -10,7 +10,7 @@ if (window.Telegram?.WebApp) {
   Telegram.WebApp.expand();
   Telegram.WebApp.onEvent("viewportChanged", function () {
     Telegram.WebApp.expand();
-    setTimeout(fixFlipRendering, 50);
+    runFlipFixOnReturn();
   });
 }
 
@@ -41,14 +41,32 @@ document.addEventListener("touchmove", function (e) {
 document.addEventListener("touchend", function () { _isHorizontalSwipe = false; }, { passive: true });
 document.addEventListener("touchcancel", function () { _isHorizontalSwipe = false; }, { passive: true });
 
-function fixFlipRendering() {
-  var flippedCards = document.querySelectorAll(".flip-inner");
-  flippedCards.forEach(function (card) {
-    var currentTransform = card.style.transform;
+function fixFlipRendering(done) {
+  var cards = document.querySelectorAll(".flip-inner");
+  var states = [];
+  for (var i = 0; i < cards.length; i++) {
+    var card = cards[i];
+    states.push({ el: card, transform: card.style.transform });
     card.style.transform = "none";
     void card.offsetHeight;
-    requestAnimationFrame(function () {
-      card.style.transform = currentTransform;
+  }
+  requestAnimationFrame(function () {
+    for (var j = 0; j < states.length; j++) {
+      states[j].el.style.transform = states[j].transform;
+    }
+    if (typeof done === "function") done();
+  });
+}
+
+function runFlipFixOnReturn() {
+  var body = document.body;
+  if (!body) return;
+  body.classList.add("flip-fix-pending");
+  requestAnimationFrame(function () {
+    fixFlipRendering(function () {
+      requestAnimationFrame(function () {
+        body.classList.remove("flip-fix-pending");
+      });
     });
   });
 }
@@ -625,14 +643,16 @@ setTimeout(function () {
 }, 1000);
 
 document.addEventListener("visibilitychange", function () {
-  if (document.visibilityState === "visible") {
-    setTimeout(fixFlipRendering, 50);
+  if (document.visibilityState === "hidden") {
+    document.body.classList.add("flip-fix-pending");
+  } else if (document.visibilityState === "visible") {
+    runFlipFixOnReturn();
     setTimeout(repairAdviceScreenIfStuck, 100);
     setTimeout(ensureNavVisibleAfterRestore, 100);
   }
 });
 window.addEventListener("pageshow", function (e) {
-  setTimeout(fixFlipRendering, 50);
+  runFlipFixOnReturn();
   if (e.persisted) {
     setTimeout(repairAdviceScreenIfStuck, 100);
     setTimeout(ensureNavVisibleAfterRestore, 100);
