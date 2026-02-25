@@ -773,7 +773,12 @@ border-top: 1px dashed rgba(58,123,253,0.45);
   border-radius: 22px;
   overflow: hidden;
 }
-/* Лицевая сторона — фон как у блока счёта */
+/* Лицевая сторона — фон как у блока счёта; preserve-3d чтобы backface не просвечивал в WebView */
+.account-flip-front.account-flip-front--main,
+.account-flip-front.account-flip-front--reserve {
+  transform-style: preserve-3d;
+  -webkit-transform-style: preserve-3d;
+}
 .account-flip-front.account-flip-front--main {
   min-height: 100%;
   background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.015));
@@ -797,6 +802,8 @@ border-top: 1px dashed rgba(58,123,253,0.45);
   align-items: stretch;
   padding: 20px;
   min-height: 100%;
+  transform-style: preserve-3d;
+  -webkit-transform-style: preserve-3d;
 }
 .account-flip-back--main {
   background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.015));
@@ -1893,22 +1900,29 @@ body.flip-fix-pending .flip-wrapper {
   width: 100%;
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
-  transform: translateZ(0);
 }
 
 .flip-front {
   position: relative;
   z-index: 2;
+  transform: translateZ(0);
+  isolation: isolate;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
 }
 
+/* Обратная сторона: rotateY(180deg) + translateZ(2px) чтобы в WebView рисовалась поверх и не просвечивал текст лицевой */
 .flip-back {
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  transform: rotateY(180deg) translateZ(0);
+  transform: rotateY(180deg) translateZ(2px);
   z-index: 1;
+  isolation: isolate;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
 }
 
 .flip-back-card {
