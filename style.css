@@ -773,18 +773,6 @@ border-top: 1px dashed rgba(58,123,253,0.45);
   border-radius: 22px;
   overflow: hidden;
 }
-
-/* При перевороте явно скрываем лицевую и показываем обратную — не полагаемся на backface в WebView */
-.flip-wrapper .flip-inner.flipped .flip-front {
-  visibility: hidden !important;
-  pointer-events: none;
-}
-.flip-wrapper .flip-inner.flipped .flip-back {
-  visibility: visible !important;
-}
-.flip-wrapper .flip-inner:not(.flipped) .flip-back {
-  visibility: hidden;
-}
 /* Лицевая сторона — фон как у блока счёта; preserve-3d чтобы backface не просвечивал в WebView */
 .account-flip-front.account-flip-front--main,
 .account-flip-front.account-flip-front--reserve {
