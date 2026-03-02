@@ -118,6 +118,7 @@ color: #fff;
   height: 72px;
   display: flex;
   align-items: center;
+  padding: 0 16px;
 
   background: rgba(18,18,22,0.45);
   background-image:
