@@ -197,6 +197,7 @@
   };
 
   // ─── Cashflow: monthly aggregate from recurring events ────
+  // (kept for backward compat / UI hints in simple mode)
 
   CashflowEngine.prototype._getRecurringMonthlyNet = function () {
     var monthlyIncome = 0;
@@ -219,6 +220,81 @@
       monthlyIncome: Math.round(monthlyIncome),
       monthlyExpense: Math.round(monthlyExpense),
       monthlyNet: Math.round(monthlyIncome - monthlyExpense)
+    };
+  };
+
+  // ─── Cashflow: fact-based forecast ──────────────────────────
+
+  function frequencyMultiplier(freq) {
+    switch (freq) {
+      case FREQUENCY.WEEKLY:   return WEEKLY_PER_MONTH;
+      case FREQUENCY.BIWEEKLY: return BIWEEKLY_PER_MONTH;
+      case FREQUENCY.MONTHLY:  return 1;
+      default:                 return 1;
+    }
+  }
+
+  /**
+   * Builds a monthly forecast from actual event amounts.
+   * Groups income/expense events by frequency,
+   * averages amount per event, multiplies by expected events/month.
+   *
+   * Returns { monthlyIncome, monthlyExpense, hasIncomeData, hasExpenseData }
+   */
+  CashflowEngine.prototype._getForecastFromEvents = function () {
+    var incomeByFreq = {};
+    var expenseByFreq = {};
+
+    for (var i = 0; i < this.events.length; i++) {
+      var e = this.events[i];
+      if (e.frequency === FREQUENCY.ONCE && !(e.meta && e.meta.userCreated)) continue;
+
+      var freq = e.frequency || FREQUENCY.MONTHLY;
+
+      if (e.type === EVENT_TYPE.INCOME) {
+        if (!incomeByFreq[freq]) incomeByFreq[freq] = [];
+        incomeByFreq[freq].push(e.amount);
+      } else if (e.type === EVENT_TYPE.EXPENSE) {
+        if (!expenseByFreq[freq]) expenseByFreq[freq] = [];
+        expenseByFreq[freq].push(e.amount);
+      }
+    }
+
+    var monthlyIncome = 0;
+    var hasIncomeData = false;
+    for (var fq in incomeByFreq) {
+      if (!incomeByFreq.hasOwnProperty(fq)) continue;
+      var amounts = incomeByFreq[fq];
+      if (!amounts.length) continue;
+      hasIncomeData = true;
+      var avg = 0;
+      for (var j = 0; j < amounts.length; j++) avg += amounts[j];
+      avg = avg / amounts.length;
+
+      var mult = fq === FREQUENCY.CUSTOM ? amounts.length : frequencyMultiplier(fq);
+      monthlyIncome += avg * mult;
+    }
+
+    var monthlyExpense = 0;
+    var hasExpenseData = false;
+    for (var fq2 in expenseByFreq) {
+      if (!expenseByFreq.hasOwnProperty(fq2)) continue;
+      var amounts2 = expenseByFreq[fq2];
+      if (!amounts2.length) continue;
+      hasExpenseData = true;
+      var avg2 = 0;
+      for (var k = 0; k < amounts2.length; k++) avg2 += amounts2[k];
+      avg2 = avg2 / amounts2.length;
+
+      var mult2 = fq2 === FREQUENCY.CUSTOM ? amounts2.length : frequencyMultiplier(fq2);
+      monthlyExpense += avg2 * mult2;
+    }
+
+    return {
+      monthlyIncome: Math.round(monthlyIncome),
+      monthlyExpense: Math.round(monthlyExpense),
+      hasIncomeData: hasIncomeData,
+      hasExpenseData: hasExpenseData
     };
   };
 
@@ -272,18 +348,15 @@
   };
 
   /**
-   * CASHFLOW: event-based with frequency aggregation + timeline.
+   * CASHFLOW: fact-based forecast. Base income/expenses IGNORED.
+   * Monthly figures derived entirely from event history.
    */
   CashflowEngine.prototype._recalculateCashflow = function () {
     var bc = this.baseConfig;
     var balances = this._computeBalances();
-    var recurring = this._getRecurringMonthlyNet();
+    var forecast = this._getForecastFromEvents();
 
-    var baseIncome = bc.income || 0;
-    var baseExpenses = bc.expenses || 0;
-    var totalMonthlyIncome = baseIncome + recurring.monthlyIncome;
-    var totalMonthlyExpense = baseExpenses + recurring.monthlyExpense;
-    var free = totalMonthlyIncome - totalMonthlyExpense;
+    var free = forecast.monthlyIncome - forecast.monthlyExpense;
 
     var pace = PACE_MAP[bc.mode] || 0.6;
     var monthlySave = free > 0 ? Math.round(free * pace) : 0;
@@ -302,7 +375,8 @@
       monthsLeft = Math.ceil(remaining / toGoal) + balances.totalSkips;
     }
 
-    var ok = free > 0 && bc.goal > 0;
+    var hasSufficientData = forecast.hasIncomeData;
+    var ok = hasSufficientData && free > 0 && bc.goal > 0;
 
     this._derived = {
       ok: ok,
@@ -322,8 +396,10 @@
         ? (function () { var d = new Date(); d.setMonth(d.getMonth() + monthsLeft); return d; })()
         : null,
       averageMonthlyContribution: toGoal,
-      recurringIncome: recurring.monthlyIncome,
-      recurringExpense: recurring.monthlyExpense,
+      forecastIncome: forecast.monthlyIncome,
+      forecastExpense: forecast.monthlyExpense,
+      hasIncomeData: forecast.hasIncomeData,
+      hasExpenseData: forecast.hasExpenseData,
       timeline: null
     };
 
@@ -378,8 +454,8 @@
         date: date,
         goalBalance: Math.round(bal),
         reserveBalance: Math.round(resBal),
-        income: d.modelType === "cashflow" ? (d.recurringIncome || 0) : 0,
-        expense: d.modelType === "cashflow" ? (d.recurringExpense || 0) : 0
+        income: d.modelType === "cashflow" ? (d.forecastIncome || 0) : 0,
+        expense: d.modelType === "cashflow" ? (d.forecastExpense || 0) : 0
       });
 
       if (bal >= goal && goal > 0) break;

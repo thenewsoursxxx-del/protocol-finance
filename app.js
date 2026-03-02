@@ -318,10 +318,8 @@ function recalcPlan() {
     var incomeVal = parseNumber(incomeInput?.value || "0");
     var expensesVal = parseNumber(expensesInput?.value || "0");
     if (modelType === "cashflow") {
-      if (s.incomeType === "variable") incomeVal = 0;
-      else if (s.incomeType === "fixed") incomeVal = parseNumber(s.fixedIncomeAmount || "0");
-      if (s.expenseType === "variable") expensesVal = 0;
-      else if (s.expenseType === "fixed") expensesVal = parseNumber(s.fixedExpenseAmount || "0");
+      incomeVal = 0;
+      expensesVal = 0;
     }
     var canRecalc = goalVal > 0 && (incomeVal > expensesVal || modelType === "cashflow");
     if (canRecalc) {
@@ -340,6 +338,8 @@ function recalcPlan() {
       });
       var derived = engine.recalculate();
 
+      updateState({ derivedState: derived });
+
       if (derived.ok) {
         lastCalc.ok = true;
         lastCalc.free = derived.free;
@@ -347,12 +347,12 @@ function recalcPlan() {
         lastCalc.monthlySave = derived.monthlySave;
         lastCalc.months = derived.monthsLeft;
         lastCalc.effectiveGoal = derived.remainingGoal;
+        lastCalc.forecastIncome = derived.forecastIncome || 0;
+        lastCalc.forecastExpense = derived.forecastExpense || 0;
 
         accounts.main = derived.currentGoalBalance;
         accounts.reserve = derived.reserveBalance;
         plannedMonthly = derived.plannedToGoal;
-
-        updateState({ derivedState: derived });
       }
     }
   }
@@ -1999,6 +1999,13 @@ function recalcPlanAfterGoalChange() {
   recalcPlan();
 }
 
+function isCashflowNoData() {
+  var s = getState();
+  if (s.financialModel !== "cashflow") return false;
+  var d = s.derivedState || {};
+  return !d.hasIncomeData;
+}
+
 function updatePlanHeader() {
 const monthlyEl = document.getElementById("planMonthly");
 const explainEl = document.getElementById("planExplanation");
@@ -2011,13 +2018,24 @@ if (isFlexibleUnconfigured()) {
   return;
 }
 
+if (isCashflowNoData()) {
+  monthlyEl.innerText = "Заполните гибкую финансовую модель";
+  explainEl.innerHTML = "Добавьте хотя бы одно событие дохода через «Добавить событие»,<br>чтобы Protocol рассчитал прогноз.";
+  return;
+}
+
 if (!lastCalc.ok) return;
 
 monthlyEl.innerText =
   `План: ${plannedMonthly.toLocaleString()} ₽ / месяц`;
 
+var s = getState();
+var isCashflow = (s.financialModel === "cashflow");
+
 var explainText = lastCalc.ok
-  ? "Свободно в месяц: " + (lastCalc.free || 0).toLocaleString() + " ₽\n"
+  ? (isCashflow ? "Прогноз дохода: " + (lastCalc.forecastIncome || 0).toLocaleString() + " ₽ / мес\n"
+      + "Прогноз расхода: " + (lastCalc.forecastExpense || 0).toLocaleString() + " ₽ / мес\n" : "")
+    + "Свободно в месяц: " + (lastCalc.free || 0).toLocaleString() + " ₽\n"
     + "Откладываете: " + (lastCalc.monthlySave || 0).toLocaleString() + " ₽\n"
     + "Это ~" + Math.round((lastCalc.pace || 0) * 100) + "% от свободных средств\n"
     + "Цель будет достигнута примерно за " + (lastCalc.months || 0) + " мес"
@@ -2725,6 +2743,8 @@ function shakeFlexHint() {
 
 function syncFlexibleUI() {
   var unconfigured = isFlexibleUnconfigured();
+  var noData = isCashflowNoData();
+  var blocked = unconfigured || noData;
   var s = getState();
   var isCashflow = (s.financialModel === "cashflow");
 
@@ -2732,14 +2752,14 @@ function syncFlexibleUI() {
   var factInput = document.getElementById("factInput");
   var applyBtn = document.getElementById("applyFact");
 
-  if (factRow) factRow.classList.toggle("fact-row-disabled", unconfigured);
-  if (factInput) factInput.disabled = unconfigured;
-  if (applyBtn) applyBtn.disabled = unconfigured;
+  if (factRow) factRow.classList.toggle("fact-row-disabled", blocked);
+  if (factInput) factInput.disabled = blocked;
+  if (applyBtn) applyBtn.disabled = blocked;
 
   if (factRow && !factRow.dataset.flexShakeBound) {
     factRow.dataset.flexShakeBound = "1";
     factRow.addEventListener("click", function () {
-      if (isFlexibleUnconfigured()) {
+      if (isFlexibleUnconfigured() || isCashflowNoData()) {
         shakeFlexHint();
         haptic("error");
       }
@@ -2751,23 +2771,26 @@ function syncFlexibleUI() {
     hint = document.createElement("div");
     hint.id = "flexHint";
     hint.className = "flex-hint flex-hint--alert";
-    hint.textContent = "Сначала настройте гибкую финансовую модель";
     factRow.parentNode.insertBefore(hint, factRow.nextSibling);
   }
   if (hint) {
     hint.classList.add("flex-hint--alert");
-    hint.textContent = "Сначала настройте гибкую финансовую модель";
-    hint.classList.toggle("visible", unconfigured);
+    if (unconfigured) {
+      hint.textContent = "Сначала настройте гибкую финансовую модель";
+    } else if (noData) {
+      hint.textContent = "Добавьте событие дохода, чтобы построить прогноз";
+    }
+    hint.classList.toggle("visible", blocked);
   }
 
   var summaryMonthlyEl = document.getElementById("summaryMonthly");
   var summaryMonthsEl = document.getElementById("summaryMonths");
   var summaryModeEl = document.getElementById("summaryMode");
 
-  if (unconfigured) {
+  if (unconfigured || noData) {
     if (summaryMonthlyEl) summaryMonthlyEl.innerText = "—";
     if (summaryMonthsEl) summaryMonthsEl.innerText = "—";
-    if (summaryModeEl) summaryModeEl.innerText = "Гибкий (не настроен)";
+    if (summaryModeEl) summaryModeEl.innerText = noData ? "Гибкий (нет данных)" : "Гибкий (не настроен)";
   } else if (isCashflow && lastCalc.ok) {
     if (summaryMonthlyEl) summaryMonthlyEl.innerText = lastCalc.monthlySave.toLocaleString();
     if (summaryMonthsEl) summaryMonthsEl.innerText = lastCalc.months;
