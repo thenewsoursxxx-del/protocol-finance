@@ -2495,6 +2495,9 @@ function setupFlipSwipe(wrapper) {
 }
 
 (function initFlipSwipe() {
+  const graphWrapper = document.getElementById("flipWrapper");
+  setupFlipSwipe(graphWrapper);
+
   document.querySelectorAll(".account-block.flip-wrapper").forEach(function (wrapper) {
     setupFlipSwipe(wrapper);
   });
