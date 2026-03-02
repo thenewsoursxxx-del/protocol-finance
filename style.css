@@ -115,23 +115,28 @@ color: #fff;
   left: 20px;
   right: 20px;
 
-  height: 82px;
+  height: 64px;
   display: flex;
   align-items: center;
 
-  /* 👇 ВАЖНО */
-  background: rgba(15, 15, 18, 0.55);
-  backdrop-filter: blur(22px) saturate(140%);
-  -webkit-backdrop-filter: blur(22px) saturate(140%);
+  background: rgba(18,18,22,0.45);
+  background-image:
+    linear-gradient(
+      to bottom,
+      rgba(255,255,255,0.06),
+      rgba(255,255,255,0.02)
+    );
+
+  backdrop-filter: blur(30px) saturate(170%);
+  -webkit-backdrop-filter: blur(30px) saturate(170%);
 
   border-radius: 999px;
 
-  /* стеклянная окантовка */
-  border: 1px solid rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.14);
 
-  /* мягкая тень */
   box-shadow:
-    0 8px 30px rgba(0,0,0,0.45);
+    0 10px 40px rgba(0,0,0,0.6),
+    inset 0 1px 0 rgba(255,255,255,0.18);
 
   z-index: 20;
 }
@@ -139,18 +144,28 @@ color: #fff;
 .nav-indicator {
 position: absolute;
 left: 0;
+top: 50%;
+transform: translateY(-50%);
 
-width: 68px;
-height: 68px;
+width: 78px;
+height: 44px;
 
-border-radius: 999px;
-background: #fff;
+border-radius: 28px;
+background: rgba(255,255,255,0.97);
 
-transition: transform .35s cubic-bezier(.4,0,.2,1);
+box-shadow:
+  0 6px 20px rgba(0,0,0,0.35),
+  0 0 18px rgba(255,255,255,0.25);
+
+transition:
+  transform .35s cubic-bezier(.4,0,.2,1),
+  width .2s ease,
+  height .2s ease,
+  box-shadow .25s ease;
 }
 .nav-btn {
 flex: 1;
-height: 68px;
+height: 54px;
 background: transparent;
 border: none;
 z-index: 1;
@@ -158,7 +173,7 @@ display: flex;
 align-items: center;
 justify-content: center;
 position: relative;
-padding: 0; /* ← ВАЖНО */
+padding: 0;
 }
 .nav-btn svg {
 width: 24px;
@@ -170,7 +185,8 @@ stroke-width: 2;
 .nav-btn.active svg {
 stroke: #000;
 stroke-width: 2.6;
-transform: scale(1.06);
+transform: scale(1.05);
+filter: drop-shadow(0 0 6px rgba(255,255,255,0.6));
 }
 
 /* ===== BOTTOM SHEET ===== */

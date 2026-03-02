@@ -190,7 +190,7 @@ btnRect.left -
 navRect.left +
 (btnRect.width - indicator.offsetWidth) / 2;
 
-indicator.style.transform = `translateX(${x}px)`;
+indicator.style.transform = `translateX(${x}px) translateY(-50%)`;
 }
 
 /* ===== NAV NEVER MOVES ===== */
