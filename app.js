@@ -375,6 +375,7 @@ function recalcPlan() {
   }
 
   if (lastCalc.ok) {
+    checkMonthTransition();
     drawStaticLayer();
     animateFactLine();
   }
@@ -647,6 +648,7 @@ document.addEventListener("visibilitychange", function () {
     document.body.classList.add("flip-fix-pending");
   } else if (document.visibilityState === "visible") {
     runFlipFixOnReturn();
+    checkMonthTransition();
     setTimeout(repairAdviceScreenIfStuck, 100);
     setTimeout(ensureNavVisibleAfterRestore, 100);
   }
@@ -1139,6 +1141,9 @@ opacity:0.75;
 ${adviceBlockHtml}
 
 <div class="graph-block">
+<div class="timeline-controls">
+<button id="timelineBackBtn" class="timeline-back-btn" type="button" style="display:none">← Обзор</button>
+</div>
 <div class="chart-card">
 <div class="chart-wrap" style="width:100%; height:260px; margin:0; position:relative;">
 <canvas id="chartBg"></canvas>
@@ -1521,6 +1526,229 @@ if (!factInput) return;
 factInput.classList.remove("error", "shake");
 }
 
+/* ===== PREMIUM DYNAMIC TIMELINE SYSTEM ===== */
+
+var _lastKnownMonth = new Date().getMonth();
+var _lastKnownYear = new Date().getFullYear();
+
+var timelineView = {
+  mode: "overview",
+  activeSegment: null
+};
+
+var _timelineCache = {
+  monthsLeft: null,
+  segments: null,
+  calendar: null
+};
+
+var _zoomAnim = {
+  progress: 0,
+  targetProgress: 0,
+  fromSegment: null,
+  toSegment: null,
+  rafId: null
+};
+
+function generateCalendarTimeline(startDate, monthsCount) {
+  var result = [];
+  var base = new Date(startDate);
+  base.setDate(1);
+  base.setHours(0, 0, 0, 0);
+  var monthNames = ["Янв", "Фев", "Мар", "Апр", "Май", "Июн",
+                    "Июл", "Авг", "Сен", "Окт", "Ноя", "Дек"];
+  for (var i = 0; i <= monthsCount; i++) {
+    var d = new Date(base);
+    d.setMonth(d.getMonth() + i);
+    result.push({
+      date: d,
+      label: monthNames[d.getMonth()] + " " + d.getFullYear(),
+      shortLabel: monthNames[d.getMonth()] + " " + String(d.getFullYear()).slice(2),
+      monthIndex: i
+    });
+  }
+  return result;
+}
+
+function buildTimeSegments(monthsCount) {
+  if (monthsCount <= 3) {
+    return [{ startMonth: 0, endMonth: monthsCount, label: "Все", monthCount: monthsCount }];
+  }
+
+  var segCount;
+  if (monthsCount <= 6) segCount = 2;
+  else if (monthsCount <= 12) segCount = Math.ceil(monthsCount / 3);
+  else if (monthsCount <= 24) segCount = 6;
+  else segCount = Math.min(8, Math.ceil(monthsCount / 6));
+
+  var perSeg = Math.floor(monthsCount / segCount);
+  var remainder = monthsCount % segCount;
+  var segments = [];
+  var cursor = 0;
+
+  for (var i = 0; i < segCount; i++) {
+    var count = perSeg + (i < remainder ? 1 : 0);
+    segments.push({
+      startMonth: cursor,
+      endMonth: cursor + count,
+      label: "Q" + (i + 1),
+      monthCount: count
+    });
+    cursor += count;
+  }
+  return segments;
+}
+
+function getTimelineData(monthsLeft) {
+  if (_timelineCache.monthsLeft === monthsLeft && _timelineCache.segments && _timelineCache.calendar) {
+    return _timelineCache;
+  }
+  var calendar = generateCalendarTimeline(new Date(), monthsLeft);
+  var segments = buildTimeSegments(monthsLeft);
+  _timelineCache = { monthsLeft: monthsLeft, segments: segments, calendar: calendar };
+  return _timelineCache;
+}
+
+function cubicBezierEase(t) {
+  return t < 0.5
+    ? 4 * t * t * t
+    : 1 - Math.pow(-2 * t + 2, 3) / 2;
+}
+
+function calcTimelineX(monthIndex, totalMonths, W, padX) {
+  if (totalMonths <= 0) return padX;
+  var drawW = W - padX * 2;
+
+  if (timelineView.mode === "overview" || !timelineView.activeSegment) {
+    return padX + (monthIndex / totalMonths) * drawW;
+  }
+
+  var data = getTimelineData(totalMonths);
+  var segs = data.segments;
+  var activeSeg = timelineView.activeSegment;
+  var prog = cubicBezierEase(_zoomAnim.progress);
+
+  var activeRatio = 0.2 + 0.6 * prog;
+  var inactiveTotal = 1 - activeRatio;
+
+  var inactiveSegCount = segs.length - 1;
+  var inactiveEach = inactiveSegCount > 0 ? inactiveTotal / inactiveSegCount : 0;
+
+  var xOffset = 0;
+  for (var i = 0; i < segs.length; i++) {
+    var seg = segs[i];
+    var segWidth;
+    if (seg === activeSeg) {
+      segWidth = activeRatio * drawW;
+    } else {
+      segWidth = inactiveEach * drawW;
+    }
+
+    if (monthIndex >= seg.startMonth && monthIndex <= seg.endMonth) {
+      var localProgress = seg.monthCount > 0
+        ? (monthIndex - seg.startMonth) / seg.monthCount
+        : 0;
+      return padX + xOffset + localProgress * segWidth;
+    }
+    xOffset += segWidth;
+  }
+
+  return padX + (monthIndex / totalMonths) * drawW;
+}
+
+function checkMonthTransition() {
+  var now = new Date();
+  var curMonth = now.getMonth();
+  var curYear = now.getFullYear();
+  if (curMonth !== _lastKnownMonth || curYear !== _lastKnownYear) {
+    _lastKnownMonth = curMonth;
+    _lastKnownYear = curYear;
+    _timelineCache = { monthsLeft: null, segments: null, calendar: null };
+    if (lastCalc.ok) {
+      drawStaticLayer();
+      animateFactLine();
+    }
+  }
+}
+
+function startZoomAnimation(targetSegment) {
+  if (_zoomAnim.rafId) cancelAnimationFrame(_zoomAnim.rafId);
+
+  var isZoomIn = !!targetSegment;
+  timelineView.activeSegment = targetSegment;
+  timelineView.mode = isZoomIn ? "segment" : "overview";
+
+  _zoomAnim.targetProgress = isZoomIn ? 1 : 0;
+  var startProg = _zoomAnim.progress;
+  var startTime = null;
+  var duration = 350;
+
+  function frame(ts) {
+    if (!startTime) startTime = ts;
+    var elapsed = ts - startTime;
+    var t = Math.min(elapsed / duration, 1);
+    var eased = cubicBezierEase(t);
+
+    _zoomAnim.progress = startProg + ((_zoomAnim.targetProgress - startProg) * eased);
+
+    drawStaticLayer();
+    var total = factHistory.filter(function (f) { return f.to === "main"; }).reduce(function (s, f) { return s + f.value; }, 0);
+    var planMax = plannedMonthly * lastCalc.months;
+    var maxValue = Math.max(total, planMax, 1);
+    drawFactLayer(1, total, maxValue);
+
+    if (t < 1) {
+      _zoomAnim.rafId = requestAnimationFrame(frame);
+    } else {
+      _zoomAnim.rafId = null;
+      if (!isZoomIn) {
+        timelineView.activeSegment = null;
+      }
+      updateTimelineBackBtn();
+    }
+  }
+
+  updateTimelineBackBtn();
+  _zoomAnim.rafId = requestAnimationFrame(frame);
+}
+
+function updateTimelineBackBtn() {
+  var btn = document.getElementById("timelineBackBtn");
+  if (!btn) return;
+  if (timelineView.mode === "segment") {
+    btn.style.display = "flex";
+    btn.style.opacity = "1";
+  } else {
+    btn.style.opacity = "0";
+    setTimeout(function () {
+      if (timelineView.mode === "overview") btn.style.display = "none";
+    }, 300);
+  }
+}
+
+function handleTimelineSegmentClick(clickX, W, padX) {
+  if (!lastCalc.months || lastCalc.months <= 3) return;
+
+  var data = getTimelineData(lastCalc.months);
+  var segs = data.segments;
+  if (segs.length <= 1) return;
+
+  var drawW = W - padX * 2;
+
+  if (timelineView.mode === "segment") return;
+
+  for (var i = 0; i < segs.length; i++) {
+    var seg = segs[i];
+    var x1 = padX + (seg.startMonth / lastCalc.months) * drawW;
+    var x2 = padX + (seg.endMonth / lastCalc.months) * drawW;
+    if (clickX >= x1 && clickX <= x2) {
+      haptic("light");
+      startZoomAnimation(seg);
+      return;
+    }
+  }
+}
+
 /* ===== GRAPH (CLEAN & STABLE) ===== */
 
 let bgCanvas, bgCtx;
@@ -1544,65 +1772,69 @@ return g;
 }
 
 function initChart() {
-const wrap = document.querySelector(".chart-wrap");
+  var wrap = document.querySelector(".chart-wrap");
 
-bgCanvas = document.getElementById("chartBg");
-factCanvas = document.getElementById("chartFact");
+  bgCanvas = document.getElementById("chartBg");
+  factCanvas = document.getElementById("chartFact");
 
-const dpr = window.devicePixelRatio || 1;
+  var dpr = window.devicePixelRatio || 1;
+  var width = wrap.clientWidth;
+  var height = wrap.clientHeight;
 
-const width = wrap.clientWidth;
-const height = wrap.clientHeight;
+  [bgCanvas, factCanvas].forEach(function (c) {
+    c.style.width = width + "px";
+    c.style.height = height + "px";
+    c.width = width * dpr;
+    c.height = height * dpr;
+  });
 
-[bgCanvas, factCanvas].forEach(c => {
-c.style.width = width + "px";
-c.style.height = height + "px";
+  bgCtx = bgCanvas.getContext("2d");
+  factCtx = factCanvas.getContext("2d");
 
-c.width = width * dpr;
-c.height = height * dpr;
-});
+  bgCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  factCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-bgCtx = bgCanvas.getContext("2d");
-factCtx = factCanvas.getContext("2d");
+  timelineView.mode = "overview";
+  timelineView.activeSegment = null;
+  _zoomAnim.progress = 0;
 
-bgCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
-factCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  drawStaticLayer();
 
-drawStaticLayer();
-factCanvas.addEventListener("pointerdown", e => {
-e.stopPropagation();
+  factCanvas.addEventListener("pointerdown", function (e) {
+    e.stopPropagation();
 
-if (!lastFactPoint) return;
+    var rect = factCanvas.getBoundingClientRect();
+    var clickX = e.clientX - rect.left;
+    var clickY = e.clientY - rect.top;
 
-const rect = factCanvas.getBoundingClientRect();
+    if (lastFactPoint) {
+      var dx = clickX - lastFactPoint.x;
+      var dy = clickY - lastFactPoint.y;
+      var distance = Math.sqrt(dx * dx + dy * dy);
 
-const clickX = e.clientX - rect.left;
-const clickY = e.clientY - rect.top;
+      if (distance <= 25) {
+        animateDotScale(1.8);
+        var total = factHistory
+          .filter(function (f) { return f.to === "main"; })
+          .reduce(function (s, f) { return s + f.value; }, 0);
+        showFactTooltip({ value: total, onHide: function () { animateDotScale(1); } });
+        return;
+      }
+    }
 
-const dx = clickX - lastFactPoint.x;
-const dy = clickY - lastFactPoint.y;
+    var W = width;
+    handleTimelineSegmentClick(clickX, W, 40);
+  });
 
-const distance = Math.sqrt(dx * dx + dy * dy);
+  var backBtn = document.getElementById("timelineBackBtn");
+  if (backBtn) {
+    backBtn.onclick = function () {
+      haptic("light");
+      startZoomAnimation(null);
+    };
+  }
 
-if (distance <= 25) {
-
-animateDotScale(1.8);
-
-const total = factHistory
-.filter(f => f.to === "main")
-.reduce((s, f) => s + f.value, 0);
-showFactTooltip({
-value: total,
-onHide: () => animateDotScale(1)
-});
-}
-});
-}
-
-function addMonths(date, n) {
-const d = new Date(date);
-d.setMonth(d.getMonth() + n);
-return d;
+  updateTimelineBackBtn();
 }
 
 function buildPlanTimeline(startDate, monthlyAmount, months) {
@@ -2069,59 +2301,115 @@ goalEditHint.classList.add("show");
 }
 
 function drawStaticLayer() {
-const W = bgCanvas.width / (window.devicePixelRatio || 1);
-const H = bgCanvas.height / (window.devicePixelRatio || 1);
+var W = bgCanvas.width / (window.devicePixelRatio || 1);
+var H = bgCanvas.height / (window.devicePixelRatio || 1);
 
 bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
 
-// СЕТКА
+var padX = 40;
+var gridY = 5;
+
+// СЕТКА (горизонтальные линии)
 bgCtx.strokeStyle = "rgba(255,255,255,0.06)";
 bgCtx.lineWidth = 1;
 
-const pad = 40;
-const gridX = 4;
-const gridY = 5;
-
-for (let i = 1; i < gridY; i++) {
-const y = pad + (i / gridY) * (H - pad * 2);
-bgCtx.beginPath();
-bgCtx.moveTo(pad, y);
-bgCtx.lineTo(W - pad, y);
-bgCtx.stroke();
+for (var i = 1; i < gridY; i++) {
+  var y = padX + (i / gridY) * (H - padX * 2);
+  bgCtx.beginPath();
+  bgCtx.moveTo(padX, y);
+  bgCtx.lineTo(W - padX, y);
+  bgCtx.stroke();
 }
 
-for (let i = 1; i < gridX; i++) {
-const x = pad + (i / gridX) * (W - pad * 2);
-bgCtx.beginPath();
-bgCtx.moveTo(x, pad);
-bgCtx.lineTo(x, H - pad);
-bgCtx.stroke();
+// Glass segment overlays
+if (lastCalc.months && lastCalc.months > 3) {
+  var data = getTimelineData(lastCalc.months);
+  var segs = data.segments;
+  var drawW = W - padX * 2;
+
+  for (var si = 0; si < segs.length; si++) {
+    var seg = segs[si];
+    var sx1 = calcTimelineX(seg.startMonth, lastCalc.months, W, padX);
+    var sx2 = calcTimelineX(seg.endMonth, lastCalc.months, W, padX);
+
+    var isActive = (timelineView.mode === "segment" && timelineView.activeSegment === seg);
+    var segAlpha = isActive ? 0.10 : 0.04;
+
+    bgCtx.save();
+    bgCtx.fillStyle = "rgba(255,255,255," + segAlpha + ")";
+    var segR = 6;
+    var segX = sx1 + 1;
+    var segW = sx2 - sx1 - 2;
+    var segY = padX;
+    var segH = H - padX * 2;
+
+    bgCtx.beginPath();
+    bgCtx.moveTo(segX + segR, segY);
+    bgCtx.lineTo(segX + segW - segR, segY);
+    bgCtx.quadraticCurveTo(segX + segW, segY, segX + segW, segY + segR);
+    bgCtx.lineTo(segX + segW, segY + segH - segR);
+    bgCtx.quadraticCurveTo(segX + segW, segY + segH, segX + segW - segR, segY + segH);
+    bgCtx.lineTo(segX + segR, segY + segH);
+    bgCtx.quadraticCurveTo(segX, segY + segH, segX, segY + segH - segR);
+    bgCtx.lineTo(segX, segY + segR);
+    bgCtx.quadraticCurveTo(segX, segY, segX + segR, segY);
+    bgCtx.closePath();
+    bgCtx.fill();
+
+    if (isActive) {
+      var glowGrad = bgCtx.createRadialGradient(
+        (sx1 + sx2) / 2, H / 2, 0,
+        (sx1 + sx2) / 2, H / 2, segW * 0.7
+      );
+      glowGrad.addColorStop(0, "rgba(58,123,253,0.08)");
+      glowGrad.addColorStop(1, "rgba(58,123,253,0)");
+      bgCtx.fillStyle = glowGrad;
+      bgCtx.fill();
+    }
+
+    bgCtx.restore();
+
+    if (si > 0) {
+      bgCtx.save();
+      bgCtx.strokeStyle = "rgba(255,255,255,0.08)";
+      bgCtx.lineWidth = 1;
+      bgCtx.setLineDash([4, 4]);
+      bgCtx.beginPath();
+      bgCtx.moveTo(sx1, padX);
+      bgCtx.lineTo(sx1, H - padX);
+      bgCtx.stroke();
+      bgCtx.setLineDash([]);
+      bgCtx.restore();
+    }
+  }
 }
 
 // ОСИ
 bgCtx.strokeStyle = "#333";
+bgCtx.lineWidth = 1;
 bgCtx.beginPath();
-bgCtx.moveTo(pad, pad);
-bgCtx.lineTo(pad, H - pad);
-bgCtx.lineTo(W - pad, H - pad);
+bgCtx.moveTo(padX, padX);
+bgCtx.lineTo(padX, H - padX);
+bgCtx.lineTo(W - padX, H - padX);
 bgCtx.stroke();
 
 drawPlanLine();
 drawMonthLabels();
+
 // ===== WATERMARK =====
-const size = 170;
-const centerX = W / 2;
-const centerY = H / 2;
+var size = 170;
+var centerX = W / 2;
+var centerY = H / 2;
 
 bgCtx.save();
 
 bgCtx.globalAlpha = 0.07;
 bgCtx.drawImage(
-watermarkLogo,
-centerX - size / 2,
-centerY - size / 2 - 12,
-size,
-size
+  watermarkLogo,
+  centerX - size / 2,
+  centerY - size / 2 - 12,
+  size,
+  size
 );
 
 bgCtx.globalAlpha = 0.16;
@@ -2130,125 +2418,134 @@ bgCtx.font = "600 16px Inter, system-ui";
 bgCtx.textAlign = "center";
 bgCtx.textBaseline = "top";
 
-const textY = centerY + size / 2 - 20;
-
+var textY = centerY + size / 2 - 20;
 bgCtx.fillText("Protocol", centerX, textY);
 
-const protocolWidth = bgCtx.measureText("Protocol").width;
+var protocolWidth = bgCtx.measureText("Protocol").width;
 
 bgCtx.globalAlpha = 0.12;
 bgCtx.font = "400 10px Inter, system-ui";
-
-bgCtx.fillText(
-"™",
-centerX + protocolWidth / 2 + 3,
-textY - 4
-);
+bgCtx.fillText("™", centerX + protocolWidth / 2 + 3, textY - 4);
 
 bgCtx.restore();
+
+drawSegmentLabels();
 }
 
 function drawMonthLabels() {
-if (!lastCalc.months) return;
+  if (!lastCalc.months) return;
 
-const W = bgCanvas.width / (window.devicePixelRatio || 1);
-const H = bgCanvas.height / (window.devicePixelRatio || 1);
-const pad = 40;
+  var W = bgCanvas.width / (window.devicePixelRatio || 1);
+  var H = bgCanvas.height / (window.devicePixelRatio || 1);
+  var padX = 40;
+  var monthsTotal = lastCalc.months;
+  var data = getTimelineData(monthsTotal);
+  var calendar = data.calendar;
 
-const monthsTotal = lastCalc.months;
+  var step = 1;
+  if (monthsTotal > 24) step = 4;
+  else if (monthsTotal > 12) step = 3;
+  else if (monthsTotal > 6) step = 2;
 
-// 🔥 рассчитываем шаг отображения
-let step = 1;
+  bgCtx.font = "11px Inter, system-ui";
+  bgCtx.textAlign = "center";
+  bgCtx.textBaseline = "top";
 
-if (monthsTotal > 24) step = 4;
-else if (monthsTotal > 12) step = 3;
-else if (monthsTotal > 6) step = 2;
+  for (var i = 0; i <= monthsTotal; i++) {
+    if (i % step !== 0 && i !== monthsTotal) continue;
+    if (i >= calendar.length) break;
 
-bgCtx.fillStyle = "rgba(255,255,255,0.35)";
-bgCtx.font = "12px Inter, system-ui";
-bgCtx.textAlign = "center";
-bgCtx.textBaseline = "top";
+    var x = calcTimelineX(i, monthsTotal, W, padX);
+    var label = calendar[i].shortLabel;
 
-for (let i = 0; i <= monthsTotal; i++) {
+    var alpha = 0.35;
+    if (timelineView.mode === "segment" && timelineView.activeSegment) {
+      var seg = timelineView.activeSegment;
+      if (i >= seg.startMonth && i <= seg.endMonth) {
+        alpha = 0.55;
+      } else {
+        alpha = 0.12 * (1 - _zoomAnim.progress) + 0.05;
+      }
+    }
 
-if (i % step !== 0 && i !== monthsTotal) continue;
-
-const x =
-pad +
-(i / monthsTotal) *
-(W - pad * 2);
-
-bgCtx.fillText(i, x, H - pad + 8);
+    bgCtx.fillStyle = "rgba(255,255,255," + alpha + ")";
+    bgCtx.fillText(label, x, H - padX + 8);
+  }
 }
+
+function drawSegmentLabels() {
+  if (!lastCalc.months || lastCalc.months <= 3) return;
+
+  var W = bgCanvas.width / (window.devicePixelRatio || 1);
+  var H = bgCanvas.height / (window.devicePixelRatio || 1);
+  var padX = 40;
+  var monthsTotal = lastCalc.months;
+  var data = getTimelineData(monthsTotal);
+  var segs = data.segments;
+  var calendar = data.calendar;
+
+  if (segs.length <= 1) return;
+
+  bgCtx.font = "600 10px Inter, system-ui";
+  bgCtx.textAlign = "center";
+  bgCtx.textBaseline = "bottom";
+
+  for (var i = 0; i < segs.length; i++) {
+    var seg = segs[i];
+    var sx1 = calcTimelineX(seg.startMonth, monthsTotal, W, padX);
+    var sx2 = calcTimelineX(seg.endMonth, monthsTotal, W, padX);
+    var cx = (sx1 + sx2) / 2;
+
+    var isActive = (timelineView.mode === "segment" && timelineView.activeSegment === seg);
+    var alpha = isActive ? 0.7 : 0.3;
+
+    var startLabel = seg.startMonth < calendar.length ? calendar[seg.startMonth].shortLabel : "";
+    var endLabel = seg.endMonth < calendar.length ? calendar[seg.endMonth].shortLabel : "";
+    var segLabel = startLabel + " – " + endLabel;
+
+    bgCtx.fillStyle = "rgba(255,255,255," + alpha + ")";
+    bgCtx.fillText(segLabel, cx, padX - 4);
+  }
 }
 
 function drawPlanLine() {
-const W = bgCanvas.width / (window.devicePixelRatio || 1);
-const H = bgCanvas.height / (window.devicePixelRatio || 1);
-const pad = 40;
+  var W = bgCanvas.width / (window.devicePixelRatio || 1);
+  var H = bgCanvas.height / (window.devicePixelRatio || 1);
+  var padX = 40;
+  var monthsTotal = lastCalc.months;
+  if (!monthsTotal) return;
 
-const points = buildPlanTimeline(new Date(), plannedMonthly, lastCalc.months);
-const maxValue = points[points.length - 1].value;
+  var points = buildPlanTimeline(new Date(), plannedMonthly, monthsTotal);
+  var maxValue = points[points.length - 1].value;
+  if (maxValue <= 0) return;
 
-let planColor = "#ffffff";
+  var planColor = "#ffffff";
 
-// если пользователь ещё не вводил реальные пополнения — линия всегда белая
-if (factHistory.length === 0) {
-bgCtx.strokeStyle = "#ffffff";
-bgCtx.lineWidth = 2;
+  if (factHistory.length > 0) {
+    var mainFacts = factHistory.filter(function (f) { return f.to === "main"; });
+    var total = mainFacts.reduce(function (s, f) { return s + f.value; }, 0);
+    var uniqueMonths = {};
+    mainFacts.forEach(function (f) {
+      var d = new Date(f.date);
+      uniqueMonths[d.getFullYear() + "-" + d.getMonth()] = true;
+    });
+    var monthsPassed = Object.keys(uniqueMonths).length;
+    var plannedSoFar = plannedMonthly * monthsPassed;
+    planColor = total >= plannedSoFar ? "#4ade80" : "#ef4444";
+  }
 
-const points = buildPlanTimeline(new Date(), plannedMonthly, lastCalc.months);
-const maxValue = points[points.length - 1].value;
+  bgCtx.strokeStyle = planColor;
+  bgCtx.lineWidth = 2;
+  bgCtx.beginPath();
 
-bgCtx.beginPath();
+  for (var i = 0; i < points.length; i++) {
+    var x = calcTimelineX(i, monthsTotal, W, padX);
+    var y = H - padX - (points[i].value / maxValue) * (H - padX * 2);
+    if (i === 0) bgCtx.moveTo(x, y);
+    else bgCtx.lineTo(x, y);
+  }
 
-points.forEach((p, i) => {
-const x = pad + (i / (points.length - 1)) * (W - pad * 2);
-const y = H - pad - (p.value / maxValue) * (H - pad * 2);
-
-if (i === 0) bgCtx.moveTo(x, y);
-else bgCtx.lineTo(x, y);
-});
-
-bgCtx.stroke();
-return; // ← ВАЖНО
-}
-
-if (factHistory.length > 0) {
-const mainFacts = factHistory.filter(f => f.to === "main");
-
-const total = mainFacts.reduce((s, f) => s + f.value, 0);
-
-const uniqueMonths = new Set(
-mainFacts.map(f => {
-const d = new Date(f.date);
-return `${d.getFullYear()}-${d.getMonth()}`;
-})
-);
-
-const monthsPassed = uniqueMonths.size;
-const plannedSoFar = plannedMonthly * monthsPassed;
-
-if (total >= plannedSoFar) {
-planColor = "#4ade80";
-} else {
-planColor = "#ef4444";
-}
-}
-
-bgCtx.strokeStyle = planColor;
-bgCtx.lineWidth = 2;
-bgCtx.beginPath();
-
-points.forEach((p, i) => {
-const x = pad + (i / (points.length - 1)) * (W - pad * 2);
-const y = H - pad - (p.value / maxValue) * (H - pad * 2);
-
-if (i === 0) bgCtx.moveTo(x, y);
-else bgCtx.lineTo(x, y);
-});
-
-bgCtx.stroke();
+  bgCtx.stroke();
 }
 
 let animationFrameId = null;
@@ -2289,85 +2586,72 @@ requestAnimationFrame(frame);
 }
 
 function drawFactLayer(progress, total, maxValue) {
-const W = factCanvas.width / (window.devicePixelRatio || 1);
-const H = factCanvas.height / (window.devicePixelRatio || 1);
-const pad = 40;
+  var W = factCanvas.width / (window.devicePixelRatio || 1);
+  var H = factCanvas.height / (window.devicePixelRatio || 1);
+  var padX = 40;
 
-factCtx.clearRect(0, 0, factCanvas.width, factCanvas.height);
+  factCtx.clearRect(0, 0, factCanvas.width, factCanvas.height);
 
-const monthsTotal = lastCalc.months;
+  var monthsTotal = lastCalc.months;
+  if (!monthsTotal) return;
 
-// сколько месяцев прошло
-const mainFacts = factHistory.filter(f => f.to === "main");
+  var mainFacts = factHistory.filter(function (f) { return f.to === "main"; });
+  var uniqueMonths = {};
+  mainFacts.forEach(function (f) {
+    var d = new Date(f.date);
+    uniqueMonths[d.getFullYear() + "-" + d.getMonth()] = true;
+  });
+  var monthsPassed = Math.max(1, Object.keys(uniqueMonths).length);
 
-const uniqueMonths = new Set(
-mainFacts.map(f => {
-const d = new Date(f.date);
-return `${d.getFullYear()}-${d.getMonth()}`;
-})
-);
-const monthsPassed = Math.max(1, uniqueMonths.size);
+  var baseX = calcTimelineX(monthsPassed, monthsTotal, W, padX);
+  var x = padX + (baseX - padX) * progress;
+  var y = H - padX - (total / maxValue) * (H - padX * 2) * progress;
 
-const x =
-pad +
-(monthsPassed / monthsTotal) *
-(W - pad * 2) *
-progress;
+  lastFactPoint = { x: x, y: y };
 
-const y =
-H - pad -
-(total / maxValue) *
-(H - pad * 2) *
-progress;
+  // Gradient stroke for fact line
+  var lineGrad = factCtx.createLinearGradient(padX, 0, x, 0);
+  lineGrad.addColorStop(0, "#1e3a8a");
+  lineGrad.addColorStop(0.5, "#2563eb");
+  lineGrad.addColorStop(1, "#60a5fa");
 
-const lastFact = mainFacts[mainFacts.length - 1];
+  factCtx.strokeStyle = lineGrad;
+  factCtx.lineWidth = 2.5;
+  factCtx.lineCap = "round";
 
-lastFactPoint = { x, y };
+  factCtx.beginPath();
+  factCtx.moveTo(calcTimelineX(0, monthsTotal, W, padX), H - padX);
+  factCtx.lineTo(x, y);
+  factCtx.stroke();
 
-factCtx.strokeStyle = "#2563eb";
-factCtx.lineWidth = 2;
+  if (progress >= 1) {
+    var radius = 5 * dotScale;
 
-factCtx.beginPath();
-factCtx.moveTo(pad, H - pad);
-factCtx.lineTo(x, y);
-factCtx.stroke();
+    var fillGrad = factCtx.createLinearGradient(x, y - radius, x, y + radius);
+    fillGrad.addColorStop(0, "#60a5fa");
+    fillGrad.addColorStop(1, "#2563eb");
 
-if (progress === 1) {
+    factCtx.beginPath();
+    factCtx.arc(x, y, radius, 0, Math.PI * 2);
+    factCtx.fillStyle = fillGrad;
+    factCtx.fill();
 
-const radius = 5 * dotScale;
+    factCtx.lineWidth = 1.2;
+    factCtx.strokeStyle = "rgba(255,255,255,0.45)";
+    factCtx.stroke();
 
-const fillGrad = factCtx.createLinearGradient(
-x, y - radius,
-x, y + radius
-);
-fillGrad.addColorStop(0, "#60a5fa");
-fillGrad.addColorStop(1, "#2563eb");
-
-factCtx.beginPath();
-factCtx.arc(x, y, radius, 0, Math.PI * 2);
-factCtx.fillStyle = fillGrad;
-factCtx.fill();
-
-// ===== Тонкий белый кант =====
-factCtx.lineWidth = 1.2;
-factCtx.strokeStyle = "rgba(255,255,255,0.45)";
-factCtx.stroke();
-
-if (dotScale > 1.05) {
-const glowRadius = radius * 2.8;
-const glow = factCtx.createRadialGradient(
-x, y, 0,
-x, y, glowRadius
-);
-glow.addColorStop(0, "rgba(37,99,235,0.35)");
-glow.addColorStop(0.4, "rgba(37,99,235,0.18)");
-glow.addColorStop(1, "rgba(37,99,235,0)");
-factCtx.beginPath();
-factCtx.arc(x, y, glowRadius, 0, Math.PI * 2);
-factCtx.fillStyle = glow;
-factCtx.fill();
-}
-}
+    if (dotScale > 1.05) {
+      var glowRadius = radius * 2.8;
+      var glow = factCtx.createRadialGradient(x, y, 0, x, y, glowRadius);
+      glow.addColorStop(0, "rgba(37,99,235,0.35)");
+      glow.addColorStop(0.4, "rgba(37,99,235,0.18)");
+      glow.addColorStop(1, "rgba(37,99,235,0)");
+      factCtx.beginPath();
+      factCtx.arc(x, y, glowRadius, 0, Math.PI * 2);
+      factCtx.fillStyle = glow;
+      factCtx.fill();
+    }
+  }
 }
 
 function animateDotScale(target, duration = 220) {
