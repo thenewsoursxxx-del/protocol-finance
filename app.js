@@ -42,6 +42,13 @@ document.addEventListener("touchend", function () { _isHorizontalSwipe = false; 
 document.addEventListener("touchcancel", function () { _isHorizontalSwipe = false; }, { passive: true });
 
 function fixFlipRendering(done) {
+  var focused = document.activeElement;
+  var isInputFocused = focused && (focused.tagName === "INPUT" || focused.tagName === "TEXTAREA");
+  if (isInputFocused) {
+    if (typeof done === "function") done();
+    return;
+  }
+
   var cards = document.querySelectorAll(".flip-inner");
   var states = [];
   for (var i = 0; i < cards.length; i++) {
@@ -61,6 +68,10 @@ function fixFlipRendering(done) {
 function runFlipFixOnReturn() {
   var body = document.body;
   if (!body) return;
+  var focused = document.activeElement;
+  if (focused && (focused.tagName === "INPUT" || focused.tagName === "TEXTAREA")) {
+    return;
+  }
   body.classList.add("flip-fix-pending");
   requestAnimationFrame(function () {
     fixFlipRendering(function () {
@@ -1715,19 +1726,33 @@ function startZoomAnimation(targetSegment) {
 function updateTimelineBackBtn() {
   var btn = document.getElementById("timelineBackBtn");
   if (!btn) return;
+  var controls = btn.parentElement;
   if (timelineView.mode === "segment") {
     btn.style.display = "flex";
     btn.style.opacity = "1";
+    if (controls) {
+      controls.style.minHeight = "32px";
+      controls.style.marginBottom = "6px";
+    }
   } else {
     btn.style.opacity = "0";
     setTimeout(function () {
-      if (timelineView.mode === "overview") btn.style.display = "none";
+      if (timelineView.mode === "overview") {
+        btn.style.display = "none";
+        if (controls) {
+          controls.style.minHeight = "0";
+          controls.style.marginBottom = "0";
+        }
+      }
     }, 300);
   }
 }
 
 function handleTimelineSegmentClick(clickX, W, padX) {
   if (!lastCalc.months || lastCalc.months <= 3) return;
+
+  var focused = document.activeElement;
+  if (focused && (focused.tagName === "INPUT" || focused.tagName === "TEXTAREA")) return;
 
   var data = getTimelineData(lastCalc.months);
   var segs = data.segments;

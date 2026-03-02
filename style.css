@@ -2638,8 +2638,8 @@ body.flip-fix-pending .flip-wrapper {
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  min-height: 32px;
-  margin-bottom: 6px;
+  min-height: 0;
+  margin-bottom: 0;
 }
 
 .timeline-back-btn {
@@ -2650,8 +2650,6 @@ body.flip-fix-pending .flip-wrapper {
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.12);
   background: rgba(255, 255, 255, 0.06);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
   color: rgba(255, 255, 255, 0.75);
   font-size: 13px;
   font-weight: 500;
@@ -2669,37 +2667,6 @@ body.flip-fix-pending .flip-wrapper {
   border-color: rgba(255, 255, 255, 0.2);
 }
 
-/* Glass card for chart */
-.chart-card {
-  position: relative;
-  border-radius: 16px;
-  overflow: hidden;
-}
-
-.chart-card::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  pointer-events: none;
-  z-index: 0;
-}
-
-.chart-card canvas {
-  position: relative;
-  z-index: 1;
-}
-
-/* Touch feedback on chart area for segment tap */
 .chart-wrap {
-  cursor: pointer;
   -webkit-tap-highlight-color: transparent;
-  transition: transform 0.12s ease;
-}
-
-.chart-wrap:active {
-  transform: scale(0.995);
 }
