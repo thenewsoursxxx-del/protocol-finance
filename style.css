@@ -804,7 +804,6 @@ border-top: 1px dashed rgba(58,123,253,0.45);
   position: relative;
   width: 100%;
   border-radius: 22px;
-  overflow: hidden;
   transform-style: preserve-3d;
   -webkit-transform-style: preserve-3d;
   transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
@@ -814,9 +813,10 @@ border-top: 1px dashed rgba(58,123,253,0.45);
 .account-flip-front.account-flip-front--reserve {
   position: relative;
   z-index: 2;
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden !important;
+  -webkit-backface-visibility: hidden !important;
   transform: translateZ(0);
+  isolation: isolate;
 }
 .account-flip-front.account-flip-front--main {
   background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.015));
@@ -844,10 +844,11 @@ border-top: 1px dashed rgba(58,123,253,0.45);
   bottom: 0;
   width: 100%;
   height: 100%;
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden !important;
+  -webkit-backface-visibility: hidden !important;
   transform: rotateY(180deg) translateZ(2px);
   z-index: 1;
+  isolation: isolate;
   border-radius: 22px;
   box-sizing: border-box;
   display: flex;
@@ -884,6 +885,20 @@ border-top: 1px dashed rgba(58,123,253,0.45);
   background: transparent;
   border: none;
   box-shadow: none;
+}
+
+/* Fallback для WebView: при flipped скрываем front, показываем back */
+.account-block.flip-wrapper .flip-inner.flipped .flip-front {
+  visibility: hidden;
+}
+.account-block.flip-wrapper .flip-inner.flipped .flip-back {
+  visibility: visible;
+}
+.account-block.flip-wrapper .flip-inner:not(.flipped) .flip-front {
+  visibility: visible;
+}
+.account-block.flip-wrapper .flip-inner:not(.flipped) .flip-back {
+  visibility: hidden;
 }
 
 /* ===== ACCOUNT HINT TYPOGRAPHY FIX ===== */
