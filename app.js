@@ -331,13 +331,30 @@ function computeGraphState() {
 
   factBalance = Math.max(0, factBalance);
 
-  var months = lastCalc.months || 0;
+  var goalMonths = lastCalc.months || 0;
   var hasFact = factHistory && factHistory.length > 0;
+
+  var actualMonths = 0;
+  if (hasFact) {
+    var mainFacts = factHistory.filter(function (f) { return f.to === "main"; });
+    var uniqueM = {};
+    mainFacts.forEach(function (f) {
+      var d = new Date(f.date);
+      uniqueM[d.getFullYear() + "-" + d.getMonth()] = true;
+    });
+    actualMonths = Object.keys(uniqueM).length;
+  }
+
+  var visibleMonths = Math.max(3, actualMonths + 2, Math.min(goalMonths, actualMonths + 6));
+  if (goalMonths > 0) visibleMonths = Math.min(visibleMonths, goalMonths);
+  visibleMonths = Math.max(3, visibleMonths);
 
   return {
     factBalance: factBalance,
-    months: months,
+    goalMonths: goalMonths,
     hasFact: hasFact,
+    actualMonths: actualMonths,
+    visibleMonths: visibleMonths,
     plannedMonthly: plannedMonthly || 0,
     goal: parseNumber(goalInput ? goalInput.value || "0" : "0")
   };
@@ -1732,8 +1749,8 @@ function startZoomAnimation(targetSegment) {
     var gs = computeGraphState();
     if (gs.hasFact) {
       var total = Math.max(0, factHistory.filter(function (f) { return f.to === "main"; }).reduce(function (s, f) { return s + f.value; }, 0));
-      var planMax = gs.plannedMonthly * gs.months;
-      var maxValue = Math.max(total, planMax, 1);
+      var goalValue = gs.plannedMonthly * gs.goalMonths;
+      var maxValue = Math.max(total, goalValue, 1);
       drawFactLayer(1, total, maxValue);
     } else {
       hideFactLayer();
@@ -1780,12 +1797,14 @@ function updateTimelineBackBtn() {
 }
 
 function handleTimelineSegmentClick(clickX, W, padX) {
-  if (!lastCalc.months || lastCalc.months <= 3) return;
+  var gs = computeGraphState();
+  var vMonths = gs.visibleMonths;
+  if (!vMonths || vMonths <= 3) return;
 
   var focused = document.activeElement;
   if (focused && (focused.tagName === "INPUT" || focused.tagName === "TEXTAREA")) return;
 
-  var data = getTimelineData(lastCalc.months);
+  var data = getTimelineData(vMonths);
   var segs = data.segments;
   if (segs.length <= 1) return;
 
@@ -1795,8 +1814,8 @@ function handleTimelineSegmentClick(clickX, W, padX) {
 
   for (var i = 0; i < segs.length; i++) {
     var seg = segs[i];
-    var x1 = padX + (seg.startMonth / lastCalc.months) * drawW;
-    var x2 = padX + (seg.endMonth / lastCalc.months) * drawW;
+    var x1 = padX + (seg.startMonth / vMonths) * drawW;
+    var x2 = padX + (seg.endMonth / vMonths) * drawW;
     if (clickX >= x1 && clickX <= x2) {
       haptic("light");
       startZoomAnimation(seg);
@@ -2376,19 +2395,22 @@ for (var i = 1; i < gridY; i++) {
 }
 
 var graphState = computeGraphState();
-var visibleMonths = Math.max(3, graphState.months);
+var actualMonths = graphState.actualMonths;
+var vMonths = graphState.visibleMonths;
 var divisions = 0;
-if (graphState.months >= 4) {
-  divisions = Math.floor((graphState.months - 1) / 3);
+if (actualMonths >= 4) {
+  divisions = Math.floor((actualMonths - 1) / 3);
 }
 
 if (divisions > 0) {
   bgCtx.save();
-  bgCtx.strokeStyle = "rgba(255,255,255,0.12)";
+  bgCtx.strokeStyle = "rgba(255,255,255,0.15)";
   bgCtx.lineWidth = 1;
   for (var di = 1; di <= divisions; di++) {
-    var divX = padX + ((di * 3) / visibleMonths) * (W - padX * 2);
-    if (divX >= W - padX) continue;
+    var divMonth = di * 3;
+    if (divMonth >= vMonths) continue;
+    var divX = padX + (divMonth / vMonths) * (W - padX * 2);
+    if (divX >= W - padX - 5) continue;
     bgCtx.beginPath();
     bgCtx.moveTo(divX, padX);
     bgCtx.lineTo(divX, H - padX);
@@ -2445,44 +2467,50 @@ bgCtx.restore();
 }
 
 function drawMonthLabels() {
-  if (!lastCalc.months) return;
+  var gs = computeGraphState();
+  var vMonths = gs.visibleMonths;
+  if (!vMonths) return;
 
   var W = bgCanvas.width / (window.devicePixelRatio || 1);
   var H = bgCanvas.height / (window.devicePixelRatio || 1);
   var padX = 40;
-  var rawMonths = lastCalc.months;
-  var monthsTotal = Math.max(3, rawMonths);
-  var data = getTimelineData(monthsTotal);
-  var calendar = data.calendar;
+  var drawW = W - padX * 2;
 
-  var step = 1;
-  if (monthsTotal > 24) step = 4;
-  else if (monthsTotal > 12) step = 3;
-  else if (monthsTotal > 6) step = 2;
+  var data = getTimelineData(vMonths);
+  var calendar = data.calendar;
 
   bgCtx.font = "11px Inter, system-ui";
   bgCtx.textAlign = "center";
   bgCtx.textBaseline = "top";
 
-  for (var i = 0; i <= monthsTotal; i++) {
-    if (i % step !== 0 && i !== monthsTotal) continue;
+  var minGap = 62;
+  var maxLabels = Math.max(2, Math.floor(drawW / minGap));
+  var step = Math.max(1, Math.ceil(vMonths / maxLabels));
+
+  var lastDrawnX = -Infinity;
+
+  for (var i = 0; i <= vMonths; i++) {
+    if (i % step !== 0 && i !== vMonths && i !== 0) continue;
     if (i >= calendar.length) break;
 
-    var x = calcTimelineX(i, monthsTotal, W, padX);
-    var label = calendar[i].shortLabel;
+    var x = padX + (i / vMonths) * drawW;
+    if (x - lastDrawnX < minGap - 5 && i !== 0) continue;
 
+    var label = calendar[i].shortLabel;
     bgCtx.fillStyle = "rgba(255,255,255,0.35)";
     bgCtx.fillText(label, x, H - padX + 8);
+    lastDrawnX = x;
   }
 }
 
 function drawSegmentLabels() {
-  if (!lastCalc.months || lastCalc.months <= 3) return;
+  var gs = computeGraphState();
+  var monthsTotal = gs.visibleMonths;
+  if (!monthsTotal || monthsTotal <= 3) return;
 
   var W = bgCanvas.width / (window.devicePixelRatio || 1);
   var H = bgCanvas.height / (window.devicePixelRatio || 1);
   var padX = 40;
-  var monthsTotal = lastCalc.months;
   var data = getTimelineData(monthsTotal);
   var segs = data.segments;
   var calendar = data.calendar;
@@ -2512,15 +2540,17 @@ function drawSegmentLabels() {
 }
 
 function drawPlanLine() {
+  var gs = computeGraphState();
   var W = bgCanvas.width / (window.devicePixelRatio || 1);
   var H = bgCanvas.height / (window.devicePixelRatio || 1);
   var padX = 40;
-  var rawMonths = lastCalc.months;
-  if (!rawMonths) return;
-  var monthsTotal = Math.max(3, rawMonths);
+  var goalMonths = gs.goalMonths;
+  if (!goalMonths) return;
+  var vMonths = gs.visibleMonths;
 
-  var points = buildPlanTimeline(new Date(), plannedMonthly, rawMonths);
-  var maxValue = points[points.length - 1].value;
+  var points = buildPlanTimeline(new Date(), plannedMonthly, goalMonths);
+  var goalValue = plannedMonthly * goalMonths;
+  var maxValue = Math.max(goalValue, points[points.length - 1].value, 1);
   if (maxValue <= 0) return;
 
   bgCtx.save();
@@ -2543,8 +2573,11 @@ function drawPlanLine() {
   bgCtx.lineJoin = "round";
   bgCtx.beginPath();
 
-  for (var i = 0; i < points.length; i++) {
-    var x = calcTimelineX(i, monthsTotal, W, padX);
+  var drawW = W - padX * 2;
+  var clampedCount = Math.min(points.length, vMonths + 1);
+
+  for (var i = 0; i < clampedCount; i++) {
+    var x = padX + (i / vMonths) * drawW;
     var val = Math.max(0, points[i].value);
     var y = H - padX - (val / maxValue) * (H - padX * 2);
     y = Math.max(padX, Math.min(y, H - padX));
@@ -2590,14 +2623,14 @@ if (!gs.hasFact) {
   return;
 }
 
-if (!gs.plannedMonthly || !gs.months) return;
+if (!gs.plannedMonthly || !gs.goalMonths) return;
 
 var total = Math.max(0, factHistory
   .filter(function (f) { return f.to === "main"; })
   .reduce(function (s, f) { return s + f.value; }, 0));
 
-var planMax = gs.plannedMonthly * gs.months;
-var maxValue = Math.max(total, planMax, 1);
+var goalValue = gs.plannedMonthly * gs.goalMonths;
+var maxValue = Math.max(total, goalValue, 1);
 
 var start = null;
 var duration = 900;
@@ -2616,15 +2649,16 @@ requestAnimationFrame(frame);
 }
 
 function drawFactLayer(progress, total, maxValue) {
+  var gs = computeGraphState();
   var W = factCanvas.width / (window.devicePixelRatio || 1);
   var H = factCanvas.height / (window.devicePixelRatio || 1);
   var padX = 40;
+  var drawW = W - padX * 2;
 
   factCtx.clearRect(0, 0, factCanvas.width, factCanvas.height);
 
-  var rawMonths = lastCalc.months;
-  if (!rawMonths) return;
-  var monthsTotal = Math.max(3, rawMonths);
+  var vMonths = gs.visibleMonths;
+  if (!vMonths) return;
 
   var mainFacts = factHistory.filter(function (f) { return f.to === "main"; });
 
@@ -2633,16 +2667,11 @@ function drawFactLayer(progress, total, maxValue) {
     return;
   }
 
-  var uniqueMonths = {};
-  mainFacts.forEach(function (f) {
-    var d = new Date(f.date);
-    uniqueMonths[d.getFullYear() + "-" + d.getMonth()] = true;
-  });
-  var monthsPassed = Math.max(1, Object.keys(uniqueMonths).length);
+  var monthsPassed = Math.max(1, gs.actualMonths);
 
   var factValue = Math.max(0, total);
-  var baseX = calcTimelineX(monthsPassed, monthsTotal, W, padX);
-  var x = padX + (baseX - padX) * progress;
+  var targetX = padX + (monthsPassed / vMonths) * drawW;
+  var x = padX + (targetX - padX) * progress;
   var y = H - padX - (factValue / maxValue) * (H - padX * 2) * progress;
   y = Math.max(padX, Math.min(y, H - padX));
 
@@ -2656,7 +2685,7 @@ function drawFactLayer(progress, total, maxValue) {
   factCtx.shadowBlur = 10;
 
   factCtx.beginPath();
-  factCtx.moveTo(calcTimelineX(0, monthsTotal, W, padX), H - padX);
+  factCtx.moveTo(padX, H - padX);
   factCtx.lineTo(x, y);
   factCtx.stroke();
   factCtx.restore();
@@ -2713,8 +2742,8 @@ var total = Math.max(0, factHistory
 .filter(function (f) { return f.to === "main"; })
 .reduce(function (s, f) { return s + f.value; }, 0));
 
-var planMax = gs.plannedMonthly * gs.months;
-var maxValue = Math.max(total, planMax, 1);
+var goalValue = gs.plannedMonthly * gs.goalMonths;
+var maxValue = Math.max(total, goalValue, 1);
 
 drawFactLayer(1, total, maxValue);
 
