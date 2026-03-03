@@ -1778,19 +1778,11 @@ function updateTimelineBackBtn() {
   if (timelineView.mode === "segment") {
     btn.style.display = "flex";
     btn.style.opacity = "1";
-    if (controls) {
-      controls.style.minHeight = "32px";
-      controls.style.marginBottom = "6px";
-    }
   } else {
     btn.style.opacity = "0";
     setTimeout(function () {
       if (timelineView.mode === "overview") {
         btn.style.display = "none";
-        if (controls) {
-          controls.style.minHeight = "0";
-          controls.style.marginBottom = "0";
-        }
       }
     }, 300);
   }
@@ -2546,7 +2538,6 @@ function drawPlanLine() {
   var padX = 40;
   var goalMonths = gs.goalMonths;
   if (!goalMonths) return;
-  var vMonths = gs.visibleMonths;
 
   var points = buildPlanTimeline(new Date(), plannedMonthly, goalMonths);
   var goalValue = plannedMonthly * goalMonths;
@@ -2574,10 +2565,9 @@ function drawPlanLine() {
   bgCtx.beginPath();
 
   var drawW = W - padX * 2;
-  var clampedCount = Math.min(points.length, vMonths + 1);
 
-  for (var i = 0; i < clampedCount; i++) {
-    var x = padX + (i / vMonths) * drawW;
+  for (var i = 0; i < points.length; i++) {
+    var x = padX + (i / goalMonths) * drawW;
     var val = Math.max(0, points[i].value);
     var y = H - padX - (val / maxValue) * (H - padX * 2);
     y = Math.max(padX, Math.min(y, H - padX));
@@ -2657,8 +2647,8 @@ function drawFactLayer(progress, total, maxValue) {
 
   factCtx.clearRect(0, 0, factCanvas.width, factCanvas.height);
 
-  var vMonths = gs.visibleMonths;
-  if (!vMonths) return;
+  var goalMonths = gs.goalMonths;
+  if (!goalMonths) return;
 
   var mainFacts = factHistory.filter(function (f) { return f.to === "main"; });
 
@@ -2670,7 +2660,7 @@ function drawFactLayer(progress, total, maxValue) {
   var monthsPassed = Math.max(1, gs.actualMonths);
 
   var factValue = Math.max(0, total);
-  var targetX = padX + (monthsPassed / vMonths) * drawW;
+  var targetX = padX + (monthsPassed / goalMonths) * drawW;
   var x = padX + (targetX - padX) * progress;
   var y = H - padX - (factValue / maxValue) * (H - padX * 2) * progress;
   y = Math.max(padX, Math.min(y, H - padX));
