@@ -1156,7 +1156,7 @@ ${adviceBlockHtml}
 <button id="timelineBackBtn" class="timeline-back-btn" type="button" style="display:none">← Обзор</button>
 </div>
 <div class="chart-card">
-<div class="chart-wrap" style="width:100%; height:260px; margin:0; position:relative;">
+<div class="chart-wrap" style="width:100%; height:280px; margin:0; position:relative;">
 <canvas id="chartBg"></canvas>
 <canvas id="chartFact"></canvas>
 </div>
@@ -1988,7 +1988,7 @@ function showFactTooltip({ value, onHide }) {
   block.innerHTML = `
 <div class="fact-date">${date}</div>
 <div class="fact-value">
-Факт: ${factOnly.toLocaleString()} ₽
+Отложено: ${factOnly.toLocaleString()} ₽
 </div>
 `;
 
@@ -2347,70 +2347,27 @@ for (var i = 1; i < gridY; i++) {
   bgCtx.stroke();
 }
 
-// Glass segment overlays
-if (lastCalc.months && lastCalc.months > 3) {
-  var data = getTimelineData(lastCalc.months);
-  var segs = data.segments;
-  var drawW = W - padX * 2;
+// Dynamic quarterly vertical dividers
+var months = lastCalc.months || 0;
+var visibleMonths = Math.max(3, months);
+var divisions = 0;
+if (months >= 4) {
+  divisions = Math.floor((months - 1) / 3);
+}
 
-  for (var si = 0; si < segs.length; si++) {
-    var seg = segs[si];
-    var sx1 = calcTimelineX(seg.startMonth, lastCalc.months, W, padX);
-    var sx2 = calcTimelineX(seg.endMonth, lastCalc.months, W, padX);
-
-    var isActive = (timelineView.mode === "segment" && timelineView.activeSegment === seg);
-
-    bgCtx.save();
-    var segR = 6;
-    var segX = sx1 + 1;
-    var segW = sx2 - sx1 - 2;
-    var segY = padX;
-    var segH = H - padX * 2;
-
+if (divisions > 0) {
+  bgCtx.save();
+  bgCtx.strokeStyle = "rgba(255,255,255,0.12)";
+  bgCtx.lineWidth = 1;
+  for (var di = 1; di <= divisions; di++) {
+    var divX = padX + ((di * 3) / visibleMonths) * (W - padX * 2);
+    if (divX >= W - padX) continue;
     bgCtx.beginPath();
-    bgCtx.moveTo(segX + segR, segY);
-    bgCtx.lineTo(segX + segW - segR, segY);
-    bgCtx.quadraticCurveTo(segX + segW, segY, segX + segW, segY + segR);
-    bgCtx.lineTo(segX + segW, segY + segH - segR);
-    bgCtx.quadraticCurveTo(segX + segW, segY + segH, segX + segW - segR, segY + segH);
-    bgCtx.lineTo(segX + segR, segY + segH);
-    bgCtx.quadraticCurveTo(segX, segY + segH, segX, segY + segH - segR);
-    bgCtx.lineTo(segX, segY + segR);
-    bgCtx.quadraticCurveTo(segX, segY, segX + segR, segY);
-    bgCtx.closePath();
-
-    bgCtx.strokeStyle = "rgba(255,255,255,0.15)";
-    bgCtx.lineWidth = 1;
-    bgCtx.setLineDash([4, 4]);
+    bgCtx.moveTo(divX, padX);
+    bgCtx.lineTo(divX, H - padX);
     bgCtx.stroke();
-    bgCtx.setLineDash([]);
-
-    if (isActive) {
-      var glowGrad = bgCtx.createRadialGradient(
-        (sx1 + sx2) / 2, H / 2, 0,
-        (sx1 + sx2) / 2, H / 2, segW * 0.7
-      );
-      glowGrad.addColorStop(0, "rgba(58,123,253,0.08)");
-      glowGrad.addColorStop(1, "rgba(58,123,253,0)");
-      bgCtx.fillStyle = glowGrad;
-      bgCtx.fill();
-    }
-
-    bgCtx.restore();
-
-    if (si > 0) {
-      bgCtx.save();
-      bgCtx.strokeStyle = "rgba(255,255,255,0.08)";
-      bgCtx.lineWidth = 1;
-      bgCtx.setLineDash([4, 4]);
-      bgCtx.beginPath();
-      bgCtx.moveTo(sx1, padX);
-      bgCtx.lineTo(sx1, H - padX);
-      bgCtx.stroke();
-      bgCtx.setLineDash([]);
-      bgCtx.restore();
-    }
   }
+  bgCtx.restore();
 }
 
 // ОСИ
@@ -2466,7 +2423,8 @@ function drawMonthLabels() {
   var W = bgCanvas.width / (window.devicePixelRatio || 1);
   var H = bgCanvas.height / (window.devicePixelRatio || 1);
   var padX = 40;
-  var monthsTotal = lastCalc.months;
+  var rawMonths = lastCalc.months;
+  var monthsTotal = Math.max(3, rawMonths);
   var data = getTimelineData(monthsTotal);
   var calendar = data.calendar;
 
@@ -2486,17 +2444,7 @@ function drawMonthLabels() {
     var x = calcTimelineX(i, monthsTotal, W, padX);
     var label = calendar[i].shortLabel;
 
-    var alpha = 0.35;
-    if (timelineView.mode === "segment" && timelineView.activeSegment) {
-      var seg = timelineView.activeSegment;
-      if (i >= seg.startMonth && i <= seg.endMonth) {
-        alpha = 0.55;
-      } else {
-        alpha = 0.12 * (1 - _zoomAnim.progress) + 0.05;
-      }
-    }
-
-    bgCtx.fillStyle = "rgba(255,255,255," + alpha + ")";
+    bgCtx.fillStyle = "rgba(255,255,255,0.35)";
     bgCtx.fillText(label, x, H - padX + 8);
   }
 }
@@ -2540,10 +2488,11 @@ function drawPlanLine() {
   var W = bgCanvas.width / (window.devicePixelRatio || 1);
   var H = bgCanvas.height / (window.devicePixelRatio || 1);
   var padX = 40;
-  var monthsTotal = lastCalc.months;
-  if (!monthsTotal) return;
+  var rawMonths = lastCalc.months;
+  if (!rawMonths) return;
+  var monthsTotal = Math.max(3, rawMonths);
 
-  var points = buildPlanTimeline(new Date(), plannedMonthly, monthsTotal);
+  var points = buildPlanTimeline(new Date(), plannedMonthly, rawMonths);
   var maxValue = points[points.length - 1].value;
   if (maxValue <= 0) return;
 
@@ -2572,10 +2521,17 @@ function drawPlanLine() {
 
 let animationFrameId = null;
 
+function hideFactLayer() {
+  if (factCtx) factCtx.clearRect(0, 0, factCanvas.width, factCanvas.height);
+  lastFactPoint = null;
+  var tooltip = document.getElementById("factTooltipContainer");
+  if (tooltip) tooltip.innerHTML = "";
+}
+
 function animateFactLine() {
-if (!factHistory.length) {
-factCtx.clearRect(0, 0, factCanvas.width, factCanvas.height);
-return;
+if (!factHistory || factHistory.length === 0) {
+  hideFactLayer();
+  return;
 }
 
 if (!plannedMonthly || !lastCalc.months) return;
@@ -2614,12 +2570,14 @@ function drawFactLayer(progress, total, maxValue) {
 
   factCtx.clearRect(0, 0, factCanvas.width, factCanvas.height);
 
-  var monthsTotal = lastCalc.months;
-  if (!monthsTotal) return;
+  var rawMonths = lastCalc.months;
+  if (!rawMonths) return;
+  var monthsTotal = Math.max(3, rawMonths);
 
   var mainFacts = factHistory.filter(function (f) { return f.to === "main"; });
 
-  if (mainFacts.length === 0 && initialBalance === 0) {
+  if (mainFacts.length === 0) {
+    lastFactPoint = null;
     return;
   }
 
