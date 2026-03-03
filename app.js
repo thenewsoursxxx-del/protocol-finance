@@ -1431,6 +1431,7 @@ if (profileBtn) {
     bottomNav.style.transform = "translateY(140%)";
     bottomNav.style.opacity = "0";
     bottomNav.style.pointerEvents = "none";
+    if (advancedBtn) advancedBtn.style.display = "none";
     moveProfileToActiveHeader();
   };
 }
@@ -2183,6 +2184,9 @@ if (editGoalBtn) {
 editGoalBtn.onclick = () => {
 haptic("light");
 
+hideBottomNav();
+if (advancedBtn) advancedBtn.style.display = "none";
+
 goalEditTitle.value = goalMeta.title;
 goalEditAmount.value = goalInput.value;
 goalEditBaseValue = parseNumber(goalInput.value || "0");
@@ -2200,8 +2204,10 @@ goalEditorOverlay.onclick = () => {
 goalEditorSheet.style.transform = "translateY(100%)";
 setTimeout(() => {
 goalEditorOverlay.style.display = "none";
-}, 550);
+showBottomNav();
+if (advancedBtn && isInitialized) advancedBtn.style.display = "flex";
 goalEditHint.classList.remove("show");
+}, 550);
 };
 
 goalEditSave.onclick = () => {
@@ -2227,12 +2233,12 @@ goalCompleted = true;
 }
 
 // 4️⃣ закрываем редактор
-goalEditorOverlay.onclick = () => {
 goalEditorSheet.style.transform = "translateY(100%)";
 setTimeout(() => {
 goalEditorOverlay.style.display = "none";
+showBottomNav();
+if (advancedBtn && isInitialized) advancedBtn.style.display = "flex";
 }, 550);
-};
 recalcPlan();
 pulseGoalCard();
 };
