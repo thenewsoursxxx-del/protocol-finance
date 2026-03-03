@@ -315,6 +315,34 @@ function assembleCashflowEvents() {
   return events;
 }
 
+function computeGraphState() {
+  var factEvents = assembleCashflowEvents();
+  var factBalance = Number(initialBalance) || 0;
+
+  factEvents.forEach(function (e) {
+    if (e.frequency && e.frequency !== "once") return;
+    if (e.type === "contribution") {
+      factBalance += e.amount;
+    }
+    if (e.type === "unexpected_expense" && (!e.meta || e.meta.source !== "skip")) {
+      factBalance -= e.amount;
+    }
+  });
+
+  factBalance = Math.max(0, factBalance);
+
+  var months = lastCalc.months || 0;
+  var hasFact = factHistory && factHistory.length > 0;
+
+  return {
+    factBalance: factBalance,
+    months: months,
+    hasFact: hasFact,
+    plannedMonthly: plannedMonthly || 0,
+    goal: parseNumber(goalInput ? goalInput.value || "0" : "0")
+  };
+}
+
 /**
  * Централизованная функция перерасчёта плана.
  * При активном плане использует CashflowEngine для пересчёта балансов,
@@ -328,10 +356,6 @@ function recalcPlan() {
     var modelType = s.financialModel || "simple";
     var incomeVal = parseNumber(incomeInput?.value || "0");
     var expensesVal = parseNumber(expensesInput?.value || "0");
-    if (modelType === "cashflow") {
-      incomeVal = 0;
-      expensesVal = 0;
-    }
     var canRecalc = goalVal > 0 && (incomeVal > expensesVal || modelType === "cashflow");
     if (canRecalc) {
       var events = assembleCashflowEvents();
@@ -1156,7 +1180,7 @@ ${adviceBlockHtml}
 <button id="timelineBackBtn" class="timeline-back-btn" type="button" style="display:none">← Обзор</button>
 </div>
 <div class="chart-card">
-<div class="chart-wrap" style="width:100%; height:280px; margin:0; position:relative;">
+<div class="chart-wrap" style="width:100%; height:300px; margin:0; position:relative;">
 <canvas id="chartBg"></canvas>
 <canvas id="chartFact"></canvas>
 </div>
@@ -1180,6 +1204,7 @@ style="width:52px;height:52px;border-radius:50%">
 `;
 
   initChart();
+  animatePlanGrowth();
   animateFactLine();
   if (protocolBack) protocolBack.style.display = "none";
   showBottomNav();
@@ -1703,10 +1728,15 @@ function startZoomAnimation(targetSegment) {
     _zoomAnim.progress = startProg + ((_zoomAnim.targetProgress - startProg) * eased);
 
     drawStaticLayer();
-    var total = Math.max(0, factHistory.filter(function (f) { return f.to === "main"; }).reduce(function (s, f) { return s + f.value; }, 0));
-    var planMax = plannedMonthly * lastCalc.months;
-    var maxValue = Math.max(total, planMax, 1);
-    drawFactLayer(1, total, maxValue);
+    var gs = computeGraphState();
+    if (gs.hasFact) {
+      var total = Math.max(0, factHistory.filter(function (f) { return f.to === "main"; }).reduce(function (s, f) { return s + f.value; }, 0));
+      var planMax = gs.plannedMonthly * gs.months;
+      var maxValue = Math.max(total, planMax, 1);
+      drawFactLayer(1, total, maxValue);
+    } else {
+      hideFactLayer();
+    }
 
     if (t < 1) {
       _zoomAnim.rafId = requestAnimationFrame(frame);
@@ -1787,14 +1817,8 @@ let isFactAnimating = false;
 let dotScale = 1;
 let dotTargetScale = 1;
 let dotAnimating = false;
-
-function getFactGradient(ctx, W) {
-const g = ctx.createLinearGradient(0, 0, W, 0);
-g.addColorStop(0, "#1e3a8a"); // тёмный как у резерва
-g.addColorStop(0.5, "#2563eb"); // фирменный синий
-g.addColorStop(1, "#60a5fa"); // мягкий светлый
-return g;
-}
+var _planLineAlpha = 1;
+var _planAnimRafId = null;
 
 function initChart() {
   var wrap = document.querySelector(".chart-wrap");
@@ -1832,17 +1856,15 @@ function initChart() {
     var clickX = e.clientX - rect.left;
     var clickY = e.clientY - rect.top;
 
-    if (lastFactPoint) {
+    var gs = computeGraphState();
+    if (gs.hasFact && lastFactPoint) {
       var dx = clickX - lastFactPoint.x;
       var dy = clickY - lastFactPoint.y;
       var distance = Math.sqrt(dx * dx + dy * dy);
 
       if (distance <= 25) {
         animateDotScale(1.8);
-        var total = factHistory
-          .filter(function (f) { return f.to === "main"; })
-          .reduce(function (s, f) { return s + f.value; }, 0);
-        showFactTooltip({ value: total, onHide: function () { animateDotScale(1); } });
+        showFactTooltip({ value: gs.factBalance, onHide: function () { animateDotScale(1); } });
         return;
       }
     }
@@ -2347,12 +2369,11 @@ for (var i = 1; i < gridY; i++) {
   bgCtx.stroke();
 }
 
-// Dynamic quarterly vertical dividers
-var months = lastCalc.months || 0;
-var visibleMonths = Math.max(3, months);
+var graphState = computeGraphState();
+var visibleMonths = Math.max(3, graphState.months);
 var divisions = 0;
-if (months >= 4) {
-  divisions = Math.floor((months - 1) / 3);
+if (graphState.months >= 4) {
+  divisions = Math.floor((graphState.months - 1) / 3);
 }
 
 if (divisions > 0) {
@@ -2496,15 +2517,24 @@ function drawPlanLine() {
   var maxValue = points[points.length - 1].value;
   if (maxValue <= 0) return;
 
-  var planColor = "#ffffff";
+  bgCtx.save();
+  bgCtx.globalAlpha = _planLineAlpha;
 
   var monthlyNet = lastCalc.free || 0;
   if (monthlyNet <= 0) {
-    planColor = "#ef4444";
+    bgCtx.strokeStyle = "#ef4444";
+  } else {
+    var gradient = bgCtx.createLinearGradient(padX, 0, W - padX, 0);
+    gradient.addColorStop(0, "#3a7bfd");
+    gradient.addColorStop(1, "#60a5fa");
+    bgCtx.strokeStyle = gradient;
   }
 
-  bgCtx.strokeStyle = planColor;
-  bgCtx.lineWidth = 2;
+  bgCtx.lineWidth = 2.5;
+  bgCtx.shadowColor = "rgba(58,123,253,0.35)";
+  bgCtx.shadowBlur = 14;
+  bgCtx.lineCap = "round";
+  bgCtx.lineJoin = "round";
   bgCtx.beginPath();
 
   for (var i = 0; i < points.length; i++) {
@@ -2517,6 +2547,24 @@ function drawPlanLine() {
   }
 
   bgCtx.stroke();
+  bgCtx.restore();
+}
+
+function animatePlanGrowth() {
+  if (_planAnimRafId) cancelAnimationFrame(_planAnimRafId);
+  _planLineAlpha = 0;
+
+  function step() {
+    _planLineAlpha = Math.min(_planLineAlpha + 0.04, 1);
+    drawStaticLayer();
+    if (_planLineAlpha < 1) {
+      _planAnimRafId = requestAnimationFrame(step);
+    } else {
+      _planAnimRafId = null;
+    }
+  }
+
+  _planAnimRafId = requestAnimationFrame(step);
 }
 
 let animationFrameId = null;
@@ -2529,35 +2577,33 @@ function hideFactLayer() {
 }
 
 function animateFactLine() {
-if (!factHistory || factHistory.length === 0) {
+var gs = computeGraphState();
+
+if (!gs.hasFact) {
   hideFactLayer();
   return;
 }
 
-if (!plannedMonthly || !lastCalc.months) return;
+if (!gs.plannedMonthly || !gs.months) return;
 
-const total = Math.max(0, factHistory
-.filter(f => f.to === "main")
-.reduce((s, f) => s + f.value, 0));
+var total = Math.max(0, factHistory
+  .filter(function (f) { return f.to === "main"; })
+  .reduce(function (s, f) { return s + f.value; }, 0));
 
-const planMax = plannedMonthly * lastCalc.months;
+var planMax = gs.plannedMonthly * gs.months;
+var maxValue = Math.max(total, planMax, 1);
 
-const maxValue = Math.max(total, planMax, 1);
-
-let start = null;
-const duration = 900;
+var start = null;
+var duration = 900;
 
 function frame(timestamp) {
-if (!start) start = timestamp;
-
-const progress = Math.min((timestamp - start) / duration, 1);
-const eased = 1 - Math.pow(1 - progress, 3);
-
-drawFactLayer(eased, total, maxValue);
-
-if (progress < 1) {
-requestAnimationFrame(frame);
-}
+  if (!start) start = timestamp;
+  var progress = Math.min((timestamp - start) / duration, 1);
+  var eased = 1 - Math.pow(1 - progress, 3);
+  drawFactLayer(eased, total, maxValue);
+  if (progress < 1) {
+    requestAnimationFrame(frame);
+  }
 }
 
 requestAnimationFrame(frame);
@@ -2596,43 +2642,42 @@ function drawFactLayer(progress, total, maxValue) {
 
   lastFactPoint = { x: x, y: y };
 
-  // Gradient stroke for fact line
-  var lineGrad = factCtx.createLinearGradient(padX, 0, x, 0);
-  lineGrad.addColorStop(0, "#1e3a8a");
-  lineGrad.addColorStop(0.5, "#2563eb");
-  lineGrad.addColorStop(1, "#60a5fa");
-
-  factCtx.strokeStyle = lineGrad;
-  factCtx.lineWidth = 2.5;
+  factCtx.save();
+  factCtx.strokeStyle = "#ffffff";
+  factCtx.lineWidth = 2.2;
   factCtx.lineCap = "round";
+  factCtx.shadowColor = "rgba(255,255,255,0.4)";
+  factCtx.shadowBlur = 10;
 
   factCtx.beginPath();
   factCtx.moveTo(calcTimelineX(0, monthsTotal, W, padX), H - padX);
   factCtx.lineTo(x, y);
   factCtx.stroke();
+  factCtx.restore();
 
   if (progress >= 1) {
     var radius = 5 * dotScale;
 
-    var fillGrad = factCtx.createLinearGradient(x, y - radius, x, y + radius);
-    fillGrad.addColorStop(0, "#60a5fa");
-    fillGrad.addColorStop(1, "#2563eb");
+    factCtx.save();
+    factCtx.shadowColor = "rgba(255,255,255,0.5)";
+    factCtx.shadowBlur = 12;
 
     factCtx.beginPath();
     factCtx.arc(x, y, radius, 0, Math.PI * 2);
-    factCtx.fillStyle = fillGrad;
+    factCtx.fillStyle = "#ffffff";
     factCtx.fill();
 
     factCtx.lineWidth = 1.2;
-    factCtx.strokeStyle = "rgba(255,255,255,0.45)";
+    factCtx.strokeStyle = "rgba(255,255,255,0.6)";
     factCtx.stroke();
+    factCtx.restore();
 
     if (dotScale > 1.05) {
       var glowRadius = radius * 2.8;
       var glow = factCtx.createRadialGradient(x, y, 0, x, y, glowRadius);
-      glow.addColorStop(0, "rgba(37,99,235,0.35)");
-      glow.addColorStop(0.4, "rgba(37,99,235,0.18)");
-      glow.addColorStop(1, "rgba(37,99,235,0)");
+      glow.addColorStop(0, "rgba(255,255,255,0.4)");
+      glow.addColorStop(0.4, "rgba(255,255,255,0.18)");
+      glow.addColorStop(1, "rgba(255,255,255,0)");
       factCtx.beginPath();
       factCtx.arc(x, y, glowRadius, 0, Math.PI * 2);
       factCtx.fillStyle = glow;
@@ -2657,12 +2702,13 @@ const eased = 1 - Math.pow(1 - progress, 3);
 
 dotScale = startScale + diff * eased;
 
-const total = Math.max(0, factHistory
-.filter(f => f.to === "main")
-.reduce((s, f) => s + f.value, 0));
+var gs = computeGraphState();
+var total = Math.max(0, factHistory
+.filter(function (f) { return f.to === "main"; })
+.reduce(function (s, f) { return s + f.value; }, 0));
 
-const planMax = plannedMonthly * lastCalc.months;
-const maxValue = Math.max(total, planMax, 1);
+var planMax = gs.plannedMonthly * gs.months;
+var maxValue = Math.max(total, planMax, 1);
 
 drawFactLayer(1, total, maxValue);
 
