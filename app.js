@@ -357,7 +357,7 @@ function recalcPlan() {
         lastCalc.pace = derived.pace;
         lastCalc.monthlySave = derived.monthlySave;
         lastCalc.months = derived.monthsLeft;
-        lastCalc.effectiveGoal = derived.remainingGoal;
+        lastCalc.effectiveGoal = Math.max(0, derived.remainingGoal);
         lastCalc.forecastIncome = derived.forecastIncome || 0;
         lastCalc.forecastExpense = derived.forecastExpense || 0;
 
@@ -1983,11 +1983,12 @@ function showFactTooltip({ value, onHide }) {
   const block = document.createElement("div");
   block.className = "fact-tooltip";
 
+  const factOnly = Math.max(0, value);
   const date = new Date().toLocaleDateString("ru-RU");
   block.innerHTML = `
 <div class="fact-date">${date}</div>
 <div class="fact-value">
-Отложено: ${value.toLocaleString()} ₽
+Факт: ${factOnly.toLocaleString()} ₽
 </div>
 `;
 
@@ -2358,10 +2359,8 @@ if (lastCalc.months && lastCalc.months > 3) {
     var sx2 = calcTimelineX(seg.endMonth, lastCalc.months, W, padX);
 
     var isActive = (timelineView.mode === "segment" && timelineView.activeSegment === seg);
-    var segAlpha = isActive ? 0.10 : 0.04;
 
     bgCtx.save();
-    bgCtx.fillStyle = "rgba(255,255,255," + segAlpha + ")";
     var segR = 6;
     var segX = sx1 + 1;
     var segW = sx2 - sx1 - 2;
@@ -2379,7 +2378,12 @@ if (lastCalc.months && lastCalc.months > 3) {
     bgCtx.lineTo(segX, segY + segR);
     bgCtx.quadraticCurveTo(segX, segY, segX + segR, segY);
     bgCtx.closePath();
-    bgCtx.fill();
+
+    bgCtx.strokeStyle = "rgba(255,255,255,0.15)";
+    bgCtx.lineWidth = 1;
+    bgCtx.setLineDash([4, 4]);
+    bgCtx.stroke();
+    bgCtx.setLineDash([]);
 
     if (isActive) {
       var glowGrad = bgCtx.createRadialGradient(
@@ -2422,6 +2426,7 @@ drawPlanLine();
 drawMonthLabels();
 
 // ===== WATERMARK =====
+// drawSegmentLabels removed to avoid duplicate month labels
 var size = 170;
 var centerX = W / 2;
 var centerY = H / 2;
@@ -2453,8 +2458,6 @@ bgCtx.font = "400 10px Inter, system-ui";
 bgCtx.fillText("™", centerX + protocolWidth / 2 + 3, textY - 4);
 
 bgCtx.restore();
-
-drawSegmentLabels();
 }
 
 function drawMonthLabels() {
@@ -2559,7 +2562,7 @@ function drawPlanLine() {
     var x = calcTimelineX(i, monthsTotal, W, padX);
     var val = Math.max(0, points[i].value);
     var y = H - padX - (val / maxValue) * (H - padX * 2);
-    y = Math.min(y, H - padX);
+    y = Math.max(padX, Math.min(y, H - padX));
     if (i === 0) bgCtx.moveTo(x, y);
     else bgCtx.lineTo(x, y);
   }
@@ -2615,6 +2618,11 @@ function drawFactLayer(progress, total, maxValue) {
   if (!monthsTotal) return;
 
   var mainFacts = factHistory.filter(function (f) { return f.to === "main"; });
+
+  if (mainFacts.length === 0 && initialBalance === 0) {
+    return;
+  }
+
   var uniqueMonths = {};
   mainFacts.forEach(function (f) {
     var d = new Date(f.date);
@@ -2622,11 +2630,11 @@ function drawFactLayer(progress, total, maxValue) {
   });
   var monthsPassed = Math.max(1, Object.keys(uniqueMonths).length);
 
-  var clampedTotal = Math.max(0, total);
+  var factValue = Math.max(0, total);
   var baseX = calcTimelineX(monthsPassed, monthsTotal, W, padX);
   var x = padX + (baseX - padX) * progress;
-  var y = H - padX - (clampedTotal / maxValue) * (H - padX * 2) * progress;
-  y = Math.min(y, H - padX);
+  var y = H - padX - (factValue / maxValue) * (H - padX * 2) * progress;
+  y = Math.max(padX, Math.min(y, H - padX));
 
   lastFactPoint = { x: x, y: y };
 
