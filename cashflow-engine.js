@@ -177,6 +177,7 @@
 
     for (var i = 0; i < this.events.length; i++) {
       var e = this.events[i];
+      if (e.frequency && e.frequency !== FREQUENCY.ONCE) continue;
       if (e.type === EVENT_TYPE.CONTRIBUTION) {
         var to = (e.meta && e.meta.to) || "main";
         if (to === "reserve") reserveBal += e.amount;
@@ -326,7 +327,7 @@
     this._derived = {
       ok: ok,
       modelType: "simple",
-      currentGoalBalance: balances.goalBalance,
+      currentGoalBalance: Math.max(0, balances.goalBalance),
       reserveBalance: balances.reserveBalance,
       remainingGoal: remaining,
       monthsLeft: monthsLeft,
@@ -381,7 +382,7 @@
     this._derived = {
       ok: ok,
       modelType: "cashflow",
-      currentGoalBalance: balances.goalBalance,
+      currentGoalBalance: Math.max(0, balances.goalBalance),
       reserveBalance: balances.reserveBalance,
       remainingGoal: remaining,
       monthsLeft: monthsLeft,
@@ -452,8 +453,8 @@
 
       points.push({
         date: date,
-        goalBalance: Math.round(bal),
-        reserveBalance: Math.round(resBal),
+        goalBalance: Math.max(0, Math.round(bal)),
+        reserveBalance: Math.max(0, Math.round(resBal)),
         income: d.modelType === "cashflow" ? (d.forecastIncome || 0) : 0,
         expense: d.modelType === "cashflow" ? (d.forecastExpense || 0) : 0
       });

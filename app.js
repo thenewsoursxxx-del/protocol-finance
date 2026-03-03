@@ -1703,7 +1703,7 @@ function startZoomAnimation(targetSegment) {
     _zoomAnim.progress = startProg + ((_zoomAnim.targetProgress - startProg) * eased);
 
     drawStaticLayer();
-    var total = factHistory.filter(function (f) { return f.to === "main"; }).reduce(function (s, f) { return s + f.value; }, 0);
+    var total = Math.max(0, factHistory.filter(function (f) { return f.to === "main"; }).reduce(function (s, f) { return s + f.value; }, 0));
     var planMax = plannedMonthly * lastCalc.months;
     var maxValue = Math.max(total, planMax, 1);
     drawFactLayer(1, total, maxValue);
@@ -1870,7 +1870,7 @@ let total = 0;
 for (let i = 0; i <= months; i++) {
 points.push({
 date: addMonths(startDate, i),
-value: total
+value: Math.max(0, total)
 });
 total += monthlyAmount;
 }
@@ -2546,17 +2546,9 @@ function drawPlanLine() {
 
   var planColor = "#ffffff";
 
-  if (factHistory.length > 0) {
-    var mainFacts = factHistory.filter(function (f) { return f.to === "main"; });
-    var total = mainFacts.reduce(function (s, f) { return s + f.value; }, 0);
-    var uniqueMonths = {};
-    mainFacts.forEach(function (f) {
-      var d = new Date(f.date);
-      uniqueMonths[d.getFullYear() + "-" + d.getMonth()] = true;
-    });
-    var monthsPassed = Object.keys(uniqueMonths).length;
-    var plannedSoFar = plannedMonthly * monthsPassed;
-    planColor = total >= plannedSoFar ? "#4ade80" : "#ef4444";
+  var monthlyNet = lastCalc.free || 0;
+  if (monthlyNet <= 0) {
+    planColor = "#ef4444";
   }
 
   bgCtx.strokeStyle = planColor;
@@ -2565,7 +2557,9 @@ function drawPlanLine() {
 
   for (var i = 0; i < points.length; i++) {
     var x = calcTimelineX(i, monthsTotal, W, padX);
-    var y = H - padX - (points[i].value / maxValue) * (H - padX * 2);
+    var val = Math.max(0, points[i].value);
+    var y = H - padX - (val / maxValue) * (H - padX * 2);
+    y = Math.min(y, H - padX);
     if (i === 0) bgCtx.moveTo(x, y);
     else bgCtx.lineTo(x, y);
   }
@@ -2583,13 +2577,13 @@ return;
 
 if (!plannedMonthly || !lastCalc.months) return;
 
-const total = factHistory
+const total = Math.max(0, factHistory
 .filter(f => f.to === "main")
-.reduce((s, f) => s + f.value, 0);
+.reduce((s, f) => s + f.value, 0));
 
 const planMax = plannedMonthly * lastCalc.months;
 
-const maxValue = Math.max(total, planMax, 1); // ← защита от 0
+const maxValue = Math.max(total, planMax, 1);
 
 let start = null;
 const duration = 900;
@@ -2628,9 +2622,11 @@ function drawFactLayer(progress, total, maxValue) {
   });
   var monthsPassed = Math.max(1, Object.keys(uniqueMonths).length);
 
+  var clampedTotal = Math.max(0, total);
   var baseX = calcTimelineX(monthsPassed, monthsTotal, W, padX);
   var x = padX + (baseX - padX) * progress;
-  var y = H - padX - (total / maxValue) * (H - padX * 2) * progress;
+  var y = H - padX - (clampedTotal / maxValue) * (H - padX * 2) * progress;
+  y = Math.min(y, H - padX);
 
   lastFactPoint = { x: x, y: y };
 
@@ -2695,9 +2691,9 @@ const eased = 1 - Math.pow(1 - progress, 3);
 
 dotScale = startScale + diff * eased;
 
-const total = factHistory
+const total = Math.max(0, factHistory
 .filter(f => f.to === "main")
-.reduce((s, f) => s + f.value, 0);
+.reduce((s, f) => s + f.value, 0));
 
 const planMax = plannedMonthly * lastCalc.months;
 const maxValue = Math.max(total, planMax, 1);
