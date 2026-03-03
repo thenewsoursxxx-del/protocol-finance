@@ -178,6 +178,7 @@
     for (var i = 0; i < this.events.length; i++) {
       var e = this.events[i];
       if (e.frequency && e.frequency !== FREQUENCY.ONCE) continue;
+      if (e.type === EVENT_TYPE.INCOME || e.type === EVENT_TYPE.EXPENSE) continue;
       if (e.type === EVENT_TYPE.CONTRIBUTION) {
         var to = (e.meta && e.meta.to) || "main";
         if (to === "reserve") reserveBal += e.amount;
