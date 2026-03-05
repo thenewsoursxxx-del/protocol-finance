@@ -2878,6 +2878,17 @@ body.flip-fix-pending .flip-wrapper {
   border: 1px solid rgba(16,185,129,0.35);
   background: linear-gradient(180deg, rgba(16,185,129,0.08), rgba(0,0,0,0));
 }
+.inflation-time {
+  font-size: 14px;
+  font-weight: 500;
+  color: #9ca3af;
+  margin-bottom: 4px;
+}
+.inflation-disclaimer {
+  font-size: 12px;
+  opacity: .5;
+  margin-bottom: 10px;
+}
 .stats-purchasing-label {
   font-size: 11px;
   color: rgba(255,255,255,0.45);

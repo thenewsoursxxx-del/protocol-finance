@@ -3961,10 +3961,26 @@ function renderAccountBackCards() {
     var comp = calculateInflationCompensation(goalVal, monthsLeft, inflRate);
 
     if (result || comp) {
+      var timeStr = "";
+      if (result) {
+        if (result.years < 1) {
+          var months = Math.round(result.years * 12);
+          timeStr = "Через " + months + " " + (months === 1 ? "месяц" : (months >= 2 && months <= 4 ? "месяца" : "месяцев"));
+        } else {
+          timeStr = "Через " + result.years.toFixed(1) + " года";
+        }
+      }
+
       html += '<div class="inflation-card">';
 
+      if (timeStr) {
+        html += '<div class="inflation-time">' + timeStr + '</div>';
+        if (inflation) {
+          html += '<div class="inflation-disclaimer">Если инфляция останется ' + inflation + '%</div>';
+        }
+      }
+
       if (result) {
-        var yearsStr = result.years.toFixed(1);
         html +=
           '<div class="stats-purchasing-label">Покупательная способность</div>' +
           '<div class="stats-purchasing-value">' + result.adjustedValue.toLocaleString() + ' ₽</div>' +
@@ -3981,10 +3997,6 @@ function renderAccountBackCards() {
             '<div class="compensation-label">Чтобы сохранить покупательную способность:</div>' +
             '<div class="extra-monthly">+' + comp.extraMonthly.toLocaleString() + ' ₽ / месяц</div>' +
           '</div>';
-      }
-
-      if (result) {
-        html += '<div class="stats-years-row">Через ' + result.years.toFixed(1) + ' года</div>';
       }
 
       html += '</div>';
