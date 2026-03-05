@@ -376,17 +376,8 @@ function applyState(saved) {
     appState.uiState = { ...defaults.uiState };
   }
 
-  // Обратная совместимость: initialBalance / planStartValue
-  if (appState.initialBalance === 0 && appState.saved) {
-    const parsed = Number(String(appState.saved).replace(/\./g, "")) || 0;
-    if (parsed > 0) appState.initialBalance = parsed;
-  }
   if (appState.planStartValue === 0 && appState.initialBalance > 0) {
     appState.planStartValue = appState.initialBalance;
-  }
-  if (appState.initialBalance === 0 && appState.accounts.main > 0) {
-    appState.initialBalance = appState.accounts.main;
-    appState.planStartValue = appState.accounts.main;
   }
 }
 

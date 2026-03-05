@@ -1311,18 +1311,19 @@ style="width:52px;height:52px;border-radius:50%">
 function protocolFlow(mode) {
 chosenPlan = mode;
 if (protocolBack) protocolBack.style.display = "none";
-// 🔥 СИНХРОНИЗАЦИЯ С УЖЕ НАКОПЛЕННЫМ
-// Если accounts уже восстановлены из сохранения, не перезаписываем их
+// initialBalance устанавливается ТОЛЬКО при создании плана из поля "Уже накоплено"
 const initialSaved = parseNumber(savedInput?.value || "0");
 if (accounts.main === 0 && accounts.reserve === 0) {
-  // Только если accounts пустые, инициализируем из savedInput
-  initialBalance = initialSaved;
-  planStartValue = initialSaved;
-  accounts.main = initialSaved;
+  if (initialSaved > 0) {
+    initialBalance = initialSaved;
+    planStartValue = initialSaved;
+    accounts.main = initialSaved;
+  } else {
+    initialBalance = 0;
+    planStartValue = 0;
+  }
   accounts.reserve = 0;
 } else {
-  // Если accounts уже заполнены (из сохранения), используем их
-  initialBalance = planStartValue || accounts.main;
   planStartValue = planStartValue || accounts.main;
 }
 
