@@ -2819,18 +2819,37 @@ if (addAccountBack) {
 
 /* ===== FLIP CARD SWIPE ===== */
 
+function measureBackContentHeight(wrapper) {
+  var backCard = wrapper.querySelector(".account-back-card");
+  var backContent = wrapper.querySelector(".account-back-content");
+  if (!backContent || !backCard) return 0;
+
+  var prevCardH = backCard.style.height;
+  var prevContentH = backContent.style.height;
+  backCard.style.height = "auto";
+  backContent.style.height = "auto";
+  var h = backContent.scrollHeight;
+  backCard.style.height = prevCardH;
+  backContent.style.height = prevContentH;
+  return h;
+}
+
 function syncAccountFlipHeight(wrapper, isFlipped) {
   if (!wrapper || !wrapper.classList.contains("account-block")) return;
   var inner = wrapper.querySelector(".flip-inner");
   if (!inner) return;
   var front = wrapper.querySelector(".account-flip-front");
-  var backCard = wrapper.querySelector(".account-back-card");
   if (!front) return;
 
   var frontH = front.scrollHeight;
-  var backH = backCard ? backCard.scrollHeight : frontH;
-  var targetH = isFlipped ? Math.max(frontH, backH) : frontH;
-  inner.style.height = targetH + "px";
+
+  if (!isFlipped) {
+    inner.style.height = frontH + "px";
+    return;
+  }
+
+  var backH = measureBackContentHeight(wrapper);
+  inner.style.height = Math.max(frontH, backH) + "px";
 }
 
 function setupFlipSwipe(wrapper) {
