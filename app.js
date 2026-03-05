@@ -3853,6 +3853,37 @@ function getActiveInflation() {
   return null;
 }
 
+function calculateInflationAdjustedValue(amount, inflationRate, monthsLeft) {
+  if (!amount || amount <= 0) return null;
+  if (!inflationRate || inflationRate <= 0) return null;
+  if (!monthsLeft || monthsLeft <= 0 || !isFinite(monthsLeft)) return null;
+
+  var years = monthsLeft / 12;
+  var adjustedValue = Math.round(amount / Math.pow(1 + inflationRate, years));
+  var loss = amount - adjustedValue;
+
+  return {
+    adjustedValue: adjustedValue,
+    loss: loss,
+    years: years
+  };
+}
+
+function calculateInflationCompensation(goal, monthsLeft, inflationRate) {
+  if (!goal || goal <= 0) return null;
+  if (!inflationRate || inflationRate <= 0) return null;
+  if (!monthsLeft || monthsLeft <= 0 || !isFinite(monthsLeft)) return null;
+
+  var years = monthsLeft / 12;
+  var realGoal = Math.round(goal * Math.pow(1 + inflationRate, years));
+  var extraMonthly = Math.round((realGoal - goal) / monthsLeft);
+
+  return {
+    realGoal: realGoal,
+    extraMonthly: extraMonthly
+  };
+}
+
 function renderAccountBackCards() {
   var s = getState();
   var allStats = s.accountStats || {};
@@ -3883,23 +3914,36 @@ function renderAccountBackCards() {
       '<div class="stats-info-row"><span>Страна</span><span>' + countryLabel + '</span></div>' +
       '<div class="stats-info-row"><span>Валюта</span><span>' + currencyLabel + '</span></div>';
 
-    if (inflation != null && inflation > 0 && amount > 0) {
-      var adjusted = Math.round(amount * (1 - inflation / 100));
-      var loss = amount - adjusted;
-      var years = monthsLeft > 0 ? (monthsLeft / 12) : 0;
-      var yearsStr = years > 0 ? years.toFixed(1) : "—";
+    var inflRate = (inflation || 0) / 100;
+    var result = calculateInflationAdjustedValue(amount, inflRate, monthsLeft);
+    var goalVal = parseNumber(goalInput ? goalInput.value || "0" : "0");
+    var comp = calculateInflationCompensation(goalVal, monthsLeft, inflRate);
 
-      html += '<div class="stats-inflation-block">' +
-        '<div style="font-size:13px;opacity:.6">С учётом инфляции</div>' +
-        '<div class="stats-adjusted-value">' +
-          amount.toLocaleString() + ' ₽ → ' + adjusted.toLocaleString() + ' ₽ ' +
-          '<span class="arrow-down">↓</span>' +
-        '</div>';
+    if (result || comp) {
+      html += '<div class="inflation-card">';
 
-      html += '<div class="stats-loss-row">Потеря из-за инфляции: – ' + loss.toLocaleString() + ' ₽</div>';
+      if (result) {
+        var yearsStr = result.years.toFixed(1);
+        html +=
+          '<div class="stats-purchasing-label">Покупательная способность</div>' +
+          '<div class="stats-purchasing-value">' + result.adjustedValue.toLocaleString() + ' ₽</div>' +
+          '<div class="loss-inflation">' +
+            'Потеря из-за инфляции' +
+            '<br>−' + result.loss.toLocaleString() + ' ₽ ' +
+            '<span class="arrow-down">↓</span>' +
+          '</div>';
+      }
 
-      if (years > 0) {
-        html += '<div class="stats-years-row">Через ' + yearsStr + ' года</div>';
+      if (comp && comp.extraMonthly > 0) {
+        html +=
+          '<div class="compensation-block">' +
+            '<div class="compensation-label">Чтобы сохранить покупательную способность:</div>' +
+            '<div class="extra-monthly">+' + comp.extraMonthly.toLocaleString() + ' ₽ / месяц</div>' +
+          '</div>';
+      }
+
+      if (result) {
+        html += '<div class="stats-years-row">Через ' + result.years.toFixed(1) + ' года</div>';
       }
 
       html += '</div>';

@@ -2756,17 +2756,31 @@ body.flip-fix-pending .flip-wrapper {
 }
 .stats-submit-btn {
   width: 100%;
-  padding: 16px;
-  border-radius: 16px;
-  border: none;
-  background: linear-gradient(135deg, #10b981, #059669);
-  box-shadow: 0 10px 30px rgba(16,185,129,0.35);
-  color: #fff;
+  margin-top: 16px;
+  padding: 14px;
   font-size: 15px;
   font-weight: 600;
+  border-radius: 16px;
+  border: 1px solid rgba(16, 185, 129, 0.45);
+  background:
+    radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.12), transparent 45%),
+    linear-gradient(
+      135deg,
+      #021a16,
+      #063d33,
+      #047857,
+      #10b981,
+      #047857,
+      #063d33,
+      #021a16
+    );
+  background-size: 100% 100%, 350% 350%;
+  animation: emeraldFlow 6s ease-in-out infinite;
+  color: #6ee7b7;
   cursor: pointer;
-  transition: opacity .2s, transform .15s;
-  margin-top: 8px;
+  transition: border-color 0.2s, transform 0.12s, box-shadow 0.2s;
+  box-shadow: 0 8px 24px rgba(4, 120, 87, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  -webkit-tap-highlight-color: transparent;
 }
 .stats-submit-btn:disabled {
   opacity: .35;
@@ -2774,6 +2788,7 @@ body.flip-fix-pending .flip-wrapper {
 }
 .stats-submit-btn:active {
   transform: scale(0.97);
+  box-shadow: 0 4px 16px rgba(4, 120, 87, 0.45), inset 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 
 /* ===== ACCOUNT BACK CARD CONTENT ===== */
@@ -2794,18 +2809,33 @@ body.flip-fix-pending .flip-wrapper {
   justify-content: center;
   gap: 6px;
   padding: 14px 28px;
-  border-radius: 16px;
-  border: none;
-  background: linear-gradient(135deg, #10b981, #059669);
-  box-shadow: 0 10px 30px rgba(16,185,129,0.35);
-  color: #fff;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
+  border-radius: 16px;
+  border: 1px solid rgba(16, 185, 129, 0.45);
+  background:
+    radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.12), transparent 45%),
+    linear-gradient(
+      135deg,
+      #021a16,
+      #063d33,
+      #047857,
+      #10b981,
+      #047857,
+      #063d33,
+      #021a16
+    );
+  background-size: 100% 100%, 350% 350%;
+  animation: emeraldFlow 6s ease-in-out infinite;
+  color: #6ee7b7;
   cursor: pointer;
-  transition: transform .15s;
+  transition: border-color 0.2s, transform 0.12s, box-shadow 0.2s;
+  box-shadow: 0 8px 24px rgba(4, 120, 87, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  -webkit-tap-highlight-color: transparent;
 }
 .account-back-content .stats-add-btn:active {
   transform: scale(0.97);
+  box-shadow: 0 4px 16px rgba(4, 120, 87, 0.45), inset 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 .account-back-content .stats-change-btn {
   display: flex;
@@ -2839,32 +2869,51 @@ body.flip-fix-pending .flip-wrapper {
   font-weight: 500;
   color: #fff;
 }
-.stats-inflation-block {
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px solid rgba(255,255,255,0.08);
+.inflation-card {
+  margin-top: 14px;
+  padding: 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(16,185,129,0.35);
+  background: linear-gradient(180deg, rgba(16,185,129,0.08), rgba(0,0,0,0));
 }
-.stats-adjusted-value {
-  font-size: 17px;
+.stats-purchasing-label {
+  font-size: 12px;
+  color: rgba(255,255,255,0.45);
+}
+.stats-purchasing-value {
+  font-size: 18px;
   font-weight: 600;
-  margin-top: 4px;
+  color: #10b981;
+  margin-top: 2px;
 }
-.stats-adjusted-value .arrow-down {
-  color: #ef4444;
+.loss-inflation {
+  margin-top: 8px;
   font-size: 14px;
-}
-.stats-adjusted-value .arrow-up {
-  color: #22c55e;
-  font-size: 14px;
-}
-.stats-loss-row {
-  margin-top: 6px;
-  font-size: 13px;
   color: #ef4444;
   font-weight: 500;
+  line-height: 1.4;
+}
+.loss-inflation .arrow-down {
+  font-size: 13px;
+}
+.compensation-block {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+.compensation-label {
+  font-size: 12px;
+  color: rgba(255,255,255,0.45);
+  line-height: 1.4;
+}
+.extra-monthly {
+  color: #10b981;
+  font-weight: 600;
+  font-size: 15px;
+  margin-top: 4px;
 }
 .stats-years-row {
-  margin-top: 4px;
+  margin-top: 8px;
   font-size: 12px;
   color: rgba(255,255,255,0.45);
 }
