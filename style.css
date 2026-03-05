@@ -2695,3 +2695,149 @@ body.flip-fix-pending .flip-wrapper {
 .chart-wrap {
   -webkit-tap-highlight-color: transparent;
 }
+
+/* ===== ACCOUNT STATS SCREEN ===== */
+.stats-body {
+  padding: 16px 20px 32px;
+}
+.stats-section-label {
+  font-size: 14px;
+  font-weight: 600;
+  opacity: .7;
+  margin-bottom: 12px;
+}
+.stats-type-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.stats-type-card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-height: 56px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color .2s, background .2s;
+}
+.stats-type-card.active {
+  border-color: #3a7bfd;
+  background: rgba(58,123,253,0.12);
+}
+.stats-cash-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.stats-input-wrap {
+  margin-bottom: 0;
+}
+.stats-select {
+  width: 100%;
+  padding: 14px 16px;
+  background: #111;
+  border: 1px solid #222;
+  border-radius: 14px;
+  color: #fff;
+  font-size: 15px;
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='7' fill='none'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23666' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+}
+.stats-select:focus {
+  border-color: #3a7bfd;
+  outline: none;
+}
+.stats-submit-btn {
+  width: 100%;
+  padding: 16px;
+  border-radius: 16px;
+  border: none;
+  background: #3a7bfd;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity .2s, transform .15s;
+  margin-top: 8px;
+}
+.stats-submit-btn:disabled {
+  opacity: .35;
+  pointer-events: none;
+}
+.stats-submit-btn:active {
+  transform: scale(0.97);
+}
+
+/* ===== ACCOUNT BACK CARD CONTENT ===== */
+.account-back-content {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  box-sizing: border-box;
+}
+.account-back-content .stats-add-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 14px;
+  border-radius: 14px;
+  border: 1px dashed rgba(255,255,255,0.15);
+  background: transparent;
+  color: rgba(255,255,255,0.6);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color .2s, color .2s;
+  margin-top: auto;
+}
+.account-back-content .stats-add-btn:active {
+  border-color: #3a7bfd;
+  color: #fff;
+}
+.stats-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  padding: 6px 0;
+  color: rgba(255,255,255,0.7);
+}
+.stats-info-row span:last-child {
+  font-weight: 500;
+  color: #fff;
+}
+.stats-inflation-block {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+}
+.stats-adjusted-value {
+  font-size: 18px;
+  font-weight: 600;
+  margin-top: 6px;
+}
+.stats-adjusted-value .arrow-down {
+  color: #ef4444;
+  font-size: 15px;
+}
+.stats-adjusted-value .arrow-up {
+  color: #22c55e;
+  font-size: 15px;
+}
+
+/* ===== INFLATION HINT ON GRAPH ===== */
+.inflation-hint {
+  margin-top: 6px;
+  font-size: 13px;
+  opacity: .55;
+}

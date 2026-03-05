@@ -1188,6 +1188,7 @@ line-height:1.4;
 opacity:0.75;
 "
 ></div>
+<div id="inflationHint" class="inflation-hint"></div>
 </div>
 
 ${adviceBlockHtml}
@@ -2074,6 +2075,8 @@ reserveBlock.classList.add("show-reserve");
 reserveBlock.classList.remove("show-reserve");
 }
 }
+
+if (typeof renderAccountBackCards === "function") renderAccountBackCards();
 }
 
 /**
@@ -2339,6 +2342,18 @@ var explainText = lastCalc.ok
     + "Цель будет достигнута примерно за " + (lastCalc.months || 0) + " мес"
   : "Когда расходы больше доходов, любой план будет нестабильным.";
 explainEl.innerHTML = explainText.replace(/\n/g, "<br>");
+
+var inflationEl = document.getElementById("inflationHint");
+if (inflationEl) {
+  var stats = s.accountStats;
+  if (stats && stats.inflation != null && stats.inflation > 0) {
+    inflationEl.textContent = "Текущая инфляция: " + stats.inflation + "%";
+    inflationEl.style.display = "";
+  } else {
+    inflationEl.textContent = "";
+    inflationEl.style.display = "none";
+  }
+}
 }
 
 function handleGoalEditHint(ratio) {
@@ -3699,3 +3714,186 @@ if (eventAmountInput) {
 }
 
 initCashflowSettings();
+
+/* ===== ACCOUNT STATS SYSTEM ===== */
+
+var STATS_COUNTRY_MAP = {
+  RU: { currency: "RUB", inflation: 8, label: "Россия" },
+  US: { currency: "USD", inflation: 3, label: "США" },
+  IN: { currency: "INR", inflation: 6, label: "Индия" },
+  CN: { currency: "CNY", inflation: 2, label: "Китай" }
+};
+
+var STATS_TYPE_LABELS = {
+  cash: "Наличные",
+  stock: "Фондовый рынок",
+  deposit: "Вклад / копилка",
+  metals: "Драг. металлы"
+};
+
+var _statsSelectedType = null;
+
+(function initAccountStats() {
+  var statsScreen = document.getElementById("screen-account-stats");
+  if (!statsScreen) return;
+
+  var backBtn = document.getElementById("accountStatsBack");
+  var typeGrid = document.getElementById("statsTypeGrid");
+  var cashFields = document.getElementById("statsCashFields");
+  var countrySelect = document.getElementById("statsCountry");
+  var currencyInput = document.getElementById("statsCurrency");
+  var submitBtn = document.getElementById("statsSubmit");
+
+  function updateSubmitState() {
+    if (!submitBtn) return;
+    if (!_statsSelectedType) { submitBtn.disabled = true; return; }
+    if (_statsSelectedType === "cash" && !countrySelect.value) { submitBtn.disabled = true; return; }
+    submitBtn.disabled = false;
+  }
+
+  if (typeGrid) {
+    typeGrid.addEventListener("click", function (e) {
+      var card = e.target.closest(".stats-type-card");
+      if (!card) return;
+
+      typeGrid.querySelectorAll(".stats-type-card").forEach(function (c) { c.classList.remove("active"); });
+      card.classList.add("active");
+      _statsSelectedType = card.getAttribute("data-stype");
+
+      if (_statsSelectedType === "cash") {
+        cashFields.style.display = "";
+      } else {
+        cashFields.style.display = "none";
+      }
+      updateSubmitState();
+    });
+  }
+
+  if (countrySelect) {
+    countrySelect.addEventListener("change", function () {
+      var code = countrySelect.value;
+      var info = STATS_COUNTRY_MAP[code];
+      if (info && currencyInput) {
+        currencyInput.value = info.currency;
+      }
+      updateSubmitState();
+    });
+  }
+
+  if (submitBtn) {
+    submitBtn.addEventListener("click", function () {
+      var statsData = { type: _statsSelectedType, country: null, currency: null, inflation: null };
+
+      if (_statsSelectedType === "cash") {
+        var code = countrySelect.value;
+        var info = STATS_COUNTRY_MAP[code];
+        statsData.country = code;
+        statsData.currency = currencyInput ? currencyInput.value : (info ? info.currency : null);
+        statsData.inflation = info ? info.inflation : null;
+      }
+
+      updateState({ accountStats: statsData });
+
+      document.querySelectorAll(".screen").forEach(function (s) { s.classList.remove("active"); });
+      document.getElementById("screen-accounts").classList.add("active");
+      showBottomNav();
+      moveProfileToActiveHeader();
+      renderAccountBackCards();
+      showToast("Статистика добавлена", "success");
+    });
+  }
+
+  if (backBtn) {
+    backBtn.addEventListener("click", function () {
+      document.querySelectorAll(".screen").forEach(function (s) { s.classList.remove("active"); });
+      document.getElementById("screen-accounts").classList.add("active");
+      showBottomNav();
+      moveProfileToActiveHeader();
+    });
+  }
+})();
+
+function openAccountStatsScreen() {
+  var s = getState();
+  var stats = s.accountStats || {};
+  _statsSelectedType = stats.type || null;
+
+  document.querySelectorAll(".screen").forEach(function (sc) { sc.classList.remove("active"); });
+  document.getElementById("screen-account-stats").classList.add("active");
+  hideBottomNav();
+  moveProfileToActiveHeader();
+
+  var typeGrid = document.getElementById("statsTypeGrid");
+  if (typeGrid) {
+    typeGrid.querySelectorAll(".stats-type-card").forEach(function (c) { c.classList.remove("active"); });
+    if (stats.type) {
+      var existing = typeGrid.querySelector('[data-stype="' + stats.type + '"]');
+      if (existing) existing.classList.add("active");
+    }
+  }
+
+  var cashFields = document.getElementById("statsCashFields");
+  if (cashFields) cashFields.style.display = (stats.type === "cash") ? "" : "none";
+
+  var countrySelect = document.getElementById("statsCountry");
+  if (countrySelect) countrySelect.value = stats.country || "";
+
+  var currencyInput = document.getElementById("statsCurrency");
+  if (currencyInput) currencyInput.value = stats.currency || "";
+
+  var submitBtn = document.getElementById("statsSubmit");
+  if (submitBtn) submitBtn.disabled = !stats.type;
+}
+
+function renderAccountBackCards() {
+  var s = getState();
+  var stats = s.accountStats || {};
+  var hasStats = stats.type != null;
+
+  document.querySelectorAll(".account-block.flip-wrapper").forEach(function (block) {
+    var accountKey = block.getAttribute("data-account");
+    var backCard = block.querySelector(".account-back-card");
+    if (!backCard) return;
+
+    if (!hasStats) {
+      backCard.innerHTML = '<div class="account-back-content">' +
+        '<button type="button" class="stats-add-btn" data-action="add-stats">+ Добавить статистику</button>' +
+        '</div>';
+    } else {
+      var amount = (accountKey === "main") ? accounts.main : accounts.reserve;
+      var typeLabel = STATS_TYPE_LABELS[stats.type] || stats.type || "—";
+      var countryLabel = stats.country ? (STATS_COUNTRY_MAP[stats.country] ? STATS_COUNTRY_MAP[stats.country].label : stats.country) : "—";
+      var currencyLabel = stats.currency || "—";
+      var inflation = stats.inflation;
+
+      var html = '<div class="account-back-content">' +
+        '<div class="stats-info-row"><span>Тип хранения</span><span>' + typeLabel + '</span></div>' +
+        '<div class="stats-info-row"><span>Страна</span><span>' + countryLabel + '</span></div>' +
+        '<div class="stats-info-row"><span>Валюта</span><span>' + currencyLabel + '</span></div>';
+
+      if (inflation != null && inflation > 0 && amount > 0) {
+        var adjusted = Math.round(amount * (1 - inflation / 100));
+        html += '<div class="stats-inflation-block">' +
+          '<div style="font-size:13px;opacity:.6">С учётом инфляции</div>' +
+          '<div class="stats-adjusted-value">' +
+            amount.toLocaleString() + ' ₽ → ' + adjusted.toLocaleString() + ' ₽ ' +
+            '<span class="arrow-down">↓</span>' +
+          '</div>' +
+          '</div>';
+      }
+
+      html += '<button type="button" class="stats-add-btn" data-action="add-stats" style="margin-top:auto">Изменить</button>';
+      html += '</div>';
+      backCard.innerHTML = html;
+    }
+  });
+}
+
+document.addEventListener("click", function (e) {
+  var btn = e.target.closest("[data-action='add-stats']");
+  if (btn) {
+    openAccountStatsScreen();
+  }
+});
+
+renderAccountBackCards();

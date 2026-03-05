@@ -66,6 +66,14 @@ function getDefaultState() {
     incomeMonthDays: [],
     expenseMonthDays: [],
 
+    // ── Account Stats (v5) ──
+    accountStats: {
+      type: null,
+      country: null,
+      currency: null,
+      inflation: null
+    },
+
     uiState: {
       goalTotal: 0,
       goalSaved: 0,
@@ -369,6 +377,12 @@ function applyState(saved) {
     ? saved.hasSeenFlexibleOnboarding : defaults.hasSeenFlexibleOnboarding;
   appState.incomeMonthDays = Array.isArray(saved.incomeMonthDays) ? saved.incomeMonthDays : [];
   appState.expenseMonthDays = Array.isArray(saved.expenseMonthDays) ? saved.expenseMonthDays : [];
+
+  if (saved.accountStats && typeof saved.accountStats === "object") {
+    appState.accountStats = { ...defaults.accountStats, ...saved.accountStats };
+  } else {
+    appState.accountStats = { ...defaults.accountStats };
+  }
 
   if (saved.uiState && typeof saved.uiState === "object") {
     appState.uiState = { ...defaults.uiState, ...saved.uiState };
