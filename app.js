@@ -2345,9 +2345,9 @@ explainEl.innerHTML = explainText.replace(/\n/g, "<br>");
 
 var inflationEl = document.getElementById("inflationHint");
 if (inflationEl) {
-  var stats = s.accountStats;
-  if (stats && stats.inflation != null && stats.inflation > 0) {
-    inflationEl.textContent = "Текущая инфляция: " + stats.inflation + "%";
+  var infl = (typeof getActiveInflation === "function") ? getActiveInflation() : null;
+  if (infl != null && infl > 0) {
+    inflationEl.textContent = "Текущая инфляция: " + infl + "%";
     inflationEl.style.display = "";
   } else {
     inflationEl.textContent = "";
@@ -3718,7 +3718,7 @@ initCashflowSettings();
 /* ===== ACCOUNT STATS SYSTEM ===== */
 
 var STATS_COUNTRY_MAP = {
-  RU: { currency: "RUB", inflation: 8, label: "Россия" },
+  RU: { currency: "RUB", inflation: 7, label: "Россия" },
   US: { currency: "USD", inflation: 3, label: "США" },
   IN: { currency: "INR", inflation: 6, label: "Индия" },
   CN: { currency: "CNY", inflation: 2, label: "Китай" }
@@ -3732,6 +3732,7 @@ var STATS_TYPE_LABELS = {
 };
 
 var _statsSelectedType = null;
+var _statsTargetAccount = "main";
 
 (function initAccountStats() {
   var statsScreen = document.getElementById("screen-account-stats");
@@ -3741,7 +3742,7 @@ var _statsSelectedType = null;
   var typeGrid = document.getElementById("statsTypeGrid");
   var cashFields = document.getElementById("statsCashFields");
   var countrySelect = document.getElementById("statsCountry");
-  var currencyInput = document.getElementById("statsCurrency");
+  var currencySelect = document.getElementById("statsCurrency");
   var submitBtn = document.getElementById("statsSubmit");
 
   function updateSubmitState() {
@@ -3755,16 +3756,10 @@ var _statsSelectedType = null;
     typeGrid.addEventListener("click", function (e) {
       var card = e.target.closest(".stats-type-card");
       if (!card) return;
-
       typeGrid.querySelectorAll(".stats-type-card").forEach(function (c) { c.classList.remove("active"); });
       card.classList.add("active");
       _statsSelectedType = card.getAttribute("data-stype");
-
-      if (_statsSelectedType === "cash") {
-        cashFields.style.display = "";
-      } else {
-        cashFields.style.display = "none";
-      }
+      cashFields.style.display = (_statsSelectedType === "cash") ? "" : "none";
       updateSubmitState();
     });
   }
@@ -3773,9 +3768,7 @@ var _statsSelectedType = null;
     countrySelect.addEventListener("change", function () {
       var code = countrySelect.value;
       var info = STATS_COUNTRY_MAP[code];
-      if (info && currencyInput) {
-        currencyInput.value = info.currency;
-      }
+      if (info && currencySelect) currencySelect.value = info.currency;
       updateSubmitState();
     });
   }
@@ -3788,11 +3781,13 @@ var _statsSelectedType = null;
         var code = countrySelect.value;
         var info = STATS_COUNTRY_MAP[code];
         statsData.country = code;
-        statsData.currency = currencyInput ? currencyInput.value : (info ? info.currency : null);
+        statsData.currency = currencySelect ? currencySelect.value : (info ? info.currency : null);
         statsData.inflation = info ? info.inflation : null;
       }
 
-      updateState({ accountStats: statsData });
+      var patch = {};
+      patch[_statsTargetAccount] = statsData;
+      updateState({ accountStats: patch });
 
       document.querySelectorAll(".screen").forEach(function (s) { s.classList.remove("active"); });
       document.getElementById("screen-accounts").classList.add("active");
@@ -3813,9 +3808,12 @@ var _statsSelectedType = null;
   }
 })();
 
-function openAccountStatsScreen() {
+function openAccountStatsScreen(accountKey) {
+  _statsTargetAccount = accountKey || "main";
+
   var s = getState();
-  var stats = s.accountStats || {};
+  var allStats = s.accountStats || {};
+  var stats = allStats[_statsTargetAccount] || {};
   _statsSelectedType = stats.type || null;
 
   document.querySelectorAll(".screen").forEach(function (sc) { sc.classList.remove("active"); });
@@ -3838,61 +3836,86 @@ function openAccountStatsScreen() {
   var countrySelect = document.getElementById("statsCountry");
   if (countrySelect) countrySelect.value = stats.country || "";
 
-  var currencyInput = document.getElementById("statsCurrency");
-  if (currencyInput) currencyInput.value = stats.currency || "";
+  var currencySelect = document.getElementById("statsCurrency");
+  if (currencySelect) currencySelect.value = stats.currency || "";
 
   var submitBtn = document.getElementById("statsSubmit");
   if (submitBtn) submitBtn.disabled = !stats.type;
 }
 
+function getActiveInflation() {
+  var s = getState();
+  var allStats = s.accountStats || {};
+  var mainStats = allStats.main;
+  if (mainStats && mainStats.inflation != null) return mainStats.inflation;
+  var resStats = allStats.reserve;
+  if (resStats && resStats.inflation != null) return resStats.inflation;
+  return null;
+}
+
 function renderAccountBackCards() {
   var s = getState();
-  var stats = s.accountStats || {};
-  var hasStats = stats.type != null;
+  var allStats = s.accountStats || {};
+  var monthsLeft = (lastCalc && lastCalc.months) ? lastCalc.months : 0;
 
   document.querySelectorAll(".account-block.flip-wrapper").forEach(function (block) {
     var accountKey = block.getAttribute("data-account");
     var backCard = block.querySelector(".account-back-card");
     if (!backCard) return;
 
-    if (!hasStats) {
-      backCard.innerHTML = '<div class="account-back-content">' +
-        '<button type="button" class="stats-add-btn" data-action="add-stats">+ Добавить статистику</button>' +
+    var stats = allStats[accountKey] || null;
+
+    if (!stats || !stats.type) {
+      backCard.innerHTML = '<div class="account-back-content stats-empty">' +
+        '<button type="button" class="stats-add-btn" data-action="add-stats" data-account="' + accountKey + '">+ Добавить статистику</button>' +
         '</div>';
-    } else {
-      var amount = (accountKey === "main") ? accounts.main : accounts.reserve;
-      var typeLabel = STATS_TYPE_LABELS[stats.type] || stats.type || "—";
-      var countryLabel = stats.country ? (STATS_COUNTRY_MAP[stats.country] ? STATS_COUNTRY_MAP[stats.country].label : stats.country) : "—";
-      var currencyLabel = stats.currency || "—";
-      var inflation = stats.inflation;
+      return;
+    }
 
-      var html = '<div class="account-back-content">' +
-        '<div class="stats-info-row"><span>Тип хранения</span><span>' + typeLabel + '</span></div>' +
-        '<div class="stats-info-row"><span>Страна</span><span>' + countryLabel + '</span></div>' +
-        '<div class="stats-info-row"><span>Валюта</span><span>' + currencyLabel + '</span></div>';
+    var amount = (accountKey === "main") ? accounts.main : accounts.reserve;
+    var typeLabel = STATS_TYPE_LABELS[stats.type] || stats.type || "—";
+    var countryLabel = stats.country ? (STATS_COUNTRY_MAP[stats.country] ? STATS_COUNTRY_MAP[stats.country].label : stats.country) : "—";
+    var currencyLabel = stats.currency || "—";
+    var inflation = stats.inflation;
 
-      if (inflation != null && inflation > 0 && amount > 0) {
-        var adjusted = Math.round(amount * (1 - inflation / 100));
-        html += '<div class="stats-inflation-block">' +
-          '<div style="font-size:13px;opacity:.6">С учётом инфляции</div>' +
-          '<div class="stats-adjusted-value">' +
-            amount.toLocaleString() + ' ₽ → ' + adjusted.toLocaleString() + ' ₽ ' +
-            '<span class="arrow-down">↓</span>' +
-          '</div>' +
-          '</div>';
+    var html = '<div class="account-back-content">' +
+      '<div class="stats-info-row"><span>Тип хранения</span><span>' + typeLabel + '</span></div>' +
+      '<div class="stats-info-row"><span>Страна</span><span>' + countryLabel + '</span></div>' +
+      '<div class="stats-info-row"><span>Валюта</span><span>' + currencyLabel + '</span></div>';
+
+    if (inflation != null && inflation > 0 && amount > 0) {
+      var adjusted = Math.round(amount * (1 - inflation / 100));
+      var loss = amount - adjusted;
+      var years = monthsLeft > 0 ? (monthsLeft / 12) : 0;
+      var yearsStr = years > 0 ? years.toFixed(1) : "—";
+
+      html += '<div class="stats-inflation-block">' +
+        '<div style="font-size:13px;opacity:.6">С учётом инфляции</div>' +
+        '<div class="stats-adjusted-value">' +
+          amount.toLocaleString() + ' ₽ → ' + adjusted.toLocaleString() + ' ₽ ' +
+          '<span class="arrow-down">↓</span>' +
+        '</div>';
+
+      html += '<div class="stats-loss-row">Потеря из-за инфляции: – ' + loss.toLocaleString() + ' ₽</div>';
+
+      if (years > 0) {
+        html += '<div class="stats-years-row">Через ' + yearsStr + ' года</div>';
       }
 
-      html += '<button type="button" class="stats-add-btn" data-action="add-stats" style="margin-top:auto">Изменить</button>';
       html += '</div>';
-      backCard.innerHTML = html;
     }
+
+    html += '<button type="button" class="stats-change-btn" data-action="add-stats" data-account="' + accountKey + '">Изменить</button>';
+    html += '</div>';
+    backCard.innerHTML = html;
   });
 }
 
 document.addEventListener("click", function (e) {
   var btn = e.target.closest("[data-action='add-stats']");
   if (btn) {
-    openAccountStatsScreen();
+    var acc = btn.getAttribute("data-account") || "main";
+    openAccountStatsScreen(acc);
   }
 });
 

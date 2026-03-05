@@ -13,7 +13,7 @@ viewport-fit=cover" />
 
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-<link rel="stylesheet" href="style.css?v=11002">
+<link rel="stylesheet" href="style.css?v=11003">
 </head>
 <body>
   
@@ -502,7 +502,14 @@ Protocol анализирует цель…
 
       <div class="input-wrap stats-input-wrap">
         <label>Валюта</label>
-        <input id="statsCurrency" type="text" placeholder="RUB" />
+        <select id="statsCurrency" class="stats-select">
+          <option value="">Выберите валюту</option>
+          <option value="RUB">RUB</option>
+          <option value="USD">USD</option>
+          <option value="INR">INR</option>
+          <option value="CNY">CNY</option>
+          <option value="EUR">EUR</option>
+        </select>
       </div>
     </div>
 
@@ -744,6 +751,6 @@ z-index:30;
 <script src="state-manager.js"></script>
 <script src="financial-events.js"></script>
 <script src="cashflow-engine.js"></script>
-<script src="app.js?v=12001"></script>
+<script src="app.js?v=12002"></script>
 </body>
 </html>

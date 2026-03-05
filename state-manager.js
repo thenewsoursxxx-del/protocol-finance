@@ -68,10 +68,8 @@ function getDefaultState() {
 
     // ── Account Stats (v5) ──
     accountStats: {
-      type: null,
-      country: null,
-      currency: null,
-      inflation: null
+      main: null,
+      reserve: null
     },
 
     uiState: {
@@ -275,7 +273,7 @@ function initState() {
 function updateState(partial) {
   if (!partial || typeof partial !== "object") return;
   Object.keys(partial).forEach(key => {
-    if (key === "accounts" || key === "goalMeta" || key === "uiState") {
+    if (key === "accounts" || key === "goalMeta" || key === "uiState" || key === "accountStats") {
       appState[key] = { ...appState[key], ...partial[key] };
     } else {
       appState[key] = partial[key];
@@ -379,9 +377,18 @@ function applyState(saved) {
   appState.expenseMonthDays = Array.isArray(saved.expenseMonthDays) ? saved.expenseMonthDays : [];
 
   if (saved.accountStats && typeof saved.accountStats === "object") {
-    appState.accountStats = { ...defaults.accountStats, ...saved.accountStats };
+    if (saved.accountStats.main !== undefined || saved.accountStats.reserve !== undefined) {
+      appState.accountStats = {
+        main: saved.accountStats.main || null,
+        reserve: saved.accountStats.reserve || null
+      };
+    } else if (saved.accountStats.type) {
+      appState.accountStats = { main: saved.accountStats, reserve: null };
+    } else {
+      appState.accountStats = { main: null, reserve: null };
+    }
   } else {
-    appState.accountStats = { ...defaults.accountStats };
+    appState.accountStats = { main: null, reserve: null };
   }
 
   if (saved.uiState && typeof saved.uiState === "object") {

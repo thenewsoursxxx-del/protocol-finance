@@ -2724,8 +2724,8 @@ body.flip-fix-pending .flip-wrapper {
   transition: border-color .2s, background .2s;
 }
 .stats-type-card.active {
-  border-color: #3a7bfd;
-  background: rgba(58,123,253,0.12);
+  border-color: #10b981;
+  background: rgba(16,185,129,0.15);
 }
 .stats-cash-fields {
   display: flex;
@@ -2751,7 +2751,7 @@ body.flip-fix-pending .flip-wrapper {
   background-position: right 16px center;
 }
 .stats-select:focus {
-  border-color: #3a7bfd;
+  border-color: #10b981;
   outline: none;
 }
 .stats-submit-btn {
@@ -2759,7 +2759,8 @@ body.flip-fix-pending .flip-wrapper {
   padding: 16px;
   border-radius: 16px;
   border: none;
-  background: #3a7bfd;
+  background: linear-gradient(135deg, #10b981, #059669);
+  box-shadow: 0 10px 30px rgba(16,185,129,0.35);
   color: #fff;
   font-size: 15px;
   font-weight: 600;
@@ -2783,33 +2784,55 @@ body.flip-fix-pending .flip-wrapper {
   height: 100%;
   box-sizing: border-box;
 }
+.account-back-content.stats-empty {
+  justify-content: center;
+  align-items: center;
+}
 .account-back-content .stats-add-btn {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  width: 100%;
-  padding: 14px;
-  border-radius: 14px;
-  border: 1px dashed rgba(255,255,255,0.15);
-  background: transparent;
-  color: rgba(255,255,255,0.6);
+  padding: 14px 28px;
+  border-radius: 16px;
+  border: none;
+  background: linear-gradient(135deg, #10b981, #059669);
+  box-shadow: 0 10px 30px rgba(16,185,129,0.35);
+  color: #fff;
   font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform .15s;
+}
+.account-back-content .stats-add-btn:active {
+  transform: scale(0.97);
+}
+.account-back-content .stats-change-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: transparent;
+  color: rgba(255,255,255,0.5);
+  font-size: 13px;
   font-weight: 500;
   cursor: pointer;
   transition: border-color .2s, color .2s;
   margin-top: auto;
 }
-.account-back-content .stats-add-btn:active {
-  border-color: #3a7bfd;
-  color: #fff;
+.account-back-content .stats-change-btn:active {
+  border-color: rgba(255,255,255,0.25);
+  color: rgba(255,255,255,0.8);
 }
 .stats-info-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
   font-size: 13px;
-  padding: 6px 0;
+  padding: 5px 0;
   color: rgba(255,255,255,0.7);
 }
 .stats-info-row span:last-child {
@@ -2817,22 +2840,33 @@ body.flip-fix-pending .flip-wrapper {
   color: #fff;
 }
 .stats-inflation-block {
-  margin-top: 14px;
-  padding-top: 14px;
+  margin-top: 12px;
+  padding-top: 12px;
   border-top: 1px solid rgba(255,255,255,0.08);
 }
 .stats-adjusted-value {
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 600;
-  margin-top: 6px;
+  margin-top: 4px;
 }
 .stats-adjusted-value .arrow-down {
   color: #ef4444;
-  font-size: 15px;
+  font-size: 14px;
 }
 .stats-adjusted-value .arrow-up {
   color: #22c55e;
-  font-size: 15px;
+  font-size: 14px;
+}
+.stats-loss-row {
+  margin-top: 6px;
+  font-size: 13px;
+  color: #ef4444;
+  font-weight: 500;
+}
+.stats-years-row {
+  margin-top: 4px;
+  font-size: 12px;
+  color: rgba(255,255,255,0.45);
 }
 
 /* ===== INFLATION HINT ON GRAPH ===== */
