@@ -2818,10 +2818,30 @@ if (addAccountBack) {
 }
 
 /* ===== FLIP CARD SWIPE ===== */
+
+function syncAccountFlipHeight(wrapper, isFlipped) {
+  if (!wrapper || !wrapper.classList.contains("account-block")) return;
+  var inner = wrapper.querySelector(".flip-inner");
+  if (!inner) return;
+  var front = wrapper.querySelector(".account-flip-front");
+  var backCard = wrapper.querySelector(".account-back-card");
+  if (!front) return;
+
+  var frontH = front.scrollHeight;
+  var backH = backCard ? backCard.scrollHeight : frontH;
+  var targetH = isFlipped ? Math.max(frontH, backH) : frontH;
+  inner.style.height = targetH + "px";
+}
+
 function setupFlipSwipe(wrapper) {
   if (!wrapper) return;
   const inner = wrapper.querySelector(".flip-inner");
   if (!inner) return;
+
+  if (wrapper.classList.contains("account-block")) {
+    var front = wrapper.querySelector(".account-flip-front");
+    if (front) inner.style.height = front.scrollHeight + "px";
+  }
 
   let startX = 0;
   let dx = 0;
@@ -2852,10 +2872,12 @@ function setupFlipSwipe(wrapper) {
     inner.style.transition = "";
     if (dx < -THRESHOLD) {
       inner.classList.add("flipped");
+      syncAccountFlipHeight(wrapper, true);
       wrapper._flipJustSwiped = true;
       setTimeout(function () { wrapper._flipJustSwiped = false; }, 300);
     } else if (dx > THRESHOLD) {
       inner.classList.remove("flipped");
+      syncAccountFlipHeight(wrapper, false);
       wrapper._flipJustSwiped = true;
       setTimeout(function () { wrapper._flipJustSwiped = false; }, 300);
     }
@@ -3952,6 +3974,9 @@ function renderAccountBackCards() {
     html += '<button type="button" class="stats-change-btn" data-action="add-stats" data-account="' + accountKey + '">Изменить</button>';
     html += '</div>';
     backCard.innerHTML = html;
+
+    var isFlipped = block.querySelector(".flip-inner.flipped") !== null;
+    syncAccountFlipHeight(block, isFlipped);
   });
 }
 
