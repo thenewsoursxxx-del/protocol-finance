@@ -13,7 +13,7 @@ viewport-fit=cover" />
 
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-<link rel="stylesheet" href="style.css?v=11005">
+<link rel="stylesheet" href="style.css?v=12001">
 </head>
 <body>
   
@@ -205,10 +205,10 @@ viewport-fit=cover" />
 
 <div id="loader" class="loader hidden"></div>
 
-<div id="flipWrapper" class="flip-wrapper">
-<div class="flip-inner">
+<div id="flipWrapper" class="flip-wrapper flip-wrapper--goals">
+<div class="flip-inner flip-inner--goals" data-face="0">
 
-<div class="flip-front">
+<div class="flip-face flip-face--0">
 <div id="adviceCard" class="card">
 
 <!-- ФЕЙК ЗАГРУЗКА (ПОЛНЫЙ ЭКРАН) -->
@@ -227,8 +227,40 @@ Protocol анализирует данные…
 </div>
 </div>
 
-<div class="flip-back">
-<div class="card flip-back-card"></div>
+<div class="flip-face flip-face--1">
+<div class="card flip-goal-card" id="flipGoalCard1">
+<div style="font-size:14px;opacity:.6">Цель 2</div>
+<div class="flip-goal-title" style="font-size:22px;font-weight:600;margin-top:6px">—</div>
+<div class="flip-goal-progress" style="margin-top:12px">
+<div style="display:flex;justify-content:space-between;font-size:14px;opacity:.7;margin-bottom:6px">
+<span>Накоплено: <b class="flip-goal-saved">0</b> ₽</span>
+<span>Цель: <b class="flip-goal-amount">0</b> ₽</span>
+</div>
+<div style="height:6px;border-radius:6px;background:#222;overflow:hidden">
+<div class="flip-goal-bar" style="height:100%;width:0%;background:#3a7bfd;transition:width .4s ease"></div>
+</div>
+<div style="margin-top:6px;font-size:13px;opacity:.6"><span class="flip-goal-percent">0</span>%</div>
+</div>
+<div class="flip-goal-months" style="margin-top:10px;font-size:14px;opacity:.6">Осталось: <b>—</b> мес.</div>
+</div>
+</div>
+
+<div class="flip-face flip-face--2">
+<div class="card flip-goal-card" id="flipGoalCard2">
+<div style="font-size:14px;opacity:.6">Цель 3</div>
+<div class="flip-goal-title" style="font-size:22px;font-weight:600;margin-top:6px">—</div>
+<div class="flip-goal-progress" style="margin-top:12px">
+<div style="display:flex;justify-content:space-between;font-size:14px;opacity:.7;margin-bottom:6px">
+<span>Накоплено: <b class="flip-goal-saved">0</b> ₽</span>
+<span>Цель: <b class="flip-goal-amount">0</b> ₽</span>
+</div>
+<div style="height:6px;border-radius:6px;background:#222;overflow:hidden">
+<div class="flip-goal-bar" style="height:100%;width:0%;background:#3a7bfd;transition:width .4s ease"></div>
+</div>
+<div style="margin-top:6px;font-size:13px;opacity:.6"><span class="flip-goal-percent">0</span>%</div>
+</div>
+<div class="flip-goal-months" style="margin-top:10px;font-size:14px;opacity:.6">Осталось: <b>—</b> мес.</div>
+</div>
 </div>
 
 </div>
@@ -260,6 +292,17 @@ Protocol анализирует данные…
 <div class="header-title">Счета</div>
 </div>
 <div class="header-right"></div>
+</div>
+
+<!-- GOALS LOCAL NAV -->
+<div class="accounts-local-nav" id="accountsLocalNav">
+<div class="accounts-local-nav-scroll">
+  <button class="goal-nav-icon active" data-goal-idx="0">
+    <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" fill="none" stroke-width="1.8">
+      <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+    </svg>
+  </button>
+</div>
 </div>
 
 <!-- ОСНОВНОЙ СЧЁТ -->
@@ -537,18 +580,13 @@ Protocol анализирует цель…
   </div>
 
   <div class="advanced-settings">
-    <div class="advanced-setting-card" data-stub>
-      <div class="advanced-setting-title">Новая цель</div>
-      <div class="advanced-setting-desc">Создайте новую цель и управляйте несколькими накоплениями одновременно</div>
-    </div>
-    <div class="advanced-setting-card" data-stub>
-      <div class="advanced-setting-title">Управление сроками целей</div>
-      <div class="advanced-setting-desc">Продлите или сократите срок достижения своих целей</div>
-    </div>
-    <div class="advanced-setting-card" data-stub>
-      <div class="advanced-setting-title">Приоритеты накоплений</div>
-      <div class="advanced-setting-desc">Определите, какая цель важнее — и перераспределите средства</div>
-    </div>
+
+    <div class="advanced-section-label">Цели</div>
+
+    <div id="advancedGoalsList" class="advanced-goals-list"></div>
+
+    <button id="addGoalBtn" class="advanced-add-goal-btn">+ Добавить цель</button>
+
   </div>
 
 </div>
@@ -747,10 +785,40 @@ z-index:30;
 </button>
 </div>
 
+<!-- ===== GOAL CREATE/EDIT SHEET (ADVANCED) ===== -->
+<div id="advGoalOverlay" class="sheet-overlay"></div>
+<div id="advGoalSheet" class="sheet goal-editor adv-goal-editor">
+  <h2 id="advGoalSheetTitle" style="margin-bottom:18px">Новая цель</h2>
+
+  <div class="input-wrap">
+    <label>Название</label>
+    <input id="advGoalTitle" placeholder="Например: Машина" />
+  </div>
+
+  <div class="input-wrap">
+    <label>Сумма</label>
+    <input id="advGoalAmount" inputmode="numeric" placeholder="500.000" />
+  </div>
+
+  <div class="input-wrap">
+    <label>Срок (месяцев)</label>
+    <input id="advGoalMonths" inputmode="numeric" placeholder="12" />
+  </div>
+
+  <div class="cf-label" style="margin-bottom:8px;margin-top:4px">Приоритет</div>
+  <div class="toggle-group adv-priority-toggle" id="advPriorityToggle">
+    <button class="mode-btn active" data-value="1">1</button>
+    <button class="mode-btn" data-value="2">2</button>
+    <button class="mode-btn" data-value="3">3</button>
+  </div>
+
+  <button id="advGoalSave" style="margin-top:20px">Сохранить</button>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 <script src="state-manager.js"></script>
 <script src="financial-events.js"></script>
 <script src="cashflow-engine.js"></script>
-<script src="app.js?v=12004"></script>
+<script src="app.js?v=13001"></script>
 </body>
 </html>

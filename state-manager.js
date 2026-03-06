@@ -9,7 +9,7 @@
  * Загружается ДО app.js.
  */
 
-const STATE_VERSION = 5;
+const STATE_VERSION = 6;
 const STORAGE_KEY = "protocol_app_state";
 
 // ─── Default State ────────────────────────────────────────────
@@ -43,6 +43,10 @@ function getDefaultState() {
     financialEvents: [],
 
     goalMeta: { title: "Основная цель" },
+
+    // ── Multi-goal (v6) ──
+    goals: [],
+    activeGoalIndex: 0,
 
     // ── Engine (v3) ──
     financialModel: "simple",
@@ -205,6 +209,38 @@ function migrateState(saved) {
     if (!Array.isArray(saved.expenseMonthDays)) saved.expenseMonthDays = [];
   }
 
+  // v5 → v6: multi-goal support
+  if (version < 6) {
+    saved.stateVersion = 6;
+    if (!Array.isArray(saved.goals) || saved.goals.length === 0) {
+      var goalAmount = 0;
+      if (saved.goal) {
+        goalAmount = Number(String(saved.goal).replace(/\./g, "")) || 0;
+      }
+      var goalSaved = 0;
+      if (saved.accounts && saved.accounts.main) {
+        goalSaved = Number(saved.accounts.main) || 0;
+      }
+      var goalMonths = 0;
+      if (saved.lastCalc && saved.lastCalc.months) {
+        goalMonths = saved.lastCalc.months;
+      }
+      var goalTitle = "Основная цель";
+      if (saved.goalMeta && saved.goalMeta.title) {
+        goalTitle = saved.goalMeta.title;
+      }
+      saved.goals = [{
+        id: "goal_1",
+        title: goalTitle,
+        amount: goalAmount,
+        saved: goalSaved,
+        priority: 1,
+        monthsTarget: goalMonths
+      }];
+    }
+    if (typeof saved.activeGoalIndex !== "number") saved.activeGoalIndex = 0;
+  }
+
   return saved;
 }
 
@@ -275,6 +311,8 @@ function updateState(partial) {
   Object.keys(partial).forEach(key => {
     if (key === "accounts" || key === "goalMeta" || key === "uiState" || key === "accountStats") {
       appState[key] = { ...appState[key], ...partial[key] };
+    } else if (key === "goals") {
+      appState[key] = Array.isArray(partial[key]) ? partial[key].map(g => ({ ...g })) : appState[key];
     } else {
       appState[key] = partial[key];
     }
@@ -350,6 +388,13 @@ function applyState(saved) {
   appState.goalMeta = saved.goalMeta && typeof saved.goalMeta === "object"
     ? { ...defaults.goalMeta, ...saved.goalMeta }
     : { ...defaults.goalMeta };
+
+  // ── Multi-goal (v6) ──
+  appState.goals = Array.isArray(saved.goals) && saved.goals.length > 0
+    ? saved.goals.map(function (g) { return { ...g }; })
+    : defaults.goals;
+  appState.activeGoalIndex = typeof saved.activeGoalIndex === "number"
+    ? saved.activeGoalIndex : 0;
 
   // ── Engine (v3) ──
   appState.financialModel = saved.financialModel || defaults.financialModel;

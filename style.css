@@ -2932,3 +2932,300 @@ body.flip-fix-pending .flip-wrapper {
   font-size: 13px;
   opacity: .55;
 }
+
+/* ===== 3-STATE GOAL FLIP (GRAPH CARD) ===== */
+
+.flip-wrapper--goals {
+  perspective: 1200px;
+}
+
+.flip-inner--goals {
+  position: relative;
+  width: 100%;
+  transform-style: preserve-3d;
+  -webkit-transform-style: preserve-3d;
+  will-change: transform;
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.flip-face {
+  width: 100%;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.flip-face--0 {
+  position: relative;
+  z-index: 2;
+  transform: rotateY(0deg) translateZ(0);
+}
+
+.flip-face--1 {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 1;
+  transform: rotateY(120deg) translateZ(2px);
+}
+
+.flip-face--2 {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 1;
+  transform: rotateY(240deg) translateZ(2px);
+}
+
+.flip-goal-card {
+  min-height: 180px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* ===== ACCOUNTS LOCAL NAV ===== */
+
+.accounts-local-nav {
+  display: none;
+  margin-bottom: 18px;
+  position: relative;
+}
+
+.accounts-local-nav.visible {
+  display: block;
+}
+
+.accounts-local-nav-scroll {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding: 8px 0;
+}
+
+.accounts-local-nav-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.goal-nav-icon {
+  width: 56px;
+  height: 56px;
+  min-width: 56px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transform: scale(0.85);
+  opacity: .7;
+  transition: transform .25s ease,
+              opacity .25s ease,
+              border-color .25s ease,
+              background .25s ease,
+              box-shadow .25s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.goal-nav-icon.active {
+  transform: scale(1.2);
+  opacity: 1;
+  border-color: rgba(58, 123, 253, 0.65);
+  background: radial-gradient(
+    120% 120% at 50% 0%,
+    rgba(58, 123, 253, 0.22),
+    rgba(255, 255, 255, 0.03)
+  );
+  box-shadow:
+    0 0 0 1px rgba(58, 123, 253, 0.35),
+    0 8px 24px rgba(58, 123, 253, 0.3);
+  color: #fff;
+}
+
+.goal-nav-icon:active {
+  transform: scale(0.9);
+}
+
+.goal-nav-icon.active:active {
+  transform: scale(1.1);
+}
+
+.goal-nav-icon svg {
+  width: 24px;
+  height: 24px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.8;
+}
+
+/* ===== ADVANCED GOALS SECTION ===== */
+
+.advanced-section-label {
+  font-size: 15px;
+  font-weight: 600;
+  opacity: .7;
+  margin-bottom: 14px;
+  letter-spacing: 0.02em;
+}
+
+.advanced-goals-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.adv-goal-card {
+  position: relative;
+  border-radius: 18px;
+  padding: 16px 18px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  transition: border-color .25s ease, background .25s ease;
+}
+
+.adv-goal-card.primary {
+  border-color: rgba(58, 123, 253, 0.5);
+  background: radial-gradient(
+    120% 120% at 50% 0%,
+    rgba(58, 123, 253, 0.15),
+    rgba(255, 255, 255, 0.03)
+  );
+}
+
+.adv-goal-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.adv-goal-card-title {
+  font-size: 17px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.adv-goal-card-priority {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.adv-goal-card-priority.p1 {
+  background: rgba(58, 123, 253, 0.2);
+  color: #93bbff;
+  border-color: rgba(58, 123, 253, 0.4);
+}
+
+.adv-goal-card-info {
+  display: flex;
+  gap: 16px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.adv-goal-card-info b {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.adv-goal-card-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.adv-goal-edit-btn,
+.adv-goal-delete-btn {
+  padding: 8px 16px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.8);
+  transition: background .2s, border-color .2s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.adv-goal-edit-btn:active,
+.adv-goal-delete-btn:active {
+  transform: scale(0.96);
+}
+
+.adv-goal-delete-btn {
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+}
+
+.advanced-add-goal-btn {
+  width: 100%;
+  padding: 14px;
+  font-size: 15px;
+  font-weight: 600;
+  border-radius: 16px;
+  border: 1px solid rgba(16, 185, 129, 0.45);
+  background:
+    radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.12), transparent 45%),
+    linear-gradient(
+      135deg,
+      #021a16,
+      #063d33,
+      #047857,
+      #10b981,
+      #047857,
+      #063d33,
+      #021a16
+    );
+  background-size: 100% 100%, 350% 350%;
+  animation: emeraldFlow 6s ease-in-out infinite;
+  color: #6ee7b7;
+  cursor: pointer;
+  transition: border-color 0.2s, transform 0.12s, box-shadow 0.2s;
+  box-shadow: 0 8px 24px rgba(4, 120, 87, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.advanced-add-goal-btn:active {
+  transform: scale(0.97);
+  box-shadow: 0 4px 16px rgba(4, 120, 87, 0.45), inset 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.advanced-add-goal-btn:disabled {
+  opacity: .35;
+  pointer-events: none;
+}
+
+/* ===== ADV GOAL EDITOR SHEET ===== */
+
+.adv-goal-editor {
+  padding-bottom: 28px;
+}
+
+.adv-goal-editor h2 {
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.adv-priority-toggle {
+  margin-bottom: 8px;
+}
+
+.adv-priority-toggle .mode-btn {
+  flex: 1;
+  padding: 10px 0;
+  font-size: 15px;
+  font-weight: 600;
+  border-radius: 12px;
+}
