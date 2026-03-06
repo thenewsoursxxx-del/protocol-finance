@@ -4188,16 +4188,11 @@ renderAccountBackCards();
 
   var MAX_GOALS = 3;
 
-  /* ───── Flip / swipe elements ──────────────────────────── */
+  /* ───── Swipe wrapper ──────────────────────────────────── */
 
   var graphFlipWrapper = document.getElementById("flipWrapper");
-  var graphFlipInner = graphFlipWrapper ? graphFlipWrapper.querySelector(".flip-inner--goals") : null;
-  var flipFaces = graphFlipWrapper ? [
-    graphFlipWrapper.querySelector(".flip-face--0"),
-    graphFlipWrapper.querySelector(".flip-face--1"),
-    graphFlipWrapper.querySelector(".flip-face--2")
-  ] : [];
   var graphGoalIndicator = document.getElementById("graphGoalIndicator");
+  var _slideAnimating = false;
 
   /* ───── setActiveGoal — single entry point for switching goals ─── */
 
@@ -4214,56 +4209,61 @@ renderAccountBackCards();
 
   window.setActiveGoal = setActiveGoal;
 
-  /* ───── Graph goal flip (3D) + swipe ─────────────────────── */
+  /* ───── Graph goal slide + swipe ─────────────────────────── */
 
   function getGoalFaceCount() {
     return Math.min(getGoals().length, MAX_GOALS);
   }
 
   function setGraphFace(idx) {
-    if (!graphFlipInner) return;
     var count = getGoalFaceCount();
     if (idx < 0) idx = 0;
     if (idx >= count) idx = count - 1;
-    if (idx === activeGoalIndex) return;
+    if (idx === activeGoalIndex || _slideAnimating) return;
 
     var advCard = document.getElementById("adviceCard");
-    if (advCard && flipFaces[idx] && advCard.parentNode !== flipFaces[idx]) {
-      flipFaces[idx].insertBefore(advCard, flipFaces[idx].firstChild);
-    }
+    if (!advCard) { setActiveGoal(idx); return; }
 
-    graphFlipInner.setAttribute("data-face", String(idx));
-    graphFlipInner.style.transform = "rotateY(" + (-(idx * 120)) + "deg)";
+    _slideAnimating = true;
+    var goingLeft = idx > activeGoalIndex;
 
-    setActiveGoal(idx);
+    advCard.classList.add(goingLeft ? "slide-out-left" : "slide-out-right");
+
+    setTimeout(function () {
+      setActiveGoal(idx);
+
+      advCard.classList.remove("slide-out-left", "slide-out-right");
+      advCard.classList.add(goingLeft ? "slide-in-left" : "slide-in-right");
+
+      requestAnimationFrame(function () {
+        requestAnimationFrame(function () {
+          advCard.classList.remove("slide-in-left", "slide-in-right");
+          setTimeout(function () { _slideAnimating = false; }, 300);
+        });
+      });
+    }, 280);
   }
 
-  if (graphFlipWrapper && graphFlipInner) {
+  if (graphFlipWrapper) {
     var gfStartX = 0, gfDx = 0, gfSwiping = false;
-    var GF_THRESHOLD = 50;
+    var GF_THRESHOLD = 40;
     graphFlipWrapper.addEventListener("touchstart", function (e) {
       if (!e.touches || !e.touches.length) return;
       gfStartX = e.touches[0].clientX; gfDx = 0; gfSwiping = true;
-      graphFlipInner.style.transition = "none";
     }, { passive: true });
     graphFlipWrapper.addEventListener("touchmove", function (e) {
       if (!gfSwiping || !e.touches || !e.touches.length) return;
       gfDx = e.touches[0].clientX - gfStartX;
-      var delta = -(gfDx / graphFlipWrapper.offsetWidth) * 80;
-      graphFlipInner.style.transform = "rotateY(" + (-(activeGoalIndex * 120) - delta) + "deg)";
     }, { passive: true });
     graphFlipWrapper.addEventListener("touchend", function () {
       if (!gfSwiping) return; gfSwiping = false;
-      graphFlipInner.style.transition = "";
       var count = getGoalFaceCount();
+      if (count <= 1) return;
       if (gfDx < -GF_THRESHOLD && activeGoalIndex < count - 1) setGraphFace(activeGoalIndex + 1);
       else if (gfDx > GF_THRESHOLD && activeGoalIndex > 0) setGraphFace(activeGoalIndex - 1);
-      else setGraphFace(activeGoalIndex);
     });
     graphFlipWrapper.addEventListener("touchcancel", function () {
-      if (!gfSwiping) return; gfSwiping = false;
-      graphFlipInner.style.transition = "";
-      setGraphFace(activeGoalIndex);
+      gfSwiping = false;
     });
   }
 
@@ -4308,27 +4308,30 @@ renderAccountBackCards();
     localNav.classList.add("visible");
 
     var existing = localNavScroll.querySelectorAll(".goal-nav-icon");
-    if (existing.length === goals.length) {
-      existing.forEach(function (btn, i) {
-        btn.classList.toggle("active", i === activeGoalIndex);
-      });
-      return;
-    }
+    var needRebuild = (existing.length !== Math.min(goals.length, MAX_GOALS));
 
-    localNavScroll.innerHTML = "";
-    for (var i = 0; i < goals.length && i < MAX_GOALS; i++) {
-      var btn = document.createElement("button");
-      btn.className = "goal-nav-icon" + (i === activeGoalIndex ? " active" : "");
-      btn.setAttribute("data-goal-idx", String(i));
-      btn.setAttribute("data-goal-index", String(i));
-      btn.innerHTML = goalNavSvgs[i] || goalNavSvgs[0];
-      btn.addEventListener("click", (function (idx) {
-        return function () {
-          if (typeof haptic === "function") haptic("light");
-          setGraphFace(idx);
-        };
-      })(i));
-      localNavScroll.appendChild(btn);
+    if (needRebuild) {
+      localNavScroll.innerHTML = "";
+      for (var i = 0; i < goals.length && i < MAX_GOALS; i++) {
+        var btn = document.createElement("button");
+        btn.className = "goal-nav-icon" + (i === activeGoalIndex ? " active" : "");
+        btn.setAttribute("data-goal-idx", String(i));
+        btn.innerHTML = goalNavSvgs[i] || goalNavSvgs[0];
+        btn.addEventListener("click", (function (idx) {
+          return function () {
+            if (typeof haptic === "function") haptic("light");
+            setGraphFace(idx);
+          };
+        })(i));
+        localNavScroll.appendChild(btn);
+      }
+    } else {
+      for (var j = 0; j < existing.length; j++) {
+        var isActive = (j === activeGoalIndex);
+        if (existing[j].classList.contains("active") !== isActive) {
+          existing[j].classList.toggle("active", isActive);
+        }
+      }
     }
   }
 
@@ -4599,7 +4602,7 @@ renderAccountBackCards();
 
     if (activeGoalIndex >= goals.length) activeGoalIndex = goals.length - 1;
     renderAdvancedGoals();
-    setGraphFace(activeGoalIndex);
+    setActiveGoal(activeGoalIndex);
   }
 
   if (addGoalBtn) {
@@ -4774,17 +4777,6 @@ renderAccountBackCards();
   var savedIdx = getState().activeGoalIndex || 0;
   if (savedIdx > 0 && savedIdx < initGoals.length) {
     activeGoalIndex = savedIdx;
-  }
-
-  if (graphFlipInner && activeGoalIndex > 0) {
-    var advCard = document.getElementById("adviceCard");
-    if (advCard && flipFaces[activeGoalIndex]) {
-      flipFaces[activeGoalIndex].insertBefore(advCard, flipFaces[activeGoalIndex].firstChild);
-    }
-    graphFlipInner.style.transition = "none";
-    graphFlipInner.style.transform = "rotateY(" + (-(activeGoalIndex * 120)) + "deg)";
-    graphFlipInner.setAttribute("data-face", String(activeGoalIndex));
-    requestAnimationFrame(function () { graphFlipInner.style.transition = ""; });
   }
 
   updateAccountsLocalNav();

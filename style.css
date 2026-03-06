@@ -3000,49 +3000,40 @@ body.flip-fix-pending .flip-wrapper {
   opacity: .55;
 }
 
-/* ===== GRAPH GOAL FLIP (3D) ===== */
+/* ===== GRAPH GOAL SLIDE ===== */
 
-.flip-wrapper--goals {
+.graph-swipe-wrapper {
   position: relative;
-  perspective: 1200px;
   overflow: hidden;
 }
 
-.flip-inner--goals {
-  position: relative;
-  width: 100%;
-  transform-style: preserve-3d;
-  -webkit-transform-style: preserve-3d;
-  will-change: transform;
-  transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+.graph-swipe-wrapper > .card {
+  transition: transform .28s cubic-bezier(.4,0,.2,1),
+              opacity .28s cubic-bezier(.4,0,.2,1);
 }
 
-.flip-face {
-  width: 100%;
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
+.graph-swipe-wrapper > .card.slide-out-left {
+  transform: translateX(-40px);
+  opacity: 0;
+  pointer-events: none;
 }
 
-.flip-face--0 {
-  position: relative;
-  z-index: 2;
-  transform: rotateY(0deg) translateZ(0);
+.graph-swipe-wrapper > .card.slide-out-right {
+  transform: translateX(40px);
+  opacity: 0;
+  pointer-events: none;
 }
 
-.flip-face--1,
-.flip-face--2 {
-  position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-  z-index: 1;
-  min-height: 200px;
+.graph-swipe-wrapper > .card.slide-in-left {
+  transform: translateX(40px);
+  opacity: 0;
+  transition: none;
 }
 
-.flip-face--1 {
-  transform: rotateY(120deg) translateZ(2px);
-}
-
-.flip-face--2 {
-  transform: rotateY(240deg) translateZ(2px);
+.graph-swipe-wrapper > .card.slide-in-right {
+  transform: translateX(-40px);
+  opacity: 0;
+  transition: none;
 }
 
 /* ===== GRAPH GOAL INDICATOR ===== */
@@ -3077,8 +3068,8 @@ body.flip-fix-pending .flip-wrapper {
 
 .accounts-local-nav {
   display: none;
-  margin-top: 36px;
-  margin-bottom: 24px;
+  margin-top: 0;
+  margin-bottom: 20px;
   position: relative;
   z-index: 10;
 }
@@ -3109,36 +3100,33 @@ body.flip-fix-pending .flip-wrapper {
   border-radius: 50%;
   border: 1.5px solid rgba(255, 255, 255, 0.12);
   background: rgba(255, 255, 255, 0.04);
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(255, 255, 255, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   padding: 0;
   transform: scale(0.85);
-  opacity: .7;
+  opacity: .65;
   position: relative;
   z-index: 20;
-  transition: transform .25s ease,
-              opacity .25s ease,
-              border-color .25s ease,
-              background .25s ease,
-              box-shadow .25s ease;
+  transition: transform .3s cubic-bezier(.4,0,.2,1),
+              opacity .3s cubic-bezier(.4,0,.2,1),
+              border-color .3s cubic-bezier(.4,0,.2,1),
+              background-color .3s cubic-bezier(.4,0,.2,1),
+              box-shadow .3s cubic-bezier(.4,0,.2,1),
+              color .3s cubic-bezier(.4,0,.2,1);
   -webkit-tap-highlight-color: transparent;
 }
 
 .goal-nav-icon.active {
-  transform: scale(1.2);
+  transform: scale(1.15);
   opacity: 1;
-  border-color: rgba(58, 123, 253, 0.65);
-  background: radial-gradient(
-    120% 120% at 50% 0%,
-    rgba(58, 123, 253, 0.22),
-    rgba(255, 255, 255, 0.03)
-  );
+  border-color: rgba(58, 123, 253, 0.6);
+  background: rgba(58, 123, 253, 0.15);
   box-shadow:
-    0 0 0 1px rgba(58, 123, 253, 0.35),
-    0 8px 24px rgba(58, 123, 253, 0.3);
+    0 0 0 1px rgba(58, 123, 253, 0.3),
+    0 6px 20px rgba(58, 123, 253, 0.25);
   color: #fff;
 }
 
