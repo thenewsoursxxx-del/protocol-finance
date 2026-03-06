@@ -4217,31 +4217,31 @@ renderAccountBackCards();
 
   function setGraphFace(idx) {
     var count = getGoalFaceCount();
-    if (idx < 0) idx = 0;
-    if (idx >= count) idx = count - 1;
+    if (count <= 1) return;
+    idx = ((idx % count) + count) % count;
     if (idx === activeGoalIndex || _slideAnimating) return;
 
     var advCard = document.getElementById("adviceCard");
     if (!advCard) { setActiveGoal(idx); return; }
 
     _slideAnimating = true;
-    var goingLeft = idx > activeGoalIndex;
+    var forward = ((idx - activeGoalIndex + count) % count) === 1;
 
-    advCard.classList.add(goingLeft ? "slide-out-left" : "slide-out-right");
+    advCard.classList.add(forward ? "slide-out-left" : "slide-out-right");
 
     setTimeout(function () {
       setActiveGoal(idx);
 
       advCard.classList.remove("slide-out-left", "slide-out-right");
-      advCard.classList.add(goingLeft ? "slide-in-left" : "slide-in-right");
+      advCard.classList.add(forward ? "slide-in-left" : "slide-in-right");
 
       requestAnimationFrame(function () {
         requestAnimationFrame(function () {
           advCard.classList.remove("slide-in-left", "slide-in-right");
-          setTimeout(function () { _slideAnimating = false; }, 300);
+          setTimeout(function () { _slideAnimating = false; }, 180);
         });
       });
-    }, 280);
+    }, 180);
   }
 
   if (graphFlipWrapper) {
@@ -4259,8 +4259,11 @@ renderAccountBackCards();
       if (!gfSwiping) return; gfSwiping = false;
       var count = getGoalFaceCount();
       if (count <= 1) return;
-      if (gfDx < -GF_THRESHOLD && activeGoalIndex < count - 1) setGraphFace(activeGoalIndex + 1);
-      else if (gfDx > GF_THRESHOLD && activeGoalIndex > 0) setGraphFace(activeGoalIndex - 1);
+      var next;
+      if (gfDx < -GF_THRESHOLD) next = (activeGoalIndex + 1) % count;
+      else if (gfDx > GF_THRESHOLD) next = (activeGoalIndex - 1 + count) % count;
+      else return;
+      setGraphFace(next);
     });
     graphFlipWrapper.addEventListener("touchcancel", function () {
       gfSwiping = false;
@@ -4301,12 +4304,13 @@ renderAccountBackCards();
     '<svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" fill="none" stroke-width="1.8"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>'
   ];
 
-  function updateAccountsLocalNav() {
+  function updateAccountsLocalNav(overrideIndex) {
     if (!localNav || !localNavScroll) return;
     var goals = getGoals();
     if (goals.length <= 1) { localNav.classList.remove("visible"); return; }
     localNav.classList.add("visible");
 
+    var activeIdx = overrideIndex !== undefined ? overrideIndex : activeGoalIndex;
     var existing = localNavScroll.querySelectorAll(".goal-nav-icon");
     var needRebuild = (existing.length !== Math.min(goals.length, MAX_GOALS));
 
@@ -4314,12 +4318,13 @@ renderAccountBackCards();
       localNavScroll.innerHTML = "";
       for (var i = 0; i < goals.length && i < MAX_GOALS; i++) {
         var btn = document.createElement("button");
-        btn.className = "goal-nav-icon" + (i === activeGoalIndex ? " active" : "");
+        btn.className = "goal-nav-icon" + (i === activeIdx ? " active" : "");
         btn.setAttribute("data-goal-idx", String(i));
         btn.innerHTML = goalNavSvgs[i] || goalNavSvgs[0];
         btn.addEventListener("click", (function (idx) {
           return function () {
             if (typeof haptic === "function") haptic("light");
+            updateAccountsLocalNav(idx);
             setGraphFace(idx);
           };
         })(i));
@@ -4327,7 +4332,7 @@ renderAccountBackCards();
       }
     } else {
       for (var j = 0; j < existing.length; j++) {
-        var isActive = (j === activeGoalIndex);
+        var isActive = (j === activeIdx);
         if (existing[j].classList.contains("active") !== isActive) {
           existing[j].classList.toggle("active", isActive);
         }

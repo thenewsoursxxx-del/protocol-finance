@@ -775,6 +775,35 @@ box-shadow:
 0 18px 50px rgba(58,123,253,0.25);
 }
 
+/* Резерв в стиле подсказки (когда выбран тип накопления с резервом) */
+.account-block.reserve.show-reserve {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.10);
+  box-shadow: none;
+}
+
+.account-block.reserve.show-reserve .account-flip-front--reserve {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.account-block.reserve.show-reserve .account-flip-front--reserve .card {
+  background: transparent;
+  border: none;
+}
+
+.account-block.reserve.show-reserve .account-hint {
+  border-top: 1px dashed rgba(255,255,255,0.15);
+  color: rgba(255,255,255,0.75);
+}
+
+.account-block.reserve.show-reserve .account-flip-back--reserve .account-back-card {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.10);
+  box-shadow: none;
+}
+
 .account-block .account-card {
 background: transparent;
 border: none;
@@ -3008,8 +3037,8 @@ body.flip-fix-pending .flip-wrapper {
 }
 
 .graph-swipe-wrapper > .card {
-  transition: transform .28s cubic-bezier(.4,0,.2,1),
-              opacity .28s cubic-bezier(.4,0,.2,1);
+  transition: transform .18s cubic-bezier(.4,0,.2,1),
+              opacity .18s cubic-bezier(.4,0,.2,1);
 }
 
 .graph-swipe-wrapper > .card.slide-out-left {
@@ -3043,10 +3072,11 @@ body.flip-fix-pending .flip-wrapper {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 6px 0 2px;
+  padding: 8px 0 10px;
+  flex-shrink: 0;
 }
 
-.graph-goal-indicator.visible {
+.graph-swipe-wrapper .graph-goal-indicator.visible {
   display: flex;
 }
 
