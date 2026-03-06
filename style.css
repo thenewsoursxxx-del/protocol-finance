@@ -775,35 +775,6 @@ box-shadow:
 0 18px 50px rgba(58,123,253,0.25);
 }
 
-/* Резерв в стиле подсказки (когда выбран тип накопления с резервом) */
-.account-block.reserve.show-reserve {
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.10);
-  box-shadow: none;
-}
-
-.account-block.reserve.show-reserve .account-flip-front--reserve {
-  background: transparent;
-  border: none;
-  box-shadow: none;
-}
-
-.account-block.reserve.show-reserve .account-flip-front--reserve .card {
-  background: transparent;
-  border: none;
-}
-
-.account-block.reserve.show-reserve .account-hint {
-  border-top: 1px dashed rgba(255,255,255,0.15);
-  color: rgba(255,255,255,0.75);
-}
-
-.account-block.reserve.show-reserve .account-flip-back--reserve .account-back-card {
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.10);
-  box-shadow: none;
-}
-
 .account-block .account-card {
 background: transparent;
 border: none;
