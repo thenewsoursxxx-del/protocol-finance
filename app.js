@@ -1793,7 +1793,7 @@ function updateTimelineBackBtn() {
 function handleTimelineSegmentClick(clickX, W, padX) {
   var gs = computeGraphState();
   var vMonths = gs.visibleMonths;
-  if (!vMonths || vMonths <= 3) return;
+  if (!vMonths || vMonths <= 3 || gs.actualMonths < 4) return;
 
   var focused = document.activeElement;
   if (focused && (focused.tagName === "INPUT" || focused.tagName === "TEXTAREA")) return;
@@ -2071,6 +2071,13 @@ const reserveBlock = document.querySelector(
 if (reserveBlock) {
 if (chosenPlan === "buffer") {
 reserveBlock.classList.add("show-reserve");
+requestAnimationFrame(function () {
+  var inner = reserveBlock.querySelector(".flip-inner");
+  var front = reserveBlock.querySelector(".account-flip-front");
+  if (inner && front && front.scrollHeight > 0) {
+    inner.style.height = front.scrollHeight + "px";
+  }
+});
 } else {
 reserveBlock.classList.remove("show-reserve");
 }
@@ -2859,7 +2866,9 @@ function setupFlipSwipe(wrapper) {
 
   if (wrapper.classList.contains("account-block")) {
     var front = wrapper.querySelector(".account-flip-front");
-    if (front) inner.style.height = front.scrollHeight + "px";
+    if (front && front.scrollHeight > 0) {
+      inner.style.height = front.scrollHeight + "px";
+    }
   }
 
   let startX = 0;
@@ -2946,6 +2955,7 @@ function openUnexpectedExpenseScreen() {
 
   openScreen("unexpected", null);
   hideBottomNav();
+  window.scrollTo(0, 0);
 }
 
 // Выбор варианта
