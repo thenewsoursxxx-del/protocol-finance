@@ -3027,33 +3027,56 @@ body.flip-fix-pending .flip-wrapper {
   transform: rotateY(0deg) translateZ(0);
 }
 
-.flip-face--1 {
-  position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-  z-index: 1;
-  transform: rotateY(120deg) translateZ(2px);
-}
-
+.flip-face--1,
 .flip-face--2 {
   position: absolute;
   top: 0; left: 0; right: 0; bottom: 0;
   z-index: 1;
+  background: rgba(17, 17, 17, 0.92);
+  border-radius: 20px;
+  min-height: 200px;
+}
+
+.flip-face--1 {
+  transform: rotateY(120deg) translateZ(2px);
+}
+
+.flip-face--2 {
   transform: rotateY(240deg) translateZ(2px);
 }
 
-.flip-goal-card {
-  min-height: 180px;
+/* ===== GRAPH GOAL INDICATOR ===== */
+
+.graph-goal-indicator {
   display: flex;
-  flex-direction: column;
+  align-items: center;
   justify-content: center;
+  gap: 8px;
+  padding: 8px 0 4px;
+}
+
+.graph-goal-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+  transition: background .25s ease, transform .25s ease;
+}
+
+.graph-goal-dot.active {
+  background: #3a7bfd;
+  transform: scale(1.3);
 }
 
 /* ===== ACCOUNTS LOCAL NAV ===== */
 
 .accounts-local-nav {
   display: none;
+  margin-top: 24px;
   margin-bottom: 18px;
   position: relative;
+  z-index: 10;
 }
 
 .accounts-local-nav.visible {
@@ -3090,6 +3113,8 @@ body.flip-fix-pending .flip-wrapper {
   padding: 0;
   transform: scale(0.85);
   opacity: .7;
+  position: relative;
+  z-index: 20;
   transition: transform .25s ease,
               opacity .25s ease,
               border-color .25s ease,

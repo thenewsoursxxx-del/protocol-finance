@@ -13,7 +13,7 @@ viewport-fit=cover" />
 
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-<link rel="stylesheet" href="style.css?v=16001">
+<link rel="stylesheet" href="style.css?v=18001">
 </head>
 <body>
   
@@ -208,7 +208,7 @@ viewport-fit=cover" />
 <div id="flipWrapper" class="flip-wrapper flip-wrapper--goals">
 <div class="flip-inner flip-inner--goals" data-face="0">
 
-<div class="flip-face flip-face--0">
+<div class="flip-face flip-face--0" data-goal-index="0">
 <div id="adviceCard" class="card">
 
 <!-- ФЕЙК ЗАГРУЗКА (ПОЛНЫЙ ЭКРАН) -->
@@ -227,46 +227,14 @@ Protocol анализирует данные…
 </div>
 </div>
 
-<div class="flip-face flip-face--1">
-<div class="card flip-goal-card" id="flipGoalCard1">
-<div class="flip-goal-label" style="font-size:14px;opacity:.6">Цель 2</div>
-<div class="flip-goal-title" style="font-size:22px;font-weight:600;margin-top:6px">—</div>
-<div class="flip-goal-progress" style="margin-top:12px">
-<div style="display:flex;justify-content:space-between;font-size:14px;opacity:.7;margin-bottom:6px">
-<span>Накоплено: <b class="flip-goal-saved">0</b> ₽</span>
-<span>Цель: <b class="flip-goal-amount">0</b> ₽</span>
-</div>
-<div style="height:6px;border-radius:6px;background:#222;overflow:hidden">
-<div class="flip-goal-bar" style="height:100%;width:0%;background:#3a7bfd;transition:width .4s ease"></div>
-</div>
-<div style="margin-top:6px;font-size:13px;opacity:.6"><span class="flip-goal-percent">0</span>%</div>
-</div>
-<div style="margin-top:10px;font-size:14px;opacity:.7">В месяц идёт: <b class="flip-goal-monthly">0</b> ₽</div>
-<div style="margin-top:4px;font-size:14px;opacity:.6">Срок достижения: <b class="flip-goal-months-left">—</b> мес.</div>
-</div>
-</div>
+<div class="flip-face flip-face--1" data-goal-index="1"></div>
 
-<div class="flip-face flip-face--2">
-<div class="card flip-goal-card" id="flipGoalCard2">
-<div class="flip-goal-label" style="font-size:14px;opacity:.6">Цель 3</div>
-<div class="flip-goal-title" style="font-size:22px;font-weight:600;margin-top:6px">—</div>
-<div class="flip-goal-progress" style="margin-top:12px">
-<div style="display:flex;justify-content:space-between;font-size:14px;opacity:.7;margin-bottom:6px">
-<span>Накоплено: <b class="flip-goal-saved">0</b> ₽</span>
-<span>Цель: <b class="flip-goal-amount">0</b> ₽</span>
-</div>
-<div style="height:6px;border-radius:6px;background:#222;overflow:hidden">
-<div class="flip-goal-bar" style="height:100%;width:0%;background:#3a7bfd;transition:width .4s ease"></div>
-</div>
-<div style="margin-top:6px;font-size:13px;opacity:.6"><span class="flip-goal-percent">0</span>%</div>
-</div>
-<div style="margin-top:10px;font-size:14px;opacity:.7">В месяц идёт: <b class="flip-goal-monthly">0</b> ₽</div>
-<div style="margin-top:4px;font-size:14px;opacity:.6">Срок достижения: <b class="flip-goal-months-left">—</b> мес.</div>
-</div>
-</div>
+<div class="flip-face flip-face--2" data-goal-index="2"></div>
 
 </div>
 </div>
+
+<div id="graphGoalIndicator" class="graph-goal-indicator"></div>
 
 </div>
 
@@ -317,6 +285,7 @@ Protocol анализирует данные…
 <div style="margin-top:8px;font-size:22px;font-weight:600">
 <span id="mainAmount">0</span> ₽
 </div>
+<div id="mainAccountGoalMeta"></div>
 </div>
 <div class="account-hint neutral">
 Этот счёт отражает ваши накопления по плану Protocol.
@@ -863,6 +832,6 @@ z-index:30;
 <script src="state-manager.js"></script>
 <script src="financial-events.js"></script>
 <script src="cashflow-engine.js"></script>
-<script src="app.js?v=16001"></script>
+<script src="app.js?v=18001"></script>
 </body>
 </html>

@@ -430,7 +430,18 @@ function computeGraphState() {
 
   factBalance = Math.max(0, factBalance);
 
+  var goals = getGoals();
+  var activeGoal = goals[activeGoalIndex] || goals[0] || null;
   var goalMonths = lastCalc.months || 0;
+  var activeMonthly = plannedMonthly || 0;
+  var goalValue = parseNumber(goalInput ? goalInput.value || "0" : "0");
+
+  if (activeGoal && goals.length > 1) {
+    goalMonths = activeGoal.monthsLeft || goalMonths;
+    activeMonthly = activeGoal.monthlyShare || activeMonthly;
+    goalValue = activeGoal.amount || goalValue;
+  }
+
   var hasFact = factHistory && factHistory.length > 0;
 
   var actualMonths = 0;
@@ -454,8 +465,8 @@ function computeGraphState() {
     hasFact: hasFact,
     actualMonths: actualMonths,
     visibleMonths: visibleMonths,
-    plannedMonthly: plannedMonthly || 0,
-    goal: parseNumber(goalInput ? goalInput.value || "0" : "0")
+    plannedMonthly: activeMonthly,
+    goal: goalValue
   };
 }
 
@@ -2174,15 +2185,34 @@ console.log("chosenPlan:", chosenPlan);
 const mainEl = document.getElementById("mainAmount");
 const reserveEl = document.getElementById("reserveAmount");
 
+var goals = getGoals();
+var activeGoal = goals[activeGoalIndex] || goals[0] || null;
+
 if (mainEl) {
-mainEl.innerText = accounts.main.toLocaleString();
+  if (activeGoal) {
+    mainEl.innerText = (activeGoal.saved || 0).toLocaleString();
+  } else {
+    mainEl.innerText = accounts.main.toLocaleString();
+  }
+}
+
+var mainGoalMeta = document.getElementById("mainAccountGoalMeta");
+if (mainGoalMeta && activeGoal) {
+  mainGoalMeta.innerHTML =
+    '<div style="opacity:.6;font-size:13px;margin-top:4px">' + (activeGoal.title || "Цель") + '</div>' +
+    '<div style="font-size:13px;margin-top:2px;opacity:.5">' +
+      'Цель: ' + (activeGoal.amount || 0).toLocaleString() + ' ₽ · ' +
+      'В месяц: ' + (activeGoal.monthlyShare || 0).toLocaleString() + ' ₽ · ' +
+      (activeGoal.monthsLeft ? activeGoal.monthsLeft + ' мес.' : '') +
+    '</div>';
+} else if (mainGoalMeta) {
+  mainGoalMeta.innerHTML = "";
 }
 
 if (reserveEl) {
 reserveEl.innerText = accounts.reserve.toLocaleString();
 }
 
-// 🔥 вот это главное
 const reserveBlock = document.querySelector(
 '.account-block[data-account="reserve"]'
 );
@@ -4162,10 +4192,33 @@ renderAccountBackCards();
 
   var MAX_GOALS = 3;
 
-  /* ───── Graph 3-state flip ─────────────────────────────── */
+  /* ───── Flip elements ───────────────────────────────────── */
 
   var graphFlipWrapper = document.getElementById("flipWrapper");
-  var graphFlipInner = graphFlipWrapper ? graphFlipWrapper.querySelector(".flip-inner--goals") : null;
+  var graphFlipInner  = graphFlipWrapper ? graphFlipWrapper.querySelector(".flip-inner--goals") : null;
+  var flipFaces = graphFlipWrapper ? [
+    graphFlipWrapper.querySelector(".flip-face--0"),
+    graphFlipWrapper.querySelector(".flip-face--1"),
+    graphFlipWrapper.querySelector(".flip-face--2")
+  ] : [];
+  var graphGoalIndicator = document.getElementById("graphGoalIndicator");
+
+  /* ───── setActiveGoal — single entry point for switching goals ─── */
+
+  function setActiveGoal(index) {
+    var goals = getGoals();
+    if (index < 0 || index >= goals.length) return;
+    activeGoalIndex = index;
+    updateState({ activeGoalIndex: index });
+    saveState();
+    recalcPlan();
+    updateAccountsLocalNav();
+    updateGraphGoalIndicator();
+  }
+
+  window.setActiveGoal = setActiveGoal;
+
+  /* ───── Graph 3-state flip ─────────────────────────────── */
 
   function getGoalFaceCount() {
     return Math.min(getGoals().length, MAX_GOALS);
@@ -4176,41 +4229,16 @@ renderAccountBackCards();
     var count = getGoalFaceCount();
     if (idx < 0) idx = 0;
     if (idx >= count) idx = count - 1;
-    activeGoalIndex = idx;
+
+    var advCard = document.getElementById("adviceCard");
+    if (advCard && flipFaces[idx] && advCard.parentNode !== flipFaces[idx]) {
+      flipFaces[idx].insertBefore(advCard, flipFaces[idx].firstChild);
+    }
+
     graphFlipInner.setAttribute("data-face", String(idx));
     graphFlipInner.style.transform = "rotateY(" + (-(idx * 120)) + "deg)";
-    updateGoalFlipCards();
-    updateAccountsLocalNav();
-    saveFullState();
-  }
 
-  function updateGoalFlipCards() {
-    var goals = getGoals();
-    for (var i = 1; i < MAX_GOALS; i++) {
-      var card = document.getElementById("flipGoalCard" + i);
-      if (!card) continue;
-      var g = goals[i];
-      if (!g) { card.style.display = "none"; continue; }
-      card.style.display = "";
-      var titleEl = card.querySelector(".flip-goal-title");
-      var savedEl = card.querySelector(".flip-goal-saved");
-      var amountEl = card.querySelector(".flip-goal-amount");
-      var percentEl = card.querySelector(".flip-goal-percent");
-      var barEl = card.querySelector(".flip-goal-bar");
-      var monthlyEl = card.querySelector(".flip-goal-monthly");
-      var monthsLeftEl = card.querySelector(".flip-goal-months-left");
-      var labelEl = card.querySelector(".flip-goal-label");
-
-      if (titleEl) titleEl.innerText = g.title;
-      if (savedEl) savedEl.innerText = (g.saved || 0).toLocaleString();
-      if (amountEl) amountEl.innerText = (g.amount || 0).toLocaleString();
-      var pct = g.amount > 0 ? Math.min(100, Math.round(((g.saved || 0) / g.amount) * 100)) : 0;
-      if (percentEl) percentEl.innerText = pct;
-      if (barEl) barEl.style.width = pct + "%";
-      if (monthlyEl) monthlyEl.innerText = (g.monthlyShare || 0).toLocaleString();
-      if (monthsLeftEl) monthsLeftEl.innerText = g.monthsLeft || "—";
-      if (labelEl) labelEl.innerText = "Цель " + (i + 1);
-    }
+    setActiveGoal(idx);
   }
 
   if (graphFlipWrapper && graphFlipInner) {
@@ -4225,18 +4253,40 @@ renderAccountBackCards();
       if (!gfSwiping || !e.touches || !e.touches.length) return;
       gfDx = e.touches[0].clientX - gfStartX;
       var delta = -(gfDx / graphFlipWrapper.offsetWidth) * 60;
-      graphFlipInner.style.transform = "rotateY(" + (-(activeGoalIndex * 120 + delta)) + "deg)";
+      graphFlipInner.style.transform = "rotateY(" + (-(activeGoalIndex * 120) - delta) + "deg)";
     }, { passive: true });
     graphFlipWrapper.addEventListener("touchend", function () {
-      if (!gfSwiping) return; gfSwiping = false; graphFlipInner.style.transition = "";
+      if (!gfSwiping) return; gfSwiping = false;
+      graphFlipInner.style.transition = "";
       var count = getGoalFaceCount();
       if (gfDx < -GF_THRESHOLD && activeGoalIndex < count - 1) setGraphFace(activeGoalIndex + 1);
       else if (gfDx > GF_THRESHOLD && activeGoalIndex > 0) setGraphFace(activeGoalIndex - 1);
       else setGraphFace(activeGoalIndex);
     });
     graphFlipWrapper.addEventListener("touchcancel", function () {
-      if (!gfSwiping) return; gfSwiping = false; graphFlipInner.style.transition = "";
+      if (!gfSwiping) return; gfSwiping = false;
+      graphFlipInner.style.transition = "";
       setGraphFace(activeGoalIndex);
+    });
+  }
+
+  /* ───── Graph goal indicator dots ───────────────────────── */
+
+  function updateGraphGoalIndicator() {
+    if (!graphGoalIndicator) return;
+    var goals = getGoals();
+    if (goals.length <= 1) { graphGoalIndicator.style.display = "none"; return; }
+    graphGoalIndicator.style.display = "";
+    var html = "";
+    for (var i = 0; i < goals.length && i < MAX_GOALS; i++) {
+      html += '<span class="graph-goal-dot' + (i === activeGoalIndex ? ' active' : '') + '" data-idx="' + i + '"></span>';
+    }
+    graphGoalIndicator.innerHTML = html;
+    graphGoalIndicator.querySelectorAll(".graph-goal-dot").forEach(function (dot) {
+      dot.addEventListener("click", function () {
+        if (typeof haptic === "function") haptic("light");
+        setGraphFace(Number(this.dataset.idx));
+      });
     });
   }
 
@@ -4260,11 +4310,12 @@ renderAccountBackCards();
       var btn = document.createElement("button");
       btn.className = "goal-nav-icon" + (i === activeGoalIndex ? " active" : "");
       btn.setAttribute("data-goal-idx", String(i));
+      btn.setAttribute("data-goal-index", String(i));
       btn.innerHTML = goalNavSvgs[i] || goalNavSvgs[0];
       btn.addEventListener("click", (function (idx) {
         return function () {
           if (typeof haptic === "function") haptic("light");
-          activeGoalIndex = idx; setGraphFace(idx); updateAccountsLocalNav();
+          setGraphFace(idx);
         };
       })(i));
       localNavScroll.appendChild(btn);
@@ -4364,8 +4415,7 @@ renderAccountBackCards();
     if (!advCardGoalsTitle || !advCardGoalsDesc || !advCardGoalsBtn) return;
     advCardGoalsTitle.innerText = "Новая цель";
     advCardGoalsDesc.innerText = "Создайте новую цель и управляйте несколькими накоплениями одновременно";
-    var goals = getGoals();
-    advCardGoalsBtn.classList.toggle("disabled-card", goals.length >= MAX_GOALS);
+    advCardGoalsBtn.classList.remove("disabled-card");
   }
 
   /* ───── Goal Create/Edit Sheet ─────────────────────────────── */
@@ -4490,10 +4540,9 @@ renderAccountBackCards();
     closeAdvGoalSheet();
     recalcPlan();
     renderAdvancedGoals();
-    updateGoalFlipCards();
     updateAccountsLocalNav();
+    updateGraphGoalIndicator();
     updateAdvCards();
-    updateGoalsButton();
     if (typeof renderGoals === "function") renderGoals();
   }
 
@@ -4539,11 +4588,7 @@ renderAccountBackCards();
     persistGoals(goals);
 
     if (activeGoalIndex >= goals.length) activeGoalIndex = goals.length - 1;
-    recalcPlan();
     renderAdvancedGoals();
-    updateGoalFlipCards();
-    updateAccountsLocalNav();
-    updateGoalsButton();
     setGraphFace(activeGoalIndex);
   }
 
@@ -4551,13 +4596,14 @@ renderAccountBackCards();
     addGoalBtn.addEventListener("click", function (e) {
       e.stopPropagation();
       if (typeof haptic === "function") haptic("light");
-      var goals = getGoals();
-      if (goals.length >= MAX_GOALS) {
-        if (typeof showToast === "function") showToast("Можно создать максимум 3 цели", "error");
-        return;
-      }
       openAdvGoalSheet(null);
     });
+  }
+
+  function updateAddGoalBtnVisibility() {
+    if (!addGoalBtn) return;
+    var goals = getGoals();
+    addGoalBtn.style.display = goals.length >= MAX_GOALS ? "none" : "";
   }
 
   /* ───── Render: Goals List (screen-advanced-goals) ─────────── */
@@ -4566,7 +4612,7 @@ renderAccountBackCards();
     if (!advGoalsList) return;
     var goals = getGoals();
 
-    if (addGoalBtn) { addGoalBtn.disabled = goals.length >= MAX_GOALS; }
+    updateAddGoalBtnVisibility();
     updateAdvCards();
     advGoalsList.innerHTML = "";
 
@@ -4692,8 +4738,8 @@ renderAccountBackCards();
             persistGoals(g2);
             recalcPlan();
             renderGoalManagement();
-            updateGoalFlipCards();
             updateAccountsLocalNav();
+            updateGraphGoalIndicator();
           });
         });
       });
@@ -4712,17 +4758,26 @@ renderAccountBackCards();
   var initGoals = getGoals();
   computeGoalsAllocation(initGoals, plannedMonthly || 0);
   persistGoals(initGoals);
-  updateGoalFlipCards();
-  updateAccountsLocalNav();
   renderAdvancedGoals();
   updateAdvCards();
-  updateGoalsButton();
 
-  if (activeGoalIndex > 0 && graphFlipInner) {
+  var savedIdx = getState().activeGoalIndex || 0;
+  if (savedIdx > 0 && savedIdx < initGoals.length) {
+    activeGoalIndex = savedIdx;
+  }
+
+  if (graphFlipInner && activeGoalIndex > 0) {
+    var advCard = document.getElementById("adviceCard");
+    if (advCard && flipFaces[activeGoalIndex]) {
+      flipFaces[activeGoalIndex].insertBefore(advCard, flipFaces[activeGoalIndex].firstChild);
+    }
     graphFlipInner.style.transition = "none";
     graphFlipInner.style.transform = "rotateY(" + (-(activeGoalIndex * 120)) + "deg)";
     graphFlipInner.setAttribute("data-face", String(activeGoalIndex));
     requestAnimationFrame(function () { graphFlipInner.style.transition = ""; });
   }
+
+  updateAccountsLocalNav();
+  updateGraphGoalIndicator();
 
 })();
