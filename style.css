@@ -3242,6 +3242,164 @@ body.flip-fix-pending .flip-wrapper {
   pointer-events: none;
 }
 
+/* ===== GOAL MANAGEMENT SCREEN ===== */
+
+.goal-mgmt-body {
+  padding: 20px;
+  padding-top: 12px;
+}
+
+.goal-mgmt-section {
+  margin-bottom: 28px;
+}
+
+.goal-mgmt-section-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.goal-mgmt-hint {
+  font-size: 13px;
+  opacity: .5;
+  margin-bottom: 16px;
+}
+
+.goal-mgmt-total {
+  font-size: 14px;
+  opacity: .7;
+  margin-bottom: 14px;
+}
+
+.goal-mgmt-total b {
+  color: #6ee7b7;
+}
+
+.goal-mgmt-alloc-row {
+  border-radius: 14px;
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 10px;
+}
+
+.goal-mgmt-alloc-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.goal-mgmt-alloc-name {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.goal-mgmt-alloc-amount {
+  font-size: 14px;
+  color: #6ee7b7;
+  font-weight: 600;
+}
+
+.goal-mgmt-alloc-pct {
+  font-weight: 400;
+  opacity: .6;
+  font-size: 12px;
+}
+
+.goal-mgmt-alloc-bar-bg {
+  height: 5px;
+  border-radius: 5px;
+  background: #222;
+  overflow: hidden;
+}
+
+.goal-mgmt-alloc-bar {
+  height: 100%;
+  border-radius: 5px;
+  background: linear-gradient(90deg, #047857, #10b981);
+  transition: width .4s ease;
+}
+
+.goal-mgmt-alloc-meta {
+  font-size: 12px;
+  opacity: .45;
+  margin-top: 6px;
+}
+
+.goal-mgmt-prio-card {
+  border-radius: 16px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 12px;
+  transition: border-color .25s ease;
+}
+
+.goal-mgmt-prio-card.primary {
+  border-color: rgba(58, 123, 253, 0.4);
+}
+
+.goal-mgmt-prio-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.goal-mgmt-prio-name {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.goal-mgmt-prio-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.goal-mgmt-prio-card.primary .goal-mgmt-prio-badge {
+  background: rgba(58, 123, 253, 0.2);
+  color: #93bbff;
+  border-color: rgba(58, 123, 253, 0.4);
+}
+
+.goal-mgmt-prio-info {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  opacity: .6;
+  margin-bottom: 12px;
+}
+
+.goal-mgmt-prio-controls {
+  margin-top: 4px;
+}
+
+.goal-mgmt-prio-label {
+  font-size: 13px;
+  opacity: .5;
+  margin-bottom: 6px;
+  display: block;
+}
+
+.goal-mgmt-prio-toggle {
+  display: flex;
+  gap: 6px;
+}
+
+.goal-mgmt-prio-toggle .mode-btn {
+  flex: 1;
+  padding: 8px 0;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 10px;
+}
+
 /* ===== ADV GOAL EDITOR SHEET ===== */
 
 .adv-goal-editor {
