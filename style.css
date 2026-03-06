@@ -3000,10 +3000,49 @@ body.flip-fix-pending .flip-wrapper {
   opacity: .55;
 }
 
-/* ===== GRAPH GOAL SWIPE ===== */
+/* ===== GRAPH GOAL FLIP (3D) ===== */
 
 .flip-wrapper--goals {
   position: relative;
+  perspective: 1200px;
+  overflow: hidden;
+}
+
+.flip-inner--goals {
+  position: relative;
+  width: 100%;
+  transform-style: preserve-3d;
+  -webkit-transform-style: preserve-3d;
+  will-change: transform;
+  transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.flip-face {
+  width: 100%;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.flip-face--0 {
+  position: relative;
+  z-index: 2;
+  transform: rotateY(0deg) translateZ(0);
+}
+
+.flip-face--1,
+.flip-face--2 {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 1;
+  min-height: 200px;
+}
+
+.flip-face--1 {
+  transform: rotateY(120deg) translateZ(2px);
+}
+
+.flip-face--2 {
+  transform: rotateY(240deg) translateZ(2px);
 }
 
 /* ===== GRAPH GOAL INDICATOR ===== */

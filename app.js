@@ -4188,9 +4188,15 @@ renderAccountBackCards();
 
   var MAX_GOALS = 3;
 
-  /* ───── Swipe elements ──────────────────────────────────── */
+  /* ───── Flip / swipe elements ──────────────────────────── */
 
   var graphFlipWrapper = document.getElementById("flipWrapper");
+  var graphFlipInner = graphFlipWrapper ? graphFlipWrapper.querySelector(".flip-inner--goals") : null;
+  var flipFaces = graphFlipWrapper ? [
+    graphFlipWrapper.querySelector(".flip-face--0"),
+    graphFlipWrapper.querySelector(".flip-face--1"),
+    graphFlipWrapper.querySelector(".flip-face--2")
+  ] : [];
   var graphGoalIndicator = document.getElementById("graphGoalIndicator");
 
   /* ───── setActiveGoal — single entry point for switching goals ─── */
@@ -4208,40 +4214,56 @@ renderAccountBackCards();
 
   window.setActiveGoal = setActiveGoal;
 
-  /* ───── Graph goal swipe ────────────────────────────────── */
+  /* ───── Graph goal flip (3D) + swipe ─────────────────────── */
 
   function getGoalFaceCount() {
     return Math.min(getGoals().length, MAX_GOALS);
   }
 
   function setGraphFace(idx) {
+    if (!graphFlipInner) return;
     var count = getGoalFaceCount();
     if (idx < 0) idx = 0;
     if (idx >= count) idx = count - 1;
     if (idx === activeGoalIndex) return;
+
+    var advCard = document.getElementById("adviceCard");
+    if (advCard && flipFaces[idx] && advCard.parentNode !== flipFaces[idx]) {
+      flipFaces[idx].insertBefore(advCard, flipFaces[idx].firstChild);
+    }
+
+    graphFlipInner.setAttribute("data-face", String(idx));
+    graphFlipInner.style.transform = "rotateY(" + (-(idx * 120)) + "deg)";
+
     setActiveGoal(idx);
   }
 
-  if (graphFlipWrapper) {
+  if (graphFlipWrapper && graphFlipInner) {
     var gfStartX = 0, gfDx = 0, gfSwiping = false;
-    var GF_THRESHOLD = 40;
+    var GF_THRESHOLD = 50;
     graphFlipWrapper.addEventListener("touchstart", function (e) {
       if (!e.touches || !e.touches.length) return;
       gfStartX = e.touches[0].clientX; gfDx = 0; gfSwiping = true;
+      graphFlipInner.style.transition = "none";
     }, { passive: true });
     graphFlipWrapper.addEventListener("touchmove", function (e) {
       if (!gfSwiping || !e.touches || !e.touches.length) return;
       gfDx = e.touches[0].clientX - gfStartX;
+      var delta = -(gfDx / graphFlipWrapper.offsetWidth) * 80;
+      graphFlipInner.style.transform = "rotateY(" + (-(activeGoalIndex * 120) - delta) + "deg)";
     }, { passive: true });
     graphFlipWrapper.addEventListener("touchend", function () {
       if (!gfSwiping) return; gfSwiping = false;
+      graphFlipInner.style.transition = "";
       var count = getGoalFaceCount();
-      if (count <= 1) return;
       if (gfDx < -GF_THRESHOLD && activeGoalIndex < count - 1) setGraphFace(activeGoalIndex + 1);
       else if (gfDx > GF_THRESHOLD && activeGoalIndex > 0) setGraphFace(activeGoalIndex - 1);
+      else setGraphFace(activeGoalIndex);
     });
     graphFlipWrapper.addEventListener("touchcancel", function () {
-      gfSwiping = false;
+      if (!gfSwiping) return; gfSwiping = false;
+      graphFlipInner.style.transition = "";
+      setGraphFace(activeGoalIndex);
     });
   }
 
@@ -4284,6 +4306,15 @@ renderAccountBackCards();
     var goals = getGoals();
     if (goals.length <= 1) { localNav.classList.remove("visible"); return; }
     localNav.classList.add("visible");
+
+    var existing = localNavScroll.querySelectorAll(".goal-nav-icon");
+    if (existing.length === goals.length) {
+      existing.forEach(function (btn, i) {
+        btn.classList.toggle("active", i === activeGoalIndex);
+      });
+      return;
+    }
+
     localNavScroll.innerHTML = "";
     for (var i = 0; i < goals.length && i < MAX_GOALS; i++) {
       var btn = document.createElement("button");
@@ -4743,6 +4774,17 @@ renderAccountBackCards();
   var savedIdx = getState().activeGoalIndex || 0;
   if (savedIdx > 0 && savedIdx < initGoals.length) {
     activeGoalIndex = savedIdx;
+  }
+
+  if (graphFlipInner && activeGoalIndex > 0) {
+    var advCard = document.getElementById("adviceCard");
+    if (advCard && flipFaces[activeGoalIndex]) {
+      flipFaces[activeGoalIndex].insertBefore(advCard, flipFaces[activeGoalIndex].firstChild);
+    }
+    graphFlipInner.style.transition = "none";
+    graphFlipInner.style.transform = "rotateY(" + (-(activeGoalIndex * 120)) + "deg)";
+    graphFlipInner.setAttribute("data-face", String(activeGoalIndex));
+    requestAnimationFrame(function () { graphFlipInner.style.transition = ""; });
   }
 
   updateAccountsLocalNav();
