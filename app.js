@@ -2260,6 +2260,8 @@ accounts.reserve.toLocaleString();
 } else {
 reserveCard.style.display = "none";
 }
+
+if (typeof updateGoalsButton === "function") updateGoalsButton();
 }
 
 function fireCelebration() {
@@ -4280,6 +4282,7 @@ renderAccountBackCards();
   var goalMgmtBack = document.getElementById("goalMgmtBack");
 
   function openAdvancedGoalsScreen() {
+    goalsListCameFromAdvanced = true;
     document.getElementById("screen-advanced").classList.remove("active");
     document.getElementById("screen-advanced-goals").classList.add("active");
     renderAdvancedGoals();
@@ -4303,7 +4306,7 @@ renderAccountBackCards();
     updateAdvCards();
   }
 
-  /* ── "Ваши цели" / "Добавить цель" button ── */
+  /* ── "Ваши цели" / "Добавить цель" card on advanced screen ── */
   if (advCardGoalsBtn) {
     advCardGoalsBtn.addEventListener("click", function () {
       if (typeof haptic === "function") haptic("light");
@@ -4316,10 +4319,55 @@ renderAccountBackCards();
     });
   }
 
+  /* ── goalsMainBtn on screen-goals ── */
+  var goalsMainBtn = document.getElementById("goalsMainBtn");
+
+  window.updateGoalsButton = function () {
+    if (!goalsMainBtn) return;
+    var goals = getGoals();
+    if (goals.length <= 1) {
+      goalsMainBtn.innerText = "Добавить цель";
+    } else {
+      goalsMainBtn.innerText = "Ваши цели";
+    }
+  };
+
+  function openGoalsListFromMain() {
+    goalsListCameFromAdvanced = false;
+    document.body.classList.add("advanced-active");
+    document.querySelectorAll(".screen").forEach(function (s) { s.classList.remove("active"); });
+    document.getElementById("screen-advanced-goals").classList.add("active");
+    if (typeof hideBottomNav === "function") hideBottomNav();
+    if (advancedBtn) advancedBtn.style.display = "none";
+    renderAdvancedGoals();
+  }
+
+  if (goalsMainBtn) {
+    goalsMainBtn.addEventListener("click", function () {
+      if (typeof haptic === "function") haptic("light");
+      var goals = getGoals();
+      if (goals.length <= 1) {
+        openGoalsListFromMain();
+        setTimeout(function () { openAdvGoalSheet(null); }, 150);
+      } else {
+        openGoalsListFromMain();
+      }
+    });
+  }
+
+  var goalsListCameFromAdvanced = false;
+
   if (advancedGoalsBack) {
     advancedGoalsBack.addEventListener("click", function () {
       if (typeof haptic === "function") haptic("light");
-      closeAdvancedGoalsScreen();
+      if (goalsListCameFromAdvanced) {
+        closeAdvancedGoalsScreen();
+      } else {
+        document.body.classList.remove("advanced-active");
+        openScreen("goals", buttons[3]);
+        if (typeof showBottomNav === "function") showBottomNav();
+        updateGoalsButton();
+      }
     });
   }
 
@@ -4429,64 +4477,71 @@ renderAccountBackCards();
 
   /* ───── SAVE BUTTON — creates/edits goal via state-manager ── */
 
-  if (advGoalSave) {
-    advGoalSave.addEventListener("click", function () {
-      if (typeof haptic === "function") haptic("medium");
+  function addGoal() {
+    var title = advGoalTitleInput ? advGoalTitleInput.value.trim() : "";
+    var amount = advGoalAmountInput ? parseNumber(advGoalAmountInput.value || "0") : 0;
+    var priority = selectedPriority || 1;
 
-      var title = advGoalTitleInput ? advGoalTitleInput.value.trim() : "";
-      var amount = advGoalAmountInput ? parseNumber(advGoalAmountInput.value || "0") : 0;
+    if (!title || !amount) {
+      if (typeof haptic === "function") haptic("error");
+      if (typeof showToast === "function") showToast("Заполните название и сумму", "error");
+      return;
+    }
 
-      if (!title || !amount) {
-        if (typeof haptic === "function") haptic("error");
-        return;
-      }
+    var goals = getGoals();
 
-      var goals = getGoals();
-
-      if (editingGoalId) {
-        var existing = getGoalById(editingGoalId);
-        if (existing) {
-          existing.title = title;
-          existing.amount = amount;
-          existing.priority = selectedPriority;
-          if (existing === goals[0]) {
-            goalMeta.title = title;
-            if (goalInput) goalInput.value = formatNumber(String(amount));
-          }
-        }
-      } else {
-        if (goals.length >= MAX_GOALS) {
-          if (typeof showToast === "function") showToast("Можно создать максимум 3 цели", "error");
-          return;
-        }
-        var newGoal = {
-          id: generateGoalId(),
-          title: title,
-          amount: amount,
-          saved: 0,
-          priority: selectedPriority,
-          monthlyShare: 0,
-          monthsLeft: 0
-        };
-        goals.push(newGoal);
-        if (goals.length === 1) {
+    if (editingGoalId) {
+      var existing = getGoalById(editingGoalId);
+      if (existing) {
+        existing.title = title;
+        existing.amount = amount;
+        existing.priority = priority;
+        if (existing === goals[0]) {
           goalMeta.title = title;
           if (goalInput) goalInput.value = formatNumber(String(amount));
         }
       }
+    } else {
+      if (goals.length >= MAX_GOALS) {
+        if (typeof showToast === "function") showToast("Можно создать максимум 3 цели", "error");
+        return;
+      }
+      goals.push({
+        id: generateGoalId(),
+        title: title,
+        amount: amount,
+        saved: 0,
+        priority: priority,
+        monthlyShare: 0,
+        monthsLeft: 0
+      });
+      if (goals.length === 1) {
+        goalMeta.title = title;
+        if (goalInput) goalInput.value = formatNumber(String(amount));
+      }
+    }
 
-      resolvePriorityConflicts(editingGoalId || goals[goals.length - 1].id, goals);
-      goals.sort(function (a, b) { return a.priority - b.priority; });
-      computeGoalsAllocation(goals, plannedMonthly || 0);
-      persistGoals(goals);
+    var keepId = editingGoalId || goals[goals.length - 1].id;
+    resolvePriorityConflicts(keepId, goals);
+    goals.sort(function (a, b) { return a.priority - b.priority; });
+    computeGoalsAllocation(goals, plannedMonthly || 0);
+    persistGoals(goals);
 
-      closeAdvGoalSheet();
-      recalcPlan();
-      renderAdvancedGoals();
-      updateGoalFlipCards();
-      updateAccountsLocalNav();
-      updateAdvCards();
-    });
+    closeAdvGoalSheet();
+    recalcPlan();
+    renderAdvancedGoals();
+    updateGoalFlipCards();
+    updateAccountsLocalNav();
+    updateAdvCards();
+    updateGoalsButton();
+    if (typeof renderGoals === "function") renderGoals();
+  }
+
+  if (advGoalSave) {
+    advGoalSave.onclick = function () {
+      if (typeof haptic === "function") haptic("medium");
+      addGoal();
+    };
   }
 
   function resolvePriorityConflicts(keepId, goals) {
@@ -4528,6 +4583,7 @@ renderAccountBackCards();
     renderAdvancedGoals();
     updateGoalFlipCards();
     updateAccountsLocalNav();
+    updateGoalsButton();
     setGraphFace(activeGoalIndex);
   }
 
@@ -4700,6 +4756,7 @@ renderAccountBackCards();
   updateAccountsLocalNav();
   renderAdvancedGoals();
   updateAdvCards();
+  updateGoalsButton();
 
   if (activeGoalIndex > 0 && graphFlipInner) {
     graphFlipInner.style.transition = "none";

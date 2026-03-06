@@ -1954,6 +1954,43 @@ body.advanced-active .advanced-fog {
   margin-top: 16px;
 }
 
+/* ===== GOALS MAIN BUTTON ===== */
+
+.goals-main-btn {
+  display: block;
+  width: 100%;
+  margin-top: 20px;
+  padding: 16px;
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: 16px;
+  border: 1px solid rgba(16, 185, 129, 0.45);
+  background:
+    radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.10), transparent 45%),
+    linear-gradient(
+      135deg,
+      #021a16,
+      #063d33,
+      #047857,
+      #10b981,
+      #047857,
+      #063d33,
+      #021a16
+    );
+  background-size: 100% 100%, 350% 350%;
+  animation: emeraldFlow 6s ease-in-out infinite;
+  color: #6ee7b7;
+  cursor: pointer;
+  transition: border-color 0.2s, transform 0.12s, box-shadow 0.2s;
+  box-shadow: 0 8px 24px rgba(4, 120, 87, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.goals-main-btn:active {
+  transform: scale(0.97);
+  box-shadow: 0 4px 16px rgba(4, 120, 87, 0.45), inset 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
 /* ===== FLIP CARD ===== */
 .flip-wrapper {
   perspective: 1200px;
