@@ -1342,6 +1342,96 @@ transition: transform 0.55s cubic-bezier(.22,1,.36,1);
   z-index: 2;
 }
 
+/* ===== SVG GRAPH ENGINE ===== */
+
+.protocol-graph-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.protocol-graph {
+  width: 100%;
+  height: 240px;
+  display: block;
+  overflow: visible;
+}
+
+.plan-line {
+  fill: none;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.plan-fill {
+  opacity: 1;
+}
+
+.fact-line {
+  fill: none;
+  stroke: #ffffff;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+}
+
+.fact-point {
+  fill: #ffffff;
+  cursor: pointer;
+  transition: r 0.25s ease;
+}
+
+.fact-point:hover {
+  filter: drop-shadow(0 0 12px rgba(255,255,255,0.6));
+}
+
+.graph-grid line {
+  shape-rendering: crispEdges;
+}
+
+.graph-watermark text {
+  pointer-events: none;
+  user-select: none;
+}
+
+.graph-month-labels text {
+  pointer-events: none;
+  user-select: none;
+}
+
+.graph-tooltip {
+  position: absolute;
+  padding: 8px 14px;
+  border-radius: 12px;
+  background: rgba(20, 20, 20, 0.92);
+  border: 1px solid rgba(255,255,255,0.12);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: #fff;
+  font-size: 13px;
+  line-height: 1.4;
+  pointer-events: none;
+  z-index: 30;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0.22s ease, transform 0.22s ease;
+  white-space: nowrap;
+}
+
+.graph-tooltip.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.graph-tooltip-date {
+  opacity: 0.55;
+  font-size: 11px;
+  margin-bottom: 2px;
+}
+
+.graph-tooltip-value {
+  font-weight: 600;
+}
+
 .protocol-header {
   position: relative;
   z-index: 10;   /* НЕ 9999 */
