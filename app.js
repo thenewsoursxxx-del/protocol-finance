@@ -4319,41 +4319,7 @@ renderAccountBackCards();
     });
   }
 
-  /* ── goalsMainBtn on screen-goals ── */
-  var goalsMainBtn = document.getElementById("goalsMainBtn");
-
-  window.updateGoalsButton = function () {
-    if (!goalsMainBtn) return;
-    var goals = getGoals();
-    if (goals.length <= 1) {
-      goalsMainBtn.innerText = "Добавить цель";
-    } else {
-      goalsMainBtn.innerText = "Ваши цели";
-    }
-  };
-
-  function openGoalsListFromMain() {
-    goalsListCameFromAdvanced = false;
-    document.body.classList.add("advanced-active");
-    document.querySelectorAll(".screen").forEach(function (s) { s.classList.remove("active"); });
-    document.getElementById("screen-advanced-goals").classList.add("active");
-    if (typeof hideBottomNav === "function") hideBottomNav();
-    if (advancedBtn) advancedBtn.style.display = "none";
-    renderAdvancedGoals();
-  }
-
-  if (goalsMainBtn) {
-    goalsMainBtn.addEventListener("click", function () {
-      if (typeof haptic === "function") haptic("light");
-      var goals = getGoals();
-      if (goals.length <= 1) {
-        openGoalsListFromMain();
-        setTimeout(function () { openAdvGoalSheet(null); }, 150);
-      } else {
-        openGoalsListFromMain();
-      }
-    });
-  }
+  window.updateGoalsButton = function () { /* no-op: goalsMainBtn removed */ };
 
   var goalsListCameFromAdvanced = false;
 
@@ -4396,16 +4362,10 @@ renderAccountBackCards();
 
   function updateAdvCards() {
     if (!advCardGoalsTitle || !advCardGoalsDesc || !advCardGoalsBtn) return;
+    advCardGoalsTitle.innerText = "Новая цель";
+    advCardGoalsDesc.innerText = "Создайте новую цель и управляйте несколькими накоплениями одновременно";
     var goals = getGoals();
-    if (goals.length === 0) {
-      advCardGoalsTitle.innerText = "Добавить цель";
-      advCardGoalsDesc.innerText = "Создайте цель и начните копить";
-      advCardGoalsBtn.classList.remove("disabled-card");
-    } else {
-      advCardGoalsTitle.innerText = "Ваши цели";
-      advCardGoalsDesc.innerText = "Просмотр и управление целями (" + goals.length + "/" + MAX_GOALS + ")";
-      advCardGoalsBtn.classList.remove("disabled-card");
-    }
+    advCardGoalsBtn.classList.toggle("disabled-card", goals.length >= MAX_GOALS);
   }
 
   /* ───── Goal Create/Edit Sheet ─────────────────────────────── */
@@ -4636,7 +4596,7 @@ renderAccountBackCards();
           '<div style="font-size:12px;opacity:.5;margin-top:3px">' + pctDone + '%</div>' +
         '</div>' +
         '<div class="adv-goal-card-actions">' +
-          '<button class="adv-goal-edit-btn" data-goal-id="' + g.id + '">Изменить</button>' +
+          (g.priority === 1 ? '' : '<button class="adv-goal-edit-btn" data-goal-id="' + g.id + '">Изменить</button>') +
           (goals.length > 1 ? '<button class="adv-goal-delete-btn" data-goal-id="' + g.id + '">Удалить</button>' : '') +
         '</div>';
       advGoalsList.appendChild(card);
