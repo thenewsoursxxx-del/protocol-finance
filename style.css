@@ -1305,18 +1305,13 @@ transition: transform 0.55s cubic-bezier(.22,1,.36,1);
 .account-block.reserve {
   display: none;
   opacity: 0;
-  transform: translateY(10px);
   pointer-events: none;
-
-  transition:
-    opacity 0.35s ease,
-    transform 0.35s ease;
+  transition: opacity 0.25s ease;
 }
 
 .account-block.reserve.show-reserve {
   display: block;
   opacity: 1;
-  transform: translateY(0);
   pointer-events: auto;
 }
 

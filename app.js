@@ -2843,12 +2843,14 @@ function measureBackContentHeight(wrapper) {
 
 function syncAccountFlipHeight(wrapper, isFlipped) {
   if (!wrapper || !wrapper.classList.contains("account-block")) return;
+  if (wrapper.classList.contains("reserve") && !wrapper.classList.contains("show-reserve")) return;
   var inner = wrapper.querySelector(".flip-inner");
   if (!inner) return;
   var front = wrapper.querySelector(".account-flip-front");
   if (!front) return;
 
   var frontH = front.scrollHeight;
+  if (frontH <= 0) return;
 
   if (!isFlipped) {
     inner.style.height = frontH + "px";
@@ -2936,6 +2938,8 @@ let selectedExpenseSource = null;
 function openUnexpectedExpenseScreen() {
   selectedExpenseSource = null;
 
+  document.activeElement?.blur();
+
   const options = document.querySelectorAll(".unexpected-option");
   options.forEach(o => o.classList.remove("selected"));
 
@@ -2946,7 +2950,6 @@ function openUnexpectedExpenseScreen() {
   if (skipBlock) skipBlock.style.display = "none";
   if (amountInput) amountInput.value = "";
 
-  // Показываем «Потратил из резерва» только при плане с резервом; при резерве 0 — визуально блокируем
   const reserveOption = document.querySelector('.unexpected-option[data-source="reserve"]');
   if (reserveOption) {
     reserveOption.style.display = chosenPlan === "buffer" ? "flex" : "none";
