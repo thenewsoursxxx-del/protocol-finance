@@ -2184,6 +2184,7 @@ function renderAccountsUI() {
 console.log("chosenPlan:", chosenPlan);
 const mainEl = document.getElementById("mainAmount");
 const reserveEl = document.getElementById("reserveAmount");
+const mainTitleEl = document.getElementById("mainAccountTitle");
 
 var goals = getGoals();
 var activeGoal = goals[activeGoalIndex] || goals[0] || null;
@@ -2196,17 +2197,12 @@ if (mainEl) {
   }
 }
 
-var mainGoalMeta = document.getElementById("mainAccountGoalMeta");
-if (mainGoalMeta && activeGoal) {
-  mainGoalMeta.innerHTML =
-    '<div style="opacity:.6;font-size:13px;margin-top:4px">' + (activeGoal.title || "Цель") + '</div>' +
-    '<div style="font-size:13px;margin-top:2px;opacity:.5">' +
-      'Цель: ' + (activeGoal.amount || 0).toLocaleString() + ' ₽ · ' +
-      'В месяц: ' + (activeGoal.monthlyShare || 0).toLocaleString() + ' ₽ · ' +
-      (activeGoal.monthsLeft ? activeGoal.monthsLeft + ' мес.' : '') +
-    '</div>';
-} else if (mainGoalMeta) {
-  mainGoalMeta.innerHTML = "";
+if (mainTitleEl) {
+  if (activeGoalIndex === 0 || !activeGoal) {
+    mainTitleEl.innerText = "Основной счёт";
+  } else {
+    mainTitleEl.innerText = activeGoal.title || "Счёт";
+  }
 }
 
 if (reserveEl) {
@@ -4192,15 +4188,9 @@ renderAccountBackCards();
 
   var MAX_GOALS = 3;
 
-  /* ───── Flip elements ───────────────────────────────────── */
+  /* ───── Swipe elements ──────────────────────────────────── */
 
   var graphFlipWrapper = document.getElementById("flipWrapper");
-  var graphFlipInner  = graphFlipWrapper ? graphFlipWrapper.querySelector(".flip-inner--goals") : null;
-  var flipFaces = graphFlipWrapper ? [
-    graphFlipWrapper.querySelector(".flip-face--0"),
-    graphFlipWrapper.querySelector(".flip-face--1"),
-    graphFlipWrapper.querySelector(".flip-face--2")
-  ] : [];
   var graphGoalIndicator = document.getElementById("graphGoalIndicator");
 
   /* ───── setActiveGoal — single entry point for switching goals ─── */
@@ -4218,55 +4208,40 @@ renderAccountBackCards();
 
   window.setActiveGoal = setActiveGoal;
 
-  /* ───── Graph 3-state flip ─────────────────────────────── */
+  /* ───── Graph goal swipe ────────────────────────────────── */
 
   function getGoalFaceCount() {
     return Math.min(getGoals().length, MAX_GOALS);
   }
 
   function setGraphFace(idx) {
-    if (!graphFlipInner) return;
     var count = getGoalFaceCount();
     if (idx < 0) idx = 0;
     if (idx >= count) idx = count - 1;
-
-    var advCard = document.getElementById("adviceCard");
-    if (advCard && flipFaces[idx] && advCard.parentNode !== flipFaces[idx]) {
-      flipFaces[idx].insertBefore(advCard, flipFaces[idx].firstChild);
-    }
-
-    graphFlipInner.setAttribute("data-face", String(idx));
-    graphFlipInner.style.transform = "rotateY(" + (-(idx * 120)) + "deg)";
-
+    if (idx === activeGoalIndex) return;
     setActiveGoal(idx);
   }
 
-  if (graphFlipWrapper && graphFlipInner) {
+  if (graphFlipWrapper) {
     var gfStartX = 0, gfDx = 0, gfSwiping = false;
-    var GF_THRESHOLD = 60;
+    var GF_THRESHOLD = 40;
     graphFlipWrapper.addEventListener("touchstart", function (e) {
       if (!e.touches || !e.touches.length) return;
       gfStartX = e.touches[0].clientX; gfDx = 0; gfSwiping = true;
-      graphFlipInner.style.transition = "none";
     }, { passive: true });
     graphFlipWrapper.addEventListener("touchmove", function (e) {
       if (!gfSwiping || !e.touches || !e.touches.length) return;
       gfDx = e.touches[0].clientX - gfStartX;
-      var delta = -(gfDx / graphFlipWrapper.offsetWidth) * 60;
-      graphFlipInner.style.transform = "rotateY(" + (-(activeGoalIndex * 120) - delta) + "deg)";
     }, { passive: true });
     graphFlipWrapper.addEventListener("touchend", function () {
       if (!gfSwiping) return; gfSwiping = false;
-      graphFlipInner.style.transition = "";
       var count = getGoalFaceCount();
+      if (count <= 1) return;
       if (gfDx < -GF_THRESHOLD && activeGoalIndex < count - 1) setGraphFace(activeGoalIndex + 1);
       else if (gfDx > GF_THRESHOLD && activeGoalIndex > 0) setGraphFace(activeGoalIndex - 1);
-      else setGraphFace(activeGoalIndex);
     });
     graphFlipWrapper.addEventListener("touchcancel", function () {
-      if (!gfSwiping) return; gfSwiping = false;
-      graphFlipInner.style.transition = "";
-      setGraphFace(activeGoalIndex);
+      gfSwiping = false;
     });
   }
 
@@ -4275,8 +4250,12 @@ renderAccountBackCards();
   function updateGraphGoalIndicator() {
     if (!graphGoalIndicator) return;
     var goals = getGoals();
-    if (goals.length <= 1) { graphGoalIndicator.style.display = "none"; return; }
-    graphGoalIndicator.style.display = "";
+    if (goals.length <= 1) {
+      graphGoalIndicator.classList.remove("visible");
+      graphGoalIndicator.innerHTML = "";
+      return;
+    }
+    graphGoalIndicator.classList.add("visible");
     var html = "";
     for (var i = 0; i < goals.length && i < MAX_GOALS; i++) {
       html += '<span class="graph-goal-dot' + (i === activeGoalIndex ? ' active' : '') + '" data-idx="' + i + '"></span>';
@@ -4764,17 +4743,6 @@ renderAccountBackCards();
   var savedIdx = getState().activeGoalIndex || 0;
   if (savedIdx > 0 && savedIdx < initGoals.length) {
     activeGoalIndex = savedIdx;
-  }
-
-  if (graphFlipInner && activeGoalIndex > 0) {
-    var advCard = document.getElementById("adviceCard");
-    if (advCard && flipFaces[activeGoalIndex]) {
-      flipFaces[activeGoalIndex].insertBefore(advCard, flipFaces[activeGoalIndex].firstChild);
-    }
-    graphFlipInner.style.transition = "none";
-    graphFlipInner.style.transform = "rotateY(" + (-(activeGoalIndex * 120)) + "deg)";
-    graphFlipInner.setAttribute("data-face", String(activeGoalIndex));
-    requestAnimationFrame(function () { graphFlipInner.style.transition = ""; });
   }
 
   updateAccountsLocalNav();
