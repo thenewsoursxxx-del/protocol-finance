@@ -7,13 +7,12 @@
 var ProtocolGraph = (function () {
 
   var SVG_NS = "http://www.w3.org/2000/svg";
-  var GRAPH_H = 240;
+  var GRAPH_H = 260;
   var PAD_X = 36;
-  var PAD_TOP = 24;
-  var PAD_BOT = 28;
+  var PAD_TOP = 14;
+  var PAD_BOT = 36;
 
   var _tooltipTimer = null;
-  var _planAnimId = null;
 
   function el(tag, attrs, parent) {
     var node = document.createElementNS(SVG_NS, tag);
@@ -24,17 +23,6 @@ var ProtocolGraph = (function () {
 
   function renderGraph(container, gs, factHistory, plannedMonthly) {
     if (!container || !gs) return;
-
-    var existing = container.querySelector(".protocol-graph-wrap");
-    if (existing) existing.remove();
-
-    var wrap = document.createElement("div");
-    wrap.className = "protocol-graph-wrap";
-
-    var svg = document.createElementNS(SVG_NS, "svg");
-    svg.setAttribute("class", "protocol-graph");
-    svg.setAttribute("viewBox", "0 0 400 " + GRAPH_H);
-    svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
 
     var W = 400;
     var H = GRAPH_H;
@@ -51,16 +39,45 @@ var ProtocolGraph = (function () {
 
     var maxValue = Math.max(goalValue, factBalance, 1);
 
-    renderGrid(svg, W, H, drawW, drawH);
-
-    if (goalMonths > 0 && monthly > 0) {
-      renderPlanLine(svg, W, H, drawW, drawH, goalMonths, monthly, maxValue);
+    var existingWrap = container.querySelector(".protocol-graph-wrap");
+    if (existingWrap) {
+      var existingSvg = existingWrap.querySelector(".protocol-graph");
+      if (existingSvg) {
+        var storedMax = parseFloat(existingSvg.getAttribute("data-max-value")) || maxValue;
+        if (maxValue > storedMax) {
+          storedMax = maxValue;
+          existingSvg.setAttribute("data-max-value", storedMax);
+        }
+        updateFactLine(existingSvg, W, H, drawW, drawH, goalMonths, storedMax, factBalance, actualMonths, hasFact, existingWrap);
+        return;
+      }
     }
 
+    var wrap = document.createElement("div");
+    wrap.className = "protocol-graph-wrap";
+
+    var svg = document.createElementNS(SVG_NS, "svg");
+    svg.setAttribute("class", "protocol-graph");
+    svg.setAttribute("viewBox", "0 0 " + W + " " + H);
+    svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
+    svg.setAttribute("data-max-value", maxValue);
+
+    var defs = el("defs", null, svg);
+    var filter = el("filter", { id: "factGlow", x: "-50%", y: "-50%", width: "200%", height: "200%" }, defs);
+    el("feGaussianBlur", { stdDeviation: "3", result: "glow" }, filter);
+    var feMerge = el("feMerge", null, filter);
+    el("feMergeNode", { "in": "glow" }, feMerge);
+    el("feMergeNode", { "in": "SourceGraphic" }, feMerge);
+
+    renderGrid(svg, W, H, drawW, drawH);
     renderWatermark(svg, W, H);
 
+    if (goalMonths > 0 && monthly > 0) {
+      renderPlanLine(svg, defs, W, H, drawW, drawH, goalMonths, monthly, maxValue);
+    }
+
     if (hasFact && goalMonths > 0 && actualMonths > 0) {
-      renderFactLine(svg, W, H, drawW, drawH, goalMonths, maxValue, factBalance, actualMonths);
+      renderFactLine(svg, W, H, drawW, drawH, goalMonths, maxValue, factBalance, actualMonths, true);
     }
 
     renderMonthLabels(svg, W, H, drawW, vMonths);
@@ -72,6 +89,8 @@ var ProtocolGraph = (function () {
     tooltipEl.style.display = "none";
     wrap.appendChild(tooltipEl);
 
+    bindTooltipEvents(wrap, svg);
+
     var graphBlock = container.querySelector(".graph-block");
     if (graphBlock) {
       var chartCard = graphBlock.querySelector(".chart-card");
@@ -79,6 +98,56 @@ var ProtocolGraph = (function () {
         chartCard.innerHTML = "";
         chartCard.appendChild(wrap);
       }
+    }
+  }
+
+  function updateFactLine(svg, W, H, drawW, drawH, goalMonths, maxValue, factBalance, actualMonths, hasFact, wrap) {
+    var oldLine = svg.querySelector(".fact-line");
+    if (oldLine) oldLine.remove();
+    var oldPoint = svg.querySelector(".fact-point");
+    if (oldPoint) oldPoint.remove();
+
+    if (!hasFact || goalMonths <= 0 || actualMonths <= 0) return;
+
+    renderFactLine(svg, W, H, drawW, drawH, goalMonths, maxValue, factBalance, actualMonths, false);
+  }
+
+  function bindTooltipEvents(wrap, svg) {
+    wrap.addEventListener("pointerleave", function () {
+      hideTooltip(wrap);
+    });
+
+    svg.addEventListener("pointermove", function (e) {
+      var dot = svg.querySelector(".fact-point");
+      if (!dot) return;
+
+      var rect = svg.getBoundingClientRect();
+      var scaleX = rect.width / 400;
+      var scaleY = rect.height / GRAPH_H;
+      var dotCx = parseFloat(dot.getAttribute("cx"));
+      var dotCy = parseFloat(dot.getAttribute("cy"));
+      var absX = dotCx * scaleX;
+      var absY = dotCy * scaleY;
+      var pointerX = e.clientX - rect.left;
+      var pointerY = e.clientY - rect.top;
+      var dist = Math.sqrt(Math.pow(pointerX - absX, 2) + Math.pow(pointerY - absY, 2));
+
+      if (dist < 35) {
+        var tooltip = wrap.querySelector(".graph-tooltip");
+        var balance = parseFloat(dot.getAttribute("data-fact-balance")) || 0;
+        if (tooltip) {
+          showTooltipAt(tooltip, svg, dotCx, dotCy, balance);
+        }
+      }
+    });
+  }
+
+  function hideTooltip(wrap) {
+    if (_tooltipTimer) clearTimeout(_tooltipTimer);
+    var t = wrap.querySelector(".graph-tooltip");
+    if (t) {
+      t.classList.remove("visible");
+      setTimeout(function () { t.style.display = "none"; }, 250);
     }
   }
 
@@ -103,7 +172,7 @@ var ProtocolGraph = (function () {
     }, g);
   }
 
-  function renderPlanLine(svg, W, H, drawW, drawH, goalMonths, monthly, maxValue) {
+  function renderPlanLine(svg, defs, W, H, drawW, drawH, goalMonths, monthly, maxValue) {
     var points = [];
     var total = 0;
     for (var i = 0; i <= goalMonths; i++) {
@@ -116,31 +185,18 @@ var ProtocolGraph = (function () {
     }
 
     var gradId = "planGrad_" + Date.now();
-    var defs = el("defs", null, svg);
     var grad = el("linearGradient", { id: gradId, x1: "0%", y1: "0%", x2: "100%", y2: "0%" }, defs);
     el("stop", { offset: "0%", "stop-color": "#3a7bfd" }, grad);
     el("stop", { offset: "100%", "stop-color": "#60a5fa" }, grad);
 
-    var fillGradId = "planFill_" + Date.now();
-    var fillGrad = el("linearGradient", { id: fillGradId, x1: "0", y1: "0", x2: "0", y2: "1" }, defs);
-    el("stop", { offset: "0%", "stop-color": "rgba(58,123,253,0.18)" }, fillGrad);
-    el("stop", { offset: "100%", "stop-color": "rgba(58,123,253,0)" }, fillGrad);
-
-    var fillD = "M" + points.join(" L") + " L" + (PAD_X + drawW).toFixed(1) + "," + (H - PAD_BOT) + " L" + PAD_X + "," + (H - PAD_BOT) + " Z";
-    el("path", {
-      d: fillD,
-      fill: "url(#" + fillGradId + ")",
-      "class": "plan-fill"
-    }, svg);
-
     var d = "M" + points.join(" L");
     var totalLen = estimatePolylineLength(points);
 
-    el("path", {
+    var line = el("path", {
       d: d,
       fill: "none",
       stroke: "url(#" + gradId + ")",
-      "stroke-width": "2.5",
+      "stroke-width": "2.4",
       "stroke-linecap": "round",
       "stroke-linejoin": "round",
       "class": "plan-line",
@@ -150,15 +206,12 @@ var ProtocolGraph = (function () {
     }, svg);
 
     requestAnimationFrame(function () {
-      var line = svg.querySelector(".plan-line");
-      if (line) {
-        line.style.transition = "stroke-dashoffset 1.2s cubic-bezier(.4,0,.2,1)";
-        line.setAttribute("stroke-dashoffset", "0");
-      }
+      line.style.transition = "stroke-dashoffset 0.6s cubic-bezier(.4,0,.2,1)";
+      line.setAttribute("stroke-dashoffset", "0");
     });
   }
 
-  function renderFactLine(svg, W, H, drawW, drawH, goalMonths, maxValue, factBalance, actualMonths) {
+  function renderFactLine(svg, W, H, drawW, drawH, goalMonths, maxValue, factBalance, actualMonths, animate) {
     var startX = PAD_X;
     var startY = H - PAD_BOT;
     var endX = PAD_X + (actualMonths / goalMonths) * drawW;
@@ -168,40 +221,45 @@ var ProtocolGraph = (function () {
     var d = "M" + startX + "," + startY + " L" + endX.toFixed(1) + "," + endY.toFixed(1);
     var len = Math.sqrt(Math.pow(endX - startX, 2) + Math.pow(endY - startY, 2));
 
-    el("path", {
+    var lineAttrs = {
       d: d,
       fill: "none",
       stroke: "#ffffff",
-      "stroke-width": "2.2",
+      "stroke-width": "2",
       "stroke-linecap": "round",
       "class": "fact-line",
-      "stroke-dasharray": len.toFixed(0),
-      "stroke-dashoffset": len.toFixed(0),
       filter: "drop-shadow(0 0 6px rgba(255,255,255,0.3))"
-    }, svg);
+    };
+
+    if (animate) {
+      lineAttrs["stroke-dasharray"] = len.toFixed(0);
+      lineAttrs["stroke-dashoffset"] = len.toFixed(0);
+    }
+
+    var line = el("path", lineAttrs, svg);
 
     var dot = el("circle", {
       cx: endX.toFixed(1),
       cy: endY.toFixed(1),
-      r: "0",
+      r: animate ? "0" : "5",
       fill: "#ffffff",
       "class": "fact-point",
-      filter: "drop-shadow(0 0 8px rgba(255,255,255,0.4))"
+      filter: "url(#factGlow)"
     }, svg);
 
     dot.setAttribute("data-fact-balance", factBalance);
 
-    requestAnimationFrame(function () {
-      var line = svg.querySelector(".fact-line");
-      if (line) {
-        line.style.transition = "stroke-dashoffset 0.9s cubic-bezier(.25,.46,.45,.94)";
+    if (animate) {
+      requestAnimationFrame(function () {
+        line.style.transition = "stroke-dashoffset 0.5s cubic-bezier(.25,.46,.45,.94)";
         line.setAttribute("stroke-dashoffset", "0");
-      }
 
-      setTimeout(function () {
-        dot.setAttribute("r", "4.5");
-      }, 800);
-    });
+        setTimeout(function () {
+          dot.style.transition = "r 0.25s ease";
+          dot.setAttribute("r", "5");
+        }, 450);
+      });
+    }
 
     dot.addEventListener("click", function (e) {
       e.stopPropagation();
@@ -231,7 +289,7 @@ var ProtocolGraph = (function () {
 
     tooltip.style.display = "block";
     tooltip.style.left = Math.max(10, Math.min(absX - 60, rect.width - 140)) + "px";
-    tooltip.style.top = Math.max(0, absY - 55) + "px";
+    tooltip.style.top = Math.max(0, absY - 40) + "px";
 
     requestAnimationFrame(function () { tooltip.classList.add("visible"); });
 
@@ -245,7 +303,7 @@ var ProtocolGraph = (function () {
     var g = el("g", { "class": "graph-watermark", opacity: "0.08" }, svg);
     el("text", {
       x: (W / 2).toFixed(0),
-      y: (H / 2 + 6).toFixed(0),
+      y: (H * 0.55).toFixed(0),
       "text-anchor": "middle",
       "font-size": "16",
       "font-weight": "600",
