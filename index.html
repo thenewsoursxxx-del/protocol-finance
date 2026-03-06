@@ -580,9 +580,16 @@ Protocol анализирует цель…
   </div>
 
   <div class="advanced-settings">
-    <div class="advanced-setting-card" id="advCardNewGoal">
-      <div class="advanced-setting-title">Новая цель</div>
-      <div class="advanced-setting-desc">Создайте новую цель и управляйте несколькими накоплениями одновременно</div>
+    <div class="advanced-setting-card adv-card-goals" id="advCardNewGoal">
+      <div class="adv-card-goals-initial" id="advCardGoalsInitial">
+        <div class="advanced-setting-title">Новая цель</div>
+        <div class="advanced-setting-desc">Создайте новую цель и управляйте несколькими накоплениями одновременно</div>
+      </div>
+      <div class="adv-card-goals-expanded" id="advCardGoalsExpanded" style="display:none">
+        <div class="advanced-setting-title">Ваши цели</div>
+        <div id="advancedGoalsList" class="advanced-goals-list"></div>
+        <button id="addGoalBtn" class="advanced-add-goal-btn">+ Добавить цель</button>
+      </div>
     </div>
     <div class="advanced-setting-card" id="advCardDeadlines">
       <div class="advanced-setting-title">Управление сроками целей</div>
@@ -592,10 +599,6 @@ Protocol анализирует цель…
       <div class="advanced-setting-title">Приоритеты накоплений</div>
       <div class="advanced-setting-desc">Определите, какая цель важнее — и перераспределите средства</div>
     </div>
-
-    <div class="advanced-section-label" style="margin-top:24px">Ваши цели</div>
-    <div id="advancedGoalsList" class="advanced-goals-list"></div>
-    <button id="addGoalBtn" class="advanced-add-goal-btn">+ Добавить цель</button>
   </div>
 
 </div>

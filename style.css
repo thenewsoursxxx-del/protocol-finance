@@ -1941,6 +1941,18 @@ body.advanced-active .advanced-fog {
   pointer-events: none;
 }
 
+.adv-card-goals .adv-card-goals-initial {
+  cursor: pointer;
+}
+
+.adv-card-goals .adv-card-goals-expanded {
+  cursor: default;
+}
+
+.adv-card-goals .adv-card-goals-expanded .advanced-add-goal-btn {
+  margin-top: 14px;
+}
+
 /* ===== FLIP CARD ===== */
 .flip-wrapper {
   perspective: 1200px;

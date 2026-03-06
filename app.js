@@ -4241,11 +4241,14 @@ renderAccountBackCards();
   /* ───── Advanced Emerald Cards ──────────────────────────────── */
 
   var advCardNewGoal = document.getElementById("advCardNewGoal");
+  var advCardGoalsInitial = document.getElementById("advCardGoalsInitial");
+  var advCardGoalsExpanded = document.getElementById("advCardGoalsExpanded");
   var advCardDeadlines = document.getElementById("advCardDeadlines");
   var advCardPriorities = document.getElementById("advCardPriorities");
 
-  if (advCardNewGoal) {
-    advCardNewGoal.addEventListener("click", function () {
+  if (advCardGoalsInitial) {
+    advCardGoalsInitial.addEventListener("click", function (e) {
+      e.stopPropagation();
       if (typeof haptic === "function") haptic("light");
       if (appGoals.length >= MAX_GOALS) {
         if (typeof showToast === "function") showToast("Максимум " + MAX_GOALS + " цели", "error");
@@ -4258,22 +4261,31 @@ renderAccountBackCards();
   if (advCardDeadlines) {
     advCardDeadlines.addEventListener("click", function () {
       if (typeof haptic === "function") haptic("light");
-      var list = document.getElementById("advancedGoalsList");
-      if (list) list.scrollIntoView({ behavior: "smooth", block: "start" });
+      if (advCardGoalsExpanded && advCardGoalsExpanded.style.display !== "none") {
+        advCardGoalsExpanded.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
     });
   }
 
   if (advCardPriorities) {
     advCardPriorities.addEventListener("click", function () {
       if (typeof haptic === "function") haptic("light");
-      var list = document.getElementById("advancedGoalsList");
-      if (list) list.scrollIntoView({ behavior: "smooth", block: "start" });
+      if (advCardGoalsExpanded && advCardGoalsExpanded.style.display !== "none") {
+        advCardGoalsExpanded.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
     });
   }
 
   function updateAdvCards() {
-    if (advCardNewGoal) {
-      advCardNewGoal.classList.toggle("disabled-card", appGoals.length >= MAX_GOALS);
+    if (!advCardGoalsInitial || !advCardGoalsExpanded) return;
+    if (appGoals.length === 0) {
+      advCardGoalsInitial.style.display = "";
+      advCardGoalsExpanded.style.display = "none";
+      if (advCardNewGoal) advCardNewGoal.classList.remove("disabled-card");
+    } else {
+      advCardGoalsInitial.style.display = "none";
+      advCardGoalsExpanded.style.display = "";
+      if (advCardNewGoal) advCardNewGoal.classList.toggle("disabled-card", appGoals.length >= MAX_GOALS);
     }
   }
 
@@ -4385,14 +4397,21 @@ renderAccountBackCards();
           if (typeof showToast === "function") showToast("Максимум 3 цели", "error");
           return;
         }
-        appGoals.push({
+        var newGoal = {
           id: generateGoalId(),
           title: title,
           amount: amount,
           saved: 0,
           priority: selectedPriority,
           monthsTarget: months
-        });
+        };
+        appGoals.push(newGoal);
+        if (appGoals.length === 1) {
+          goalMeta.title = title;
+          if (goalInput) goalInput.value = formatNumber(String(amount));
+          if (lastCalc) lastCalc.months = months;
+          recalcPlan();
+        }
       }
 
       resolvePriorityConflicts(editingGoalId || appGoals[appGoals.length - 1].id);
@@ -4449,7 +4468,8 @@ renderAccountBackCards();
   }
 
   if (addGoalBtn) {
-    addGoalBtn.addEventListener("click", function () {
+    addGoalBtn.addEventListener("click", function (e) {
+      e.stopPropagation();
       if (typeof haptic === "function") haptic("light");
       if (appGoals.length >= MAX_GOALS) {
         if (typeof showToast === "function") showToast("Максимум " + MAX_GOALS + " цели", "error");
