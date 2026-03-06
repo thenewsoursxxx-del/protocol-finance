@@ -1919,9 +1919,26 @@ body.advanced-active .advanced-fog {
   line-height: 1.35;
 }
 
-.advanced-setting-card[data-stub] {
+.advanced-setting-card {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.25s ease,
+    opacity 0.2s ease;
+}
+
+.advanced-setting-card:active {
+  transform: scale(0.97);
+  box-shadow:
+    0 4px 16px rgba(0, 80, 60, 0.5),
+    inset 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.advanced-setting-card.disabled-card {
   cursor: default;
-  opacity: 0.95;
+  opacity: 0.45;
+  pointer-events: none;
 }
 
 /* ===== FLIP CARD ===== */

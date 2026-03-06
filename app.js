@@ -4238,6 +4238,45 @@ renderAccountBackCards();
     }
   }
 
+  /* ───── Advanced Emerald Cards ──────────────────────────────── */
+
+  var advCardNewGoal = document.getElementById("advCardNewGoal");
+  var advCardDeadlines = document.getElementById("advCardDeadlines");
+  var advCardPriorities = document.getElementById("advCardPriorities");
+
+  if (advCardNewGoal) {
+    advCardNewGoal.addEventListener("click", function () {
+      if (typeof haptic === "function") haptic("light");
+      if (appGoals.length >= MAX_GOALS) {
+        if (typeof showToast === "function") showToast("Максимум " + MAX_GOALS + " цели", "error");
+        return;
+      }
+      openAdvGoalSheet(null);
+    });
+  }
+
+  if (advCardDeadlines) {
+    advCardDeadlines.addEventListener("click", function () {
+      if (typeof haptic === "function") haptic("light");
+      var list = document.getElementById("advancedGoalsList");
+      if (list) list.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }
+
+  if (advCardPriorities) {
+    advCardPriorities.addEventListener("click", function () {
+      if (typeof haptic === "function") haptic("light");
+      var list = document.getElementById("advancedGoalsList");
+      if (list) list.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }
+
+  function updateAdvCards() {
+    if (advCardNewGoal) {
+      advCardNewGoal.classList.toggle("disabled-card", appGoals.length >= MAX_GOALS);
+    }
+  }
+
   /* ───── Advanced Goals Management ─────────────────────────── */
 
   var advGoalsList = document.getElementById("advancedGoalsList");
@@ -4426,6 +4465,7 @@ renderAccountBackCards();
     if (addGoalBtn) {
       addGoalBtn.disabled = appGoals.length >= MAX_GOALS;
     }
+    updateAdvCards();
 
     advGoalsList.innerHTML = "";
 
