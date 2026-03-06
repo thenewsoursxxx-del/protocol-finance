@@ -235,10 +235,19 @@ function migrateState(saved) {
         amount: goalAmount,
         saved: goalSaved,
         priority: 1,
-        monthsTarget: goalMonths
+        monthlyShare: 0,
+        monthsLeft: goalMonths
       }];
     }
     if (typeof saved.activeGoalIndex !== "number") saved.activeGoalIndex = 0;
+
+    saved.goals.forEach(function (g) {
+      if (typeof g.monthlyShare !== "number") g.monthlyShare = 0;
+      if (typeof g.monthsLeft !== "number") {
+        g.monthsLeft = g.monthsTarget || 0;
+      }
+      delete g.monthsTarget;
+    });
   }
 
   return saved;

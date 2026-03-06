@@ -3159,13 +3159,18 @@ body.flip-fix-pending .flip-wrapper {
 
 .adv-goal-card-info {
   display: flex;
-  gap: 16px;
+  justify-content: space-between;
   font-size: 13px;
   color: rgba(255, 255, 255, 0.6);
+  margin-top: 4px;
 }
 
 .adv-goal-card-info b {
   color: rgba(255, 255, 255, 0.9);
+}
+
+.adv-goal-card-progress {
+  margin-top: 8px;
 }
 
 .adv-goal-card-actions {
