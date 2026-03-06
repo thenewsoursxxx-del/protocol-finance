@@ -4286,52 +4286,71 @@ renderAccountBackCards();
 
   /* ───── Advanced Emerald Cards ──────────────────────────────── */
 
-  var advCardNewGoal = document.getElementById("advCardNewGoal");
-  var advCardGoalsInitial = document.getElementById("advCardGoalsInitial");
-  var advCardGoalsExpanded = document.getElementById("advCardGoalsExpanded");
+  var advCardGoalsBtn = document.getElementById("advCardGoalsBtn");
+  var advCardGoalsTitle = document.getElementById("advCardGoalsTitle");
+  var advCardGoalsDesc = document.getElementById("advCardGoalsDesc");
   var advCardDeadlines = document.getElementById("advCardDeadlines");
   var advCardPriorities = document.getElementById("advCardPriorities");
+  var advancedGoalsBack = document.getElementById("advancedGoalsBack");
 
-  if (advCardGoalsInitial) {
-    advCardGoalsInitial.addEventListener("click", function (e) {
-      e.stopPropagation();
+  function openAdvancedGoalsScreen() {
+    document.getElementById("screen-advanced").classList.remove("active");
+    document.getElementById("screen-advanced-goals").classList.add("active");
+    renderAdvancedGoals();
+  }
+
+  function closeAdvancedGoalsScreen() {
+    document.getElementById("screen-advanced-goals").classList.remove("active");
+    document.getElementById("screen-advanced").classList.add("active");
+    updateAdvCards();
+  }
+
+  if (advCardGoalsBtn) {
+    advCardGoalsBtn.addEventListener("click", function () {
       if (typeof haptic === "function") haptic("light");
-      if (appGoals.length >= MAX_GOALS) {
-        if (typeof showToast === "function") showToast("Максимум " + MAX_GOALS + " цели", "error");
-        return;
+      if (appGoals.length === 0) {
+        if (appGoals.length >= MAX_GOALS) {
+          if (typeof showToast === "function") showToast("Можно создать максимум 3 цели", "error");
+          return;
+        }
+        openAdvGoalSheet(null);
+      } else {
+        openAdvancedGoalsScreen();
       }
-      openAdvGoalSheet(null);
+    });
+  }
+
+  if (advancedGoalsBack) {
+    advancedGoalsBack.addEventListener("click", function () {
+      if (typeof haptic === "function") haptic("light");
+      closeAdvancedGoalsScreen();
     });
   }
 
   if (advCardDeadlines) {
     advCardDeadlines.addEventListener("click", function () {
       if (typeof haptic === "function") haptic("light");
-      if (advCardGoalsExpanded && advCardGoalsExpanded.style.display !== "none") {
-        advCardGoalsExpanded.scrollIntoView({ behavior: "smooth", block: "start" });
-      }
+      if (appGoals.length > 0) openAdvancedGoalsScreen();
     });
   }
 
   if (advCardPriorities) {
     advCardPriorities.addEventListener("click", function () {
       if (typeof haptic === "function") haptic("light");
-      if (advCardGoalsExpanded && advCardGoalsExpanded.style.display !== "none") {
-        advCardGoalsExpanded.scrollIntoView({ behavior: "smooth", block: "start" });
-      }
+      if (appGoals.length > 0) openAdvancedGoalsScreen();
     });
   }
 
   function updateAdvCards() {
-    if (!advCardGoalsInitial || !advCardGoalsExpanded) return;
+    if (!advCardGoalsTitle || !advCardGoalsDesc || !advCardGoalsBtn) return;
     if (appGoals.length === 0) {
-      advCardGoalsInitial.style.display = "";
-      advCardGoalsExpanded.style.display = "none";
-      if (advCardNewGoal) advCardNewGoal.classList.remove("disabled-card");
+      advCardGoalsTitle.innerText = "Добавить цель";
+      advCardGoalsDesc.innerText = "Создайте цель и начните копить";
+      advCardGoalsBtn.classList.remove("disabled-card");
     } else {
-      advCardGoalsInitial.style.display = "none";
-      advCardGoalsExpanded.style.display = "";
-      if (advCardNewGoal) advCardNewGoal.classList.toggle("disabled-card", appGoals.length >= MAX_GOALS);
+      advCardGoalsTitle.innerText = "Ваши цели";
+      advCardGoalsDesc.innerText = "Просмотр и управление целями";
+      advCardGoalsBtn.classList.toggle("disabled-card", appGoals.length >= MAX_GOALS);
     }
   }
 

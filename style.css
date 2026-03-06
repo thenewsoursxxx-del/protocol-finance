@@ -1941,16 +1941,17 @@ body.advanced-active .advanced-fog {
   pointer-events: none;
 }
 
-.adv-card-goals .adv-card-goals-initial {
+.adv-card-goals {
   cursor: pointer;
 }
 
-.adv-card-goals .adv-card-goals-expanded {
-  cursor: default;
+.advanced-goals-screen-body {
+  padding: 20px;
+  padding-top: 16px;
 }
 
-.adv-card-goals .adv-card-goals-expanded .advanced-add-goal-btn {
-  margin-top: 14px;
+.advanced-goals-screen-body .advanced-add-goal-btn {
+  margin-top: 16px;
 }
 
 /* ===== FLIP CARD ===== */

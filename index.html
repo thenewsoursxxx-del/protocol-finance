@@ -582,16 +582,9 @@ Protocol анализирует цель…
   </div>
 
   <div class="advanced-settings">
-    <div class="advanced-setting-card adv-card-goals" id="advCardNewGoal">
-      <div class="adv-card-goals-initial" id="advCardGoalsInitial">
-        <div class="advanced-setting-title">Новая цель</div>
-        <div class="advanced-setting-desc">Создайте новую цель и управляйте несколькими накоплениями одновременно</div>
-      </div>
-      <div class="adv-card-goals-expanded" id="advCardGoalsExpanded" style="display:none">
-        <div class="advanced-setting-title">Ваши цели</div>
-        <div id="advancedGoalsList" class="advanced-goals-list"></div>
-        <button id="addGoalBtn" class="advanced-add-goal-btn">+ Добавить цель</button>
-      </div>
+    <div class="advanced-setting-card adv-card-goals" id="advCardGoalsBtn">
+      <div class="advanced-setting-title" id="advCardGoalsTitle">Добавить цель</div>
+      <div class="advanced-setting-desc" id="advCardGoalsDesc">Создайте цель и начните копить</div>
     </div>
     <div class="advanced-setting-card" id="advCardDeadlines">
       <div class="advanced-setting-title">Управление сроками целей</div>
@@ -603,6 +596,23 @@ Protocol анализирует цель…
     </div>
   </div>
 
+</div>
+
+<!-- ===== ADVANCED GOALS LIST (открывается по нажатию "Ваши цели") ===== -->
+<div class="screen" id="screen-advanced-goals">
+  <div class="app-header">
+    <div class="header-left">
+      <button id="advancedGoalsBack" class="header-back">←</button>
+    </div>
+    <div class="header-center">
+      <div class="header-title">Ваши цели</div>
+    </div>
+    <div class="header-right"></div>
+  </div>
+  <div class="advanced-goals-screen-body">
+    <div id="advancedGoalsList" class="advanced-goals-list"></div>
+    <button id="addGoalBtn" class="advanced-add-goal-btn">+ Добавить цель</button>
+  </div>
 </div>
 
 <!-- ===== UNEXPECTED EXPENSE SCREEN ===== -->
