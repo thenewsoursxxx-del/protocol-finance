@@ -3091,29 +3091,30 @@ body.flip-fix-pending .flip-wrapper {
 .graph-swipe-wrapper {
   position: relative;
   overflow: hidden;
-  will-change: transform;
-  transform: translateZ(0);
   touch-action: pan-y;
 }
 
 .graph-swipe-wrapper > .card {
   will-change: transform, opacity;
-  transform: translateZ(0);
-  backface-visibility: hidden;
 }
 
 .graph-swipe-wrapper > .card.swipe-dragging {
   transition: none !important;
 }
 
-.graph-swipe-wrapper > .card.swipe-animating {
-  transition: transform 420ms cubic-bezier(.22,.9,.2,1),
-              opacity 420ms cubic-bezier(.22,.9,.2,1);
+.graph-swipe-wrapper > .card.swipe-exit {
+  transition: transform 350ms cubic-bezier(.4, 0, .7, .2),
+              opacity 300ms ease-out;
+}
+
+.graph-swipe-wrapper > .card.swipe-enter {
+  transition: transform 380ms cubic-bezier(.0, 0, .2, 1),
+              opacity 320ms ease-in;
 }
 
 .graph-swipe-wrapper > .card.swipe-cancel {
-  transition: transform 250ms ease,
-              opacity 250ms ease;
+  transition: transform 280ms cubic-bezier(.2, .8, .4, 1),
+              opacity 200ms ease;
 }
 
 /* ===== GRAPH GOAL INDICATOR ===== */
