@@ -3733,49 +3733,164 @@ renderAccountBackCards();
     if (!advCard) { setActiveGoal(idx); return; }
 
     _slideAnimating = true;
-    var forward = ((idx - activeGoalIndex + count) % count) === 1;
+    var forward = idx > activeGoalIndex || (activeGoalIndex === count - 1 && idx === 0);
+    var offX = forward ? "-100vw" : "100vw";
 
-    advCard.classList.add(forward ? "slide-out-left" : "slide-out-right");
+    advCard.classList.remove("swipe-dragging", "swipe-cancel");
+    advCard.classList.add("swipe-animating");
+    advCard.style.transform = "translateX(" + offX + ")";
+    advCard.style.opacity = "0";
 
-    setTimeout(function () {
+    function onDone() {
+      advCard.removeEventListener("transitionend", onDone);
       setActiveGoal(idx);
 
-      advCard.classList.remove("slide-out-left", "slide-out-right");
-      advCard.classList.add(forward ? "slide-in-left" : "slide-in-right");
+      advCard.classList.remove("swipe-animating");
+      advCard.style.transition = "none";
+      advCard.style.transform = "translateX(" + (forward ? "60px" : "-60px") + ")";
+      advCard.style.opacity = "0";
 
       requestAnimationFrame(function () {
         requestAnimationFrame(function () {
-          advCard.classList.remove("slide-in-left", "slide-in-right");
-          setTimeout(function () { _slideAnimating = false; }, 180);
+          advCard.style.transition = "";
+          advCard.classList.add("swipe-animating");
+          advCard.style.transform = "translateX(0)";
+          advCard.style.opacity = "1";
+
+          function onIn() {
+            advCard.removeEventListener("transitionend", onIn);
+            advCard.classList.remove("swipe-animating");
+            advCard.style.transform = "";
+            advCard.style.opacity = "";
+            advCard.style.transition = "";
+            _slideAnimating = false;
+          }
+          advCard.addEventListener("transitionend", onIn, { once: true });
+          setTimeout(function () { _slideAnimating = false; }, 500);
         });
       });
-    }, 180);
+    }
+    advCard.addEventListener("transitionend", onDone, { once: true });
+    setTimeout(function () { if (_slideAnimating) { onDone(); } }, 480);
   }
 
+  /* ───── Touch swipe: finger-following drag ───────────────── */
+
   if (graphFlipWrapper) {
-    var gfStartX = 0, gfDx = 0, gfSwiping = false;
-    var GF_THRESHOLD = 40;
+    var _swStartX = 0;
+    var _swStartY = 0;
+    var _swDeltaX = 0;
+    var _swActive = false;
+    var _swLocked = false;
+    var _swRafId = null;
+    var GF_THRESHOLD = 80;
+
     graphFlipWrapper.addEventListener("touchstart", function (e) {
-      if (!e.touches || !e.touches.length) return;
-      gfStartX = e.touches[0].clientX; gfDx = 0; gfSwiping = true;
+      if (_slideAnimating || !e.touches || !e.touches.length) return;
+      var advCard = document.getElementById("adviceCard");
+      if (!advCard) return;
+      _swStartX = e.touches[0].clientX;
+      _swStartY = e.touches[0].clientY;
+      _swDeltaX = 0;
+      _swActive = true;
+      _swLocked = false;
+
+      advCard.classList.remove("swipe-animating", "swipe-cancel");
+      advCard.classList.add("swipe-dragging");
     }, { passive: true });
+
     graphFlipWrapper.addEventListener("touchmove", function (e) {
-      if (!gfSwiping || !e.touches || !e.touches.length) return;
-      gfDx = e.touches[0].clientX - gfStartX;
-    }, { passive: true });
-    graphFlipWrapper.addEventListener("touchend", function () {
-      if (!gfSwiping) return; gfSwiping = false;
+      if (!_swActive || !e.touches || !e.touches.length) return;
+
+      var cx = e.touches[0].clientX;
+      var cy = e.touches[0].clientY;
+      var rawDx = cx - _swStartX;
+      var rawDy = cy - _swStartY;
+
+      if (!_swLocked) {
+        if (Math.abs(rawDx) < 8 && Math.abs(rawDy) < 8) return;
+        if (Math.abs(rawDy) > Math.abs(rawDx)) {
+          _swActive = false;
+          var advCard = document.getElementById("adviceCard");
+          if (advCard) {
+            advCard.classList.remove("swipe-dragging");
+            advCard.style.transform = "";
+            advCard.style.opacity = "";
+          }
+          return;
+        }
+        _swLocked = true;
+      }
+
+      e.preventDefault();
+
       var count = getGoalFaceCount();
-      if (count <= 1) return;
-      var next;
-      if (gfDx < -GF_THRESHOLD) next = (activeGoalIndex + 1) % count;
-      else if (gfDx > GF_THRESHOLD) next = (activeGoalIndex - 1 + count) % count;
-      else return;
-      setGraphFace(next);
-    });
-    graphFlipWrapper.addEventListener("touchcancel", function () {
-      gfSwiping = false;
-    });
+      var atFirst = activeGoalIndex === 0;
+      var atLast = activeGoalIndex === count - 1;
+      var dx = rawDx;
+
+      if ((atFirst && dx > 0) || (atLast && dx < 0)) {
+        dx = dx * 0.35;
+      }
+
+      _swDeltaX = dx;
+
+      if (_swRafId) cancelAnimationFrame(_swRafId);
+      _swRafId = requestAnimationFrame(function () {
+        _swRafId = null;
+        var advCard = document.getElementById("adviceCard");
+        if (!advCard) return;
+        advCard.style.transform = "translateX(" + _swDeltaX + "px)";
+        var progress = Math.min(Math.abs(_swDeltaX) / 300, 1);
+        advCard.style.opacity = String(1 - progress * 0.3);
+      });
+    }, { passive: false });
+
+    function finishSwipe() {
+      if (!_swActive && !_swLocked) return;
+      _swActive = false;
+      _swLocked = false;
+
+      if (_swRafId) { cancelAnimationFrame(_swRafId); _swRafId = null; }
+
+      var advCard = document.getElementById("adviceCard");
+      if (!advCard) return;
+      advCard.classList.remove("swipe-dragging");
+
+      var count = getGoalFaceCount();
+      var dx = _swDeltaX;
+      var absDx = Math.abs(dx);
+
+      if (absDx > GF_THRESHOLD && count > 1) {
+        var next;
+        if (dx < 0 && activeGoalIndex < count - 1) {
+          next = activeGoalIndex + 1;
+        } else if (dx > 0 && activeGoalIndex > 0) {
+          next = activeGoalIndex - 1;
+        }
+
+        if (next !== undefined) {
+          if (typeof haptic === "function") haptic("light");
+          setGraphFace(next);
+          return;
+        }
+      }
+
+      advCard.classList.add("swipe-cancel");
+      advCard.style.transform = "translateX(0)";
+      advCard.style.opacity = "1";
+      function onCancel() {
+        advCard.removeEventListener("transitionend", onCancel);
+        advCard.classList.remove("swipe-cancel");
+        advCard.style.transform = "";
+        advCard.style.opacity = "";
+      }
+      advCard.addEventListener("transitionend", onCancel, { once: true });
+      setTimeout(onCancel, 300);
+    }
+
+    graphFlipWrapper.addEventListener("touchend", finishSwipe);
+    graphFlipWrapper.addEventListener("touchcancel", finishSwipe);
   }
 
   /* ───── Graph goal indicator dots ───────────────────────── */

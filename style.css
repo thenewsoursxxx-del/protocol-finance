@@ -3086,40 +3086,34 @@ body.flip-fix-pending .flip-wrapper {
   opacity: .55;
 }
 
-/* ===== GRAPH GOAL SLIDE ===== */
+/* ===== GRAPH GOAL SWIPE ===== */
 
 .graph-swipe-wrapper {
   position: relative;
   overflow: hidden;
+  will-change: transform;
+  transform: translateZ(0);
+  touch-action: pan-y;
 }
 
 .graph-swipe-wrapper > .card {
-  transition: transform .18s cubic-bezier(.4,0,.2,1),
-              opacity .18s cubic-bezier(.4,0,.2,1);
+  will-change: transform, opacity;
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
-.graph-swipe-wrapper > .card.slide-out-left {
-  transform: translateX(-40px);
-  opacity: 0;
-  pointer-events: none;
+.graph-swipe-wrapper > .card.swipe-dragging {
+  transition: none !important;
 }
 
-.graph-swipe-wrapper > .card.slide-out-right {
-  transform: translateX(40px);
-  opacity: 0;
-  pointer-events: none;
+.graph-swipe-wrapper > .card.swipe-animating {
+  transition: transform 420ms cubic-bezier(.22,.9,.2,1),
+              opacity 420ms cubic-bezier(.22,.9,.2,1);
 }
 
-.graph-swipe-wrapper > .card.slide-in-left {
-  transform: translateX(40px);
-  opacity: 0;
-  transition: none;
-}
-
-.graph-swipe-wrapper > .card.slide-in-right {
-  transform: translateX(-40px);
-  opacity: 0;
-  transition: none;
+.graph-swipe-wrapper > .card.swipe-cancel {
+  transition: transform 250ms ease,
+              opacity 250ms ease;
 }
 
 /* ===== GRAPH GOAL INDICATOR ===== */
