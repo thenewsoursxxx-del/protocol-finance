@@ -1347,6 +1347,7 @@ style="width:52px;height:52px;border-radius:50%">
   buttons[1].classList.add("active");
   moveIndicator(buttons[1]);
   updatePlanHeader();
+  if (typeof updateFactInputVisibility === "function") updateFactInputVisibility();
 
   const factInput = document.getElementById("factInput");
   const applyBtn = document.getElementById("applyFact");
@@ -3704,18 +3705,44 @@ renderAccountBackCards();
 
   /* ───── setActiveGoal — single entry point for switching goals ─── */
 
+  function resetAccountFlips() {
+    document.querySelectorAll(".account-block.flip-wrapper").forEach(function (block) {
+      var inner = block.querySelector(".flip-inner");
+      if (inner && inner.classList.contains("flipped")) {
+        inner.classList.remove("flipped");
+        inner.style.transition = "";
+        inner.style.transform = "";
+        syncAccountFlipHeight(block, false);
+      }
+    });
+  }
+
+  function updateFactInputVisibility() {
+    var factRow = document.querySelector(".fact-input-row");
+    if (!factRow) return;
+    if (activeGoalIndex > 0) {
+      factRow.style.display = "none";
+    } else {
+      factRow.style.display = "";
+    }
+  }
+
   function setActiveGoal(index) {
     var goals = getGoals();
+    if (goals.length <= 1) index = 0;
     if (index < 0 || index >= goals.length) return;
     activeGoalIndex = index;
     updateState({ activeGoalIndex: index });
     saveState();
     recalcPlan();
+    resetAccountFlips();
+    updateFactInputVisibility();
     updateAccountsLocalNav();
     updateGraphGoalIndicator();
   }
 
   window.setActiveGoal = setActiveGoal;
+  window.updateFactInputVisibility = updateFactInputVisibility;
 
   /* ───── Graph goal slide + swipe ─────────────────────────── */
 
