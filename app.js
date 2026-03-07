@@ -3733,7 +3733,7 @@ renderAccountBackCards();
     if (!advCard) { setActiveGoal(idx); return; }
 
     _slideAnimating = true;
-    var forward = idx > activeGoalIndex || (activeGoalIndex === count - 1 && idx === 0);
+    var forward = ((idx - activeGoalIndex + count) % count) <= (count / 2);
     var offX = forward ? "-100vw" : "100vw";
 
     advCard.classList.remove("swipe-dragging", "swipe-cancel");
@@ -3741,8 +3741,7 @@ renderAccountBackCards();
     advCard.style.transform = "translateX(" + offX + ")";
     advCard.style.opacity = "0";
 
-    function onDone() {
-      advCard.removeEventListener("transitionend", onDone);
+    setTimeout(function () {
       setActiveGoal(idx);
 
       advCard.classList.remove("swipe-animating");
@@ -3757,21 +3756,16 @@ renderAccountBackCards();
           advCard.style.transform = "translateX(0)";
           advCard.style.opacity = "1";
 
-          function onIn() {
-            advCard.removeEventListener("transitionend", onIn);
+          setTimeout(function () {
             advCard.classList.remove("swipe-animating");
             advCard.style.transform = "";
             advCard.style.opacity = "";
             advCard.style.transition = "";
             _slideAnimating = false;
-          }
-          advCard.addEventListener("transitionend", onIn, { once: true });
-          setTimeout(function () { _slideAnimating = false; }, 500);
+          }, 440);
         });
       });
-    }
-    advCard.addEventListener("transitionend", onDone, { once: true });
-    setTimeout(function () { if (_slideAnimating) { onDone(); } }, 480);
+    }, 420);
   }
 
   /* ───── Touch swipe: finger-following drag ───────────────── */
@@ -3823,17 +3817,7 @@ renderAccountBackCards();
       }
 
       e.preventDefault();
-
-      var count = getGoalFaceCount();
-      var atFirst = activeGoalIndex === 0;
-      var atLast = activeGoalIndex === count - 1;
-      var dx = rawDx;
-
-      if ((atFirst && dx > 0) || (atLast && dx < 0)) {
-        dx = dx * 0.35;
-      }
-
-      _swDeltaX = dx;
+      _swDeltaX = rawDx;
 
       if (_swRafId) cancelAnimationFrame(_swRafId);
       _swRafId = requestAnimationFrame(function () {
@@ -3859,34 +3843,25 @@ renderAccountBackCards();
 
       var count = getGoalFaceCount();
       var dx = _swDeltaX;
-      var absDx = Math.abs(dx);
 
-      if (absDx > GF_THRESHOLD && count > 1) {
+      if (Math.abs(dx) > GF_THRESHOLD && count > 1) {
         var next;
-        if (dx < 0 && activeGoalIndex < count - 1) {
-          next = activeGoalIndex + 1;
-        } else if (dx > 0 && activeGoalIndex > 0) {
-          next = activeGoalIndex - 1;
-        }
+        if (dx < 0) next = (activeGoalIndex + 1) % count;
+        else        next = (activeGoalIndex - 1 + count) % count;
 
-        if (next !== undefined) {
-          if (typeof haptic === "function") haptic("light");
-          setGraphFace(next);
-          return;
-        }
+        if (typeof haptic === "function") haptic("light");
+        setGraphFace(next);
+        return;
       }
 
       advCard.classList.add("swipe-cancel");
       advCard.style.transform = "translateX(0)";
       advCard.style.opacity = "1";
-      function onCancel() {
-        advCard.removeEventListener("transitionend", onCancel);
+      setTimeout(function () {
         advCard.classList.remove("swipe-cancel");
         advCard.style.transform = "";
         advCard.style.opacity = "";
-      }
-      advCard.addEventListener("transitionend", onCancel, { once: true });
-      setTimeout(onCancel, 300);
+      }, 260);
     }
 
     graphFlipWrapper.addEventListener("touchend", finishSwipe);
