@@ -4277,9 +4277,53 @@ renderAccountBackCards();
   var advGoalAmountInput = document.getElementById("advGoalAmount");
   var advGoalSave = document.getElementById("advGoalSave");
   var advPriorityToggle = document.getElementById("advPriorityToggle");
+  var priorityHintEl = document.getElementById("priorityHint");
 
   var editingGoalId = null;
   var selectedPriority = 1;
+
+  var priorityHintTexts = {
+    1: "Цель получит наибольшую долю накоплений.\nЕсли выбрана позиция 1, остальные цели автоматически сдвинутся ниже.",
+    2: "Средний приоритет.\nЧасть накоплений будет направляться в эту цель.",
+    3: "Низкий приоритет.\nЦель будет получать минимальную долю накоплений."
+  };
+
+  function willShiftOtherGoals(priority) {
+    if (editingGoalId) return false;
+    var goals = getGoals();
+    return goals.some(function (g) { return g.priority >= priority; });
+  }
+
+  function showPriorityHint(priority) {
+    if (!priorityHintEl) return;
+    var text = priorityHintTexts[priority] || "";
+    var shift = willShiftOtherGoals(priority);
+    var html = '<span>' + text.replace(/\n/g, '<br>') + '</span>';
+    if (shift) {
+      html += '<span class="priority-hint-shift">Приоритет выбранной цели изменит порядок других целей.</span>';
+    }
+    priorityHintEl.innerHTML = html;
+    requestAnimationFrame(function () { priorityHintEl.classList.add("visible"); });
+  }
+
+  function hidePriorityHint() {
+    if (priorityHintEl) priorityHintEl.classList.remove("visible");
+  }
+
+  function getMaxAllowedPriority() {
+    var goals = getGoals();
+    var count = editingGoalId ? goals.length : goals.length + 1;
+    return Math.min(count, MAX_GOALS);
+  }
+
+  function updatePriorityButtons() {
+    if (!advPriorityToggle) return;
+    var maxP = getMaxAllowedPriority();
+    advPriorityToggle.querySelectorAll(".mode-btn").forEach(function (b) {
+      var val = Number(b.dataset.value);
+      b.classList.toggle("prio-disabled", val > maxP);
+    });
+  }
 
   function setAdvPriority(val) {
     selectedPriority = val;
@@ -4287,13 +4331,16 @@ renderAccountBackCards();
     advPriorityToggle.querySelectorAll(".mode-btn").forEach(function (b) {
       b.classList.toggle("active", Number(b.dataset.value) === val);
     });
+    showPriorityHint(val);
   }
 
   if (advPriorityToggle) {
     advPriorityToggle.querySelectorAll(".mode-btn").forEach(function (b) {
       b.addEventListener("click", function () {
+        var val = Number(this.dataset.value);
+        if (val > getMaxAllowedPriority()) return;
         if (typeof haptic === "function") haptic("light");
-        setAdvPriority(Number(this.dataset.value));
+        setAdvPriority(val);
       });
     });
   }
@@ -4304,6 +4351,8 @@ renderAccountBackCards();
     if (advGoalSheetTitle) advGoalSheetTitle.innerText = g ? "Редактирование цели" : "Новая цель";
     if (advGoalTitleInput) advGoalTitleInput.value = g ? g.title : "";
     if (advGoalAmountInput) advGoalAmountInput.value = g ? formatNumber(String(g.amount || 0)) : "";
+    updatePriorityButtons();
+    hidePriorityHint();
     setAdvPriority(g ? g.priority : getNextFreePriority());
     if (advGoalOverlay) advGoalOverlay.style.display = "block";
     requestAnimationFrame(function () {
@@ -4315,14 +4364,14 @@ renderAccountBackCards();
     if (advGoalSheet) advGoalSheet.style.transform = "translateY(100%)";
     setTimeout(function () { if (advGoalOverlay) advGoalOverlay.style.display = "none"; }, 550);
     editingGoalId = null;
+    hidePriorityHint();
   }
 
   function getNextFreePriority() {
     var goals = getGoals();
-    var used = {};
-    goals.forEach(function (g) { used[g.priority] = true; });
-    for (var p = 1; p <= 3; p++) { if (!used[p]) return p; }
-    return goals.length + 1;
+    var count = goals.length;
+    if (count === 0) return 1;
+    return Math.min(count + 1, MAX_GOALS);
   }
 
   if (advGoalOverlay) { advGoalOverlay.addEventListener("click", closeAdvGoalSheet); }
@@ -4331,6 +4380,19 @@ renderAccountBackCards();
     advGoalAmountInput.addEventListener("input", function (e) {
       e.target.value = formatNumber(e.target.value);
     });
+  }
+
+  /* ───── Priority Insertion ───────────────────────────────── */
+
+  function insertGoalWithPriority(goals, newGoal, priority) {
+    goals.forEach(function (g) {
+      if (g.priority >= priority) {
+        g.priority += 1;
+      }
+    });
+    newGoal.priority = priority;
+    goals.push(newGoal);
+    goals.sort(function (a, b) { return a.priority - b.priority; });
   }
 
   /* ───── SAVE BUTTON — creates/edits goal via state-manager ── */
@@ -4351,37 +4413,40 @@ renderAccountBackCards();
     if (editingGoalId) {
       var existing = getGoalById(editingGoalId);
       if (existing) {
+        var oldPriority = existing.priority;
         existing.title = title;
         existing.amount = amount;
-        existing.priority = priority;
+        if (priority !== oldPriority) {
+          existing.priority = priority;
+          resolvePriorityConflicts(editingGoalId, goals);
+        }
         if (existing === goals[0]) {
           goalMeta.title = title;
           if (goalInput) goalInput.value = formatNumber(String(amount));
         }
       }
+      goals.sort(function (a, b) { return a.priority - b.priority; });
     } else {
       if (goals.length >= MAX_GOALS) {
         if (typeof showToast === "function") showToast("Можно создать максимум 3 цели", "error");
         return;
       }
-      goals.push({
+      var newGoal = {
         id: generateGoalId(),
         title: title,
         amount: amount,
         saved: 0,
-        priority: priority,
+        priority: 1,
         monthlyShare: 0,
         monthsLeft: 0
-      });
+      };
+      insertGoalWithPriority(goals, newGoal, priority);
       if (goals.length === 1) {
         goalMeta.title = title;
         if (goalInput) goalInput.value = formatNumber(String(amount));
       }
     }
 
-    var keepId = editingGoalId || goals[goals.length - 1].id;
-    resolvePriorityConflicts(keepId, goals);
-    goals.sort(function (a, b) { return a.priority - b.priority; });
     computeGoalsAllocation(goals, plannedMonthly || 0);
     persistGoals(goals);
 
@@ -4392,6 +4457,8 @@ renderAccountBackCards();
     updateGraphGoalIndicator();
     updateAdvCards();
     if (typeof renderGoals === "function") renderGoals();
+    if (typeof renderAccountsUI === "function") renderAccountsUI();
+    if (typeof renderSVGGraph === "function") renderSVGGraph();
   }
 
   if (advGoalSave) {
