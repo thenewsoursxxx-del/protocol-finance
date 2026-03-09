@@ -47,6 +47,7 @@ function getDefaultState() {
     // ── Multi-goal (v6) ──
     goals: [],
     activeGoalIndex: 0,
+    completedGoals: [],
 
     // ── Engine (v3) ──
     financialModel: "simple",
@@ -320,7 +321,7 @@ function updateState(partial) {
   Object.keys(partial).forEach(key => {
     if (key === "accounts" || key === "goalMeta" || key === "uiState" || key === "accountStats") {
       appState[key] = { ...appState[key], ...partial[key] };
-    } else if (key === "goals") {
+    } else if (key === "goals" || key === "completedGoals") {
       appState[key] = Array.isArray(partial[key]) ? partial[key].map(g => ({ ...g })) : appState[key];
     } else {
       appState[key] = partial[key];
@@ -404,6 +405,7 @@ function applyState(saved) {
     : defaults.goals;
   appState.activeGoalIndex = typeof saved.activeGoalIndex === "number"
     ? saved.activeGoalIndex : 0;
+  appState.completedGoals = Array.isArray(saved.completedGoals) ? saved.completedGoals : [];
 
   // ── Engine (v3) ──
   appState.financialModel = saved.financialModel || defaults.financialModel;

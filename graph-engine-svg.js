@@ -13,6 +13,10 @@ var ProtocolGraph = (function () {
   var PAD_BOT = 36;
 
   var _tooltipTimer = null;
+  var _tooltipShowTimer = null;
+  var _tooltipHideTimer = null;
+  var tooltipShowDelay = 120;
+  var tooltipHideDelay = 300;
 
   function el(tag, attrs, parent) {
     var node = document.createElementNS(SVG_NS, tag);
@@ -113,8 +117,12 @@ var ProtocolGraph = (function () {
   }
 
   function bindTooltipEvents(wrap, svg) {
+    var _insideDot = false;
+
     wrap.addEventListener("pointerleave", function () {
-      hideTooltip(wrap);
+      _insideDot = false;
+      if (_tooltipShowTimer) { clearTimeout(_tooltipShowTimer); _tooltipShowTimer = null; }
+      startHideTimer(wrap);
     });
 
     svg.addEventListener("pointermove", function (e) {
@@ -133,21 +141,42 @@ var ProtocolGraph = (function () {
       var dist = Math.sqrt(Math.pow(pointerX - absX, 2) + Math.pow(pointerY - absY, 2));
 
       if (dist < 35) {
-        var tooltip = wrap.querySelector(".graph-tooltip");
-        var balance = parseFloat(dot.getAttribute("data-fact-balance")) || 0;
-        if (tooltip) {
-          showTooltipAt(tooltip, svg, dotCx, dotCy, balance);
+        if (_tooltipHideTimer) { clearTimeout(_tooltipHideTimer); _tooltipHideTimer = null; }
+        if (!_insideDot) {
+          _insideDot = true;
+          _tooltipShowTimer = setTimeout(function () {
+            var tooltip = wrap.querySelector(".graph-tooltip");
+            var balance = parseFloat(dot.getAttribute("data-fact-balance")) || 0;
+            if (tooltip) {
+              showTooltipAt(tooltip, svg, dotCx, dotCy, balance);
+            }
+          }, tooltipShowDelay);
+        }
+      } else {
+        if (_insideDot) {
+          _insideDot = false;
+          if (_tooltipShowTimer) { clearTimeout(_tooltipShowTimer); _tooltipShowTimer = null; }
+          startHideTimer(wrap);
         }
       }
     });
   }
 
+  function startHideTimer(wrap) {
+    if (_tooltipHideTimer) clearTimeout(_tooltipHideTimer);
+    _tooltipHideTimer = setTimeout(function () {
+      hideTooltip(wrap);
+      _tooltipHideTimer = null;
+    }, tooltipHideDelay);
+  }
+
   function hideTooltip(wrap) {
     if (_tooltipTimer) clearTimeout(_tooltipTimer);
+    if (_tooltipShowTimer) { clearTimeout(_tooltipShowTimer); _tooltipShowTimer = null; }
     var t = wrap.querySelector(".graph-tooltip");
     if (t) {
       t.classList.remove("visible");
-      setTimeout(function () { t.style.display = "none"; }, 250);
+      setTimeout(function () { if (!t.classList.contains("visible")) t.style.display = "none"; }, 300);
     }
   }
 
@@ -275,6 +304,7 @@ var ProtocolGraph = (function () {
 
   function showTooltipAt(tooltip, svg, cx, cy, value) {
     if (_tooltipTimer) clearTimeout(_tooltipTimer);
+    if (_tooltipHideTimer) { clearTimeout(_tooltipHideTimer); _tooltipHideTimer = null; }
 
     var rect = svg.getBoundingClientRect();
     var scaleX = rect.width / 400;
@@ -292,11 +322,6 @@ var ProtocolGraph = (function () {
     tooltip.style.top = Math.max(0, absY - 40) + "px";
 
     requestAnimationFrame(function () { tooltip.classList.add("visible"); });
-
-    _tooltipTimer = setTimeout(function () {
-      tooltip.classList.remove("visible");
-      setTimeout(function () { tooltip.style.display = "none"; }, 250);
-    }, 3500);
   }
 
   function renderWatermark(svg, W, H) {

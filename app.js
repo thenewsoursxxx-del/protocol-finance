@@ -444,6 +444,10 @@ function computeGraphState() {
 
   var hasFact = factHistory && factHistory.length > 0;
 
+  if (activeGoalIndex !== 0) {
+    hasFact = false;
+  }
+
   var actualMonths = 0;
   if (hasFact) {
     var mainFacts = factHistory.filter(function (f) { return f.to === "main"; });
@@ -1404,6 +1408,8 @@ style="width:52px;height:52px;border-radius:50%">
         setTimeout(fireCelebration, 120);
       }
 
+      checkGoalCompletion();
+
       factInput.value = "";
       factInput.blur();
     };
@@ -1584,6 +1590,130 @@ profileResetPlanBtn.onclick = () => {
 haptic("light");
 confirmReset.style.display = "block";
 };
+}
+
+/* ===== GOAL HISTORY ===== */
+
+var goalHistoryBtn = document.getElementById("goalHistoryBtn");
+var goalHistoryBack = document.getElementById("goalHistoryBack");
+
+if (goalHistoryBtn) {
+  goalHistoryBtn.addEventListener("click", function () {
+    haptic("light");
+    document.querySelectorAll(".screen").forEach(function (s) { s.classList.remove("active"); });
+    document.getElementById("screen-goal-history").classList.add("active");
+    renderGoalHistory();
+    moveProfileToActiveHeader();
+  });
+}
+
+if (goalHistoryBack) {
+  goalHistoryBack.addEventListener("click", function () {
+    haptic("light");
+    document.querySelectorAll(".screen").forEach(function (s) { s.classList.remove("active"); });
+    document.getElementById("screen-profile").classList.add("active");
+    moveProfileToActiveHeader();
+  });
+}
+
+function renderGoalHistory() {
+  var list = document.getElementById("goalHistoryList");
+  var emptyMsg = document.getElementById("goalHistoryEmpty");
+  var completed = getState().completedGoals || [];
+
+  if (!list) return;
+  list.innerHTML = "";
+
+  if (completed.length === 0) {
+    if (emptyMsg) emptyMsg.style.display = "block";
+    return;
+  }
+
+  if (emptyMsg) emptyMsg.style.display = "none";
+
+  var monthNames = ["Январь","Февраль","Март","Апрель","Май","Июнь","Июль","Август","Сентябрь","Октябрь","Ноябрь","Декабрь"];
+
+  completed.forEach(function (g) {
+    var card = document.createElement("div");
+    card.className = "goal-history-card";
+
+    var dateStr = "";
+    if (g.completedDate) {
+      var d = new Date(g.completedDate);
+      dateStr = monthNames[d.getMonth()] + " " + d.getFullYear();
+    }
+
+    var durationStr = g.durationMonths ? ("Достигнута за " + g.durationMonths + " мес.") : "";
+
+    card.innerHTML =
+      '<div class="goal-history-card-title">' + escapeHtmlSafe(g.title || "Цель") + '</div>' +
+      '<div class="goal-history-card-amount">' + (g.amount || 0).toLocaleString() + ' ₽</div>' +
+      '<div class="goal-history-card-meta">' +
+        '<span>' + durationStr + '</span>' +
+        '<span>' + dateStr + '</span>' +
+      '</div>';
+    list.appendChild(card);
+  });
+}
+
+function escapeHtmlSafe(str) {
+  var div = document.createElement("div");
+  div.appendChild(document.createTextNode(str));
+  return div.innerHTML;
+}
+
+function checkGoalCompletion() {
+  var goals = getGoals();
+  var completed = getState().completedGoals || [];
+  var changed = false;
+
+  for (var i = goals.length - 1; i >= 0; i--) {
+    var g = goals[i];
+    if (g.amount > 0 && (g.saved || 0) >= g.amount) {
+      var startDate = null;
+      if (factHistory && factHistory.length > 0) {
+        var sorted = factHistory.slice().sort(function (a, b) { return new Date(a.date) - new Date(b.date); });
+        startDate = new Date(sorted[0].date);
+      }
+
+      var now = new Date();
+      var duration = 0;
+      if (startDate) {
+        duration = (now.getFullYear() - startDate.getFullYear()) * 12 + (now.getMonth() - startDate.getMonth());
+        if (duration < 1) duration = 1;
+      }
+
+      completed.push({
+        id: g.id,
+        title: g.title,
+        amount: g.amount,
+        saved: g.saved,
+        completedDate: now.toISOString(),
+        durationMonths: duration
+      });
+
+      goals.splice(i, 1);
+      changed = true;
+    }
+  }
+
+  if (changed) {
+    if (goals.length === 0) {
+      goals.push({
+        id: "goal_" + Date.now(),
+        title: "Основная цель",
+        amount: 0,
+        saved: 0,
+        priority: 1,
+        monthlyShare: 0,
+        monthsLeft: 0
+      });
+    }
+    persistGoals(goals);
+    updateState({ completedGoals: completed });
+    saveState();
+    if (activeGoalIndex >= goals.length) activeGoalIndex = goals.length - 1;
+  }
 }
 
 /* ===== INPUT HINT LOGIC ===== */
@@ -2102,7 +2232,7 @@ const reserveBlock = document.querySelector(
 );
 
 if (reserveBlock) {
-if (chosenPlan === "buffer") {
+if (chosenPlan === "buffer" && activeGoalIndex === 0) {
 reserveBlock.classList.add("show-reserve");
 requestAnimationFrame(function () {
   var inner = reserveBlock.querySelector(".flip-inner");
@@ -2434,6 +2564,8 @@ if (advancedBtn) {
     haptic("light");
     
        document.body.classList.add("advanced-active");
+       var fog = document.querySelector(".advanced-fog");
+       if (fog) fog.classList.remove("fog-hidden");
 
     // скрываем все экраны
 document.querySelectorAll(".screen")
@@ -3978,10 +4110,20 @@ renderAccountBackCards();
   var advCardDeadlines = document.getElementById("advCardDeadlines");
   var advCardPriorities = document.getElementById("advCardPriorities");
   var advancedGoalsBack = document.getElementById("advancedGoalsBack");
-  var goalMgmtBack = document.getElementById("goalMgmtBack");
+
+  function showAdvancedFog() {
+    var fog = document.querySelector(".advanced-fog");
+    if (fog) fog.classList.remove("fog-hidden");
+  }
+
+  function hideAdvancedFog() {
+    var fog = document.querySelector(".advanced-fog");
+    if (fog) fog.classList.add("fog-hidden");
+  }
 
   function openAdvancedGoalsScreen() {
     goalsListCameFromAdvanced = true;
+    hideAdvancedFog();
     document.getElementById("screen-advanced").classList.remove("active");
     document.getElementById("screen-advanced-goals").classList.add("active");
     renderAdvancedGoals();
@@ -3990,18 +4132,35 @@ renderAccountBackCards();
   function closeAdvancedGoalsScreen() {
     document.getElementById("screen-advanced-goals").classList.remove("active");
     document.getElementById("screen-advanced").classList.add("active");
+    showAdvancedFog();
     updateAdvCards();
   }
 
-  function openGoalManagementScreen() {
+  function openGoalTimelineManager() {
+    hideAdvancedFog();
     document.getElementById("screen-advanced").classList.remove("active");
-    document.getElementById("screen-goal-management").classList.add("active");
-    renderGoalManagement();
+    document.getElementById("screen-goal-timeline").classList.add("active");
+    renderGoalTimeline();
   }
 
-  function closeGoalManagementScreen() {
-    document.getElementById("screen-goal-management").classList.remove("active");
+  function closeGoalTimelineScreen() {
+    document.getElementById("screen-goal-timeline").classList.remove("active");
     document.getElementById("screen-advanced").classList.add("active");
+    showAdvancedFog();
+    updateAdvCards();
+  }
+
+  function openGoalPriorityManager() {
+    hideAdvancedFog();
+    document.getElementById("screen-advanced").classList.remove("active");
+    document.getElementById("screen-goal-priority").classList.add("active");
+    renderGoalPriority();
+  }
+
+  function closeGoalPriorityScreen() {
+    document.getElementById("screen-goal-priority").classList.remove("active");
+    document.getElementById("screen-advanced").classList.add("active");
+    showAdvancedFog();
     updateAdvCards();
   }
 
@@ -4036,26 +4195,35 @@ renderAccountBackCards();
     });
   }
 
-  /* ── "Управление сроками" → goal-management ── */
+  /* ── "Управление сроками" → goal-timeline ── */
   if (advCardDeadlines) {
     advCardDeadlines.addEventListener("click", function () {
       if (typeof haptic === "function") haptic("light");
-      if (getGoals().length > 0) openGoalManagementScreen();
+      if (getGoals().length > 0) openGoalTimelineManager();
     });
   }
 
-  /* ── "Приоритеты" → goal-management ── */
+  /* ── "Приоритеты" → goal-priority ── */
   if (advCardPriorities) {
     advCardPriorities.addEventListener("click", function () {
       if (typeof haptic === "function") haptic("light");
-      if (getGoals().length > 0) openGoalManagementScreen();
+      if (getGoals().length > 0) openGoalPriorityManager();
     });
   }
 
-  if (goalMgmtBack) {
-    goalMgmtBack.addEventListener("click", function () {
+  var goalTimelineBack = document.getElementById("goalTimelineBack");
+  if (goalTimelineBack) {
+    goalTimelineBack.addEventListener("click", function () {
       if (typeof haptic === "function") haptic("light");
-      closeGoalManagementScreen();
+      closeGoalTimelineScreen();
+    });
+  }
+
+  var goalPriorityBack = document.getElementById("goalPriorityBack");
+  if (goalPriorityBack) {
+    goalPriorityBack.addEventListener("click", function () {
+      if (typeof haptic === "function") haptic("light");
+      closeGoalPriorityScreen();
     });
   }
 
@@ -4310,88 +4478,96 @@ renderAccountBackCards();
     });
   }
 
-  /* ───── Render: Goal Management (screen-goal-management) ───── */
+  /* ───── Render: Goal Timeline (screen-goal-timeline) ───── */
 
-  var goalMgmtAllocation = document.getElementById("goalMgmtAllocation");
-  var goalMgmtPriorities = document.getElementById("goalMgmtPriorities");
+  var goalTimelineAllocation = document.getElementById("goalTimelineAllocation");
 
-  function renderGoalManagement() {
+  function renderGoalTimeline() {
     var goals = getGoals();
     var monthly = plannedMonthly || 0;
 
-    if (goalMgmtAllocation) {
-      goalMgmtAllocation.innerHTML = "";
-      if (monthly > 0 && goals.length > 0) {
-        var totalEl = document.createElement("div");
-        totalEl.className = "goal-mgmt-total";
-        totalEl.innerHTML = "Ежемесячный взнос: <b>" + monthly.toLocaleString() + " ₽</b>";
-        goalMgmtAllocation.appendChild(totalEl);
-      }
-      goals.forEach(function (g) {
-        var pct = monthly > 0 ? Math.round(((g.monthlyShare || 0) / monthly) * 100) : 0;
-        var row = document.createElement("div");
-        row.className = "goal-mgmt-alloc-row";
-        row.innerHTML =
-          '<div class="goal-mgmt-alloc-header">' +
-            '<span class="goal-mgmt-alloc-name">' + escapeHtml(g.title) + '</span>' +
-            '<span class="goal-mgmt-alloc-amount">' + (g.monthlyShare || 0).toLocaleString() + ' ₽ <span class="goal-mgmt-alloc-pct">(' + pct + '%)</span></span>' +
-          '</div>' +
-          '<div class="goal-mgmt-alloc-bar-bg">' +
-            '<div class="goal-mgmt-alloc-bar" style="width:' + pct + '%"></div>' +
-          '</div>' +
-          '<div class="goal-mgmt-alloc-meta">Осталось: ' + (g.monthsLeft || "—") + ' мес.</div>';
-        goalMgmtAllocation.appendChild(row);
-      });
+    if (!goalTimelineAllocation) return;
+    goalTimelineAllocation.innerHTML = "";
+
+    if (monthly > 0 && goals.length > 0) {
+      var totalEl = document.createElement("div");
+      totalEl.className = "goal-mgmt-total";
+      totalEl.innerHTML = "Ежемесячный взнос: <b>" + monthly.toLocaleString() + " ₽</b>";
+      goalTimelineAllocation.appendChild(totalEl);
     }
 
-    if (goalMgmtPriorities) {
-      goalMgmtPriorities.innerHTML = "";
-      goals.forEach(function (g) {
-        var card = document.createElement("div");
-        card.className = "goal-mgmt-prio-card" + (g.priority === 1 ? " primary" : "");
-        var pctDone = g.amount > 0 ? Math.min(100, Math.round(((g.saved || 0) / g.amount) * 100)) : 0;
-        card.innerHTML =
-          '<div class="goal-mgmt-prio-header">' +
-            '<div class="goal-mgmt-prio-name">' + escapeHtml(g.title) + '</div>' +
-            '<div class="goal-mgmt-prio-badge">P' + g.priority + '</div>' +
-          '</div>' +
-          '<div class="goal-mgmt-prio-info">' +
-            '<span>' + pctDone + '% выполнено</span>' +
-            '<span>' + (g.saved || 0).toLocaleString() + ' / ' + (g.amount || 0).toLocaleString() + ' ₽</span>' +
-          '</div>' +
-          '<div class="goal-mgmt-prio-controls">' +
-            '<label class="goal-mgmt-prio-label">Приоритет</label>' +
-            '<div class="toggle-group goal-mgmt-prio-toggle" data-goal-id="' + g.id + '">' +
-              '<button class="mode-btn' + (g.priority === 1 ? " active" : "") + '" data-value="1">1</button>' +
-              '<button class="mode-btn' + (g.priority === 2 ? " active" : "") + '" data-value="2">2</button>' +
-              '<button class="mode-btn' + (g.priority === 3 ? " active" : "") + '" data-value="3">3</button>' +
-            '</div>' +
-          '</div>';
-        goalMgmtPriorities.appendChild(card);
-      });
+    goals.forEach(function (g) {
+      var pct = monthly > 0 ? Math.round(((g.monthlyShare || 0) / monthly) * 100) : 0;
+      var row = document.createElement("div");
+      row.className = "goal-mgmt-alloc-row";
+      row.innerHTML =
+        '<div class="goal-mgmt-alloc-header">' +
+          '<span class="goal-mgmt-alloc-name">' + escapeHtml(g.title) + '</span>' +
+          '<span class="goal-mgmt-alloc-amount">' + (g.monthlyShare || 0).toLocaleString() + ' ₽ <span class="goal-mgmt-alloc-pct">(' + pct + '%)</span></span>' +
+        '</div>' +
+        '<div class="goal-mgmt-alloc-bar-bg">' +
+          '<div class="goal-mgmt-alloc-bar" style="width:' + pct + '%"></div>' +
+        '</div>' +
+        '<div class="goal-mgmt-alloc-meta">Осталось: ' + (g.monthsLeft || "—") + ' мес.</div>';
+      goalTimelineAllocation.appendChild(row);
+    });
+  }
 
-      goalMgmtPriorities.querySelectorAll(".goal-mgmt-prio-toggle").forEach(function (toggle) {
-        var goalId = toggle.dataset.goalId;
-        toggle.querySelectorAll(".mode-btn").forEach(function (btn) {
-          btn.addEventListener("click", function () {
-            if (typeof haptic === "function") haptic("light");
-            var newP = Number(this.dataset.value);
-            var goal = getGoalById(goalId);
-            if (!goal) return;
-            goal.priority = newP;
-            var g2 = getGoals();
-            resolvePriorityConflicts(goalId, g2);
-            g2.sort(function (a, b) { return a.priority - b.priority; });
-            computeGoalsAllocation(g2, plannedMonthly || 0);
-            persistGoals(g2);
-            recalcPlan();
-            renderGoalManagement();
-            updateAccountsLocalNav();
-            updateGraphGoalIndicator();
-          });
+  /* ───── Render: Goal Priority (screen-goal-priority) ───── */
+
+  var goalPriorityList = document.getElementById("goalPriorityList");
+
+  function renderGoalPriority() {
+    var goals = getGoals();
+
+    if (!goalPriorityList) return;
+    goalPriorityList.innerHTML = "";
+
+    goals.forEach(function (g) {
+      var card = document.createElement("div");
+      card.className = "goal-mgmt-prio-card" + (g.priority === 1 ? " primary" : "");
+      var pctDone = g.amount > 0 ? Math.min(100, Math.round(((g.saved || 0) / g.amount) * 100)) : 0;
+      card.innerHTML =
+        '<div class="goal-mgmt-prio-header">' +
+          '<div class="goal-mgmt-prio-name">' + escapeHtml(g.title) + '</div>' +
+          '<div class="goal-mgmt-prio-badge">P' + g.priority + '</div>' +
+        '</div>' +
+        '<div class="goal-mgmt-prio-info">' +
+          '<span>' + pctDone + '% выполнено</span>' +
+          '<span>' + (g.saved || 0).toLocaleString() + ' / ' + (g.amount || 0).toLocaleString() + ' ₽</span>' +
+        '</div>' +
+        '<div class="goal-mgmt-prio-controls">' +
+          '<label class="goal-mgmt-prio-label">Приоритет</label>' +
+          '<div class="toggle-group goal-mgmt-prio-toggle" data-goal-id="' + g.id + '">' +
+            '<button class="mode-btn' + (g.priority === 1 ? " active" : "") + '" data-value="1">1</button>' +
+            '<button class="mode-btn' + (g.priority === 2 ? " active" : "") + '" data-value="2">2</button>' +
+            '<button class="mode-btn' + (g.priority === 3 ? " active" : "") + '" data-value="3">3</button>' +
+          '</div>' +
+        '</div>';
+      goalPriorityList.appendChild(card);
+    });
+
+    goalPriorityList.querySelectorAll(".goal-mgmt-prio-toggle").forEach(function (toggle) {
+      var goalId = toggle.dataset.goalId;
+      toggle.querySelectorAll(".mode-btn").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          if (typeof haptic === "function") haptic("light");
+          var newP = Number(this.dataset.value);
+          var goal = getGoalById(goalId);
+          if (!goal) return;
+          goal.priority = newP;
+          var g2 = getGoals();
+          resolvePriorityConflicts(goalId, g2);
+          g2.sort(function (a, b) { return a.priority - b.priority; });
+          computeGoalsAllocation(g2, plannedMonthly || 0);
+          persistGoals(g2);
+          recalcPlan();
+          renderGoalPriority();
+          updateAccountsLocalNav();
+          updateGraphGoalIndicator();
         });
       });
-    }
+    });
   }
 
   function escapeHtml(str) {

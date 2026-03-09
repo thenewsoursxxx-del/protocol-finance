@@ -411,7 +411,27 @@ Protocol анализирует цель…
 </div>
 
 <button class="profile-btn">⚙️ Настройки</button>
+<button id="goalHistoryBtn" class="profile-btn">📋 История целей</button>
 <button id="profileResetPlan" class="profile-btn danger">🔄 Сбросить план</button>
+</div>
+
+<!-- ===== GOAL HISTORY SCREEN ===== -->
+<div class="screen" id="screen-goal-history">
+  <div class="app-header">
+    <div class="header-left">
+      <button id="goalHistoryBack" class="header-back">←</button>
+    </div>
+    <div class="header-center">
+      <div class="header-title">История целей</div>
+    </div>
+    <div class="header-right"></div>
+  </div>
+  <div class="goal-history-body" id="goalHistoryBody">
+    <div class="goal-history-empty" id="goalHistoryEmpty">
+      Завершённых целей пока нет
+    </div>
+    <div id="goalHistoryList" class="goal-history-list"></div>
+  </div>
 </div>
 
 <!-- ===== NAV ===== -->
@@ -566,27 +586,42 @@ Protocol анализирует цель…
   </div>
 </div>
 
-<!-- ===== GOAL MANAGEMENT (сроки, приоритеты, распределение) ===== -->
-<div class="screen" id="screen-goal-management">
+<!-- ===== GOAL TIMELINE MANAGER ===== -->
+<div class="screen" id="screen-goal-timeline">
   <div class="app-header">
     <div class="header-left">
-      <button id="goalMgmtBack" class="header-back">←</button>
+      <button id="goalTimelineBack" class="header-back">←</button>
     </div>
     <div class="header-center">
-      <div class="header-title">Управление целями</div>
+      <div class="header-title">Сроки целей</div>
     </div>
     <div class="header-right"></div>
   </div>
-  <div class="goal-mgmt-body" id="goalMgmtBody">
+  <div class="goal-mgmt-body" id="goalTimelineBody">
     <div class="goal-mgmt-section">
-      <div class="goal-mgmt-section-title">Распределение накоплений</div>
-      <div class="goal-mgmt-hint">Ежемесячный взнос распределяется по приоритету</div>
-      <div id="goalMgmtAllocation" class="goal-mgmt-allocation"></div>
+      <div class="goal-mgmt-section-title">Распределение по месяцам</div>
+      <div class="goal-mgmt-hint">Управляйте сроками достижения каждой цели</div>
+      <div id="goalTimelineAllocation" class="goal-mgmt-allocation"></div>
     </div>
+  </div>
+</div>
+
+<!-- ===== GOAL PRIORITY MANAGER ===== -->
+<div class="screen" id="screen-goal-priority">
+  <div class="app-header">
+    <div class="header-left">
+      <button id="goalPriorityBack" class="header-back">←</button>
+    </div>
+    <div class="header-center">
+      <div class="header-title">Приоритеты</div>
+    </div>
+    <div class="header-right"></div>
+  </div>
+  <div class="goal-mgmt-body" id="goalPriorityBody">
     <div class="goal-mgmt-section">
-      <div class="goal-mgmt-section-title">Приоритеты и сроки</div>
-      <div class="goal-mgmt-hint">Нажмите на цель, чтобы изменить приоритет</div>
-      <div id="goalMgmtPriorities" class="goal-mgmt-priorities"></div>
+      <div class="goal-mgmt-section-title">Приоритеты и порядок</div>
+      <div class="goal-mgmt-hint">Определите приоритет каждой цели и порядок распределения средств</div>
+      <div id="goalPriorityList" class="goal-mgmt-priorities"></div>
     </div>
   </div>
 </div>

@@ -1409,7 +1409,7 @@ transition: transform 0.55s cubic-bezier(.22,1,.36,1);
   z-index: 30;
   opacity: 0;
   transform: translateY(4px);
-  transition: opacity 0.22s ease, transform 0.22s ease;
+  transition: opacity .25s ease, transform .25s ease;
   white-space: nowrap;
 }
 
@@ -1918,12 +1918,19 @@ button {
 
 .advanced-fog {
   display: none;
+  transition: opacity .35s ease;
 }
 
 body.advanced-active .advanced-fog {
   display: block;
   opacity: 0;
   animation: fogEnter 1s ease-out forwards, fogBreath 6s ease-in-out 1s infinite;
+}
+
+body.advanced-active .advanced-fog.fog-hidden {
+  opacity: 0 !important;
+  pointer-events: none;
+  animation: none;
 }
 
 /* ===== ADVANCED SETTINGS CARDS (глубокий изумруд) ===== */
@@ -3557,4 +3564,58 @@ body.flip-fix-pending .flip-wrapper {
   font-size: 15px;
   font-weight: 600;
   border-radius: 12px;
+}
+
+/* ===== GOAL HISTORY SCREEN ===== */
+
+.goal-history-body {
+  padding: 16px 20px 32px;
+}
+
+.goal-history-empty {
+  text-align: center;
+  font-size: 15px;
+  opacity: 0.5;
+  padding: 40px 0;
+}
+
+.goal-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.goal-history-card {
+  border-radius: 18px;
+  padding: 16px 18px;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  background: linear-gradient(
+    180deg,
+    rgba(16, 185, 129, 0.12),
+    rgba(16, 185, 129, 0.04)
+  );
+}
+
+.goal-history-card-title {
+  font-size: 17px;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 6px;
+}
+
+.goal-history-card-amount {
+  font-size: 20px;
+  font-weight: 600;
+  color: #6ee7b7;
+  margin-bottom: 8px;
+}
+
+.goal-history-card-meta {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.5;
+}
+
+.goal-history-card-meta span {
+  display: block;
 }
