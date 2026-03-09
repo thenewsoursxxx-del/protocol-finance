@@ -1918,19 +1918,12 @@ button {
 
 .advanced-fog {
   display: none;
-  transition: opacity .35s ease;
 }
 
 body.advanced-active .advanced-fog {
   display: block;
   opacity: 0;
   animation: fogEnter 1s ease-out forwards, fogBreath 6s ease-in-out 1s infinite;
-}
-
-body.advanced-active .advanced-fog.fog-hidden {
-  opacity: 0 !important;
-  pointer-events: none;
-  animation: none;
 }
 
 /* ===== ADVANCED SETTINGS CARDS (глубокий изумруд) ===== */
