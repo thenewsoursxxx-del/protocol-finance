@@ -317,7 +317,11 @@ Protocol анализирует данные…
 <div class="header-right"></div>
 </div>
 
+<div class="goal-swipe-wrapper" id="goalSwipeWrapper">
+<div class="goal-swipe-content" id="goalSwipeContent">
+
 <div class="card" id="activeGoalCard">
+<div id="goalPausedBadge" class="goal-paused-badge" style="display:none">На паузе</div>
 <div style="font-size:14px;opacity:.6">Активная цель</div>
 
 <div class="goal-title-row">
@@ -328,6 +332,10 @@ Protocol анализирует данные…
 <path d="M12 20h9"/>
 <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>
 </svg>
+</button>
+
+<button id="goalPauseBtn" class="goal-pause-btn" style="display:none">
+⏸ Пауза
 </button>
 </div>
 
@@ -374,6 +382,10 @@ style="height:100%;width:0%;background:#3a7bfd">
 
 <div class="protocol-verdict" id="goalVerdict">
 Protocol анализирует цель…
+</div>
+
+</div>
+<div class="goal-swipe-indicator" id="goalSwipeIndicator"></div>
 </div>
 </div>
 

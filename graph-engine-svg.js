@@ -15,8 +15,6 @@ var ProtocolGraph = (function () {
   var _tooltipTimer = null;
   var _tooltipShowTimer = null;
   var _tooltipHideTimer = null;
-  var tooltipShowDelay = 120;
-  var tooltipHideDelay = 300;
 
   function el(tag, attrs, parent) {
     var node = document.createElementNS(SVG_NS, tag);
@@ -76,7 +74,7 @@ var ProtocolGraph = (function () {
     renderGrid(svg, W, H, drawW, drawH);
     renderWatermark(svg, W, H);
 
-    if (goalMonths > 0 && monthly > 0) {
+    if (goalMonths > 0 && monthly > 0 && !svg.querySelector(".plan-line")) {
       renderPlanLine(svg, defs, W, H, drawW, drawH, goalMonths, monthly, maxValue);
     }
 
@@ -89,8 +87,7 @@ var ProtocolGraph = (function () {
     wrap.appendChild(svg);
 
     var tooltipEl = document.createElement("div");
-    tooltipEl.className = "graph-tooltip";
-    tooltipEl.style.display = "none";
+    tooltipEl.className = "graph-tooltip-bottom";
     wrap.appendChild(tooltipEl);
 
     bindTooltipEvents(wrap, svg);
@@ -113,19 +110,13 @@ var ProtocolGraph = (function () {
 
     if (!hasFact || goalMonths <= 0 || actualMonths <= 0) return;
 
-    renderFactLine(svg, W, H, drawW, drawH, goalMonths, maxValue, factBalance, actualMonths, false);
+    renderFactLine(svg, W, H, drawW, drawH, goalMonths, maxValue, factBalance, actualMonths, true);
   }
 
   function bindTooltipEvents(wrap, svg) {
-    var _insideDot = false;
-
-    wrap.addEventListener("pointerleave", function () {
-      _insideDot = false;
-      if (_tooltipShowTimer) { clearTimeout(_tooltipShowTimer); _tooltipShowTimer = null; }
-      startHideTimer(wrap);
-    });
-
-    svg.addEventListener("pointermove", function (e) {
+    wrap.addEventListener("click", function (e) {
+      var tooltip = wrap.querySelector(".graph-tooltip-bottom");
+      if (!tooltip) return;
       var dot = svg.querySelector(".fact-point");
       if (!dot) return;
 
@@ -134,49 +125,28 @@ var ProtocolGraph = (function () {
       var scaleY = rect.height / GRAPH_H;
       var dotCx = parseFloat(dot.getAttribute("cx"));
       var dotCy = parseFloat(dot.getAttribute("cy"));
-      var absX = dotCx * scaleX;
-      var absY = dotCy * scaleY;
-      var pointerX = e.clientX - rect.left;
-      var pointerY = e.clientY - rect.top;
+      var absX = dotCx * scaleX + rect.left;
+      var absY = dotCy * scaleY + rect.top;
+      var pointerX = e.clientX;
+      var pointerY = e.clientY;
       var dist = Math.sqrt(Math.pow(pointerX - absX, 2) + Math.pow(pointerY - absY, 2));
 
-      if (dist < 35) {
-        if (_tooltipHideTimer) { clearTimeout(_tooltipHideTimer); _tooltipHideTimer = null; }
-        if (!_insideDot) {
-          _insideDot = true;
-          _tooltipShowTimer = setTimeout(function () {
-            var tooltip = wrap.querySelector(".graph-tooltip");
-            var balance = parseFloat(dot.getAttribute("data-fact-balance")) || 0;
-            if (tooltip) {
-              showTooltipAt(tooltip, svg, dotCx, dotCy, balance);
-            }
-          }, tooltipShowDelay);
-        }
+      if (dist < 40) {
+        var balance = parseFloat(dot.getAttribute("data-fact-balance")) || 0;
+        var month = parseFloat(dot.getAttribute("data-fact-month")) || 0;
+        showTooltipBottom(tooltip, balance, month);
       } else {
-        if (_insideDot) {
-          _insideDot = false;
-          if (_tooltipShowTimer) { clearTimeout(_tooltipShowTimer); _tooltipShowTimer = null; }
-          startHideTimer(wrap);
-        }
+        hideTooltip(wrap);
       }
     });
-  }
-
-  function startHideTimer(wrap) {
-    if (_tooltipHideTimer) clearTimeout(_tooltipHideTimer);
-    _tooltipHideTimer = setTimeout(function () {
-      hideTooltip(wrap);
-      _tooltipHideTimer = null;
-    }, tooltipHideDelay);
   }
 
   function hideTooltip(wrap) {
     if (_tooltipTimer) clearTimeout(_tooltipTimer);
     if (_tooltipShowTimer) { clearTimeout(_tooltipShowTimer); _tooltipShowTimer = null; }
-    var t = wrap.querySelector(".graph-tooltip");
+    var t = wrap.querySelector(".graph-tooltip-bottom");
     if (t) {
       t.classList.remove("visible");
-      setTimeout(function () { if (!t.classList.contains("visible")) t.style.display = "none"; }, 300);
     }
   }
 
@@ -277,16 +247,17 @@ var ProtocolGraph = (function () {
     }, svg);
 
     dot.setAttribute("data-fact-balance", factBalance);
+    dot.setAttribute("data-fact-month", actualMonths);
 
     if (animate) {
       requestAnimationFrame(function () {
-        line.style.transition = "stroke-dashoffset 0.5s cubic-bezier(.25,.46,.45,.94)";
+        line.style.transition = "stroke-dashoffset 0.9s cubic-bezier(.4,0,.2,1)";
         line.setAttribute("stroke-dashoffset", "0");
 
         setTimeout(function () {
-          dot.style.transition = "r 0.25s ease";
+          dot.style.transition = "r 0.3s ease";
           dot.setAttribute("r", "5");
-        }, 450);
+        }, 750);
       });
     }
 
@@ -294,47 +265,51 @@ var ProtocolGraph = (function () {
       e.stopPropagation();
       var wrap = svg.closest(".protocol-graph-wrap");
       if (wrap) {
-        var tooltip = wrap.querySelector(".graph-tooltip");
+        var tooltip = wrap.querySelector(".graph-tooltip-bottom");
         if (tooltip) {
-          showTooltipAt(tooltip, svg, parseFloat(dot.getAttribute("cx")), parseFloat(dot.getAttribute("cy")), factBalance);
+          showTooltipBottom(tooltip, factBalance, actualMonths);
         }
       }
     });
   }
 
-  function showTooltipAt(tooltip, svg, cx, cy, value) {
+  function showTooltipBottom(tooltip, balance, month) {
     if (_tooltipTimer) clearTimeout(_tooltipTimer);
     if (_tooltipHideTimer) { clearTimeout(_tooltipHideTimer); _tooltipHideTimer = null; }
 
-    var rect = svg.getBoundingClientRect();
-    var scaleX = rect.width / 400;
-    var scaleY = rect.height / GRAPH_H;
-    var absX = cx * scaleX;
-    var absY = cy * scaleY;
-
-    var date = new Date().toLocaleDateString("ru-RU");
     tooltip.innerHTML =
-      '<div class="graph-tooltip-date">' + date + '</div>' +
-      '<div class="graph-tooltip-value">Отложено: ' + Math.max(0, Math.round(value)).toLocaleString() + ' ₽</div>';
+      '<div class="graph-tooltip-value">Факт: ' + Math.max(0, Math.round(balance)).toLocaleString() + ' ₽</div>' +
+      '<div class="graph-tooltip-month">Месяц: ' + month + '</div>';
 
-    tooltip.style.display = "block";
-    tooltip.style.left = Math.max(10, Math.min(absX - 60, rect.width - 140)) + "px";
-    tooltip.style.top = Math.max(0, absY - 40) + "px";
-
+    tooltip.classList.remove("visible");
     requestAnimationFrame(function () { tooltip.classList.add("visible"); });
   }
 
   function renderWatermark(svg, W, H) {
-    var g = el("g", { "class": "graph-watermark", opacity: "0.08" }, svg);
+    var g = el("g", { "class": "graph-watermark", opacity: "0.12" }, svg);
+
+    var centerX = W / 2;
+    var centerY = H * 0.45;
+
+    var logoG = el("g", {
+      transform: "translate(" + (centerX - 20).toFixed(0) + "," + (centerY - 24).toFixed(0) + ")"
+    }, g);
+
+    el("path", {
+      d: "M20 2L4 10v12l16 8 16-8V10L20 2zm0 4.5L30.5 11 20 15.5 9.5 11 20 6.5zM7 13.3l11 5.5v9.4l-11-5.5V13.3zm26 0v9.4l-11 5.5v-9.4l11-5.5z",
+      fill: "#ffffff",
+      transform: "scale(1)"
+    }, logoG);
+
     el("text", {
-      x: (W / 2).toFixed(0),
-      y: (H * 0.55).toFixed(0),
+      x: centerX.toFixed(0),
+      y: (centerY + 28).toFixed(0),
       "text-anchor": "middle",
-      "font-size": "16",
+      "font-size": "14",
       "font-weight": "600",
       "font-family": "Inter, system-ui, sans-serif",
       fill: "#ffffff"
-    }, g).textContent = "Protocol™";
+    }, g).textContent = "Protocol\u2122";
   }
 
   function renderMonthLabels(svg, W, H, drawW, vMonths) {

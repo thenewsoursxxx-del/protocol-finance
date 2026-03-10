@@ -251,6 +251,13 @@ function migrateState(saved) {
     });
   }
 
+  // Ensure all goals have the paused field
+  if (Array.isArray(saved.goals)) {
+    saved.goals.forEach(function (g) {
+      if (typeof g.paused !== "boolean") g.paused = false;
+    });
+  }
+
   return saved;
 }
 

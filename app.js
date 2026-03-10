@@ -304,7 +304,8 @@ function ensureDefaultGoal() {
       saved: goalSaved,
       priority: 1,
       monthlyShare: 0,
-      monthsLeft: 0
+      monthsLeft: 0,
+      paused: false
     });
     persistGoals(goals);
   }
@@ -340,6 +341,11 @@ function computeGoalsAllocation(goals, monthlyContribution) {
 
   var active = [];
   goals.forEach(function (g) {
+    if (g.paused) {
+      g.monthlyShare = 0;
+      g.monthsLeft = 0;
+      return;
+    }
     var remaining = Math.max(0, (g.amount || 0) - (g.saved || 0));
     if (remaining <= 0) {
       g.monthlyShare = 0;
@@ -443,10 +449,6 @@ function computeGraphState() {
   }
 
   var hasFact = factHistory && factHistory.length > 0;
-
-  if (activeGoalIndex !== 0) {
-    hasFact = false;
-  }
 
   var actualMonths = 0;
   if (hasFact) {
@@ -810,7 +812,7 @@ function ensureNavVisibleAfterRestore() {
   }
   // Зелёная кнопка расширенных настроек — показывать только на вкладке «Цели»
   if (advancedBtn) {
-    advancedBtn.style.display = id === "screen-goals" ? "flex" : "none";
+    advancedBtn.style.display = "none";
   }
 }
 
@@ -920,13 +922,9 @@ if (name !== "advanced") {
   document.body.classList.remove("advanced-active");
 }
 
-// показываем advanced кнопку только в goals
+// floating кнопка + скрыта, вместо неё кнопка в блоке графика
 if (advancedBtn) {
-  if (name === "goals" && isInitialized) {
-    advancedBtn.style.display = "flex";
-  } else {
-    advancedBtn.style.display = "none";
-  }
+  advancedBtn.style.display = "none";
 }
 
 // Если перешли на вкладку графика, а там ещё «загрузка» (например после восстановления на Счета/Цели) — сразу рендерим график
@@ -1345,6 +1343,10 @@ style="width:52px;height:52px;border-radius:50%">
 <button id="unexpectedExpenseBtn" class="unexpected-expense-trigger" type="button">
 Непредвиденный расход
 </button>
+
+<button id="advancedSettingsInline" class="advanced-settings-btn" type="button">
+Расширенные настройки
+</button>
 `;
 
   renderSVGGraph();
@@ -1431,6 +1433,15 @@ style="width:52px;height:52px;border-radius:50%">
       }
       haptic("light");
       openUnexpectedExpenseScreen();
+    };
+  }
+
+  var advSettingsInline = document.getElementById("advancedSettingsInline");
+  if (advSettingsInline) {
+    advSettingsInline.onclick = function () {
+      if (advancedBtn && advancedBtn.onclick) {
+        advancedBtn.onclick();
+      }
     };
   }
 
@@ -1711,7 +1722,8 @@ function checkGoalCompletion() {
         saved: 0,
         priority: 1,
         monthlyShare: 0,
-        monthsLeft: 0
+        monthsLeft: 0,
+        paused: false
       });
     }
     persistGoals(goals);
@@ -2262,55 +2274,114 @@ if (typeof renderAccountBackCards === "function") renderAccountBackCards();
 function renderGoals() {
 if (!lastCalc.ok) return;
 
-const titleEl = document.getElementById("goalTitle");
-if (titleEl) {
-titleEl.innerText = goalMeta.title;
-}
+var goals = getGoals();
+var idx = activeGoalIndex;
+if (idx < 0 || idx >= goals.length) idx = 0;
+var goal = goals[idx] || null;
 
-// ===== ОСНОВНАЯ ЦЕЛЬ =====
-const saved = accounts.main;
-const total = parseNumber(goalInput.value || "0");
+var titleEl = document.getElementById("goalTitle");
+var totalEl = document.getElementById("goalTotal");
+var savedEl = document.getElementById("goalSaved");
+var percentEl = document.getElementById("goalPercent");
+var progressBar = document.getElementById("goalProgressBar");
+var verdict = document.getElementById("goalVerdict");
+var reserveCard = document.getElementById("goalReserveCard");
+var card = document.getElementById("activeGoalCard");
+var pausedBadge = document.getElementById("goalPausedBadge");
+var pauseBtn = document.getElementById("goalPauseBtn");
 
-const percent = total
-? Math.min(100, Math.round((saved / total) * 100))
-: 0;
-
-document.getElementById("goalTotal").innerText =
-total.toLocaleString();
-
-document.getElementById("goalSaved").innerText =
-saved.toLocaleString();
-
-document.getElementById("goalPercent").innerText = percent;
-
-document.getElementById("goalProgressBar").style.width =
-percent + "%";
-
-const verdict = document.getElementById("goalVerdict");
-
-if (percent >= 100) {
-verdict.innerText =
-"Цель достигнута. Protocol фиксирует успех.";
-} else if (percent >= 70) {
-verdict.innerText =
-"Цель близка к завершению. Темп хороший.";
+var title, saved, total;
+if (idx === 0) {
+  title = goalMeta.title;
+  saved = accounts.main;
+  total = parseNumber(goalInput.value || "0");
+} else if (goal) {
+  title = goal.title || "Цель " + (idx + 1);
+  saved = goal.saved || 0;
+  total = goal.amount || 0;
 } else {
-verdict.innerText =
-"Цель в процессе. Стабильность важнее скорости.";
+  title = "—";
+  saved = 0;
+  total = 0;
 }
 
-// ===== РЕЗЕРВ =====
-const reserveCard = document.getElementById("goalReserveCard");
+if (titleEl) titleEl.innerText = title;
 
-if (chosenPlan === "buffer") {
-reserveCard.style.display = "block";
-document.getElementById("goalReserveAmount").innerText =
-accounts.reserve.toLocaleString();
-} else {
-reserveCard.style.display = "none";
+var percent = total ? Math.min(100, Math.round((saved / total) * 100)) : 0;
+
+if (totalEl) totalEl.innerText = total.toLocaleString();
+if (savedEl) savedEl.innerText = saved.toLocaleString();
+if (percentEl) percentEl.innerText = percent;
+if (progressBar) progressBar.style.width = percent + "%";
+
+if (verdict) {
+  if (percent >= 100) {
+    verdict.innerText = "Цель достигнута. Protocol фиксирует успех.";
+  } else if (percent >= 70) {
+    verdict.innerText = "Цель близка к завершению. Темп хороший.";
+  } else {
+    verdict.innerText = "Цель в процессе. Стабильность важнее скорости.";
+  }
 }
+
+if (reserveCard) {
+  if (chosenPlan === "buffer" && idx === 0) {
+    reserveCard.style.display = "block";
+    var reserveEl = document.getElementById("goalReserveAmount");
+    if (reserveEl) reserveEl.innerText = accounts.reserve.toLocaleString();
+  } else {
+    reserveCard.style.display = "none";
+  }
+}
+
+var isPaused = goal && goal.paused;
+
+if (card) {
+  card.classList.toggle("goal-card-paused", !!isPaused);
+}
+
+if (pausedBadge) {
+  pausedBadge.style.display = isPaused ? "" : "none";
+}
+
+if (editGoalBtn) {
+  editGoalBtn.style.display = (idx === 0) ? "" : "none";
+}
+
+if (pauseBtn) {
+  pauseBtn.style.display = (idx > 0 && goal) ? "" : "none";
+  pauseBtn.innerText = isPaused ? "▶ Продолжить" : "⏸ Пауза";
+}
+
+renderGoalSwipeIndicator();
 
 if (typeof updateGoalsButton === "function") updateGoalsButton();
+}
+
+function renderGoalSwipeIndicator() {
+  var indicator = document.getElementById("goalSwipeIndicator");
+  if (!indicator) return;
+  var goals = getGoals();
+  if (goals.length <= 1) {
+    indicator.style.display = "none";
+    indicator.innerHTML = "";
+    return;
+  }
+  indicator.style.display = "";
+  var html = "";
+  for (var i = 0; i < goals.length && i < 3; i++) {
+    html += '<span class="goal-swipe-dot' + (i === activeGoalIndex ? ' active' : '') + '" data-gidx="' + i + '"></span>';
+  }
+  indicator.innerHTML = html;
+
+  indicator.querySelectorAll(".goal-swipe-dot").forEach(function (dot) {
+    dot.addEventListener("click", function () {
+      var targetIdx = parseInt(dot.getAttribute("data-gidx"), 10);
+      if (targetIdx !== activeGoalIndex) {
+        goalSwipeToIndex(targetIdx, targetIdx > activeGoalIndex);
+      }
+    });
+  });
 }
 
 function fireCelebration() {
@@ -2385,11 +2456,26 @@ goalEditBaseValue = parseNumber(goalInput.value || "0");
 
 goalEditorOverlay.style.display = "block";
 
-// 🔥 ДАЁМ БРАУЗЕРУ 1 КАДР
 requestAnimationFrame(() => {
 goalEditorSheet.style.transform = "translateY(0)";
 });
 };
+}
+
+var goalPauseBtn = document.getElementById("goalPauseBtn");
+if (goalPauseBtn) {
+  goalPauseBtn.onclick = function () {
+    haptic("light");
+    var goals = getGoals();
+    var goal = goals[activeGoalIndex];
+    if (!goal || activeGoalIndex === 0) return;
+    goal.paused = !goal.paused;
+    computeGoalsAllocation(goals, plannedMonthly || 0);
+    persistGoals(goals);
+    renderGoals();
+    if (typeof renderAccountsUI === "function") renderAccountsUI();
+    if (typeof renderSVGGraph === "function") renderSVGGraph();
+  };
 }
 
 goalEditorOverlay.onclick = () => {
@@ -2397,7 +2483,6 @@ goalEditorSheet.style.transform = "translateY(100%)";
 setTimeout(() => {
 goalEditorOverlay.style.display = "none";
 showBottomNav();
-if (advancedBtn && isInitialized) advancedBtn.style.display = "flex";
 goalEditHint.classList.remove("show");
 }, 550);
 };
@@ -2429,7 +2514,6 @@ goalEditorSheet.style.transform = "translateY(100%)";
 setTimeout(() => {
 goalEditorOverlay.style.display = "none";
 showBottomNav();
-if (advancedBtn && isInitialized) advancedBtn.style.display = "flex";
 }, 550);
 recalcPlan();
 pulseGoalCard();
@@ -3952,7 +4036,7 @@ renderAccountBackCards();
     var _swActive = false;
     var _swLocked = false;
     var _swRafId = null;
-    var GF_THRESHOLD = 60;
+    var GF_THRESHOLD = 80;
 
     graphFlipWrapper.addEventListener("touchstart", function (e) {
       if (_slideAnimating || !e.touches || !e.touches.length) return;
@@ -4438,7 +4522,8 @@ renderAccountBackCards();
         saved: 0,
         priority: 1,
         monthlyShare: 0,
-        monthsLeft: 0
+        monthsLeft: 0,
+        paused: false
       };
       insertGoalWithPriority(goals, newGoal, priority);
       if (goals.length === 1) {
@@ -4692,4 +4777,156 @@ renderAccountBackCards();
   updateAccountsLocalNav();
   updateGraphGoalIndicator();
 
+})();
+
+/* ===== GOAL CARD SWIPE (screen-goals) ===== */
+
+var _goalSwipeAnimating = false;
+
+function goalSwipeToIndex(idx, goLeft) {
+  var goals = getGoals();
+  var count = Math.min(goals.length, 3);
+  if (count <= 1) return;
+  idx = ((idx % count) + count) % count;
+  if (idx === activeGoalIndex || _goalSwipeAnimating) return;
+
+  var content = document.getElementById("goalSwipeContent");
+  if (!content) { setActiveGoal(idx); return; }
+
+  if (goLeft === undefined) {
+    goLeft = idx > activeGoalIndex;
+  }
+
+  _goalSwipeAnimating = true;
+  content.style.transition = "transform 0.35s cubic-bezier(.4,0,.2,1), opacity 0.3s ease";
+  content.style.transform = goLeft ? "translateX(-110%)" : "translateX(110%)";
+  content.style.opacity = "0";
+
+  setTimeout(function () {
+    if (typeof setActiveGoal === "function") {
+      setActiveGoal(idx);
+    } else {
+      activeGoalIndex = idx;
+      updateState({ activeGoalIndex: idx });
+      saveState();
+    }
+    renderGoals();
+
+    content.style.transition = "none";
+    content.style.transform = goLeft ? "translateX(70px)" : "translateX(-70px)";
+    content.style.opacity = "0";
+
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () {
+        content.style.transition = "transform 0.35s cubic-bezier(.4,0,.2,1), opacity 0.3s ease";
+        content.style.transform = "translateX(0)";
+        content.style.opacity = "1";
+
+        setTimeout(function () {
+          content.style.transform = "";
+          content.style.opacity = "";
+          content.style.transition = "";
+          _goalSwipeAnimating = false;
+        }, 380);
+      });
+    });
+  }, 350);
+}
+
+(function initGoalSwipe() {
+  var wrapper = document.getElementById("goalSwipeWrapper");
+  if (!wrapper) return;
+
+  var _gsStartX = 0;
+  var _gsStartY = 0;
+  var _gsDeltaX = 0;
+  var _gsActive = false;
+  var _gsLocked = false;
+  var _gsRafId = null;
+  var GS_THRESHOLD = 80;
+
+  wrapper.addEventListener("pointerdown", function (e) {
+    if (_goalSwipeAnimating) return;
+    var content = document.getElementById("goalSwipeContent");
+    if (!content) return;
+    _gsStartX = e.clientX;
+    _gsStartY = e.clientY;
+    _gsDeltaX = 0;
+    _gsActive = true;
+    _gsLocked = false;
+    content.style.transition = "none";
+  });
+
+  wrapper.addEventListener("pointermove", function (e) {
+    if (!_gsActive) return;
+
+    var rawDx = e.clientX - _gsStartX;
+    var rawDy = e.clientY - _gsStartY;
+
+    if (!_gsLocked) {
+      if (Math.abs(rawDx) < 8 && Math.abs(rawDy) < 8) return;
+      if (Math.abs(rawDy) > Math.abs(rawDx)) {
+        _gsActive = false;
+        var content = document.getElementById("goalSwipeContent");
+        if (content) { content.style.transform = ""; content.style.opacity = ""; }
+        return;
+      }
+      _gsLocked = true;
+      wrapper.setPointerCapture(e.pointerId);
+    }
+
+    e.preventDefault();
+    _gsDeltaX = rawDx;
+
+    if (_gsRafId) cancelAnimationFrame(_gsRafId);
+    _gsRafId = requestAnimationFrame(function () {
+      _gsRafId = null;
+      var content = document.getElementById("goalSwipeContent");
+      if (!content) return;
+      content.style.transform = "translateX(" + _gsDeltaX + "px)";
+      var progress = Math.min(Math.abs(_gsDeltaX) / 250, 1);
+      content.style.opacity = String(1 - progress * 0.4);
+    });
+  });
+
+  function finishGoalSwipe(e) {
+    if (!_gsActive && !_gsLocked) return;
+    _gsActive = false;
+    _gsLocked = false;
+    if (e && e.pointerId !== undefined) {
+      try { wrapper.releasePointerCapture(e.pointerId); } catch (ex) {}
+    }
+
+    if (_gsRafId) { cancelAnimationFrame(_gsRafId); _gsRafId = null; }
+
+    var content = document.getElementById("goalSwipeContent");
+    if (!content) return;
+
+    var goals = getGoals();
+    var count = Math.min(goals.length, 3);
+    var dx = _gsDeltaX;
+
+    if (Math.abs(dx) > GS_THRESHOLD && count > 1) {
+      var goLeft = dx < 0;
+      var next;
+      if (goLeft) next = (activeGoalIndex + 1) % count;
+      else        next = (activeGoalIndex - 1 + count) % count;
+
+      if (typeof haptic === "function") haptic("light");
+      goalSwipeToIndex(next, goLeft);
+      return;
+    }
+
+    content.style.transition = "transform 0.35s cubic-bezier(.4,0,.2,1), opacity 0.2s ease";
+    content.style.transform = "translateX(0)";
+    content.style.opacity = "1";
+    setTimeout(function () {
+      content.style.transform = "";
+      content.style.opacity = "";
+      content.style.transition = "";
+    }, 350);
+  }
+
+  wrapper.addEventListener("pointerup", finishGoalSwipe);
+  wrapper.addEventListener("pointercancel", finishGoalSwipe);
 })();
