@@ -86,10 +86,6 @@ var ProtocolGraph = (function () {
 
     wrap.appendChild(svg);
 
-    var tooltipEl = document.createElement("div");
-    tooltipEl.className = "graph-tooltip-bottom";
-    wrap.appendChild(tooltipEl);
-
     bindTooltipEvents(wrap, svg);
 
     var graphBlock = container.querySelector(".graph-block");
@@ -115,7 +111,7 @@ var ProtocolGraph = (function () {
 
   function bindTooltipEvents(wrap, svg) {
     wrap.addEventListener("click", function (e) {
-      var tooltip = wrap.querySelector(".graph-tooltip-bottom");
+      var tooltip = document.getElementById("factTooltipContainer");
       if (!tooltip) return;
       var dot = svg.querySelector(".fact-point");
       if (!dot) return;
@@ -136,15 +132,16 @@ var ProtocolGraph = (function () {
         var month = parseFloat(dot.getAttribute("data-fact-month")) || 0;
         showTooltipBottom(tooltip, balance, month);
       } else {
-        hideTooltip(wrap);
+        hideTooltip();
       }
     });
   }
 
-  function hideTooltip(wrap) {
+  function hideTooltip() {
     if (_tooltipTimer) clearTimeout(_tooltipTimer);
     if (_tooltipShowTimer) { clearTimeout(_tooltipShowTimer); _tooltipShowTimer = null; }
-    var t = wrap.querySelector(".graph-tooltip-bottom");
+    if (_tooltipHideTimer) { clearTimeout(_tooltipHideTimer); _tooltipHideTimer = null; }
+    var t = document.getElementById("factTooltipContainer");
     if (t) {
       t.classList.remove("visible");
     }
@@ -263,12 +260,9 @@ var ProtocolGraph = (function () {
 
     dot.addEventListener("click", function (e) {
       e.stopPropagation();
-      var wrap = svg.closest(".protocol-graph-wrap");
-      if (wrap) {
-        var tooltip = wrap.querySelector(".graph-tooltip-bottom");
-        if (tooltip) {
-          showTooltipBottom(tooltip, factBalance, actualMonths);
-        }
+      var tooltip = document.getElementById("factTooltipContainer");
+      if (tooltip) {
+        showTooltipBottom(tooltip, factBalance, actualMonths);
       }
     });
   }
@@ -283,6 +277,10 @@ var ProtocolGraph = (function () {
 
     tooltip.classList.remove("visible");
     requestAnimationFrame(function () { tooltip.classList.add("visible"); });
+
+    _tooltipHideTimer = setTimeout(function () {
+      tooltip.classList.remove("visible");
+    }, 3000);
   }
 
   function renderWatermark(svg, W, H) {

@@ -1337,15 +1337,12 @@ style="width:52px;height:52px;border-radius:50%">
 </button>
 </div>
 <div id="brainMessageContainer"></div>
-<div id="factTooltipContainer" class="fact-tooltip-container"></div>
 </div>
+
+<div id="factTooltipContainer" class="fact-tooltip-container graph-tooltip-bottom"></div>
 
 <button id="unexpectedExpenseBtn" class="unexpected-expense-trigger" type="button">
 Непредвиденный расход
-</button>
-
-<button id="advancedSettingsInline" class="advanced-settings-btn" type="button">
-Расширенные настройки
 </button>
 `;
 
@@ -1433,15 +1430,6 @@ style="width:52px;height:52px;border-radius:50%">
       }
       haptic("light");
       openUnexpectedExpenseScreen();
-    };
-  }
-
-  var advSettingsInline = document.getElementById("advancedSettingsInline");
-  if (advSettingsInline) {
-    advSettingsInline.onclick = function () {
-      if (advancedBtn && advancedBtn.onclick) {
-        advancedBtn.onclick();
-      }
     };
   }
 
@@ -2350,7 +2338,7 @@ if (editGoalBtn) {
 
 if (pauseBtn) {
   pauseBtn.style.display = (idx > 0 && goal) ? "" : "none";
-  pauseBtn.innerText = isPaused ? "▶ Продолжить" : "⏸ Пауза";
+  pauseBtn.innerText = isPaused ? "▶" : "⏸";
 }
 
 renderGoalSwipeIndicator();
@@ -2475,6 +2463,15 @@ if (goalPauseBtn) {
     renderGoals();
     if (typeof renderAccountsUI === "function") renderAccountsUI();
     if (typeof renderSVGGraph === "function") renderSVGGraph();
+  };
+}
+
+var advSettingsGoals = document.getElementById("advancedSettingsGoals");
+if (advSettingsGoals) {
+  advSettingsGoals.onclick = function () {
+    if (advancedBtn && advancedBtn.onclick) {
+      advancedBtn.onclick();
+    }
   };
 }
 
