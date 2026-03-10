@@ -1398,8 +1398,7 @@ transition: transform 0.55s cubic-bezier(.22,1,.36,1);
   padding: 0 14px;
   border-radius: 12px;
   background: rgba(20, 20, 20, 0.92);
-  border: 1px solid rgba(255,255,255,0.12);
-  border-color: transparent;
+  border: 1px solid transparent;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   color: #fff;
@@ -1421,7 +1420,7 @@ transition: transform 0.55s cubic-bezier(.22,1,.36,1);
   max-height: 80px;
   padding: 10px 14px;
   margin-top: 12px;
-  border-color: rgba(255,255,255,0.12);
+  border-color: rgba(255, 255, 255, 0.45);
 }
 
 .graph-tooltip-value {

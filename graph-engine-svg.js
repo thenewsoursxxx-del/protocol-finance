@@ -287,21 +287,21 @@ var ProtocolGraph = (function () {
     var g = el("g", { "class": "graph-watermark", opacity: "0.12" }, svg);
 
     var centerX = W / 2;
-    var centerY = H * 0.45;
+    var centerY = H * 0.42;
+    var logoSize = 48;
 
-    var logoG = el("g", {
-      transform: "translate(" + (centerX - 20).toFixed(0) + "," + (centerY - 24).toFixed(0) + ")"
-    }, g);
-
-    el("path", {
-      d: "M20 2L4 10v12l16 8 16-8V10L20 2zm0 4.5L30.5 11 20 15.5 9.5 11 20 6.5zM7 13.3l11 5.5v9.4l-11-5.5V13.3zm26 0v9.4l-11 5.5v-9.4l11-5.5z",
-      fill: "#ffffff",
-      transform: "scale(1)"
-    }, logoG);
+    var imgEl = document.createElementNS(SVG_NS, "image");
+    imgEl.setAttribute("x", (centerX - logoSize / 2).toFixed(0));
+    imgEl.setAttribute("y", (centerY - logoSize / 2).toFixed(0));
+    imgEl.setAttribute("width", logoSize);
+    imgEl.setAttribute("height", logoSize);
+    imgEl.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", "logo.svg");
+    imgEl.setAttribute("href", "logo.svg");
+    g.appendChild(imgEl);
 
     el("text", {
       x: centerX.toFixed(0),
-      y: (centerY + 28).toFixed(0),
+      y: (centerY + logoSize / 2 + 16).toFixed(0),
       "text-anchor": "middle",
       "font-size": "14",
       "font-weight": "600",
