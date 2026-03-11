@@ -1080,19 +1080,18 @@ z-index: 5;
   overflow: visible;
 }
 
-.protocol-verdict {
-  animation: verdict-pop 0.35s ease;
+#goalVerdict {
+  transition: opacity .22s ease, transform .22s ease;
 }
 
-@keyframes verdict-pop {
-  from {
-    opacity: 0;
-    transform: translateY(8px) scale(0.98);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
+.verdict-fade-out {
+  opacity: 0 !important;
+  transform: translateY(6px) !important;
+}
+
+.verdict-fade-in {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 /* ===== GOAL TITLE EDIT ===== */
@@ -1475,7 +1474,7 @@ transition: transform 0.55s cubic-bezier(.22,1,.36,1);
 .goal-title-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 10px;
   margin-top: 6px;
 }
 
@@ -1494,11 +1493,12 @@ transition: transform 0.55s cubic-bezier(.22,1,.36,1);
   background: none;
   border: none;
   padding: 0;
-  margin-left: 12px;
+  margin-left: auto;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .goal-edit-btn svg {
@@ -3731,21 +3731,31 @@ body.flip-fix-pending .flip-wrapper {
 /* ===== GOAL PAUSE BUTTON ===== */
 
 .goal-pause-btn {
-  background: none;
-  border: none;
-  padding: 6px;
-  font-size: 20px;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  max-width: 32px;
+  padding: 0;
+  margin-left: auto;
+  flex: 0 0 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: transparent;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  font-size: 18px;
   line-height: 1;
-  color: rgba(255, 255, 255, 0.7);
   cursor: pointer;
-  transition: transform 0.12s ease, opacity 0.2s ease;
+  transition: transform 0.12s ease, opacity 0.2s ease, background 0.2s ease;
   -webkit-tap-highlight-color: transparent;
-  flex-shrink: 0;
 }
 
 .goal-pause-btn:active {
   transform: scale(0.85);
   opacity: 0.6;
+  background: rgba(255, 255, 255, 0.08);
 }
 
 /* ===== GOAL PAUSED STATE ===== */

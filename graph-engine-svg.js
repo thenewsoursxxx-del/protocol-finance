@@ -287,8 +287,8 @@ var ProtocolGraph = (function () {
     var g = el("g", { "class": "graph-watermark", opacity: "0.12" }, svg);
 
     var centerX = W / 2;
-    var centerY = H * 0.42;
-    var logoSize = 48;
+    var centerY = H * 0.38;
+    var logoSize = 92;
 
     var imgEl = document.createElementNS(SVG_NS, "image");
     imgEl.setAttribute("x", (centerX - logoSize / 2).toFixed(0));
@@ -301,9 +301,9 @@ var ProtocolGraph = (function () {
 
     el("text", {
       x: centerX.toFixed(0),
-      y: (centerY + logoSize / 2 + 16).toFixed(0),
+      y: (H - 18).toFixed(0),
       "text-anchor": "middle",
-      "font-size": "14",
+      "font-size": "12",
       "font-weight": "600",
       "font-family": "Inter, system-ui, sans-serif",
       fill: "#ffffff"

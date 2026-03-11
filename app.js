@@ -2254,11 +2254,25 @@ reserveBlock.classList.remove("show-reserve");
 if (typeof renderAccountBackCards === "function") renderAccountBackCards();
 }
 
-/**
- * Обновляет UI элементов цели
- * ⚠️ ВАЖНО: Эта функция вызывается из recalcPlan().
- * Не вызывайте её напрямую - используйте recalcPlan() для обновления состояния.
- */
+function updateGoalVerdict(text) {
+  var verdict = document.getElementById("goalVerdict");
+  if (!verdict) return;
+  if (verdict.dataset.text === text) return;
+  verdict.dataset.text = text;
+
+  verdict.classList.add("verdict-fade-out");
+
+  setTimeout(function () {
+    verdict.innerText = text;
+    verdict.classList.remove("verdict-fade-out");
+    verdict.classList.add("verdict-fade-in");
+
+    setTimeout(function () {
+      verdict.classList.remove("verdict-fade-in");
+    }, 260);
+  }, 180);
+}
+
 function renderGoals() {
 if (!lastCalc.ok) return;
 
@@ -2302,14 +2316,20 @@ if (savedEl) savedEl.innerText = saved.toLocaleString();
 if (percentEl) percentEl.innerText = percent;
 if (progressBar) progressBar.style.width = percent + "%";
 
+var isPaused = goal && goal.paused;
+
 if (verdict) {
-  if (percent >= 100) {
-    verdict.innerText = "Цель достигнута. Protocol фиксирует успех.";
+  var verdictText;
+  if (isPaused) {
+    verdictText = "Цель на паузе — средства не начисляются.";
+  } else if (percent >= 100) {
+    verdictText = "Цель достигнута. Protocol фиксирует успех.";
   } else if (percent >= 70) {
-    verdict.innerText = "Цель близка к завершению. Темп хороший.";
+    verdictText = "Цель близка к завершению. Темп хороший.";
   } else {
-    verdict.innerText = "Цель в процессе. Стабильность важнее скорости.";
+    verdictText = "Цель в процессе. Стабильность важнее скорости.";
   }
+  updateGoalVerdict(verdictText);
 }
 
 if (reserveCard) {
@@ -2321,8 +2341,6 @@ if (reserveCard) {
     reserveCard.style.display = "none";
   }
 }
-
-var isPaused = goal && goal.paused;
 
 if (card) {
   card.classList.toggle("goal-card-paused", !!isPaused);
