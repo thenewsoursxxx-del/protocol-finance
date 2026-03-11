@@ -1340,11 +1340,12 @@ style="width:52px;height:52px;border-radius:50%">
 </div>
 
 <div id="factTooltipContainer" class="fact-tooltip-container graph-tooltip-bottom"></div>
-
-<button id="unexpectedExpenseBtn" class="unexpected-expense-trigger" type="button">
-Непредвиденный расход
-</button>
 `;
+
+  var actionsContainer = document.getElementById("protocolActionsContainer");
+  if (actionsContainer) {
+    actionsContainer.innerHTML = '<button id="unexpectedExpenseBtn" class="unexpected-expense-trigger" type="button">Непредвиденный расход</button>';
+  }
 
   renderSVGGraph();
   if (protocolBack) protocolBack.style.display = "none";
@@ -2315,6 +2316,22 @@ if (totalEl) totalEl.innerText = total.toLocaleString();
 if (savedEl) savedEl.innerText = saved.toLocaleString();
 if (percentEl) percentEl.innerText = percent;
 if (progressBar) progressBar.style.width = percent + "%";
+
+var percentLabel = document.getElementById("goalPercentLabel");
+if (percentLabel) {
+  var section = percentLabel.parentElement;
+  if (section) {
+    var sw = section.offsetWidth;
+    var lw = percentLabel.offsetWidth;
+    var progressX = (percent / 100) * sw;
+    var targetLeft = progressX - lw - 4;
+    var minLeft = 0;
+    var maxLeft = sw - lw;
+    if (targetLeft < minLeft) targetLeft = minLeft;
+    if (targetLeft > maxLeft) targetLeft = maxLeft;
+    percentLabel.style.left = targetLeft + "px";
+  }
+}
 
 var isPaused = goal && goal.paused;
 
@@ -4222,34 +4239,18 @@ renderAccountBackCards();
   var advCardPriorities = document.getElementById("advCardPriorities");
   var advancedGoalsBack = document.getElementById("advancedGoalsBack");
 
-  var _fogRestoreTimer = null;
-
   function showAdvancedFog() {
     var fog = document.querySelector(".advanced-fog");
     if (!fog) return;
-    if (_fogRestoreTimer) { clearTimeout(_fogRestoreTimer); _fogRestoreTimer = null; }
-    fog.style.transition = "opacity .35s ease";
-    fog.style.opacity = "0.9";
-    fog.style.pointerEvents = "";
-    _fogRestoreTimer = setTimeout(function () {
-      fog.style.transition = "";
-      fog.style.opacity = "";
-      fog.style.animation = "";
-      _fogRestoreTimer = null;
-    }, 400);
+    fog.classList.remove("advanced-fog--hidden");
+    fog.classList.add("advanced-fog--visible");
   }
 
   function hideAdvancedFog() {
     var fog = document.querySelector(".advanced-fog");
     if (!fog) return;
-    if (_fogRestoreTimer) { clearTimeout(_fogRestoreTimer); _fogRestoreTimer = null; }
-    var current = getComputedStyle(fog).opacity;
-    fog.style.animation = "none";
-    fog.style.opacity = current;
-    void fog.offsetHeight;
-    fog.style.transition = "opacity .35s ease";
-    fog.style.opacity = "0";
-    fog.style.pointerEvents = "none";
+    fog.classList.remove("advanced-fog--visible");
+    fog.classList.add("advanced-fog--hidden");
   }
 
   function openAdvancedGoalsScreen() {

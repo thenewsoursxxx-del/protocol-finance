@@ -225,6 +225,8 @@ Protocol анализирует данные…
 </div>
 </div>
 
+<div id="protocolActionsContainer"></div>
+
 </div>
 
 <div class="screen" id="screen-progress">
@@ -337,42 +339,27 @@ Protocol анализирует данные…
 <button id="goalPauseBtn" class="goal-pause-btn" style="display:none">⏸</button>
 </div>
 
-<div style="margin-top:10px;font-size:14px;opacity:.7">
+<div class="goal-meta">
 Цель: <b><span id="goalTotal">—</span> ₽</b><br>
 Накоплено: <b><span id="goalSaved">—</span> ₽</b>
 </div>
 
-<div
-class="card"
-id="goalReserveCard"
-style="display:none"
->
-<div style="font-size:14px;opacity:.6">
-Резерв
-</div>
-
+<div class="card goal-reserve-card" id="goalReserveCard" style="display:none">
+<div style="font-size:14px;opacity:.6">Резерв</div>
 <div style="font-size:22px;font-weight:600;margin-top:4px">
 <span id="goalReserveAmount">0</span> ₽
 </div>
-
-<div style="
-margin-top:8px;
-font-size:14px;
-line-height:1.4;
-opacity:.75
-">
+<div style="font-size:14px;line-height:1.4;opacity:.75;margin-top:8px">
 Эти средства не участвуют в достижении цели и
 используются как подушка безопасности.
 </div>
 </div>
 
-<div style="margin-top:12px">
-<div style="height:6px;border-radius:6px;background:#222;overflow:hidden">
-<div id="goalProgressBar"
-style="height:100%;width:0%;background:#3a7bfd">
+<div class="goal-progress-section">
+<div class="goal-progress-track">
+<div id="goalProgressBar" class="goal-progress-fill"></div>
 </div>
-</div>
-<div style="margin-top:6px;font-size:13px;opacity:.6">
+<div class="goal-percent-label" id="goalPercentLabel">
 <span id="goalPercent">0</span>%
 </div>
 </div>

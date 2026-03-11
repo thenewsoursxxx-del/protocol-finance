@@ -1473,6 +1473,52 @@ transition: transform 0.55s cubic-bezier(.22,1,.36,1);
   opacity: 1;
 }
 
+/* ===== GOAL CARD SPACING ===== */
+
+.goal-meta {
+  margin-top: 8px;
+  font-size: 14px;
+  opacity: .7;
+}
+
+.goal-reserve-card {
+  margin-top: 12px;
+}
+
+/* ===== GOAL PROGRESS WITH FLOATING LABEL ===== */
+
+.goal-progress-section {
+  position: relative;
+  margin-top: 12px;
+  padding-bottom: 12px;
+}
+
+.goal-progress-track {
+  height: 6px;
+  border-radius: 6px;
+  background: #222;
+  overflow: hidden;
+}
+
+.goal-progress-fill {
+  height: 100%;
+  width: 0%;
+  background: #3a7bfd;
+  border-radius: 6px;
+  transition: width 0.4s cubic-bezier(.4,0,.2,1);
+}
+
+.goal-percent-label {
+  position: absolute;
+  top: 14px;
+  left: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+  transition: left 0.35s cubic-bezier(.4,0,.2,1);
+}
+
 /* ===== GOAL TITLE FIX ===== */
 
 .goal-title-row {
@@ -1936,6 +1982,18 @@ body.advanced-active .advanced-fog {
   display: block;
   opacity: 0;
   animation: fogEnter 1s ease-out forwards, fogBreath 6s ease-in-out 1s infinite;
+  transition: opacity .55s ease;
+}
+
+body.advanced-active .advanced-fog.advanced-fog--visible {
+  opacity: 0.9;
+  pointer-events: auto;
+  animation: fogBreath 6s ease-in-out infinite;
+}
+
+body.advanced-active .advanced-fog.advanced-fog--hidden {
+  opacity: 0;
+  pointer-events: none;
 }
 
 /* ===== ADVANCED SETTINGS CARDS (глубокий изумруд) ===== */
@@ -2262,6 +2320,10 @@ body.flip-fix-pending .flip-wrapper {
 }
 
 /* Кнопка на вкладке Protocol — изумрудная, переливание как у кнопки + */
+#protocolActionsContainer {
+  margin-top: 16px;
+}
+
 .unexpected-expense-trigger {
   width: 100%;
   margin-top: 16px;
