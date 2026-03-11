@@ -2269,8 +2269,8 @@ function updateGoalVerdict(text) {
 
     setTimeout(function () {
       verdict.classList.remove("verdict-fade-in");
-    }, 260);
-  }, 180);
+    }, 450);
+  }, 350);
 }
 
 function renderGoals() {

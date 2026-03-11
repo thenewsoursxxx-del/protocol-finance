@@ -1081,12 +1081,12 @@ z-index: 5;
 }
 
 #goalVerdict {
-  transition: opacity .22s ease, transform .22s ease;
+  transition: opacity .4s cubic-bezier(.4,0,.2,1), transform .4s cubic-bezier(.4,0,.2,1);
 }
 
 .verdict-fade-out {
   opacity: 0 !important;
-  transform: translateY(6px) !important;
+  transform: translateY(8px) !important;
 }
 
 .verdict-fade-in {
@@ -1222,6 +1222,10 @@ transition: transform 0.55s cubic-bezier(.22,1,.36,1);
   0% { box-shadow: 0 0 0 rgba(58,123,253,0); }
   50% { box-shadow: 0 0 0 6px rgba(58,123,253,0.35); }
   100% { box-shadow: 0 0 0 rgba(58,123,253,0); }
+}
+
+#activeGoalCard {
+  transition: opacity 0.5s cubic-bezier(.4,0,.2,1);
 }
 
 #activeGoalCard.pulse {
@@ -2294,8 +2298,11 @@ body.flip-fix-pending .flip-wrapper {
 /* ===== ADVANCED SETTINGS BUTTON (GOALS TAB) ===== */
 
 .advanced-settings-btn {
-  width: 100%;
-  margin-top: 16px;
+  position: fixed;
+  bottom: 110px;
+  left: 20px;
+  right: 20px;
+  z-index: 998;
   padding: 14px;
   font-size: 15px;
   font-weight: 600;
@@ -3762,7 +3769,7 @@ body.flip-fix-pending .flip-wrapper {
 
 .goal-card-paused {
   opacity: 0.6;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.5s cubic-bezier(.4,0,.2,1);
 }
 
 .goal-paused-badge {
