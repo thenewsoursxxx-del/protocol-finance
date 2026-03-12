@@ -289,7 +289,7 @@ var ProtocolGraph = (function () {
     var centerX = W / 2;
     var drawH = H - PAD_TOP - PAD_BOT;
     var centerY = PAD_TOP + drawH * 0.44;
-    var logoSize = 280;
+    var logoSize = 220;
 
     var imgEl = document.createElementNS(SVG_NS, "image");
     imgEl.setAttribute("x", (centerX - logoSize / 2).toFixed(0));
@@ -304,7 +304,7 @@ var ProtocolGraph = (function () {
       x: centerX.toFixed(0),
       y: (H - PAD_BOT - 12).toFixed(0),
       "text-anchor": "middle",
-      "font-size": "11",
+      "font-size": "16",
       "font-weight": "600",
       "font-family": "Inter, system-ui, sans-serif",
       fill: "#ffffff"

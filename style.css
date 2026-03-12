@@ -1992,8 +1992,9 @@ body.advanced-active .advanced-fog.advanced-fog--visible {
 }
 
 body.advanced-active .advanced-fog.advanced-fog--hidden {
-  opacity: 0;
+  opacity: 0 !important;
   pointer-events: none;
+  animation: none;
 }
 
 /* ===== ADVANCED SETTINGS CARDS (глубокий изумруд) ===== */
@@ -2364,6 +2365,8 @@ body.flip-fix-pending .flip-wrapper {
   bottom: 110px;
   left: 20px;
   right: 20px;
+  width: auto;
+  box-sizing: border-box;
   z-index: 998;
   padding: 14px;
   font-size: 15px;
