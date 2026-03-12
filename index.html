@@ -94,6 +94,11 @@ viewport-fit=cover" />
 Режим: <span id="summaryMode">—</span>
 </div>
 <div id="summaryModelReport" class="summary-model-report" style="display:none"></div>
+
+<div class="plan-actions">
+<button id="changePaceBtn" class="plan-action-btn" type="button">Изменить темп накоплений</button>
+<button id="addDebtsBtn" class="plan-action-btn" type="button">Добавить кредиты и долги</button>
+</div>
 </div>
 
 <!-- ===== FLEXIBLE MODEL ===== -->
@@ -697,6 +702,157 @@ Protocol анализирует цель…
     </div>
     <button id="unexpectedSkipConfirm" class="unexpected-confirm-btn">Подтвердить пропуск</button>
   </div>
+</div>
+
+<!-- ===== PACE CHANGE SCREEN ===== -->
+<div class="screen" id="screen-pace">
+  <div class="app-header">
+    <div class="header-left">
+      <button id="paceBack" class="header-back">←</button>
+    </div>
+    <div class="header-center">
+      <div class="header-title">Темп накоплений</div>
+    </div>
+    <div class="header-right"></div>
+  </div>
+
+  <div class="pace-body">
+    <div class="pace-info-card card">
+      <div class="pace-info-label">Текущий темп</div>
+      <div class="pace-info-value" id="paceCurrentMode">—</div>
+      <div class="pace-info-sub">Сейчас вы откладываете: <b id="paceCurrentMonthly">—</b> ₽ / мес</div>
+      <div class="pace-info-sub">Текущая цель будет достигнута за: <b id="paceCurrentMonths">—</b> мес</div>
+    </div>
+
+    <div class="pace-selector-label">Выберите новый темп</div>
+    <div class="mode-buttons pace-mode-buttons" id="paceModeButtons">
+      <button class="mode-btn" data-mode="calm">Спокойно</button>
+      <button class="mode-btn" data-mode="normal">Умеренно</button>
+      <button class="mode-btn" data-mode="aggressive">Агрессивно</button>
+    </div>
+
+    <div class="pace-preview-card" id="pacePreviewCard" style="display:none">
+      <div id="pacePreviewText" class="pace-preview-text"></div>
+      <div class="pace-preview-values">
+        <div class="pace-preview-row">Новый объём накоплений: <b id="pacePreviewMonthly">—</b> ₽ / мес</div>
+        <div class="pace-preview-row">Новый срок: <b id="pacePreviewMonths">—</b> мес</div>
+      </div>
+    </div>
+
+    <button id="paceConfirmBtn" class="advanced-settings-btn save-pace-btn" type="button">Сохранить темп накоплений</button>
+  </div>
+</div>
+
+<!-- ===== DEBTS SCREEN ===== -->
+<div class="screen" id="screen-debts">
+  <div class="app-header">
+    <div class="header-left">
+      <button id="debtsBack" class="header-back">←</button>
+    </div>
+    <div class="header-center">
+      <div class="header-title">Кредиты и долги</div>
+    </div>
+    <div class="header-right"></div>
+  </div>
+
+  <div class="debts-body" id="debtsBody">
+    <div class="debt-summary-card" id="debtSummaryCard">
+      <div class="debt-summary-chip">Protocol Finance</div>
+      <div class="debt-summary-total-label">Общий долг</div>
+      <div class="debt-summary-total" id="debtSummaryTotal">0 ₽</div>
+      <div class="debt-summary-row">
+        <span>Осталось выплатить</span>
+        <span id="debtSummaryRemaining">0 ₽</span>
+      </div>
+      <div class="debt-summary-row">
+        <span>Ближайший платёж</span>
+        <span id="debtSummaryNext">—</span>
+      </div>
+      <div class="debt-summary-status" id="debtSummaryStatus"></div>
+    </div>
+
+    <div class="debt-planning-toggle-wrap">
+      <label class="debt-planning-toggle-label">
+        <span>Учитывать долги отдельно в расчёте</span>
+        <input type="checkbox" id="debtPlanningToggle" class="debt-toggle-input">
+        <span class="debt-toggle-slider"></span>
+      </label>
+      <div class="debt-planning-hint">Если включено — ежемесячные платежи по долгам будут уменьшать свободные средства для накоплений</div>
+    </div>
+
+    <div id="debtList" class="debt-list"></div>
+
+    <button id="addDebtBtn" class="advanced-settings-btn add-debt-btn" type="button">Добавить кредит или долг</button>
+  </div>
+</div>
+
+<!-- ===== DEBT ENTRY OVERLAY ===== -->
+<div id="debtEntryOverlay" class="debt-entry-overlay">
+  <div class="debt-entry-modal">
+    <div class="debt-entry-question">Учтены ли кредиты и долги в указанной вами сумме расходов?</div>
+    <div class="debt-entry-hint">Это поможет Protocol точнее рассчитать ваш финансовый план</div>
+    <div class="debt-entry-actions">
+      <button id="debtEntryNo" class="confirmBtn confirmBtn--cancel">Нет</button>
+      <button id="debtEntryYes" class="confirmBtn debt-entry-yes-btn">Да</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== ADD DEBT SHEET ===== -->
+<div id="addDebtOverlay" class="sheet-overlay"></div>
+<div id="addDebtSheet" class="sheet debt-editor">
+  <h2 style="margin-bottom:18px">Новый кредит / долг</h2>
+
+  <div class="cf-label" style="margin-bottom:8px">Тип</div>
+  <div class="toggle-group debt-type-toggle" id="debtTypeToggle">
+    <button class="mode-btn active" data-value="credit">Кредит</button>
+    <button class="mode-btn" data-value="debt">Долг</button>
+    <button class="mode-btn" data-value="installment">Рассрочка</button>
+    <button class="mode-btn" data-value="card">Карта</button>
+  </div>
+
+  <div class="debt-form-fields">
+    <div class="input-wrap" style="margin-top:16px">
+      <label>Название</label>
+      <input id="debtTitle" placeholder="Например: Ипотека" />
+    </div>
+    <div class="input-wrap">
+      <label>Общая сумма</label>
+      <input id="debtTotalAmount" inputmode="numeric" placeholder="1.000.000" />
+    </div>
+    <div class="input-wrap">
+      <label>Осталось выплатить</label>
+      <input id="debtRemainingAmount" inputmode="numeric" placeholder="800.000" />
+    </div>
+    <div class="input-wrap">
+      <label>Ежемесячный платёж</label>
+      <input id="debtMonthlyPayment" inputmode="numeric" placeholder="25.000" />
+    </div>
+    <div class="input-wrap">
+      <label>Дата следующего платежа</label>
+      <input id="debtNextDate" type="date" />
+    </div>
+    <div class="input-wrap">
+      <label>Дата окончания</label>
+      <input id="debtEndDate" type="date" />
+    </div>
+    <div class="debt-card-fields" id="debtCardFields" style="display:none">
+      <div class="input-wrap">
+        <label>Кредитный лимит</label>
+        <input id="debtCreditLimit" inputmode="numeric" placeholder="500.000" />
+      </div>
+      <div class="input-wrap">
+        <label>Свободный лимит</label>
+        <input id="debtFreeLimit" inputmode="numeric" placeholder="200.000" />
+      </div>
+    </div>
+    <div class="input-wrap">
+      <label>Комментарий (необязательно)</label>
+      <input id="debtNote" placeholder="Заметка" />
+    </div>
+  </div>
+
+  <button id="debtSaveBtn" class="unexpected-confirm-btn" style="margin-top:20px">Сохранить</button>
 </div>
 
 <!-- ===== BOTTOM SHEET ===== -->

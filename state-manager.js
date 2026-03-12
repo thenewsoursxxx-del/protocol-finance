@@ -9,7 +9,7 @@
  * Загружается ДО app.js.
  */
 
-const STATE_VERSION = 6;
+const STATE_VERSION = 7;
 const STORAGE_KEY = "protocol_app_state";
 
 // ─── Default State ────────────────────────────────────────────
@@ -76,6 +76,11 @@ function getDefaultState() {
       main: null,
       reserve: null
     },
+
+    // ── Debts (v7) ──
+    debts: [],
+    debtPlanningMode: false,
+    debtOverlaySeen: false,
 
     uiState: {
       goalTotal: 0,
@@ -251,6 +256,14 @@ function migrateState(saved) {
     });
   }
 
+  // v6 → v7: debts support
+  if (version < 7) {
+    saved.stateVersion = 7;
+    if (!Array.isArray(saved.debts)) saved.debts = [];
+    if (typeof saved.debtPlanningMode !== "boolean") saved.debtPlanningMode = false;
+    if (typeof saved.debtOverlaySeen !== "boolean") saved.debtOverlaySeen = false;
+  }
+
   // Ensure all goals have the paused field
   if (Array.isArray(saved.goals)) {
     saved.goals.forEach(function (g) {
@@ -328,7 +341,7 @@ function updateState(partial) {
   Object.keys(partial).forEach(key => {
     if (key === "accounts" || key === "goalMeta" || key === "uiState" || key === "accountStats") {
       appState[key] = { ...appState[key], ...partial[key] };
-    } else if (key === "goals" || key === "completedGoals") {
+    } else if (key === "goals" || key === "completedGoals" || key === "debts") {
       appState[key] = Array.isArray(partial[key]) ? partial[key].map(g => ({ ...g })) : appState[key];
     } else {
       appState[key] = partial[key];
@@ -438,6 +451,11 @@ function applyState(saved) {
     ? saved.hasSeenFlexibleOnboarding : defaults.hasSeenFlexibleOnboarding;
   appState.incomeMonthDays = Array.isArray(saved.incomeMonthDays) ? saved.incomeMonthDays : [];
   appState.expenseMonthDays = Array.isArray(saved.expenseMonthDays) ? saved.expenseMonthDays : [];
+
+  // ── Debts (v7) ──
+  appState.debts = Array.isArray(saved.debts) ? saved.debts.map(function (d) { return { ...d }; }) : [];
+  appState.debtPlanningMode = typeof saved.debtPlanningMode === "boolean" ? saved.debtPlanningMode : false;
+  appState.debtOverlaySeen = typeof saved.debtOverlaySeen === "boolean" ? saved.debtOverlaySeen : false;
 
   if (saved.accountStats && typeof saved.accountStats === "object") {
     if (saved.accountStats.main !== undefined || saved.accountStats.reserve !== undefined) {

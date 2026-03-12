@@ -560,6 +560,17 @@ function computeGraphState() {
  * При активном плане использует CashflowEngine для пересчёта балансов,
  * месяцев и derivedState. Маппит результат в legacy-глобалы для UI.
  */
+function getDebtMonthlyTotal() {
+  var s = getState();
+  if (!s.debtPlanningMode) return 0;
+  var debts = s.debts || [];
+  var total = 0;
+  debts.forEach(function (d) {
+    if (d.isActive !== false) total += (Number(d.monthlyPayment) || 0);
+  });
+  return total;
+}
+
 function recalcPlan() {
   // ── Engine recalculation (когда план активен) ──
   if (isInitialized && chosenPlan && typeof CashflowEngine !== "undefined") {
@@ -567,7 +578,7 @@ function recalcPlan() {
     var s = getState();
     var modelType = s.financialModel || "simple";
     var incomeVal = parseNumber(incomeInput?.value || "0");
-    var expensesVal = parseNumber(expensesInput?.value || "0");
+    var expensesVal = parseNumber(expensesInput?.value || "0") + getDebtMonthlyTotal();
     var canRecalc = goalVal > 0 && (incomeVal > expensesVal || modelType === "cashflow");
     if (canRecalc) {
       var events = assembleCashflowEvents();
@@ -5085,6 +5096,507 @@ function goalSwipeToIndex(idx, goLeft) {
     });
   }, 350);
 }
+
+/* ===== PACE CHANGE SCREEN ===== */
+(function initPaceChangeScreen() {
+  var changePaceBtn = document.getElementById("changePaceBtn");
+  var paceBackBtn = document.getElementById("paceBack");
+  var paceConfirmBtn = document.getElementById("paceConfirmBtn");
+  var paceModeButtons = document.querySelectorAll("#paceModeButtons .mode-btn");
+  var pacePreviewCard = document.getElementById("pacePreviewCard");
+
+  var draftPace = null;
+  var originalPace = null;
+
+  var PACE_LABELS = { calm: "Спокойно", normal: "Умеренно", aggressive: "Агрессивно" };
+
+  function simulatePace(mode) {
+    var goalVal = parseNumber(goalInput ? goalInput.value || "0" : "0");
+    var incomeVal = parseNumber(incomeInput ? incomeInput.value || "0" : "0");
+    var expensesVal = parseNumber(expensesInput ? expensesInput.value || "0" : "0") + getDebtMonthlyTotal();
+    if (goalVal <= 0 || incomeVal <= expensesVal) return null;
+
+    var s = getState();
+    var events = assembleCashflowEvents();
+    var engine = new CashflowEngine({
+      modelType: s.financialModel || "simple",
+      baseConfig: {
+        goal: goalVal,
+        income: incomeVal,
+        expenses: expensesVal,
+        saved: initialBalance,
+        mode: mode,
+        hasReserve: chosenPlan === "buffer"
+      },
+      events: events
+    });
+    var d = engine.recalculate();
+    if (!d.ok) return null;
+    return { monthlySave: d.monthlySave, months: d.monthsLeft };
+  }
+
+  function openPaceScreen() {
+    originalPace = saveMode || "calm";
+    draftPace = originalPace;
+
+    var curLabel = PACE_LABELS[originalPace] || originalPace;
+    var curModeEl = document.getElementById("paceCurrentMode");
+    var curMonthlyEl = document.getElementById("paceCurrentMonthly");
+    var curMonthsEl = document.getElementById("paceCurrentMonths");
+    if (curModeEl) curModeEl.textContent = curLabel;
+    if (curMonthlyEl) curMonthlyEl.textContent = (lastCalc.monthlySave || plannedMonthly || 0).toLocaleString();
+    if (curMonthsEl) curMonthsEl.textContent = lastCalc.months || "—";
+
+    paceModeButtons.forEach(function (b) {
+      b.classList.toggle("active", b.dataset.mode === draftPace);
+    });
+
+    if (pacePreviewCard) pacePreviewCard.style.display = "none";
+
+    openScreen("pace", null);
+  }
+
+  function updatePacePreview() {
+    if (!pacePreviewCard) return;
+    if (draftPace === originalPace) {
+      pacePreviewCard.style.display = "block";
+      var txtEl = document.getElementById("pacePreviewText");
+      if (txtEl) txtEl.innerHTML = "Это ваш текущий темп накоплений.";
+      var pmEl = document.getElementById("pacePreviewMonthly");
+      var pmoEl = document.getElementById("pacePreviewMonths");
+      if (pmEl) pmEl.textContent = (lastCalc.monthlySave || 0).toLocaleString();
+      if (pmoEl) pmoEl.textContent = lastCalc.months || "—";
+      return;
+    }
+
+    var sim = simulatePace(draftPace);
+    if (!sim) {
+      pacePreviewCard.style.display = "none";
+      return;
+    }
+    pacePreviewCard.style.display = "block";
+
+    var curMonthly = lastCalc.monthlySave || plannedMonthly || 0;
+    var curMonths = lastCalc.months || 0;
+    var diff = sim.monthlySave - curMonthly;
+    var monthsDiff = curMonths - sim.months;
+    var txtEl = document.getElementById("pacePreviewText");
+
+    if (diff > 0) {
+      txtEl.innerHTML = "Ваш темп увеличится.<br>Вы будете откладывать на " + Math.abs(diff).toLocaleString() + " ₽ больше в месяц.<br>Срок достижения цели сократится на " + Math.abs(monthsDiff) + " мес.";
+    } else if (diff < 0) {
+      txtEl.innerHTML = "Ваш темп уменьшится.<br>Вы будете откладывать на " + Math.abs(diff).toLocaleString() + " ₽ меньше в месяц.<br>Срок достижения цели увеличится на " + Math.abs(monthsDiff) + " мес.";
+    } else {
+      txtEl.innerHTML = "Это ваш текущий темп накоплений.";
+    }
+
+    var pmEl = document.getElementById("pacePreviewMonthly");
+    var pmoEl = document.getElementById("pacePreviewMonths");
+    if (pmEl) pmEl.textContent = sim.monthlySave.toLocaleString();
+    if (pmoEl) pmoEl.textContent = sim.months;
+  }
+
+  if (changePaceBtn) {
+    changePaceBtn.addEventListener("click", function () {
+      if (typeof haptic === "function") haptic("light");
+      openPaceScreen();
+    });
+  }
+
+  paceModeButtons.forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      if (typeof haptic === "function") haptic("light");
+      draftPace = btn.dataset.mode;
+      paceModeButtons.forEach(function (b) {
+        b.classList.toggle("active", b.dataset.mode === draftPace);
+      });
+      updatePacePreview();
+    });
+  });
+
+  if (paceBackBtn) {
+    paceBackBtn.addEventListener("click", function () {
+      if (typeof haptic === "function") haptic("light");
+      draftPace = null;
+      originalPace = null;
+      openScreen(lastScreenBeforeProfile || "calc", buttons[0]);
+    });
+  }
+
+  if (paceConfirmBtn) {
+    paceConfirmBtn.addEventListener("click", function () {
+      if (typeof haptic === "function") haptic("medium");
+      if (!draftPace || draftPace === originalPace) {
+        showToast("Темп накоплений не был изменён", "info");
+        return;
+      }
+
+      saveMode = draftPace;
+      selectedMode = draftPace;
+      modeButtons.forEach(function (b) {
+        b.classList.toggle("active", b.dataset.mode === draftPace);
+      });
+
+      recalcPlan();
+
+      if (typeof renderProtocolAdviceGraph === "function") renderProtocolAdviceGraph();
+      renderGoals();
+      renderAccountsUI();
+      if (typeof updateGraphGoalIndicator === "function") updateGraphGoalIndicator();
+      if (typeof updateAccountsLocalNav === "function") updateAccountsLocalNav();
+
+      var smEl = document.getElementById("summaryMonthly");
+      var smoEl = document.getElementById("summaryMonths");
+      var smoodeEl = document.getElementById("summaryMode");
+      if (smEl && lastCalc.monthlySave) smEl.innerText = lastCalc.monthlySave.toLocaleString();
+      if (smoEl && lastCalc.months) smoEl.innerText = lastCalc.months;
+      if (smoodeEl) smoodeEl.innerText = PACE_LABELS[saveMode] || saveMode;
+
+      saveFullState();
+
+      originalPace = draftPace;
+      showToast("Темп накоплений обновлён", "success");
+
+      openScreen("calc", buttons[0]);
+    });
+  }
+})();
+
+/* ===== DEBTS / CREDITS SCREEN ===== */
+(function initDebtsScreen() {
+  var addDebtsBtn = document.getElementById("addDebtsBtn");
+  var debtsBackBtn = document.getElementById("debtsBack");
+  var addDebtBtn = document.getElementById("addDebtBtn");
+  var debtEntryOverlay = document.getElementById("debtEntryOverlay");
+  var debtEntryNo = document.getElementById("debtEntryNo");
+  var debtEntryYes = document.getElementById("debtEntryYes");
+  var addDebtOverlay = document.getElementById("addDebtOverlay");
+  var addDebtSheet = document.getElementById("addDebtSheet");
+  var debtSaveBtn = document.getElementById("debtSaveBtn");
+  var debtPlanningToggle = document.getElementById("debtPlanningToggle");
+  var debtTypeToggle = document.querySelectorAll("#debtTypeToggle .mode-btn");
+  var debtCardFields = document.getElementById("debtCardFields");
+
+  var TYPE_LABELS = { credit: "Кредит", debt: "Долг", installment: "Рассрочка", card: "Кредитная карта" };
+  var editingDebtId = null;
+
+  function getDebts() {
+    return getState().debts || [];
+  }
+
+  function persistDebts(debts) {
+    updateState({ debts: debts.map(function (d) { return { ...d }; }) });
+    saveState();
+  }
+
+  function openDebtsScreen() {
+    var s = getState();
+    if (debtPlanningToggle) debtPlanningToggle.checked = !!s.debtPlanningMode;
+
+    renderDebtList();
+    renderDebtSummary();
+    openScreen("debts", null);
+
+    if (!s.debtOverlaySeen && debtEntryOverlay) {
+      debtEntryOverlay.classList.add("visible");
+    }
+  }
+
+  function closeDebtsScreen() {
+    openScreen("calc", buttons[0]);
+  }
+
+  function renderDebtSummary() {
+    var debts = getDebts();
+    var totalAmount = 0, totalRemaining = 0, nextPayment = null;
+    debts.forEach(function (d) {
+      if (d.isActive === false) return;
+      totalAmount += Number(d.totalAmount) || 0;
+      totalRemaining += Number(d.remainingAmount) || 0;
+      if (d.nextPaymentDate) {
+        var nd = new Date(d.nextPaymentDate);
+        if (!nextPayment || nd < nextPayment) nextPayment = nd;
+      }
+    });
+
+    var totalEl = document.getElementById("debtSummaryTotal");
+    var remainEl = document.getElementById("debtSummaryRemaining");
+    var nextEl = document.getElementById("debtSummaryNext");
+    var statusEl = document.getElementById("debtSummaryStatus");
+
+    if (totalEl) totalEl.textContent = totalAmount.toLocaleString() + " ₽";
+    if (remainEl) remainEl.textContent = totalRemaining.toLocaleString() + " ₽";
+    if (nextEl) {
+      if (nextPayment) {
+        nextEl.textContent = nextPayment.toLocaleDateString("ru-RU", { day: "numeric", month: "short" });
+      } else {
+        nextEl.textContent = "—";
+      }
+    }
+
+    var s = getState();
+    if (statusEl) {
+      if (debts.length === 0) {
+        statusEl.textContent = "";
+      } else if (s.debtPlanningMode) {
+        statusEl.textContent = "Платежи учтены в финансовом плане";
+      } else {
+        statusEl.textContent = "Долги отслеживаются, но не влияют на расчёт";
+      }
+    }
+  }
+
+  function renderDebtList() {
+    var listEl = document.getElementById("debtList");
+    if (!listEl) return;
+    var debts = getDebts();
+
+    if (debts.length === 0) {
+      listEl.innerHTML = '<div style="text-align:center;padding:24px 0;font-size:14px;opacity:0.4;">Добавьте свой первый кредит или долг</div>';
+      return;
+    }
+
+    var html = "";
+    debts.forEach(function (d) {
+      var typeLabel = TYPE_LABELS[d.type] || d.type;
+      var endStr = d.endDate ? new Date(d.endDate).toLocaleDateString("ru-RU", { month: "short", year: "numeric" }) : "—";
+      var nextStr = d.nextPaymentDate ? new Date(d.nextPaymentDate).toLocaleDateString("ru-RU", { day: "numeric", month: "short" }) : "—";
+
+      html += '<div class="debt-item-card" data-debt-id="' + d.id + '">'
+        + '<div class="debt-item-header">'
+        + '<div class="debt-item-title">' + (d.title || "Без названия") + '</div>'
+        + '<span class="debt-item-type-badge">' + typeLabel + '</span>'
+        + '</div>'
+        + '<div class="debt-item-rows">'
+        + '<div class="debt-item-row"><span>Общая сумма</span><span>' + (Number(d.totalAmount) || 0).toLocaleString() + ' ₽</span></div>'
+        + '<div class="debt-item-row"><span>Осталось</span><span>' + (Number(d.remainingAmount) || 0).toLocaleString() + ' ₽</span></div>'
+        + '<div class="debt-item-row"><span>Ежемесячный платёж</span><span>' + (Number(d.monthlyPayment) || 0).toLocaleString() + ' ₽</span></div>'
+        + '<div class="debt-item-row"><span>Следующий платёж</span><span>' + nextStr + '</span></div>'
+        + '<div class="debt-item-row"><span>Окончание</span><span>' + endStr + '</span></div>';
+
+      if (d.type === "card" && d.creditLimit) {
+        html += '<div class="debt-item-row"><span>Кредитный лимит</span><span>' + (Number(d.creditLimit) || 0).toLocaleString() + ' ₽</span></div>';
+        html += '<div class="debt-item-row"><span>Свободный лимит</span><span>' + (Number(d.freeLimit) || 0).toLocaleString() + ' ₽</span></div>';
+      }
+
+      if (d.note) {
+        html += '<div class="debt-item-row"><span>Заметка</span><span>' + d.note + '</span></div>';
+      }
+
+      html += '</div>'
+        + '<div class="debt-item-actions">'
+        + '<button class="debt-item-delete-btn" data-delete-id="' + d.id + '">Удалить</button>'
+        + '</div>'
+        + '</div>';
+    });
+    listEl.innerHTML = html;
+
+    listEl.querySelectorAll(".debt-item-delete-btn").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        if (typeof haptic === "function") haptic("medium");
+        var id = btn.dataset.deleteId;
+        var debts = getDebts().filter(function (d) { return d.id !== id; });
+        persistDebts(debts);
+        renderDebtList();
+        renderDebtSummary();
+        recalcWithDebts();
+        showToast("Удалено", "success");
+      });
+    });
+  }
+
+  function recalcWithDebts() {
+    var s = getState();
+    if (s.debtPlanningMode) {
+      recalcPlan();
+      if (typeof renderProtocolAdviceGraph === "function") renderProtocolAdviceGraph();
+      renderGoals();
+      renderAccountsUI();
+      if (typeof updateGraphGoalIndicator === "function") updateGraphGoalIndicator();
+      if (typeof updateAccountsLocalNav === "function") updateAccountsLocalNav();
+    }
+  }
+
+  function openAddDebtSheet(existingDebt) {
+    editingDebtId = existingDebt ? existingDebt.id : null;
+    var title = document.getElementById("debtTitle");
+    var totalAmt = document.getElementById("debtTotalAmount");
+    var remainAmt = document.getElementById("debtRemainingAmount");
+    var monthlyPay = document.getElementById("debtMonthlyPayment");
+    var nextDate = document.getElementById("debtNextDate");
+    var endDate = document.getElementById("debtEndDate");
+    var creditLim = document.getElementById("debtCreditLimit");
+    var freeLim = document.getElementById("debtFreeLimit");
+    var note = document.getElementById("debtNote");
+
+    if (existingDebt) {
+      if (title) title.value = existingDebt.title || "";
+      if (totalAmt) totalAmt.value = existingDebt.totalAmount ? formatNumber(String(existingDebt.totalAmount)) : "";
+      if (remainAmt) remainAmt.value = existingDebt.remainingAmount ? formatNumber(String(existingDebt.remainingAmount)) : "";
+      if (monthlyPay) monthlyPay.value = existingDebt.monthlyPayment ? formatNumber(String(existingDebt.monthlyPayment)) : "";
+      if (nextDate) nextDate.value = existingDebt.nextPaymentDate || "";
+      if (endDate) endDate.value = existingDebt.endDate || "";
+      if (creditLim) creditLim.value = existingDebt.creditLimit ? formatNumber(String(existingDebt.creditLimit)) : "";
+      if (freeLim) freeLim.value = existingDebt.freeLimit ? formatNumber(String(existingDebt.freeLimit)) : "";
+      if (note) note.value = existingDebt.note || "";
+
+      var debtType = existingDebt.type || "credit";
+      debtTypeToggle.forEach(function (b) {
+        b.classList.toggle("active", b.dataset.value === debtType);
+      });
+      if (debtCardFields) debtCardFields.style.display = debtType === "card" ? "" : "none";
+    } else {
+      [title, totalAmt, remainAmt, monthlyPay, nextDate, endDate, creditLim, freeLim, note].forEach(function (el) {
+        if (el) el.value = "";
+      });
+      debtTypeToggle.forEach(function (b, i) { b.classList.toggle("active", i === 0); });
+      if (debtCardFields) debtCardFields.style.display = "none";
+    }
+
+    if (addDebtOverlay) addDebtOverlay.style.display = "block";
+    setTimeout(function () {
+      if (addDebtSheet) addDebtSheet.classList.add("open");
+    }, 10);
+  }
+
+  function closeAddDebtSheet() {
+    if (addDebtSheet) addDebtSheet.classList.remove("open");
+    setTimeout(function () {
+      if (addDebtOverlay) addDebtOverlay.style.display = "none";
+    }, 400);
+    editingDebtId = null;
+  }
+
+  function getSelectedDebtType() {
+    var active = document.querySelector("#debtTypeToggle .mode-btn.active");
+    return active ? active.dataset.value : "credit";
+  }
+
+  if (addDebtsBtn) {
+    addDebtsBtn.addEventListener("click", function () {
+      if (typeof haptic === "function") haptic("light");
+      openDebtsScreen();
+    });
+  }
+
+  if (debtsBackBtn) {
+    debtsBackBtn.addEventListener("click", function () {
+      if (typeof haptic === "function") haptic("light");
+      closeDebtsScreen();
+    });
+  }
+
+  if (debtEntryNo) {
+    debtEntryNo.addEventListener("click", function () {
+      if (typeof haptic === "function") haptic("light");
+      updateState({ debtOverlaySeen: true });
+      saveState();
+      if (debtEntryOverlay) debtEntryOverlay.classList.remove("visible");
+    });
+  }
+
+  if (debtEntryYes) {
+    debtEntryYes.addEventListener("click", function () {
+      if (typeof haptic === "function") haptic("light");
+      updateState({ debtOverlaySeen: true });
+      saveState();
+      if (debtEntryOverlay) debtEntryOverlay.classList.remove("visible");
+      showToast("Вы можете рассчитать кредиты и долги точнее, если сумма расходов была указана приблизительно.", "info");
+    });
+  }
+
+  if (addDebtBtn) {
+    addDebtBtn.addEventListener("click", function () {
+      if (typeof haptic === "function") haptic("light");
+      openAddDebtSheet(null);
+    });
+  }
+
+  if (addDebtOverlay) {
+    addDebtOverlay.addEventListener("click", function () {
+      closeAddDebtSheet();
+    });
+  }
+
+  debtTypeToggle.forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      if (typeof haptic === "function") haptic("light");
+      debtTypeToggle.forEach(function (b) { b.classList.remove("active"); });
+      btn.classList.add("active");
+      if (debtCardFields) debtCardFields.style.display = btn.dataset.value === "card" ? "" : "none";
+    });
+  });
+
+  [document.getElementById("debtTotalAmount"),
+   document.getElementById("debtRemainingAmount"),
+   document.getElementById("debtMonthlyPayment"),
+   document.getElementById("debtCreditLimit"),
+   document.getElementById("debtFreeLimit")].forEach(function (el) {
+    if (el) {
+      el.addEventListener("input", function () {
+        el.value = formatNumber(el.value);
+      });
+    }
+  });
+
+  if (debtSaveBtn) {
+    debtSaveBtn.addEventListener("click", function () {
+      if (typeof haptic === "function") haptic("medium");
+
+      var titleEl = document.getElementById("debtTitle");
+      var monthlyPayEl = document.getElementById("debtMonthlyPayment");
+      if (!titleEl || !titleEl.value.trim()) { showToast("Укажите название", "error"); return; }
+      if (!monthlyPayEl || !parseNumber(monthlyPayEl.value)) { showToast("Укажите ежемесячный платёж", "error"); return; }
+
+      var type = getSelectedDebtType();
+      var entry = {
+        id: editingDebtId || ("debt_" + Date.now() + "_" + Math.floor(Math.random() * 1000)),
+        type: type,
+        title: titleEl.value.trim(),
+        totalAmount: parseNumber(document.getElementById("debtTotalAmount").value || "0"),
+        remainingAmount: parseNumber(document.getElementById("debtRemainingAmount").value || "0"),
+        monthlyPayment: parseNumber(monthlyPayEl.value || "0"),
+        nextPaymentDate: document.getElementById("debtNextDate").value || "",
+        endDate: document.getElementById("debtEndDate").value || "",
+        creditLimit: type === "card" ? parseNumber(document.getElementById("debtCreditLimit").value || "0") : 0,
+        freeLimit: type === "card" ? parseNumber(document.getElementById("debtFreeLimit").value || "0") : 0,
+        note: (document.getElementById("debtNote").value || "").trim(),
+        isActive: true
+      };
+
+      var debts = getDebts();
+      if (editingDebtId) {
+        for (var i = 0; i < debts.length; i++) {
+          if (debts[i].id === editingDebtId) { debts[i] = entry; break; }
+        }
+      } else {
+        debts.push(entry);
+      }
+      persistDebts(debts);
+
+      closeAddDebtSheet();
+      renderDebtList();
+      renderDebtSummary();
+      recalcWithDebts();
+      showToast(editingDebtId ? "Изменения сохранены" : "Кредит / долг добавлен", "success");
+    });
+  }
+
+  if (debtPlanningToggle) {
+    debtPlanningToggle.addEventListener("change", function () {
+      if (typeof haptic === "function") haptic("light");
+      var enabled = debtPlanningToggle.checked;
+      updateState({ debtPlanningMode: enabled });
+      saveState();
+      renderDebtSummary();
+      recalcWithDebts();
+      if (enabled) {
+        showToast("Долги учтены в расчёте", "success");
+      }
+    });
+  }
+
+})();
 
 (function initGoalSwipe() {
   var wrapper = document.getElementById("goalSwipeWrapper");
