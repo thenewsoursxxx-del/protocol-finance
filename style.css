@@ -3849,3 +3849,40 @@ body.flip-fix-pending .flip-wrapper {
   color: #f59e0b;
   margin-bottom: 10px;
 }
+
+/* ===== PRIORITY SAVE BUTTON ===== */
+
+.save-priority-btn {
+  position: relative !important;
+  bottom: auto !important;
+  left: auto !important;
+  right: auto !important;
+  width: 100% !important;
+  margin-top: 20px;
+  margin-bottom: 24px;
+}
+
+/* ===== PRIORITY CARD DETAIL LINE ===== */
+
+.goal-mgmt-prio-detail {
+  font-size: 13px;
+  line-height: 1.5;
+  opacity: .6;
+  margin-bottom: 10px;
+}
+
+/* ===== PRIORITY CARD PAUSED TAG ===== */
+
+.goal-prio-paused-tag {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(245, 158, 11, 0.2);
+  border: 1px solid rgba(245, 158, 11, 0.45);
+  color: #f59e0b;
+  margin-left: 6px;
+  vertical-align: middle;
+}

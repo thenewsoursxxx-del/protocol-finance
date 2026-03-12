@@ -372,6 +372,77 @@ function computeGoalsAllocation(goals, monthlyContribution) {
   return goals;
 }
 
+/**
+ * Distributes a given distributableAmount across active goals by priority weights.
+ * Returns array of { goalId, amount }. Paused and completed goals get 0.
+ * Final rounding remainder goes to the highest-priority active goal.
+ */
+function allocateFactByPriority(goals, distributableAmount) {
+  if (!goals || !goals.length || !distributableAmount || distributableAmount <= 0) {
+    return goals.map(function (g) { return { goalId: g.id, amount: 0 }; });
+  }
+
+  var active = [];
+  var result = {};
+  goals.forEach(function (g) {
+    result[g.id] = 0;
+    var remaining = Math.max(0, (g.amount || 0) - (g.saved || 0));
+    if (!g.paused && remaining > 0) {
+      active.push(g);
+    }
+  });
+
+  if (active.length === 0) {
+    return goals.map(function (g) { return { goalId: g.id, amount: 0 }; });
+  }
+
+  if (active.length === 1) {
+    result[active[0].id] = distributableAmount;
+    return goals.map(function (g) { return { goalId: g.id, amount: result[g.id] }; });
+  }
+
+  var totalWeight = 0;
+  active.forEach(function (g) { totalWeight += 1 / (g.priority || 1); });
+
+  var allocated = 0;
+  active.forEach(function (g) {
+    var weight = (1 / (g.priority || 1)) / totalWeight;
+    var share = Math.round(distributableAmount * weight);
+    result[g.id] = share;
+    allocated += share;
+  });
+
+  var diff = distributableAmount - allocated;
+  if (diff !== 0) {
+    var highest = active.slice().sort(function (a, b) { return a.priority - b.priority; })[0];
+    result[highest.id] += diff;
+  }
+
+  return goals.map(function (g) { return { goalId: g.id, amount: result[g.id] }; });
+}
+
+function getFactPreviewForGoal(goalIndex, rawInputAmount) {
+  var goals = getGoals();
+  if (!goals.length || goalIndex < 0 || goalIndex >= goals.length) return 0;
+
+  var amount = rawInputAmount || 0;
+  if (amount <= 0 && plannedMonthly > 0) {
+    amount = plannedMonthly;
+  }
+  if (amount <= 0) return 0;
+
+  var distributable = amount;
+  if (chosenPlan === "buffer") {
+    distributable = amount - Math.round(amount * 0.1);
+  }
+
+  var alloc = allocateFactByPriority(goals, distributable);
+  for (var i = 0; i < alloc.length; i++) {
+    if (alloc[i].goalId === goals[goalIndex].id) return alloc[i].amount;
+  }
+  return 0;
+}
+
 /* ===== CENTRALIZED STATE MANAGEMENT ===== */
 
 /**
@@ -448,10 +519,16 @@ function computeGraphState() {
     goalValue = activeGoal.amount || goalValue;
   }
 
-  var hasFact = factHistory && factHistory.length > 0;
+  if (activeGoalIndex > 0 && activeGoal) {
+    factBalance = activeGoal.saved || 0;
+  }
+
+  var hasFact = (activeGoalIndex > 0 && activeGoal)
+    ? (factBalance > 0)
+    : (factHistory && factHistory.length > 0);
 
   var actualMonths = 0;
-  if (hasFact) {
+  if (activeGoalIndex === 0 && factHistory && factHistory.length > 0) {
     var mainFacts = factHistory.filter(function (f) { return f.to === "main"; });
     var uniqueM = {};
     mainFacts.forEach(function (f) {
@@ -459,6 +536,8 @@ function computeGraphState() {
       uniqueM[d.getFullYear() + "-" + d.getMonth()] = true;
     });
     actualMonths = Object.keys(uniqueM).length;
+  } else if (activeGoalIndex > 0 && hasFact) {
+    actualMonths = 1;
   }
 
   var visibleMonths = Math.max(3, actualMonths + 2, Math.min(goalMonths, actualMonths + 6));
@@ -1365,6 +1444,7 @@ style="width:52px;height:52px;border-radius:50%">
     factInput.addEventListener("input", e => {
       e.target.value = formatNumber(e.target.value);
       factInput.classList.remove("error", "shake");
+      updatePlanHeader();
     });
 
     factInput.addEventListener("focus", () => {
@@ -1385,26 +1465,46 @@ style="width:52px;height:52px;border-radius:50%">
         return;
       }
 
-      let toMain = fact;
       let toReserve = 0;
+      let distributable = fact;
 
       if (chosenPlan === "buffer") {
         toReserve = Math.round(fact * 0.1);
-        toMain = fact - toReserve;
+        distributable = fact - toReserve;
       }
 
       const now = new Date();
       now.setDate(1);
       now.setHours(0, 0, 0, 0);
 
-      factHistory.push({ value: toMain, date: now, to: "main" });
+      var goals = getGoals();
+      var alloc = allocateFactByPriority(goals, distributable);
+
+      alloc.forEach(function (entry) {
+        if (entry.amount <= 0) return;
+        var g = getGoalById(entry.goalId);
+        if (!g) return;
+        if (g.priority === 1 || goals.indexOf(g) === 0) {
+          factHistory.push({ value: entry.amount, date: now, to: "main" });
+        } else {
+          g.saved = (g.saved || 0) + entry.amount;
+        }
+      });
+
       if (toReserve > 0) {
         factHistory.push({ value: toReserve, date: now, to: "reserve" });
       }
 
       factRatio = fact / plannedMonthly;
 
+      computeGoalsAllocation(goals, plannedMonthly || 0);
+      persistGoals(goals);
       recalcPlan();
+      renderProtocolAdviceGraph();
+      renderGoals();
+      renderAccountsUI();
+      if (typeof updateGraphGoalIndicator === "function") updateGraphGoalIndicator();
+      if (typeof updateAccountsLocalNav === "function") updateAccountsLocalNav();
       runBrain();
 
       const goalTotal = parseNumber(goalInput.value || "0");
@@ -2601,8 +2701,8 @@ function isCashflowNoData() {
 }
 
 function updatePlanHeader() {
-const monthlyEl = document.getElementById("planMonthly");
-const explainEl = document.getElementById("planExplanation");
+var monthlyEl = document.getElementById("planMonthly");
+var explainEl = document.getElementById("planExplanation");
 
 if (!monthlyEl || !explainEl) return;
 
@@ -2620,8 +2720,30 @@ if (isCashflowNoData()) {
 
 if (!lastCalc.ok) return;
 
+var goals = getGoals();
+var activeGoal = goals[activeGoalIndex] || null;
+
+if (activeGoalIndex > 0 && activeGoal) {
+  monthlyEl.innerText = activeGoal.title || ("Цель " + (activeGoalIndex + 1));
+
+  var factEl = document.getElementById("factInput");
+  var rawInput = factEl ? parseNumber(factEl.value || "0") : 0;
+  var preview = getFactPreviewForGoal(activeGoalIndex, rawInput);
+
+  var lines = "Откладывается: " + (activeGoal.monthlyShare || 0).toLocaleString() + " ₽ / мес"
+    + "<br>Приоритет: " + (activeGoal.priority || 1)
+    + "<br>При вводе суммы сюда пойдёт: " + preview.toLocaleString() + " ₽"
+    + "<br>Цель будет достигнута за: " + (activeGoal.monthsLeft || "—") + " мес";
+
+  explainEl.innerHTML = lines;
+
+  var inflationEl = document.getElementById("inflationHint");
+  if (inflationEl) { inflationEl.textContent = ""; inflationEl.style.display = "none"; }
+  return;
+}
+
 monthlyEl.innerText =
-  `План: ${plannedMonthly.toLocaleString()} ₽ / месяц`;
+  "План: " + plannedMonthly.toLocaleString() + " ₽ / месяц";
 
 var s = getState();
 var isCashflow = (s.financialModel === "cashflow");
@@ -3978,11 +4100,7 @@ renderAccountBackCards();
   function updateFactInputVisibility() {
     var factRow = document.querySelector(".fact-input-row");
     if (!factRow) return;
-    if (activeGoalIndex > 0) {
-      factRow.style.display = "none";
-    } else {
-      factRow.style.display = "";
-    }
+    factRow.style.display = "";
   }
 
   function setActiveGoal(index) {
@@ -4282,14 +4400,23 @@ renderAccountBackCards();
     updateAdvCards();
   }
 
+  var goalPriorityDraft = null;
+  var goalPriorityOriginal = null;
+
   function openGoalPriorityManager() {
+    var real = getGoals();
+    goalPriorityOriginal = JSON.parse(JSON.stringify(real));
+    goalPriorityDraft = JSON.parse(JSON.stringify(real));
+
     hideAdvancedFog();
     document.getElementById("screen-advanced").classList.remove("active");
     document.getElementById("screen-goal-priority").classList.add("active");
-    renderGoalPriority();
+    renderGoalPriority(goalPriorityDraft);
   }
 
   function closeGoalPriorityScreen() {
+    goalPriorityDraft = null;
+    goalPriorityOriginal = null;
     document.getElementById("screen-goal-priority").classList.remove("active");
     document.getElementById("screen-advanced").classList.add("active");
     showAdvancedFog();
@@ -4717,24 +4844,55 @@ renderAccountBackCards();
 
   var goalPriorityList = document.getElementById("goalPriorityList");
 
-  function renderGoalPriority() {
-    var goals = getGoals();
+  function resolveDraftPriorityConflicts(keepId, draftGoals) {
+    var byPriority = {};
+    draftGoals.forEach(function (g) {
+      if (!byPriority[g.priority]) byPriority[g.priority] = [];
+      byPriority[g.priority].push(g);
+    });
+    Object.keys(byPriority).forEach(function (p) {
+      var arr = byPriority[p];
+      if (arr.length <= 1) return;
+      var bump = Number(p);
+      arr.forEach(function (g) {
+        if (g.id !== keepId) {
+          bump++;
+          while (bump <= 3 && draftGoals.some(function (x) { return x.priority === bump && x.id !== g.id; })) bump++;
+          if (bump > 3) bump = 3;
+          g.priority = bump;
+        }
+      });
+    });
+  }
+
+  function renderGoalPriority(draftGoals) {
+    var goals = draftGoals || getGoals();
 
     if (!goalPriorityList) return;
+
+    var previewClone = JSON.parse(JSON.stringify(goals));
+    computeGoalsAllocation(previewClone, plannedMonthly || 0);
+
+    var goalPriorityBody = document.getElementById("goalPriorityBody");
     goalPriorityList.innerHTML = "";
 
-    goals.forEach(function (g) {
+    previewClone.forEach(function (g) {
       var card = document.createElement("div");
       card.className = "goal-mgmt-prio-card" + (g.priority === 1 ? " primary" : "");
       var pctDone = g.amount > 0 ? Math.min(100, Math.round(((g.saved || 0) / g.amount) * 100)) : 0;
+      var pausedTag = g.paused ? ' <span class="goal-prio-paused-tag">На паузе</span>' : '';
       card.innerHTML =
         '<div class="goal-mgmt-prio-header">' +
-          '<div class="goal-mgmt-prio-name">' + escapeHtml(g.title) + '</div>' +
+          '<div class="goal-mgmt-prio-name">' + escapeHtml(g.title) + pausedTag + '</div>' +
           '<div class="goal-mgmt-prio-badge">P' + g.priority + '</div>' +
         '</div>' +
         '<div class="goal-mgmt-prio-info">' +
           '<span>' + pctDone + '% выполнено</span>' +
           '<span>' + (g.saved || 0).toLocaleString() + ' / ' + (g.amount || 0).toLocaleString() + ' ₽</span>' +
+        '</div>' +
+        '<div class="goal-mgmt-prio-detail">' +
+          'Откладывается: ' + (g.monthlyShare || 0).toLocaleString() + ' ₽ / мес' +
+          '<br>Цель будет достигнута за: ' + (g.monthsLeft || "—") + ' мес' +
         '</div>' +
         '<div class="goal-mgmt-prio-controls">' +
           '<label class="goal-mgmt-prio-label">Приоритет</label>' +
@@ -4753,21 +4911,100 @@ renderAccountBackCards();
         btn.addEventListener("click", function () {
           if (typeof haptic === "function") haptic("light");
           var newP = Number(this.dataset.value);
-          var goal = getGoalById(goalId);
-          if (!goal) return;
-          goal.priority = newP;
-          var g2 = getGoals();
-          resolvePriorityConflicts(goalId, g2);
-          g2.sort(function (a, b) { return a.priority - b.priority; });
-          computeGoalsAllocation(g2, plannedMonthly || 0);
-          persistGoals(g2);
-          recalcPlan();
-          renderGoalPriority();
-          updateAccountsLocalNav();
-          updateGraphGoalIndicator();
+
+          if (goalPriorityDraft) {
+            var dg = null;
+            for (var i = 0; i < goalPriorityDraft.length; i++) {
+              if (goalPriorityDraft[i].id === goalId) { dg = goalPriorityDraft[i]; break; }
+            }
+            if (!dg) return;
+            dg.priority = newP;
+            resolveDraftPriorityConflicts(goalId, goalPriorityDraft);
+            goalPriorityDraft.sort(function (a, b) { return a.priority - b.priority; });
+            renderGoalPriority(goalPriorityDraft);
+          } else {
+            var goal = getGoalById(goalId);
+            if (!goal) return;
+            goal.priority = newP;
+            var g2 = getGoals();
+            resolvePriorityConflicts(goalId, g2);
+            g2.sort(function (a, b) { return a.priority - b.priority; });
+            computeGoalsAllocation(g2, plannedMonthly || 0);
+            persistGoals(g2);
+            recalcPlan();
+            renderGoalPriority();
+            updateAccountsLocalNav();
+            updateGraphGoalIndicator();
+          }
         });
       });
     });
+
+    var existingSaveBtn = document.getElementById("saveGoalPriorityBtn");
+    if (!existingSaveBtn && goalPriorityBody) {
+      var saveBtn = document.createElement("button");
+      saveBtn.id = "saveGoalPriorityBtn";
+      saveBtn.className = "advanced-settings-btn save-priority-btn";
+      saveBtn.type = "button";
+      saveBtn.textContent = "Сохранить приоритет";
+      goalPriorityBody.appendChild(saveBtn);
+    }
+
+    var savePrioBtn = document.getElementById("saveGoalPriorityBtn");
+    if (savePrioBtn) {
+      savePrioBtn.onclick = function () {
+        if (typeof haptic === "function") haptic("medium");
+
+        if (!goalPriorityDraft || !goalPriorityOriginal) {
+          showToast("Приоритеты целей не были изменены", "info");
+          return;
+        }
+
+        var changed = false;
+        for (var i = 0; i < goalPriorityDraft.length; i++) {
+          var orig = null;
+          for (var j = 0; j < goalPriorityOriginal.length; j++) {
+            if (goalPriorityOriginal[j].id === goalPriorityDraft[i].id) {
+              orig = goalPriorityOriginal[j];
+              break;
+            }
+          }
+          if (!orig || orig.priority !== goalPriorityDraft[i].priority) {
+            changed = true;
+            break;
+          }
+        }
+
+        if (!changed) {
+          showToast("Приоритеты целей не были изменены", "info");
+          return;
+        }
+
+        var realGoals = getGoals();
+        goalPriorityDraft.forEach(function (dg) {
+          for (var k = 0; k < realGoals.length; k++) {
+            if (realGoals[k].id === dg.id) {
+              realGoals[k].priority = dg.priority;
+              break;
+            }
+          }
+        });
+        realGoals.sort(function (a, b) { return a.priority - b.priority; });
+        computeGoalsAllocation(realGoals, plannedMonthly || 0);
+        persistGoals(realGoals);
+        recalcPlan();
+        renderGoalPriority(realGoals);
+        renderGoals();
+        if (typeof renderProtocolAdviceGraph === "function") renderProtocolAdviceGraph();
+        renderAccountsUI();
+        if (typeof updateGraphGoalIndicator === "function") updateGraphGoalIndicator();
+        if (typeof updateAccountsLocalNav === "function") updateAccountsLocalNav();
+        showToast("Приоритет сохранён", "success");
+
+        goalPriorityOriginal = JSON.parse(JSON.stringify(realGoals));
+        goalPriorityDraft = JSON.parse(JSON.stringify(realGoals));
+      };
+    }
   }
 
   function escapeHtml(str) {
