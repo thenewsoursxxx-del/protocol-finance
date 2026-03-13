@@ -1485,6 +1485,7 @@ style="width:52px;height:52px;border-radius:50%">
   var actionsContainer = document.getElementById("protocolActionsContainer");
   if (actionsContainer) {
     actionsContainer.innerHTML = '<button id="unexpectedExpenseBtn" class="unexpected-expense-trigger" type="button">Непредвиденный расход</button>';
+    actionsContainer.style.display = "";
   }
 
   renderSVGGraph();
@@ -1630,6 +1631,11 @@ if (backBtn) backBtn.style.display = "none";
 hideBottomNav();
 adviceCard.innerHTML = "";
 loader.classList.remove("hidden");
+
+var actionsContainer = document.getElementById("protocolActionsContainer");
+var graphIndicator = document.getElementById("graphGoalIndicator");
+if (actionsContainer) { actionsContainer.innerHTML = ""; actionsContainer.style.display = "none"; }
+if (graphIndicator) { graphIndicator.classList.remove("visible"); graphIndicator.innerHTML = ""; }
 
 plannedMonthly = lastCalc.monthlySave;
 
@@ -2293,32 +2299,37 @@ function showBrainMessage(text) {
  * Всплывающая toast-подсказка сверху экрана.
  * @param {string} message - Текст сообщения
  * @param {string} type - "error" | "success" | "info"
+ * @param {object} opts - { duration, screenScope } duration в мс; screenScope="debts" — toast внутри экрана долгов (не виден на других вкладках, при возврате остаётся до конца таймера)
  */
-function showToast(message, type) {
+function showToast(message, type, opts) {
   type = type === "error" || type === "success" || type === "info" ? type : "info";
+  opts = opts || {};
+  var duration = opts.duration || 2000;
+  var screenScope = opts.screenScope;
 
-  const existing = document.getElementById("protocol-toast");
+  var existing = document.getElementById("protocol-toast");
   if (existing) {
     clearTimeout(existing._toastTimeout);
     existing.remove();
   }
 
-  const el = document.createElement("div");
+  var el = document.createElement("div");
   el.id = "protocol-toast";
   el.className = "toast toast--" + type;
   el.textContent = message;
-  document.body.appendChild(el);
 
-  requestAnimationFrame(() => {
+  var parent = screenScope === "debts" ? document.getElementById("screen-debts") : null;
+  (parent || document.body).appendChild(el);
+
+  requestAnimationFrame(function () {
     el.classList.add("toast--visible");
   });
 
-  const duration = 2000;
-  el._toastTimeout = setTimeout(() => {
+  el._toastTimeout = setTimeout(function () {
     el.classList.remove("toast--visible");
     el.classList.add("toast--hiding");
-    setTimeout(() => {
-      el.remove();
+    setTimeout(function () {
+      if (el.parentNode) el.remove();
     }, 300);
   }, duration);
 }
@@ -5644,6 +5655,7 @@ function goalSwipeToIndex(idx, goLeft) {
       updateState({ debtOverlaySeen: true });
       saveState();
       if (debtEntryOverlay) debtEntryOverlay.classList.remove("visible");
+      showToast("Вы можете рассчитать кредиты и долги, чтобы protocol учёл их в своей системе.", "info", { duration: 6000, screenScope: "debts" });
     });
   }
 
@@ -5653,7 +5665,7 @@ function goalSwipeToIndex(idx, goLeft) {
       updateState({ debtOverlaySeen: true });
       saveState();
       if (debtEntryOverlay) debtEntryOverlay.classList.remove("visible");
-      showToast("Вы можете рассчитать кредиты и долги точнее, если сумма расходов была указана приблизительно.", "info");
+      showToast("Вы можете рассчитать кредиты и долги точнее, если сумма расходов была указана приблизительно.", "info", { duration: 6000, screenScope: "debts" });
     });
   }
 

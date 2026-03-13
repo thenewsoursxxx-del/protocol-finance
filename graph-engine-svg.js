@@ -266,7 +266,7 @@ var ProtocolGraph = (function () {
     if (_tooltipHideTimer) { clearTimeout(_tooltipHideTimer); _tooltipHideTimer = null; }
 
     tooltip.innerHTML =
-      '<div class="graph-tooltip-value">Факт: ' + Math.max(0, Math.round(balance)).toLocaleString() + ' ₽</div>' +
+      '<div class="graph-tooltip-value">Отложено: ' + Math.max(0, Math.round(balance)).toLocaleString() + ' ₽</div>' +
       '<div class="graph-tooltip-month">Месяц: ' + month + '</div>';
 
     tooltip.classList.remove("visible");
