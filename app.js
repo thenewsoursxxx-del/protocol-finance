@@ -5,6 +5,40 @@ const buttons = document.querySelectorAll(".nav-btn");
 const screens = document.querySelectorAll(".screen");
 const indicator = document.querySelector(".nav-indicator");
 
+/* ===== NAV ICON ANIMATIONS ===== */
+var navAccountsLottie = null;
+(function initNavIcons() {
+  var lottieContainer = document.getElementById("nav-accounts-lottie");
+  if (lottieContainer && typeof lottie !== "undefined") {
+    navAccountsLottie = lottie.loadAnimation({
+      container: lottieContainer,
+      renderer: "svg",
+      loop: false,
+      autoplay: false,
+      path: "assets/animations/wallet-double.json"
+    });
+  }
+})();
+
+function replayNavIconForScreen(screenName) {
+  if (screenName === "accounts" && navAccountsLottie) {
+    navAccountsLottie.goToAndStop(0, true);
+    navAccountsLottie.play();
+  }
+  if (screenName === "advice") {
+    var svgIcon = document.getElementById("nav-protocol-svg");
+    if (svgIcon) {
+      svgIcon.classList.remove("animate");
+      var line = svgIcon.querySelector(".chart-line");
+      var arrow = svgIcon.querySelector(".chart-arrow");
+      if (line) { line.style.strokeDashoffset = "30"; }
+      if (arrow) { arrow.style.strokeDashoffset = "10"; arrow.style.transform = ""; arrow.style.opacity = ""; }
+      void svgIcon.offsetWidth;
+      svgIcon.classList.add("animate");
+    }
+  }
+}
+
 if (window.Telegram?.WebApp) {
   Telegram.WebApp.ready();
   Telegram.WebApp.expand();
@@ -1037,6 +1071,8 @@ if (navScreens.includes(name) && isInitialized) {
 }
 
 if (name === "advice") syncFlexibleUI();
+
+replayNavIconForScreen(name);
 }
 // ===== TOP PROFILE FIX =====
 
