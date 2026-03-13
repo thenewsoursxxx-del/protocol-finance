@@ -1108,8 +1108,8 @@ z-index: 5;
 }
 
 .goal-edit-btn {
-  width: 36px;
-  height: 36px;
+  width: 52px;
+  height: 52px;
   border-radius: 50%;
 
   display: flex;
@@ -1130,14 +1130,15 @@ z-index: 5;
 .goal-edit-btn svg,
 .goal-edit-btn .goal-edit-lottie,
 .goal-edit-btn .goal-edit-lottie svg {
-  width: 18px;
-  height: 18px;
+  width: 48px;
+  height: 48px;
 }
 
 .goal-edit-btn .goal-edit-lottie {
   display: flex;
   align-items: center;
   justify-content: center;
+  filter: brightness(0) invert(1);
 }
 
 .goal-edit-btn .goal-edit-lottie svg {
@@ -1214,8 +1215,8 @@ transition: transform 0.55s cubic-bezier(.22,1,.36,1);
 }
 
 .goal-edit-btn .goal-edit-lottie svg {
-  width: 16px;
-  height: 16px;
+  width: 48px !important;
+  height: 48px !important;
   stroke: #fff;
   fill: none;
   transition: transform 0.15s ease, opacity 0.15s ease;
@@ -3355,6 +3356,7 @@ body.flip-fix-pending .flip-wrapper {
   display: flex;
   align-items: center;
   justify-content: center;
+  filter: brightness(0) invert(1);
 }
 
 .goal-nav-icon .goal-nav-lottie svg {
@@ -3863,6 +3865,7 @@ body.flip-fix-pending .flip-wrapper {
   display: flex;
   align-items: center;
   justify-content: center;
+  filter: brightness(0) invert(1);
   transition: opacity 0.3s ease, transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
