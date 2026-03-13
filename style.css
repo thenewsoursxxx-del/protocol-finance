@@ -4390,6 +4390,10 @@ body.flip-fix-pending .flip-wrapper {
   filter: drop-shadow(0 0 6px rgba(255,255,255,0.6));
 }
 
+.nav-svg-icon.no-filter svg {
+  filter: none !important;
+}
+
 .nav-btn.active .nav-lottie {
   transform: scale(1.05);
 }
@@ -4416,10 +4420,63 @@ body.flip-fix-pending .flip-wrapper {
   color: rgba(0,0,0,0.65);
 }
 
-/* ===== CHART ICON SVG PATHS ===== */
+/* ===== CHART ICON ANIMATION ===== */
 
-.chart-axis,
-.chart-line,
+.chart-axis {
+  stroke-dasharray: 36;
+  stroke-dashoffset: 0;
+}
+
+.chart-line {
+  stroke-dasharray: 22;
+  stroke-dashoffset: 0;
+}
+
 .chart-arrow {
-  will-change: stroke-dashoffset, opacity, transform;
+  stroke-dasharray: 8;
+  stroke-dashoffset: 0;
+}
+
+/* Staggered draw sequence: axis → line → arrow + icon pulse */
+
+.nav-svg-icon.animate .chart-axis {
+  animation: axisDraw 350ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.nav-svg-icon.animate .chart-line {
+  animation: lineDraw 400ms cubic-bezier(0.22, 1, 0.36, 1) 120ms both;
+}
+
+.nav-svg-icon.animate .chart-arrow {
+  animation: arrowPop 500ms cubic-bezier(0.34, 1.56, 0.64, 1) 320ms both;
+}
+
+.nav-svg-icon.animate svg {
+  animation: iconPulse 600ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes axisDraw {
+  0%   { stroke-dashoffset: 36; }
+  100% { stroke-dashoffset: 0; }
+}
+
+@keyframes lineDraw {
+  0%   { stroke-dashoffset: 22; }
+  100% { stroke-dashoffset: 0; }
+}
+
+@keyframes arrowPop {
+  0%   { stroke-dashoffset: 8; opacity: 0; transform: translateY(3px) scale(0.4); }
+  45%  { stroke-dashoffset: 0; opacity: 1; transform: translateY(-1.8px) scale(1.18); }
+  70%  { opacity: 1; transform: translateY(0.6px) scale(0.94); }
+  88%  { transform: translateY(-0.3px) scale(1.03); }
+  100% { stroke-dashoffset: 0; opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes iconPulse {
+  0%   { transform: scale(0.88); }
+  40%  { transform: scale(1.06); }
+  65%  { transform: scale(0.97); }
+  82%  { transform: scale(1.02); }
+  100% { transform: scale(1); }
 }

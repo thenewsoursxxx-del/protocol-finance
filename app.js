@@ -20,94 +20,7 @@ var navAccountsLottie = null;
   }
 })();
 
-/* --- Elastic easing (spring-like, matches Lottie feel) --- */
-function elasticOut(t, amp, freq, decay) {
-  if (t <= 0) return 0;
-  if (t >= 1) return 1;
-  return 1 - amp * Math.sin(freq * t * Math.PI * 2) * Math.exp(-decay * t);
-}
-
-function springEase(t) {
-  return elasticOut(t, 0.4, 1.8, 8);
-}
-
-function bounceSettle(t) {
-  return elasticOut(t, 0.55, 2.2, 6);
-}
-
-var _chartAnimFrame = 0;
-function animateChartIcon() {
-  var svgIcon = document.getElementById("nav-protocol-svg");
-  if (!svgIcon) return;
-  var svgEl = svgIcon.querySelector("svg");
-  var axis = svgIcon.querySelector(".chart-axis");
-  var line = svgIcon.querySelector(".chart-line");
-  var arrow = svgIcon.querySelector(".chart-arrow");
-  if (!line || !arrow || !axis) return;
-
-  if (_chartAnimFrame) cancelAnimationFrame(_chartAnimFrame);
-
-  var lineLen = 30;
-  var arrowLen = 10;
-  var axisLen = 50;
-  var duration = 1100;
-  var start = null;
-
-  axis.style.strokeDasharray = axisLen;
-  axis.style.strokeDashoffset = axisLen;
-  line.style.strokeDasharray = lineLen;
-  line.style.strokeDashoffset = lineLen;
-  arrow.style.strokeDasharray = arrowLen;
-  arrow.style.strokeDashoffset = arrowLen;
-  arrow.style.opacity = "0";
-  if (svgEl) svgEl.style.transform = "scale(0.85)";
-
-  function tick(ts) {
-    if (!start) start = ts;
-    var elapsed = ts - start;
-    var t = Math.min(elapsed / duration, 1);
-
-    /* Phase 1: icon scale spring (0 → 0.4) */
-    var scaleT = Math.min(t / 0.4, 1);
-    var scaleVal = 0.85 + 0.15 * bounceSettle(scaleT);
-    if (svgEl) svgEl.style.transform = "scale(" + scaleVal.toFixed(4) + ")";
-
-    /* Phase 2: axis draws in (0 → 0.35) */
-    var axisT = Math.min(t / 0.35, 1);
-    var axisOffset = axisLen * (1 - springEase(axisT));
-    axis.style.strokeDashoffset = axisOffset.toFixed(2);
-
-    /* Phase 3: chart line draws (0.15 → 0.7) */
-    var lineT = Math.max(0, Math.min((t - 0.15) / 0.55, 1));
-    var lineOffset = lineLen * (1 - springEase(lineT));
-    line.style.strokeDashoffset = lineOffset.toFixed(2);
-
-    /* Phase 4: arrow appears (0.45 → 1.0) */
-    var arrowT = Math.max(0, Math.min((t - 0.45) / 0.55, 1));
-    var arrowEased = bounceSettle(arrowT);
-    var arrowOffset = arrowLen * (1 - arrowEased);
-    arrow.style.strokeDashoffset = arrowOffset.toFixed(2);
-    arrow.style.opacity = Math.min(arrowEased * 2.5, 1).toFixed(3);
-    var arrowY = (1 - arrowEased) * 5;
-    var arrowScale = 0.6 + 0.4 * arrowEased;
-    arrow.style.transform = "translateY(" + arrowY.toFixed(2) + "px) scale(" + arrowScale.toFixed(3) + ")";
-    arrow.style.transformOrigin = "19px 8px";
-
-    if (t < 1) {
-      _chartAnimFrame = requestAnimationFrame(tick);
-    } else {
-      axis.style.strokeDasharray = "";
-      axis.style.strokeDashoffset = "";
-      line.style.strokeDashoffset = "0";
-      arrow.style.strokeDashoffset = "0";
-      arrow.style.opacity = "1";
-      arrow.style.transform = "";
-      if (svgEl) svgEl.style.transform = "";
-      _chartAnimFrame = 0;
-    }
-  }
-  _chartAnimFrame = requestAnimationFrame(tick);
-}
+var _chartAnimTimer = 0;
 
 function replayNavIconForScreen(screenName) {
   if (screenName === "accounts" && navAccountsLottie) {
@@ -115,7 +28,16 @@ function replayNavIconForScreen(screenName) {
     navAccountsLottie.play();
   }
   if (screenName === "advice") {
-    animateChartIcon();
+    var svgIcon = document.getElementById("nav-protocol-svg");
+    if (!svgIcon) return;
+    clearTimeout(_chartAnimTimer);
+    svgIcon.classList.remove("animate");
+    svgIcon.classList.add("no-filter");
+    void svgIcon.offsetWidth;
+    svgIcon.classList.add("animate");
+    _chartAnimTimer = setTimeout(function() {
+      svgIcon.classList.remove("no-filter");
+    }, 900);
   }
 }
 
