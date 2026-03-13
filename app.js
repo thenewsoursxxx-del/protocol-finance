@@ -2584,9 +2584,17 @@ haptic("light");
 hideBottomNav();
 if (advancedBtn) advancedBtn.style.display = "none";
 
-goalEditTitle.value = goalMeta.title;
-goalEditAmount.value = goalInput.value;
-goalEditBaseValue = parseNumber(goalInput.value || "0");
+var goals = getGoals();
+var activeGoal = goals[activeGoalIndex] || goals[0] || null;
+if (activeGoalIndex === 0) {
+  goalEditTitle.value = goalMeta.title;
+  goalEditAmount.value = goalInput.value;
+  goalEditBaseValue = parseNumber(goalInput.value || "0");
+} else if (activeGoal) {
+  goalEditTitle.value = activeGoal.title || "";
+  goalEditAmount.value = formatNumber(String(activeGoal.amount || 0));
+  goalEditBaseValue = activeGoal.amount || 0;
+}
 
 goalEditorOverlay.style.display = "block";
 
@@ -2641,18 +2649,22 @@ haptic("error");
 return;
 }
 
-// 1️⃣ обновляем мету цели
-goalMeta.title = newTitle;
-
-// 2️⃣ обновляем ТОЛЬКО цель (не трогаем accounts)
-goalInput.value = formatNumber(String(newAmount));
-
-// 3️⃣ если цель стала меньше накопленного — считаем её выполненной
-if (accounts.main >= newAmount) {
-goalCompleted = true;
+var goals = getGoals();
+if (activeGoalIndex === 0) {
+  goalMeta.title = newTitle;
+  goalInput.value = formatNumber(String(newAmount));
+  if (accounts.main >= newAmount) {
+    goalCompleted = true;
+  }
+} else {
+  var activeGoal = goals[activeGoalIndex];
+  if (activeGoal) {
+    activeGoal.title = newTitle;
+    activeGoal.amount = newAmount;
+  }
+  persistGoals(goals);
 }
 
-// 4️⃣ закрываем редактор
 goalEditorSheet.style.transform = "translateY(100%)";
 setTimeout(() => {
 goalEditorOverlay.style.display = "none";
@@ -5109,6 +5121,16 @@ function goalSwipeToIndex(idx, goLeft) {
   var originalPace = null;
 
   var PACE_LABELS = { calm: "Спокойно", normal: "Умеренно", aggressive: "Агрессивно" };
+  var PACE_HINTS = {
+    calm: "~40% от свободных средств. Комфортный режим без лишнего давления на бюджет.",
+    normal: "~60% от свободных средств. Баланс между скоростью и комфортом.",
+    aggressive: "~80% от свободных средств. Максимальная скорость, но выше нагрузка на бюджет."
+  };
+  var paceHintEl = document.getElementById("paceHint");
+
+  function updatePaceHint(mode) {
+    if (paceHintEl) paceHintEl.textContent = PACE_HINTS[mode] || "";
+  }
 
   function simulatePace(mode) {
     var goalVal = parseNumber(goalInput ? goalInput.value || "0" : "0");
@@ -5152,6 +5174,7 @@ function goalSwipeToIndex(idx, goLeft) {
     });
 
     if (pacePreviewCard) pacePreviewCard.style.display = "none";
+    updatePaceHint(draftPace);
 
     openScreen("pace", null);
   }
@@ -5210,6 +5233,7 @@ function goalSwipeToIndex(idx, goLeft) {
       paceModeButtons.forEach(function (b) {
         b.classList.toggle("active", b.dataset.mode === draftPace);
       });
+      updatePaceHint(draftPace);
       updatePacePreview();
     });
   });

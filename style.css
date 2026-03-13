@@ -3902,21 +3902,32 @@ body.flip-fix-pending .flip-wrapper {
   font-size: 14px;
   font-weight: 600;
   border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  background:
+    linear-gradient(165deg, rgba(16,185,129,0.08), rgba(4,120,87,0.04)),
+    linear-gradient(
+      135deg,
+      #021a16,
+      #063d33,
+      #047857,
+      #10b981,
+      #047857,
+      #063d33,
+      #021a16
+    );
+  background-size: 100% 100%, 350% 350%;
+  animation: emeraldFlow 6s ease-in-out infinite;
+  color: #6ee7b7;
   cursor: pointer;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  transition: background 0.2s, border-color 0.2s, transform 0.12s;
+  transition: border-color 0.2s, transform 0.12s, box-shadow 0.2s;
+  box-shadow: 0 4px 16px rgba(4, 120, 87, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.06);
   -webkit-tap-highlight-color: transparent;
   text-align: left;
 }
 
 .plan-action-btn:active {
   transform: scale(0.97);
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 2px 8px rgba(4, 120, 87, 0.3), inset 0 2px 4px rgba(0, 0, 0, 0.15);
 }
 
 /* ===== PACE CHANGE SCREEN ===== */
@@ -3961,7 +3972,16 @@ body.flip-fix-pending .flip-wrapper {
 }
 
 .pace-mode-buttons {
-  margin-bottom: 16px;
+  margin-bottom: 8px;
+}
+
+.pace-hint {
+  font-size: 13px;
+  opacity: 0.5;
+  line-height: 1.4;
+  min-height: 18px;
+  margin-bottom: 12px;
+  transition: opacity 0.2s;
 }
 
 .pace-preview-card {

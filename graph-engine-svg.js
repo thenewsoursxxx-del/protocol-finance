@@ -75,7 +75,7 @@ var ProtocolGraph = (function () {
     renderWatermark(svg, W, H);
 
     if (goalMonths > 0 && monthly > 0 && !svg.querySelector(".plan-line")) {
-      renderPlanLine(svg, defs, W, H, drawW, drawH, goalMonths, monthly, maxValue);
+      renderPlanLine(svg, defs, W, H, drawW, drawH);
     }
 
     if (hasFact && goalMonths > 0 && actualMonths > 0) {
@@ -168,25 +168,19 @@ var ProtocolGraph = (function () {
     }, g);
   }
 
-  function renderPlanLine(svg, defs, W, H, drawW, drawH, goalMonths, monthly, maxValue) {
-    var points = [];
-    var total = 0;
-    for (var i = 0; i <= goalMonths; i++) {
-      var x = PAD_X + (i / goalMonths) * drawW;
-      var val = Math.max(0, total);
-      var y = (H - PAD_BOT) - (val / maxValue) * drawH;
-      y = Math.max(PAD_TOP, Math.min(y, H - PAD_BOT));
-      points.push(x.toFixed(1) + "," + y.toFixed(1));
-      total += monthly;
-    }
+  function renderPlanLine(svg, defs, W, H, drawW, drawH) {
+    var x1 = PAD_X;
+    var y1 = H - PAD_BOT;
+    var x2 = W - PAD_X;
+    var y2 = PAD_TOP;
 
     var gradId = "planGrad_" + Date.now();
     var grad = el("linearGradient", { id: gradId, x1: "0%", y1: "0%", x2: "100%", y2: "0%" }, defs);
     el("stop", { offset: "0%", "stop-color": "#3a7bfd" }, grad);
     el("stop", { offset: "100%", "stop-color": "#60a5fa" }, grad);
 
-    var d = "M" + points.join(" L");
-    var totalLen = estimatePolylineLength(points);
+    var d = "M" + x1 + "," + y1 + " L" + x2 + "," + y2;
+    var totalLen = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
 
     var line = el("path", {
       d: d,
@@ -196,8 +190,8 @@ var ProtocolGraph = (function () {
       "stroke-linecap": "round",
       "stroke-linejoin": "round",
       "class": "plan-line",
-      "stroke-dasharray": totalLen,
-      "stroke-dashoffset": totalLen,
+      "stroke-dasharray": Math.ceil(totalLen),
+      "stroke-dashoffset": Math.ceil(totalLen),
       filter: "drop-shadow(0 0 6px rgba(58,123,253,0.35))"
     }, svg);
 
@@ -342,18 +336,6 @@ var ProtocolGraph = (function () {
 
       lastX = x;
     }
-  }
-
-  function estimatePolylineLength(pointStrings) {
-    var total = 0;
-    for (var i = 1; i < pointStrings.length; i++) {
-      var a = pointStrings[i - 1].split(",");
-      var b = pointStrings[i].split(",");
-      var dx = parseFloat(b[0]) - parseFloat(a[0]);
-      var dy = parseFloat(b[1]) - parseFloat(a[1]);
-      total += Math.sqrt(dx * dx + dy * dy);
-    }
-    return Math.ceil(total);
   }
 
   return {
