@@ -6,38 +6,50 @@ const screens = document.querySelectorAll(".screen");
 const indicator = document.querySelector(".nav-indicator");
 
 /* ===== NAV ICON ANIMATIONS ===== */
+var navCalcLottie = null;
+var navProtocolLottie = null;
 var navAccountsLottie = null;
+var navGoalsLottie = null;
+var navExpensesLottie = null;
+
 (function initNavIcons() {
-  var lottieContainer = document.getElementById("nav-accounts-lottie");
-  if (lottieContainer && typeof lottie !== "undefined") {
-    navAccountsLottie = lottie.loadAnimation({
-      container: lottieContainer,
-      renderer: "svg",
-      loop: false,
-      autoplay: false,
-      path: "assets/animation/Wallet-doublle.json"
-    });
-  }
+  if (typeof lottie === "undefined") return;
+  var navIcons = [
+    { id: "nav-calc-lottie", path: "assets/animation/Coins-2.json", ref: "navCalcLottie" },
+    { id: "nav-protocol-lottie", path: "assets/animation/trend-up-ai_.json", ref: "navProtocolLottie" },
+    { id: "nav-accounts-lottie", path: "assets/animation/Wallet-doublle.json", ref: "navAccountsLottie" },
+    { id: "nav-goals-lottie", path: "assets/animation/Marker.json", ref: "navGoalsLottie" },
+    { id: "nav-expenses-lottie", path: "assets/animation/Align-bottom.json", ref: "navExpensesLottie" }
+  ];
+  navIcons.forEach(function (cfg) {
+    var el = document.getElementById(cfg.id);
+    if (el) {
+      var anim = lottie.loadAnimation({
+        container: el,
+        renderer: "svg",
+        loop: false,
+        autoplay: false,
+        path: cfg.path
+      });
+      if (cfg.ref === "navCalcLottie") navCalcLottie = anim;
+      else if (cfg.ref === "navProtocolLottie") navProtocolLottie = anim;
+      else if (cfg.ref === "navAccountsLottie") navAccountsLottie = anim;
+      else if (cfg.ref === "navGoalsLottie") navGoalsLottie = anim;
+      else if (cfg.ref === "navExpensesLottie") navExpensesLottie = anim;
+    }
+  });
 })();
 
-var _chartAnimTimer = 0;
-
 function replayNavIconForScreen(screenName) {
-  if (screenName === "accounts" && navAccountsLottie) {
-    navAccountsLottie.goToAndStop(0, true);
-    navAccountsLottie.play();
-  }
-  if (screenName === "advice") {
-    var svgIcon = document.getElementById("nav-protocol-svg");
-    if (!svgIcon) return;
-    clearTimeout(_chartAnimTimer);
-    svgIcon.classList.remove("animate");
-    svgIcon.classList.add("no-filter");
-    void svgIcon.offsetWidth;
-    svgIcon.classList.add("animate");
-    _chartAnimTimer = setTimeout(function() {
-      svgIcon.classList.remove("no-filter");
-    }, 900);
+  var anim = null;
+  if (screenName === "calc") anim = navCalcLottie;
+  else if (screenName === "advice") anim = navProtocolLottie;
+  else if (screenName === "accounts") anim = navAccountsLottie;
+  else if (screenName === "goals") anim = navGoalsLottie;
+  else if (screenName === "ai") anim = navExpensesLottie;
+  if (anim) {
+    anim.goToAndStop(0, true);
+    anim.play();
   }
 }
 
@@ -2440,7 +2452,7 @@ var verdict = document.getElementById("goalVerdict");
 var reserveCard = document.getElementById("goalReserveCard");
 var card = document.getElementById("activeGoalCard");
 var pausedBadge = document.getElementById("goalPausedBadge");
-var pauseBtn = document.getElementById("goalPauseBtn");
+var pausePlayBtn = document.getElementById("goalPausePlayBtn");
 
 var title, saved, total;
 if (idx === 0) {
@@ -2520,9 +2532,16 @@ if (editGoalBtn) {
   editGoalBtn.style.display = (idx === 0) ? "" : "none";
 }
 
-if (pauseBtn) {
-  pauseBtn.style.display = (idx > 0 && goal) ? "" : "none";
-  pauseBtn.innerText = isPaused ? "▶" : "⏸";
+if (pausePlayBtn) {
+  pausePlayBtn.style.display = (idx > 0 && goal) ? "" : "none";
+  var pauseLottie = document.getElementById("goalPauseLottie");
+  var playLottie = document.getElementById("goalPlayLottie");
+  if (pauseLottie && playLottie) {
+    pauseLottie.style.display = isPaused ? "none" : "";
+    pauseLottie.parentElement.classList.toggle("showing-pause", !isPaused);
+    playLottie.style.display = isPaused ? "" : "none";
+    pauseLottie.parentElement.classList.toggle("showing-play", isPaused);
+  }
 }
 
 renderGoalSwipeIndicator();
@@ -2642,19 +2661,79 @@ goalEditorSheet.style.transform = "translateY(0)";
 };
 }
 
-var goalPauseBtn = document.getElementById("goalPauseBtn");
-if (goalPauseBtn) {
-  goalPauseBtn.onclick = function () {
+var goalPausePlayBtn = document.getElementById("goalPausePlayBtn");
+var goalPauseLottieAnim = null;
+var goalPlayLottieAnim = null;
+
+if (typeof lottie !== "undefined") {
+  var pauseContainer = document.getElementById("goalPauseLottie");
+  var playContainer = document.getElementById("goalPlayLottie");
+  if (pauseContainer) {
+    goalPauseLottieAnim = lottie.loadAnimation({
+      container: pauseContainer,
+      renderer: "svg",
+      loop: false,
+      autoplay: false,
+      path: "assets/animation/Pause.json"
+    });
+  }
+  if (playContainer) {
+    goalPlayLottieAnim = lottie.loadAnimation({
+      container: playContainer,
+      renderer: "svg",
+      loop: false,
+      autoplay: false,
+      path: "assets/animation/Play.json"
+    });
+  }
+}
+
+var editGoalLottieEl = document.getElementById("editGoalLottie");
+if (editGoalLottieEl && typeof lottie !== "undefined") {
+  lottie.loadAnimation({
+    container: editGoalLottieEl,
+    renderer: "svg",
+    loop: false,
+    autoplay: false,
+    path: "assets/animation/Pen.json"
+  });
+}
+
+if (goalPausePlayBtn) {
+  goalPausePlayBtn.onclick = function () {
     haptic("light");
     var goals = getGoals();
     var goal = goals[activeGoalIndex];
     if (!goal || activeGoalIndex === 0) return;
-    goal.paused = !goal.paused;
-    computeGoalsAllocation(goals, plannedMonthly || 0);
-    persistGoals(goals);
-    renderGoals();
-    if (typeof renderAccountsUI === "function") renderAccountsUI();
-    if (typeof renderSVGGraph === "function") renderSVGGraph();
+
+    var inner = goalPausePlayBtn.querySelector(".goal-pause-play-inner");
+    var isPaused = goal.paused;
+    var currentAnim = isPaused ? goalPlayLottieAnim : goalPauseLottieAnim;
+
+    if (currentAnim) {
+      currentAnim.goToAndStop(0, true);
+      currentAnim.play();
+      currentAnim.addEventListener("complete", function onComplete() {
+        currentAnim.removeEventListener("complete", onComplete);
+        goal.paused = !goal.paused;
+        computeGoalsAllocation(goals, plannedMonthly || 0);
+        persistGoals(goals);
+        if (inner) inner.classList.add("swipe-transition");
+        renderGoals();
+        if (typeof renderAccountsUI === "function") renderAccountsUI();
+        if (typeof renderSVGGraph === "function") renderSVGGraph();
+        setTimeout(function () {
+          if (inner) inner.classList.remove("swipe-transition");
+        }, 350);
+      });
+    } else {
+      goal.paused = !goal.paused;
+      computeGoalsAllocation(goals, plannedMonthly || 0);
+      persistGoals(goals);
+      renderGoals();
+      if (typeof renderAccountsUI === "function") renderAccountsUI();
+      if (typeof renderSVGGraph === "function") renderSVGGraph();
+    }
   };
 }
 
@@ -4367,10 +4446,10 @@ renderAccountBackCards();
 
   var localNav = document.getElementById("accountsLocalNav");
   var localNavScroll = localNav ? localNav.querySelector(".accounts-local-nav-scroll") : null;
-  var goalNavSvgs = [
-    '<svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" fill="none" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>',
-    '<svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" fill="none" stroke-width="1.8"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg>',
-    '<svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" fill="none" stroke-width="1.8"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>'
+  var goalNavLottiePaths = [
+    "assets/animation/Number-1-Square_.json",
+    "assets/animation/Number-2-Square_.json",
+    "assets/animation/Number-3-Square_.json"
   ];
 
   function updateAccountsLocalNav(overrideIndex) {
@@ -4389,7 +4468,18 @@ renderAccountBackCards();
         var btn = document.createElement("button");
         btn.className = "goal-nav-icon" + (i === activeIdx ? " active" : "");
         btn.setAttribute("data-goal-idx", String(i));
-        btn.innerHTML = goalNavSvgs[i] || goalNavSvgs[0];
+        var lottieDiv = document.createElement("div");
+        lottieDiv.className = "goal-nav-lottie";
+        btn.appendChild(lottieDiv);
+        if (typeof lottie !== "undefined") {
+          lottie.loadAnimation({
+            container: lottieDiv,
+            renderer: "svg",
+            loop: false,
+            autoplay: false,
+            path: goalNavLottiePaths[i] || goalNavLottiePaths[0]
+          });
+        }
         btn.addEventListener("click", (function (idx) {
           return function () {
             if (typeof haptic === "function") haptic("light");

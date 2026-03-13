@@ -1127,13 +1127,22 @@ z-index: 5;
     opacity 0.15s ease;
 }
 
-.goal-edit-btn svg {
+.goal-edit-btn svg,
+.goal-edit-btn .goal-edit-lottie,
+.goal-edit-btn .goal-edit-lottie svg {
   width: 18px;
   height: 18px;
+}
 
+.goal-edit-btn .goal-edit-lottie {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.goal-edit-btn .goal-edit-lottie svg {
   stroke: #fff;
   fill: none;
-  stroke-width: 2;
 }
 
 .goal-edit-btn:hover {
@@ -1204,16 +1213,15 @@ transition: transform 0.55s cubic-bezier(.22,1,.36,1);
   will-change: transform;
 }
 
-.goal-edit-btn svg {
+.goal-edit-btn .goal-edit-lottie svg {
   width: 16px;
   height: 16px;
   stroke: #fff;
   fill: none;
-  stroke-width: 2;
   transition: transform 0.15s ease, opacity 0.15s ease;
 }
 
-.goal-edit-btn:active svg {
+.goal-edit-btn:active .goal-edit-lottie svg {
   transform: scale(0.9);
   opacity: 0.75;
 }
@@ -3336,12 +3344,22 @@ body.flip-fix-pending .flip-wrapper {
   transform: scale(1.1);
 }
 
-.goal-nav-icon svg {
+.goal-nav-icon svg,
+.goal-nav-icon .goal-nav-lottie,
+.goal-nav-icon .goal-nav-lottie svg {
   width: 24px;
   height: 24px;
+}
+
+.goal-nav-icon .goal-nav-lottie {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.goal-nav-icon .goal-nav-lottie svg {
   stroke: currentColor;
   fill: none;
-  stroke-width: 1.8;
 }
 
 /* ===== ADVANCED GOALS SECTION ===== */
@@ -3800,16 +3818,16 @@ body.flip-fix-pending .flip-wrapper {
   transform: scale(1.35);
 }
 
-/* ===== GOAL PAUSE BUTTON ===== */
+/* ===== GOAL PAUSE/PLAY BUTTON ===== */
 
-.goal-pause-btn {
-  width: 32px;
-  height: 32px;
-  min-width: 32px;
-  max-width: 32px;
+.goal-pause-play-btn {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  max-width: 40px;
   padding: 0;
   margin-left: auto;
-  flex: 0 0 32px;
+  flex: 0 0 40px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3817,17 +3835,52 @@ body.flip-fix-pending .flip-wrapper {
   background: transparent;
   color: #fff;
   border: 1px solid rgba(255, 255, 255, 0.14);
-  font-size: 18px;
-  line-height: 1;
   cursor: pointer;
   transition: transform 0.12s ease, opacity 0.2s ease, background 0.2s ease;
   -webkit-tap-highlight-color: transparent;
 }
 
-.goal-pause-btn:active {
+.goal-pause-play-btn:active {
   transform: scale(0.85);
   opacity: 0.6;
   background: rgba(255, 255, 255, 0.08);
+}
+
+.goal-pause-play-inner {
+  position: relative;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.goal-pause-lottie,
+.goal-play-lottie {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.3s ease, transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.goal-pause-play-inner .goal-pause-lottie svg,
+.goal-pause-play-inner .goal-play-lottie svg {
+  width: 24px !important;
+  height: 24px !important;
+}
+
+.goal-pause-play-inner.swipe-transition .goal-pause-lottie,
+.goal-pause-play-inner.swipe-transition .goal-play-lottie {
+  animation: goalIconSwipe 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes goalIconSwipe {
+  0% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0; transform: scale(0.8) translateX(-8px); }
+  100% { opacity: 1; transform: scale(1) translateX(0); }
 }
 
 /* ===== GOAL PAUSED STATE ===== */
@@ -4418,46 +4471,6 @@ body.flip-fix-pending .flip-wrapper {
 
 .nav-btn.active .nav-label {
   color: rgba(0,0,0,0.65);
-}
-
-/* ===== CHART ICON ANIMATION ===== */
-
-.chart-axis {
-  stroke-dasharray: 36;
-  stroke-dashoffset: 0;
-}
-
-.chart-line {
-  stroke-dasharray: 22;
-  stroke-dashoffset: 0;
-}
-
-.chart-arrow {
-  stroke-dasharray: 8;
-  stroke-dashoffset: 0;
-}
-
-/* Staggered draw sequence: axis → line → arrow + icon pulse */
-
-.nav-svg-icon.animate .chart-axis {
-  animation: axisDraw 350ms cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
-.nav-svg-icon.animate .chart-line {
-  animation: lineDraw 400ms cubic-bezier(0.22, 1, 0.36, 1) 120ms both;
-}
-
-.nav-svg-icon.animate .chart-arrow {
-  animation: arrowPop 500ms cubic-bezier(0.34, 1.56, 0.64, 1) 320ms both;
-}
-
-.nav-svg-icon.animate svg {
-  animation: iconPulse 600ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
-}
-
-@keyframes axisDraw {
-  0%   { stroke-dashoffset: 36; }
-  100% { stroke-dashoffset: 0; }
 }
 
 @keyframes lineDraw {
