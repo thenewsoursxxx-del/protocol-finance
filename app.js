@@ -15,7 +15,7 @@ var navAccountsLottie = null;
       renderer: "svg",
       loop: false,
       autoplay: false,
-      path: "assets/animations/wallet-double.json"
+      path: "assets/animation/Wallet-doublle.json"
     });
   }
 })();
@@ -27,15 +27,24 @@ function replayNavIconForScreen(screenName) {
   }
   if (screenName === "advice") {
     var svgIcon = document.getElementById("nav-protocol-svg");
-    if (svgIcon) {
-      svgIcon.classList.remove("animate");
-      var line = svgIcon.querySelector(".chart-line");
-      var arrow = svgIcon.querySelector(".chart-arrow");
-      if (line) { line.style.strokeDashoffset = "30"; }
-      if (arrow) { arrow.style.strokeDashoffset = "10"; arrow.style.transform = ""; arrow.style.opacity = ""; }
-      void svgIcon.offsetWidth;
-      svgIcon.classList.add("animate");
+    if (!svgIcon) return;
+    var line = svgIcon.querySelector(".chart-line");
+    var arrow = svgIcon.querySelector(".chart-arrow");
+    svgIcon.classList.remove("animate");
+    if (line) {
+      line.style.animation = "none";
+      line.style.strokeDashoffset = "30";
     }
+    if (arrow) {
+      arrow.style.animation = "none";
+      arrow.style.strokeDashoffset = "10";
+      arrow.style.transform = "translateY(4px)";
+      arrow.style.opacity = "0";
+    }
+    void svgIcon.offsetWidth;
+    svgIcon.classList.add("animate");
+    if (line) line.style.animation = "";
+    if (arrow) arrow.style.animation = "";
   }
 }
 
