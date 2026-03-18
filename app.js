@@ -5632,6 +5632,7 @@ function goalSwipeToIndex(idx, goLeft) {
     }
 
     if (addDebtOverlay) addDebtOverlay.style.display = "block";
+    hideBottomNav();
     setTimeout(function () {
       if (addDebtSheet) addDebtSheet.classList.add("open");
     }, 10);
@@ -5641,6 +5642,7 @@ function goalSwipeToIndex(idx, goLeft) {
     if (addDebtSheet) addDebtSheet.classList.remove("open");
     setTimeout(function () {
       if (addDebtOverlay) addDebtOverlay.style.display = "none";
+      showBottomNav();
     }, 400);
     editingDebtId = null;
   }
@@ -6134,6 +6136,7 @@ function goalSwipeToIndex(idx, goLeft) {
 
   function openExpenseSheet() {
     _expSelectedCat = null;
+    hideBottomNav();
     var amtInput = document.getElementById("expenseAmount");
     var dateInput = document.getElementById("expenseDate");
     var noteInput = document.getElementById("expenseNote");
@@ -6156,6 +6159,7 @@ function goalSwipeToIndex(idx, goLeft) {
     if (sheet) sheet.classList.remove("open");
     setTimeout(function () {
       if (sheetOverlay) sheetOverlay.style.display = "none";
+      showBottomNav();
     }, 550);
   }
 
