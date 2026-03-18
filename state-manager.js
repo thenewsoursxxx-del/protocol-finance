@@ -9,7 +9,7 @@
  * Загружается ДО app.js.
  */
 
-const STATE_VERSION = 7;
+const STATE_VERSION = 8;
 const STORAGE_KEY = "protocol_app_state";
 
 // ─── Default State ────────────────────────────────────────────
@@ -81,6 +81,9 @@ function getDefaultState() {
     debts: [],
     debtPlanningMode: false,
     debtOverlaySeen: false,
+
+    // ── Expenses Tracker (v8) ──
+    expensesLog: [],
 
     uiState: {
       goalTotal: 0,
@@ -264,6 +267,12 @@ function migrateState(saved) {
     if (typeof saved.debtOverlaySeen !== "boolean") saved.debtOverlaySeen = false;
   }
 
+  // v7 → v8: expenses tracker
+  if (version < 8) {
+    saved.stateVersion = 8;
+    if (!Array.isArray(saved.expensesLog)) saved.expensesLog = [];
+  }
+
   // Ensure all goals have the paused field
   if (Array.isArray(saved.goals)) {
     saved.goals.forEach(function (g) {
@@ -341,7 +350,7 @@ function updateState(partial) {
   Object.keys(partial).forEach(key => {
     if (key === "accounts" || key === "goalMeta" || key === "uiState" || key === "accountStats") {
       appState[key] = { ...appState[key], ...partial[key] };
-    } else if (key === "goals" || key === "completedGoals" || key === "debts") {
+    } else if (key === "goals" || key === "completedGoals" || key === "debts" || key === "expensesLog") {
       appState[key] = Array.isArray(partial[key]) ? partial[key].map(g => ({ ...g })) : appState[key];
     } else {
       appState[key] = partial[key];
@@ -456,6 +465,9 @@ function applyState(saved) {
   appState.debts = Array.isArray(saved.debts) ? saved.debts.map(function (d) { return { ...d }; }) : [];
   appState.debtPlanningMode = typeof saved.debtPlanningMode === "boolean" ? saved.debtPlanningMode : false;
   appState.debtOverlaySeen = typeof saved.debtOverlaySeen === "boolean" ? saved.debtOverlaySeen : false;
+
+  // ── Expenses Tracker (v8) ──
+  appState.expensesLog = Array.isArray(saved.expensesLog) ? saved.expensesLog.map(function (e) { return { ...e }; }) : [];
 
   if (saved.accountStats && typeof saved.accountStats === "object") {
     if (saved.accountStats.main !== undefined || saved.accountStats.reserve !== undefined) {

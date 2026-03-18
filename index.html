@@ -395,6 +395,76 @@ Protocol анализирует цель…
 </div>
 <div class="header-right"></div>
 </div>
+
+<!-- Expenses Tracker Content -->
+<div class="exp-tracker" id="expTracker">
+
+  <!-- A) Top Summary -->
+  <div class="exp-summary-card" id="expSummaryCard">
+    <div class="exp-summary-row">
+      <span class="exp-summary-label">Потрачено</span>
+      <span class="exp-summary-value"><span id="expSpent">0</span> ₽ / <span id="expLimit">0</span> ₽</span>
+    </div>
+    <div class="exp-summary-remaining">
+      Осталось: <span id="expRemaining">0</span> ₽
+    </div>
+    <div class="exp-progress-track">
+      <div class="exp-progress-fill" id="expProgressFill"></div>
+    </div>
+    <div class="exp-status" id="expStatus">Добавьте расход</div>
+  </div>
+
+  <!-- B) Donut Chart -->
+  <div class="exp-donut-wrap" id="expDonutWrap">
+    <canvas id="expDonutCanvas" width="220" height="220"></canvas>
+    <div class="exp-donut-center">
+      <div class="exp-donut-center-label">Потрачено</div>
+      <div class="exp-donut-center-value" id="expDonutTotal">0 ₽</div>
+    </div>
+  </div>
+
+  <!-- C) Category List -->
+  <div class="exp-categories" id="expCategories"></div>
+
+  <!-- D) Add Expense Button -->
+  <button class="exp-add-btn" id="expAddBtn">Добавить расход</button>
+
+  <!-- Empty State -->
+  <div class="exp-empty" id="expEmpty" style="display:none">
+    <div class="exp-empty-ring"></div>
+    <div class="exp-empty-text">Добавьте первый расход, чтобы начать отслеживание бюджета</div>
+    <button class="exp-add-btn exp-add-btn--empty" id="expAddBtnEmpty">Добавить расход</button>
+  </div>
+
+</div>
+</div>
+
+<!-- ===== ADD EXPENSE SHEET ===== -->
+<div id="expenseSheetOverlay" class="sheet-overlay"></div>
+<div id="expenseSheet" class="sheet expense-editor">
+  <h2 style="margin-bottom:18px">Новый расход</h2>
+
+  <div class="cf-label" style="margin-bottom:8px">Категория</div>
+  <div class="exp-cat-grid" id="expCatGrid"></div>
+
+  <div class="expense-form-fields">
+    <div class="input-wrap" style="margin-top:16px">
+      <label>Сумма</label>
+      <input id="expenseAmount" inputmode="numeric" placeholder="0" />
+    </div>
+    <div class="input-wrap" style="margin-top:8px">
+      <label>Дата</label>
+      <input id="expenseDate" type="date" />
+    </div>
+    <div class="input-wrap" style="margin-top:8px">
+      <label>Заметка (необязательно)</label>
+      <input id="expenseNote" placeholder="Комментарий" />
+    </div>
+  </div>
+
+  <div class="exp-validation" id="expValidation" style="display:none"></div>
+
+  <button id="expenseSaveBtn" class="unexpected-confirm-btn" style="margin-top:20px">Сохранить расход</button>
 </div>
 
 <!-- ===== PROFILE ===== -->

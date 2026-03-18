@@ -1118,6 +1118,10 @@ renderGoals();
 if (btn.dataset.screen === "accounts") {
 renderAccountsUI();
 }
+
+if (btn.dataset.screen === "ai") {
+renderExpensesScreen();
+}
 };
 });
 
@@ -5869,4 +5873,384 @@ function goalSwipeToIndex(idx, goLeft) {
 
   wrapper.addEventListener("pointerup", finishGoalSwipe);
   wrapper.addEventListener("pointercancel", finishGoalSwipe);
+})();
+
+/* ============================================================
+   EXPENSES TRACKER MODULE
+   ============================================================ */
+
+(function () {
+
+  var EXP_CATEGORIES = [
+    { key: "food",      name: "Продукты",         color: "#10b981" },
+    { key: "transport",  name: "Транспорт",        color: "#3b82f6" },
+    { key: "cafe",       name: "Кафе и рестораны", color: "#f59e0b" },
+    { key: "home",       name: "Дом",              color: "#8b5cf6" },
+    { key: "subs",       name: "Подписки",         color: "#ec4899" },
+    { key: "fun",        name: "Развлечения",      color: "#06b6d4" },
+    { key: "health",     name: "Здоровье",         color: "#14b8a6" },
+    { key: "clothes",    name: "Одежда",           color: "#f43f5e" },
+    { key: "other",      name: "Прочее",           color: "#6b7280" }
+  ];
+
+  var _expSelectedCat = null;
+
+  function getCatByKey(key) {
+    for (var i = 0; i < EXP_CATEGORIES.length; i++) {
+      if (EXP_CATEGORIES[i].key === key) return EXP_CATEGORIES[i];
+    }
+    return EXP_CATEGORIES[EXP_CATEGORIES.length - 1];
+  }
+
+  function getMonthlyExpenseLimit() {
+    var inp = document.getElementById("expenses");
+    if (!inp || !inp.value) {
+      var s = getState();
+      if (s.expenses) return Number(String(s.expenses).replace(/\./g, "")) || 0;
+      return 0;
+    }
+    return Number(inp.value.replace(/\./g, "")) || 0;
+  }
+
+  function getCurrentMonthKey() {
+    var now = new Date();
+    var y = now.getFullYear();
+    var m = now.getMonth();
+    return y + "-" + m;
+  }
+
+  function getMonthExpenses() {
+    var s = getState();
+    var log = s.expensesLog || [];
+    var mk = getCurrentMonthKey();
+    var result = [];
+    for (var i = 0; i < log.length; i++) {
+      var e = log[i];
+      var d = new Date(e.date);
+      if (d.getFullYear() + "-" + d.getMonth() === mk) {
+        result.push(e);
+      }
+    }
+    return result;
+  }
+
+  function calcCategoryTotals(entries) {
+    var totals = {};
+    var totalSpent = 0;
+    for (var i = 0; i < entries.length; i++) {
+      var e = entries[i];
+      var k = e.category || "other";
+      if (!totals[k]) totals[k] = 0;
+      totals[k] += e.amount;
+      totalSpent += e.amount;
+    }
+    var sorted = [];
+    for (var key in totals) {
+      sorted.push({ key: key, amount: totals[key], pct: totalSpent > 0 ? Math.round((totals[key] / totalSpent) * 100) : 0 });
+    }
+    sorted.sort(function (a, b) { return b.amount - a.amount; });
+    return { categories: sorted, totalSpent: totalSpent };
+  }
+
+  /* ── Donut Chart (Canvas) ── */
+
+  function drawDonut(catData, totalSpent) {
+    var canvas = document.getElementById("expDonutCanvas");
+    if (!canvas) return;
+    var dpr = window.devicePixelRatio || 1;
+    var size = 220;
+    canvas.width = size * dpr;
+    canvas.height = size * dpr;
+    canvas.style.width = size + "px";
+    canvas.style.height = size + "px";
+
+    var ctx = canvas.getContext("2d");
+    ctx.scale(dpr, dpr);
+    ctx.clearRect(0, 0, size, size);
+
+    var cx = size / 2;
+    var cy = size / 2;
+    var outerR = 100;
+    var innerR = 68;
+
+    if (!catData.length || totalSpent === 0) {
+      ctx.beginPath();
+      ctx.arc(cx, cy, outerR, 0, Math.PI * 2);
+      ctx.arc(cx, cy, innerR, 0, Math.PI * 2, true);
+      ctx.fillStyle = "rgba(255,255,255,0.06)";
+      ctx.fill();
+      return;
+    }
+
+    var startAngle = -Math.PI / 2;
+    for (var i = 0; i < catData.length; i++) {
+      var seg = catData[i];
+      var cat = getCatByKey(seg.key);
+      var sweep = (seg.amount / totalSpent) * Math.PI * 2;
+      var gap = catData.length > 1 ? 0.03 : 0;
+
+      ctx.beginPath();
+      ctx.arc(cx, cy, outerR, startAngle + gap / 2, startAngle + sweep - gap / 2);
+      ctx.arc(cx, cy, innerR, startAngle + sweep - gap / 2, startAngle + gap / 2, true);
+      ctx.closePath();
+      ctx.fillStyle = cat.color;
+      ctx.fill();
+
+      startAngle += sweep;
+    }
+  }
+
+  /* ── Render Category List ── */
+
+  function renderCategoryList(catData, totalSpent) {
+    var container = document.getElementById("expCategories");
+    if (!container) return;
+    if (!catData.length) {
+      container.innerHTML = "";
+      return;
+    }
+    var html = "";
+    for (var i = 0; i < catData.length; i++) {
+      var seg = catData[i];
+      var cat = getCatByKey(seg.key);
+      html += '<div class="exp-cat-row">' +
+        '<div class="exp-cat-dot" style="background:' + cat.color + '"></div>' +
+        '<div class="exp-cat-info">' +
+          '<div class="exp-cat-name">' + cat.name + '</div>' +
+          '<div class="exp-cat-amount">' + seg.amount.toLocaleString("ru-RU") + ' ₽</div>' +
+        '</div>' +
+        '<div class="exp-cat-pct">' + seg.pct + '%</div>' +
+      '</div>';
+    }
+    container.innerHTML = html;
+  }
+
+  /* ── Render Full Screen ── */
+
+  window.renderExpensesScreen = function () {
+    var entries = getMonthExpenses();
+    var data = calcCategoryTotals(entries);
+    var limit = getMonthlyExpenseLimit();
+    var spent = data.totalSpent;
+    var remaining = limit - spent;
+
+    var elSpent = document.getElementById("expSpent");
+    var elLimit = document.getElementById("expLimit");
+    var elRemaining = document.getElementById("expRemaining");
+    var elProgress = document.getElementById("expProgressFill");
+    var elStatus = document.getElementById("expStatus");
+    var elDonutTotal = document.getElementById("expDonutTotal");
+    var elEmpty = document.getElementById("expEmpty");
+    var elSummary = document.getElementById("expSummaryCard");
+    var elDonut = document.getElementById("expDonutWrap");
+    var elCats = document.getElementById("expCategories");
+    var elAddBtn = document.getElementById("expAddBtn");
+
+    if (entries.length === 0) {
+      if (elEmpty) elEmpty.style.display = "flex";
+      if (elSummary) elSummary.style.display = "none";
+      if (elDonut) elDonut.style.display = "none";
+      if (elCats) elCats.style.display = "none";
+      if (elAddBtn) elAddBtn.style.display = "none";
+      drawDonut([], 0);
+      return;
+    }
+
+    if (elEmpty) elEmpty.style.display = "none";
+    if (elSummary) elSummary.style.display = "";
+    if (elDonut) elDonut.style.display = "";
+    if (elCats) elCats.style.display = "";
+    if (elAddBtn) elAddBtn.style.display = "";
+
+    if (elSpent) elSpent.textContent = spent.toLocaleString("ru-RU");
+    if (elLimit) elLimit.textContent = limit > 0 ? limit.toLocaleString("ru-RU") : "—";
+
+    if (remaining >= 0) {
+      if (elRemaining) elRemaining.textContent = remaining.toLocaleString("ru-RU");
+    } else {
+      if (elRemaining) elRemaining.textContent = "−" + Math.abs(remaining).toLocaleString("ru-RU");
+    }
+
+    var pct = limit > 0 ? Math.min((spent / limit) * 100, 100) : 0;
+    if (elProgress) {
+      elProgress.style.width = pct + "%";
+      elProgress.classList.remove("warn", "over");
+      if (limit > 0 && spent > limit) elProgress.classList.add("over");
+      else if (limit > 0 && pct >= 80) elProgress.classList.add("warn");
+    }
+
+    if (elStatus) {
+      elStatus.classList.remove("status-ok", "status-warn", "status-over");
+      if (limit <= 0) {
+        elStatus.textContent = "Лимит не задан";
+        elStatus.classList.add("status-warn");
+      } else if (spent > limit) {
+        elStatus.textContent = "Лимит превышен на " + Math.abs(remaining).toLocaleString("ru-RU") + " ₽";
+        elStatus.classList.add("status-over");
+      } else if (pct >= 80) {
+        elStatus.textContent = "Лимит почти исчерпан";
+        elStatus.classList.add("status-warn");
+      } else {
+        elStatus.textContent = "Вы укладываетесь в лимит";
+        elStatus.classList.add("status-ok");
+      }
+    }
+
+    if (elDonutTotal) elDonutTotal.textContent = spent.toLocaleString("ru-RU") + " ₽";
+
+    drawDonut(data.categories, data.totalSpent);
+    renderCategoryList(data.categories, data.totalSpent);
+  };
+
+  /* ── Category Grid in Sheet ── */
+
+  function renderCatGrid() {
+    var grid = document.getElementById("expCatGrid");
+    if (!grid) return;
+    var html = "";
+    for (var i = 0; i < EXP_CATEGORIES.length; i++) {
+      var c = EXP_CATEGORIES[i];
+      html += '<div class="exp-cat-chip" data-cat="' + c.key + '">' +
+        '<span class="exp-chip-dot" style="background:' + c.color + '"></span>' +
+        c.name +
+      '</div>';
+    }
+    grid.innerHTML = html;
+
+    grid.querySelectorAll(".exp-cat-chip").forEach(function (chip) {
+      chip.addEventListener("click", function () {
+        grid.querySelectorAll(".exp-cat-chip").forEach(function (c) { c.classList.remove("active"); });
+        chip.classList.add("active");
+        _expSelectedCat = chip.dataset.cat;
+        hideExpValidation();
+      });
+    });
+  }
+
+  /* ── Sheet Open / Close ── */
+
+  var sheetOverlay = document.getElementById("expenseSheetOverlay");
+  var sheet = document.getElementById("expenseSheet");
+
+  function openExpenseSheet() {
+    _expSelectedCat = null;
+    var amtInput = document.getElementById("expenseAmount");
+    var dateInput = document.getElementById("expenseDate");
+    var noteInput = document.getElementById("expenseNote");
+    if (amtInput) amtInput.value = "";
+    if (noteInput) noteInput.value = "";
+    if (dateInput) {
+      var now = new Date();
+      dateInput.value = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0") + "-" + String(now.getDate()).padStart(2, "0");
+    }
+    renderCatGrid();
+    hideExpValidation();
+
+    if (sheetOverlay) sheetOverlay.style.display = "block";
+    requestAnimationFrame(function () {
+      if (sheet) sheet.classList.add("open");
+    });
+  }
+
+  function closeExpenseSheet() {
+    if (sheet) sheet.classList.remove("open");
+    setTimeout(function () {
+      if (sheetOverlay) sheetOverlay.style.display = "none";
+    }, 550);
+  }
+
+  if (sheetOverlay) {
+    sheetOverlay.addEventListener("click", function () {
+      haptic("light");
+      closeExpenseSheet();
+    });
+  }
+
+  /* ── Validation ── */
+
+  function showExpValidation(msg) {
+    var el = document.getElementById("expValidation");
+    if (el) {
+      el.textContent = msg;
+      el.style.display = "block";
+    }
+  }
+
+  function hideExpValidation() {
+    var el = document.getElementById("expValidation");
+    if (el) el.style.display = "none";
+  }
+
+  /* ── Save Expense ── */
+
+  var saveBtn = document.getElementById("expenseSaveBtn");
+  if (saveBtn) {
+    saveBtn.addEventListener("click", function () {
+      haptic("light");
+
+      if (!_expSelectedCat) {
+        showExpValidation("Выберите категорию");
+        return;
+      }
+
+      var amtInput = document.getElementById("expenseAmount");
+      var rawAmt = amtInput ? amtInput.value : "";
+      var amount = Number(rawAmt.replace(/\./g, "").replace(/\D/g, "")) || 0;
+      if (amount <= 0) {
+        showExpValidation("Введите сумму расхода");
+        return;
+      }
+
+      var dateInput = document.getElementById("expenseDate");
+      var noteInput = document.getElementById("expenseNote");
+      var dateVal = dateInput ? dateInput.value : "";
+      var noteVal = noteInput ? noteInput.value.trim() : "";
+
+      if (!dateVal) {
+        var now = new Date();
+        dateVal = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0") + "-" + String(now.getDate()).padStart(2, "0");
+      }
+
+      var entry = {
+        id: "exp_" + Date.now() + "_" + Math.random().toString(36).substr(2, 5),
+        category: _expSelectedCat,
+        amount: amount,
+        date: dateVal,
+        note: noteVal
+      };
+
+      var s = getState();
+      var log = Array.isArray(s.expensesLog) ? s.expensesLog.slice() : [];
+      log.push(entry);
+      updateState({ expensesLog: log });
+      saveState();
+
+      closeExpenseSheet();
+      renderExpensesScreen();
+
+      showToast("Расход добавлен", "success");
+    });
+  }
+
+  /* ── Format amount input ── */
+
+  var expAmtInput = document.getElementById("expenseAmount");
+  if (expAmtInput) {
+    expAmtInput.addEventListener("input", function (e) {
+      var p = e.target.selectionStart;
+      var b = e.target.value.length;
+      e.target.value = formatNumber(e.target.value);
+      var a = e.target.value.length;
+      e.target.selectionEnd = p + (a - b);
+    });
+  }
+
+  /* ── Wire up buttons ── */
+
+  var addBtn = document.getElementById("expAddBtn");
+  var addBtnEmpty = document.getElementById("expAddBtnEmpty");
+
+  if (addBtn) addBtn.addEventListener("click", function () { haptic("light"); openExpenseSheet(); });
+  if (addBtnEmpty) addBtnEmpty.addEventListener("click", function () { haptic("light"); openExpenseSheet(); });
+
 })();
