@@ -571,9 +571,13 @@ function computeGraphState() {
     factBalance = activeGoal.saved || 0;
   }
 
-  var hasFact = (activeGoalIndex > 0 && activeGoal)
-    ? (factBalance > 0)
-    : (factHistory && factHistory.length > 0);
+  var goalTarget = goalValue || 1;
+  var hasFact;
+  if (activeGoalIndex > 0 && activeGoal) {
+    hasFact = factBalance > 0 && (factBalance / goalTarget) > 0.005;
+  } else {
+    hasFact = factHistory && factHistory.length > 0;
+  }
 
   var actualMonths = 0;
   if (activeGoalIndex === 0 && factHistory && factHistory.length > 0) {
@@ -585,7 +589,15 @@ function computeGraphState() {
     });
     actualMonths = Object.keys(uniqueM).length;
   } else if (activeGoalIndex > 0 && hasFact) {
-    actualMonths = 1;
+    var secondaryFacts = factHistory ? factHistory.filter(function (f) {
+      return f.goalIndex === activeGoalIndex;
+    }) : [];
+    var uniqueSecondary = {};
+    secondaryFacts.forEach(function (f) {
+      var d = new Date(f.date);
+      uniqueSecondary[d.getFullYear() + "-" + d.getMonth()] = true;
+    });
+    actualMonths = Math.max(1, Object.keys(uniqueSecondary).length);
   }
 
   var visibleMonths = Math.max(3, actualMonths + 2, Math.min(goalMonths, actualMonths + 6));
@@ -2536,7 +2548,12 @@ if (card) {
 }
 
 if (pausedBadge) {
-  pausedBadge.style.display = isPaused ? "" : "none";
+  if (idx === 0) {
+    pausedBadge.style.display = "none";
+  } else {
+    pausedBadge.style.display = "";
+    pausedBadge.classList.toggle("badge-visible", !!isPaused);
+  }
 }
 
 if (editGoalBtn) {
@@ -2718,32 +2735,23 @@ if (goalPausePlayBtn) {
     if (!goal || activeGoalIndex === 0) return;
 
     var inner = goalPausePlayBtn.querySelector(".goal-pause-play-inner");
-    var isPaused = goal.paused;
-    var currentAnim = isPaused ? goalPlayLottieAnim : goalPauseLottieAnim;
 
+    goal.paused = !goal.paused;
+    computeGoalsAllocation(goals, plannedMonthly || 0);
+    persistGoals(goals);
+    renderGoals();
+    if (typeof renderAccountsUI === "function") renderAccountsUI();
+    if (typeof renderSVGGraph === "function") renderSVGGraph();
+
+    var currentAnim = goal.paused ? goalPauseLottieAnim : goalPlayLottieAnim;
     if (currentAnim) {
       currentAnim.goToAndStop(0, true);
       currentAnim.play();
+      if (inner) inner.classList.add("swipe-transition");
       currentAnim.addEventListener("complete", function onComplete() {
         currentAnim.removeEventListener("complete", onComplete);
-        goal.paused = !goal.paused;
-        computeGoalsAllocation(goals, plannedMonthly || 0);
-        persistGoals(goals);
-        if (inner) inner.classList.add("swipe-transition");
-        renderGoals();
-        if (typeof renderAccountsUI === "function") renderAccountsUI();
-        if (typeof renderSVGGraph === "function") renderSVGGraph();
-        setTimeout(function () {
-          if (inner) inner.classList.remove("swipe-transition");
-        }, 350);
+        if (inner) inner.classList.remove("swipe-transition");
       });
-    } else {
-      goal.paused = !goal.paused;
-      computeGoalsAllocation(goals, plannedMonthly || 0);
-      persistGoals(goals);
-      renderGoals();
-      if (typeof renderAccountsUI === "function") renderAccountsUI();
-      if (typeof renderSVGGraph === "function") renderSVGGraph();
     }
   };
 }
@@ -4251,7 +4259,7 @@ renderAccountBackCards();
   function updateFactInputVisibility() {
     var factRow = document.querySelector(".fact-input-row");
     if (!factRow) return;
-    factRow.style.display = "";
+    factRow.style.display = (activeGoalIndex > 0) ? "none" : "";
   }
 
   function setActiveGoal(index) {
@@ -4266,6 +4274,8 @@ renderAccountBackCards();
     updateFactInputVisibility();
     updateAccountsLocalNav();
     updateGraphGoalIndicator();
+    if (typeof renderSVGGraph === "function") renderSVGGraph();
+    if (typeof updatePlanHeader === "function") updatePlanHeader();
   }
 
   window.setActiveGoal = setActiveGoal;
@@ -4495,7 +4505,8 @@ renderAccountBackCards();
           return function () {
             if (typeof haptic === "function") haptic("light");
             updateAccountsLocalNav(idx);
-            setGraphFace(idx);
+            setActiveGoal(idx);
+            renderAccountsUI();
           };
         })(i));
         localNavScroll.appendChild(btn);

@@ -685,6 +685,7 @@ border: 1px solid rgba(58,123,253,0.65);
 border-radius: 20px;
 
 padding: 16px 18px;
+min-height: 54px;
 
 color: #ffffff;
 font-size: 16px;
@@ -1607,6 +1608,14 @@ transition: transform 0.55s cubic-bezier(.22,1,.36,1);
   font-weight: 600;
   line-height: 1;
   color: #ffffff;
+}
+
+#screen-calc > .app-header .header-title,
+#screen-advice > .app-header .header-title,
+#screen-accounts > .app-header .header-title,
+#screen-goals > .app-header .header-title,
+#screen-ai > .app-header .header-title {
+  display: none;
 }
 
 .header-back {
@@ -3904,6 +3913,12 @@ body.flip-fix-pending .flip-wrapper {
   border: 1px solid rgba(245, 158, 11, 0.45);
   color: #f59e0b;
   margin-bottom: 10px;
+  min-height: 26px;
+  visibility: hidden;
+}
+
+.goal-paused-badge.badge-visible {
+  visibility: visible;
 }
 
 /* ===== PRIORITY SAVE BUTTON ===== */

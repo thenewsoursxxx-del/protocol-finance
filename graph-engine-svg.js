@@ -23,6 +23,8 @@ var ProtocolGraph = (function () {
     return node;
   }
 
+  var _lastGoalIndex = -1;
+
   function renderGraph(container, gs, factHistory, plannedMonthly) {
     if (!container || !gs) return;
 
@@ -41,7 +43,16 @@ var ProtocolGraph = (function () {
 
     var maxValue = Math.max(goalValue, factBalance, 1);
 
+    var currentGoalIndex = (typeof activeGoalIndex !== "undefined") ? activeGoalIndex : 0;
+    var goalChanged = (_lastGoalIndex !== -1 && _lastGoalIndex !== currentGoalIndex);
+    _lastGoalIndex = currentGoalIndex;
+
     var existingWrap = container.querySelector(".protocol-graph-wrap");
+    if (existingWrap && goalChanged) {
+      existingWrap.remove();
+      existingWrap = null;
+    }
+
     if (existingWrap) {
       var existingSvg = existingWrap.querySelector(".protocol-graph");
       if (existingSvg) {
