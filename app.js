@@ -1016,6 +1016,7 @@ function hideBottomNav() {
 bottomNav.style.transform = "translateY(140%)";
 bottomNav.style.opacity = "0";
 bottomNav.style.pointerEvents = "none";
+bottomNav.style.visibility = "hidden";
 }
 
 function showBottomNav() {
@@ -6004,9 +6005,14 @@ function goalSwipeToIndex(idx, goLeft) {
 
   /* ── Render Category List ── */
 
+  var _lastCatData = [];
+  var _lastCatTotalSpent = 0;
+
   function renderCategoryList(catData, totalSpent) {
     var container = document.getElementById("expCategories");
     if (!container) return;
+    _lastCatData = catData;
+    _lastCatTotalSpent = totalSpent;
     if (!catData.length) {
       container.innerHTML = "";
       return;
@@ -6015,7 +6021,7 @@ function goalSwipeToIndex(idx, goLeft) {
     for (var i = 0; i < catData.length; i++) {
       var seg = catData[i];
       var cat = getCatByKey(seg.key);
-      html += '<div class="exp-cat-row">' +
+      html += '<div class="exp-cat-row" data-cat="' + seg.key + '">' +
         '<div class="exp-cat-dot" style="background:' + cat.color + '"></div>' +
         '<div class="exp-cat-info">' +
           '<div class="exp-cat-name">' + cat.name + '</div>' +
@@ -6025,6 +6031,13 @@ function goalSwipeToIndex(idx, goLeft) {
       '</div>';
     }
     container.innerHTML = html;
+
+    container.querySelectorAll(".exp-cat-row").forEach(function (row) {
+      row.addEventListener("click", function () {
+        haptic("light");
+        openCatDetailSheet(row.dataset.cat);
+      });
+    });
   }
 
   /* ── Render Full Screen ── */
@@ -6256,5 +6269,169 @@ function goalSwipeToIndex(idx, goLeft) {
 
   if (addBtn) addBtn.addEventListener("click", function () { haptic("light"); openExpenseSheet(); });
   if (addBtnEmpty) addBtnEmpty.addEventListener("click", function () { haptic("light"); openExpenseSheet(); });
+
+  /* ── Donut chart click → open category detail ── */
+
+  var donutCanvas = document.getElementById("expDonutCanvas");
+  if (donutCanvas) {
+    donutCanvas.addEventListener("click", function (e) {
+      if (!_lastCatData.length || !_lastCatTotalSpent) return;
+      var rect = donutCanvas.getBoundingClientRect();
+      var x = e.clientX - rect.left - rect.width / 2;
+      var y = e.clientY - rect.top - rect.height / 2;
+      var dist = Math.sqrt(x * x + y * y);
+      var scale = 220 / rect.width;
+      var distScaled = dist * scale;
+      if (distScaled < 68 || distScaled > 100) return;
+
+      var angle = Math.atan2(y, x);
+      if (angle < -Math.PI / 2) angle += Math.PI * 2;
+      var adjustedAngle = angle + Math.PI / 2;
+      if (adjustedAngle >= Math.PI * 2) adjustedAngle -= Math.PI * 2;
+
+      var cumAngle = 0;
+      for (var i = 0; i < _lastCatData.length; i++) {
+        var sweep = (_lastCatData[i].amount / _lastCatTotalSpent) * Math.PI * 2;
+        cumAngle += sweep;
+        if (adjustedAngle <= cumAngle) {
+          haptic("light");
+          openCatDetailSheet(_lastCatData[i].key);
+          return;
+        }
+      }
+    });
+  }
+
+  /* ── Category Detail Sheet ── */
+
+  var catDetailOverlay = document.getElementById("expCatDetailOverlay");
+  var catDetailSheet = document.getElementById("expCatDetailSheet");
+
+  var MONTH_NAMES_RU = ["января", "февраля", "марта", "апреля", "мая", "июня",
+    "июля", "августа", "сентября", "октября", "ноября", "декабря"];
+
+  function formatExpDate(dateStr) {
+    var d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    var now = new Date();
+    var base = d.getDate() + " " + MONTH_NAMES_RU[d.getMonth()];
+    if (d.getFullYear() !== now.getFullYear()) base += " " + d.getFullYear();
+    return base;
+  }
+
+  function openCatDetailSheet(catKey) {
+    var cat = getCatByKey(catKey);
+    var allMonth = getMonthExpenses();
+    var entries = allMonth.filter(function (e) {
+      return (e.category || "other") === catKey;
+    });
+    entries.sort(function (a, b) {
+      return new Date(b.date) - new Date(a.date);
+    });
+
+    var dotEl = document.getElementById("expDetailDot");
+    var nameEl = document.getElementById("expDetailCatName");
+    var countEl = document.getElementById("expDetailCount");
+    var totalEl = document.getElementById("expDetailTotal");
+    var metaEl = document.getElementById("expDetailMeta");
+    var progressWrap = document.getElementById("expDetailProgressWrap");
+    var progressFill = document.getElementById("expDetailProgressFill");
+    var listEl = document.getElementById("expDetailList");
+    var emptyEl = document.getElementById("expDetailEmpty");
+
+    if (dotEl) dotEl.style.background = cat.color;
+    if (nameEl) nameEl.textContent = cat.name;
+
+    var catTotal = 0;
+    for (var i = 0; i < entries.length; i++) catTotal += entries[i].amount;
+
+    if (countEl) {
+      countEl.textContent = entries.length + " " + _pluralizeExpense(entries.length);
+    }
+
+    if (totalEl) totalEl.textContent = catTotal.toLocaleString("ru-RU") + " ₽";
+
+    var totalAllSpent = 0;
+    for (var k = 0; k < allMonth.length; k++) totalAllSpent += allMonth[k].amount;
+    var pctOfTotal = totalAllSpent > 0 ? Math.round((catTotal / totalAllSpent) * 100) : 0;
+
+    var limit = getMonthlyExpenseLimit();
+    if (metaEl) {
+      var metaParts = [];
+      metaParts.push(pctOfTotal + "% от всех расходов");
+      if (limit > 0) metaParts.push(catTotal.toLocaleString("ru-RU") + " из " + limit.toLocaleString("ru-RU") + " ₽");
+      metaEl.textContent = metaParts.join("  ·  ");
+    }
+
+    if (progressWrap && progressFill) {
+      if (limit > 0) {
+        progressWrap.style.display = "";
+        var pctBar = Math.min((catTotal / limit) * 100, 100);
+        progressFill.style.width = "0%";
+        progressFill.style.background = cat.color;
+        requestAnimationFrame(function () {
+          progressFill.style.width = pctBar + "%";
+        });
+      } else {
+        progressWrap.style.display = "none";
+      }
+    }
+
+    if (!entries.length) {
+      if (listEl) listEl.innerHTML = "";
+      if (emptyEl) emptyEl.style.display = "flex";
+    } else {
+      if (emptyEl) emptyEl.style.display = "none";
+      var html = "";
+      for (var j = 0; j < entries.length; j++) {
+        var e = entries[j];
+        var delay = Math.min(j * 40, 300);
+        var noteHtml = e.note
+          ? '<div class="exp-detail-entry-note">' + e.note.replace(/</g, "&lt;") + '</div>'
+          : '<div class="exp-detail-entry-note muted">Без заметки</div>';
+
+        html += '<div class="exp-detail-entry" style="animation-delay:' + delay + 'ms">' +
+          '<div class="exp-detail-entry-dot" style="background:' + cat.color + '"></div>' +
+          '<div class="exp-detail-entry-body">' +
+            '<div class="exp-detail-entry-amount">' + e.amount.toLocaleString("ru-RU") + ' ₽</div>' +
+            noteHtml +
+          '</div>' +
+          '<div class="exp-detail-entry-date">' + formatExpDate(e.date) + '</div>' +
+          '<svg class="exp-detail-entry-chevron" width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M1 1l5 5-5 5" stroke="rgba(255,255,255,0.35)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
+        '</div>';
+      }
+      if (listEl) listEl.innerHTML = html;
+    }
+
+    hideBottomNav();
+    if (catDetailOverlay) catDetailOverlay.style.display = "block";
+    requestAnimationFrame(function () {
+      if (catDetailSheet) catDetailSheet.classList.add("open");
+    });
+  }
+
+  function _pluralizeExpense(n) {
+    var mod10 = n % 10;
+    var mod100 = n % 100;
+    if (mod100 >= 11 && mod100 <= 14) return "операций";
+    if (mod10 === 1) return "операция";
+    if (mod10 >= 2 && mod10 <= 4) return "операции";
+    return "операций";
+  }
+
+  function closeCatDetailSheet() {
+    if (catDetailSheet) catDetailSheet.classList.remove("open");
+    setTimeout(function () {
+      if (catDetailOverlay) catDetailOverlay.style.display = "none";
+      showBottomNav();
+    }, 550);
+  }
+
+  if (catDetailOverlay) {
+    catDetailOverlay.addEventListener("click", function () {
+      haptic("light");
+      closeCatDetailSheet();
+    });
+  }
 
 })();
