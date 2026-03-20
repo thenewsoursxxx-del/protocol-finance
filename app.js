@@ -841,6 +841,10 @@ function loadFullState() {
           }
         }
 
+        if (targetScreen === "ai" && typeof renderExpensesScreen === "function") {
+          renderExpensesScreen();
+        }
+
         requestAnimationFrame(() => {
           lockTabs(false);
           showBottomNav();
@@ -1030,6 +1034,83 @@ function showBottomNav() {
     b.style.opacity = isInitialized ? "1" : (i === 0 ? "1" : "0.35");
   });
 }
+
+/* ============================================================
+   ProtoSheet — Unified Sheet Helpers
+   ============================================================ */
+
+window.ProtoSheet = {
+  open: function (sheetEl, overlayEl) {
+    if (!sheetEl) return;
+    sheetEl.style.transform = "";
+    sheetEl.style.transition = "";
+    if (overlayEl) overlayEl.style.display = "block";
+    hideBottomNav();
+    requestAnimationFrame(function () {
+      sheetEl.classList.add("open");
+    });
+  },
+
+  close: function (sheetEl, overlayEl, opts) {
+    if (!sheetEl) return;
+    opts = opts || {};
+    sheetEl.style.transform = "";
+    sheetEl.style.transition = "";
+    sheetEl.classList.remove("open");
+    setTimeout(function () {
+      if (overlayEl) overlayEl.style.display = "none";
+      showBottomNav();
+      if (opts.onClosed) opts.onClosed();
+    }, 500);
+  },
+
+  initSwipe: function (sheetEl, closeFn) {
+    if (!sheetEl) return;
+    var startY = 0;
+    var dy = 0;
+    var dragging = false;
+
+    sheetEl.addEventListener("touchstart", function (e) {
+      if (sheetEl.scrollTop > 5) return;
+      startY = e.touches[0].clientY;
+      dy = 0;
+      dragging = true;
+    }, { passive: true });
+
+    sheetEl.addEventListener("touchmove", function (e) {
+      if (!dragging) return;
+      dy = e.touches[0].clientY - startY;
+      if (dy < 0) { dy = 0; return; }
+      sheetEl.style.transition = "none";
+      sheetEl.style.transform = "translateY(" + dy + "px)";
+    }, { passive: true });
+
+    sheetEl.addEventListener("touchend", function () {
+      if (!dragging) return;
+      dragging = false;
+      sheetEl.style.transition = "";
+      if (dy > 80) {
+        if (typeof haptic === "function") haptic("light");
+        sheetEl.style.transform = "";
+        closeFn();
+      } else {
+        sheetEl.style.transform = "";
+        sheetEl.classList.add("open");
+      }
+    });
+  },
+
+  resetAll: function () {
+    document.querySelectorAll(".proto-sheet").forEach(function (s) {
+      s.classList.remove("open");
+      s.style.transform = "";
+      s.style.transition = "";
+    });
+    document.querySelectorAll(".proto-sheet-overlay").forEach(function (o) {
+      o.style.display = "none";
+    });
+  }
+};
 
 /* ===== TAB LOCK ===== */
 function lockTabs(lock) {
@@ -1260,13 +1341,12 @@ openScreen("progress", null);
 
 /* ===== BOTTOM SHEET ===== */
 function openSheet() {
-sheetOverlay.style.display = "block";
-sheet.style.bottom = "0";
+ProtoSheet.open(sheet, sheetOverlay);
 }
 function closeSheet() {
-sheet.style.bottom = "-100%";
-sheetOverlay.style.display = "none";
+ProtoSheet.close(sheet, sheetOverlay);
 }
+ProtoSheet.initSwipe(sheet, closeSheet);
 
 function renderProtocolResult({ scenariosHTML, advice }) {
 adviceCard.innerHTML = `
@@ -2686,11 +2766,7 @@ if (activeGoalIndex === 0) {
   goalEditBaseValue = activeGoal.amount || 0;
 }
 
-goalEditorOverlay.style.display = "block";
-
-requestAnimationFrame(() => {
-goalEditorSheet.style.transform = "translateY(0)";
-});
+ProtoSheet.open(goalEditorSheet, goalEditorOverlay);
 };
 }
 
@@ -2771,13 +2847,13 @@ if (advSettingsGoals) {
 }
 
 goalEditorOverlay.onclick = () => {
-goalEditorSheet.style.transform = "translateY(100%)";
-setTimeout(() => {
-goalEditorOverlay.style.display = "none";
-showBottomNav();
-goalEditHint.classList.remove("show");
-}, 550);
+ProtoSheet.close(goalEditorSheet, goalEditorOverlay, {
+  onClosed: function () { goalEditHint.classList.remove("show"); }
+});
 };
+ProtoSheet.initSwipe(goalEditorSheet, function () {
+  goalEditorOverlay.onclick();
+});
 
 goalEditSave.onclick = () => {
 haptic("medium");
@@ -2806,11 +2882,7 @@ if (activeGoalIndex === 0) {
   persistGoals(goals);
 }
 
-goalEditorSheet.style.transform = "translateY(100%)";
-setTimeout(() => {
-goalEditorOverlay.style.display = "none";
-showBottomNav();
-}, 550);
+ProtoSheet.close(goalEditorSheet, goalEditorOverlay);
 recalcPlan();
 pulseGoalCard();
 };
@@ -3795,75 +3867,14 @@ function openEventEditor() {
     var today = new Date();
     eventDateInput.value = today.toISOString().slice(0, 10);
   }
-  if (eventEditorOverlay) eventEditorOverlay.style.display = "block";
-  if (eventEditorSheet) {
-    requestAnimationFrame(function () {
-      eventEditorSheet.classList.add("open");
-      requestAnimationFrame(function () {
-        constrainEventDateInputWidth();
-        setTimeout(constrainEventDateInputWidth, 100);
-        setTimeout(constrainEventDateInputWidth, 300);
-        setTimeout(constrainEventDateInputWidth, 600);
-        setTimeout(constrainEventDateInputWidth, 900);
-      });
-      eventEditorSheet.addEventListener("transitionend", function onOpen() {
-        eventEditorSheet.removeEventListener("transitionend", onOpen);
-        constrainEventDateInputWidth();
-        setTimeout(constrainEventDateInputWidth, 150);
-        setTimeout(constrainEventDateInputWidth, 400);
-      }, { once: true });
-    });
-  }
+  ProtoSheet.open(eventEditorSheet, eventEditorOverlay);
 }
 
-function constrainEventDateInputWidth() {
-  var sheet = document.getElementById("eventEditorSheet");
-  var wrap = document.querySelector(".event-date-wrap");
-  var input = document.getElementById("eventDate");
-  var amountWrap = document.getElementById("eventAmount") && document.getElementById("eventAmount").closest(".input-wrap");
-  var fieldsContainer = document.querySelector(".event-editor-fields");
-  if (!sheet || !wrap || !input) return;
-  var vv = window.visualViewport;
-  var visibleW = (vv && typeof vv.width === "number") ? vv.width : (window.innerWidth || document.documentElement.clientWidth || 320);
-  var safeFallback = Math.max(200, Math.floor(visibleW) - 56);
-  sheet.style.width = visibleW + "px";
-  sheet.style.maxWidth = visibleW + "px";
-  var targetPx = safeFallback;
-  if (amountWrap && amountWrap.offsetWidth > 0) {
-    targetPx = amountWrap.offsetWidth - 2;
-    if (targetPx < 180) targetPx = amountWrap.offsetWidth;
-  }
-  if (fieldsContainer) {
-    fieldsContainer.style.setProperty("--event-field-width", targetPx + "px");
-  }
-  wrap.style.width = targetPx + "px";
-  wrap.style.maxWidth = targetPx + "px";
-  input.style.width = targetPx + "px";
-  input.style.maxWidth = targetPx + "px";
-  input.style.boxSizing = "border-box";
-}
-
-function onEventEditorResize() {
-  if (eventEditorSheet && eventEditorSheet.classList.contains("open")) {
-    constrainEventDateInputWidth();
-  }
-}
+function constrainEventDateInputWidth() {}
+function onEventEditorResize() {}
 
 function closeEventEditor() {
-  if (eventEditorSheet) {
-    eventEditorSheet.classList.remove("open");
-    eventEditorSheet.style.width = "";
-    eventEditorSheet.style.maxWidth = "";
-  }
-  var wrap = document.querySelector(".event-date-wrap");
-  var input = document.getElementById("eventDate");
-  var fieldsContainer = document.querySelector(".event-editor-fields");
-  if (wrap) { wrap.style.maxWidth = ""; wrap.style.width = ""; }
-  if (input) { input.style.maxWidth = ""; input.style.width = ""; input.style.boxSizing = ""; }
-  if (fieldsContainer) { fieldsContainer.style.removeProperty("--event-field-width"); }
-  setTimeout(function () {
-    if (eventEditorOverlay) eventEditorOverlay.style.display = "none";
-  }, 550);
+  ProtoSheet.close(eventEditorSheet, eventEditorOverlay);
 }
 
 function syncEventTypeUI(value) {
@@ -3885,6 +3896,7 @@ if (eventTypeToggle) {
 if (eventEditorOverlay) {
   eventEditorOverlay.addEventListener("click", function () { closeEventEditor(); });
 }
+ProtoSheet.initSwipe(eventEditorSheet, closeEventEditor);
 
 window.addEventListener("resize", onEventEditorResize);
 window.addEventListener("orientationchange", function () { setTimeout(onEventEditorResize, 100); });
@@ -4759,17 +4771,14 @@ renderAccountBackCards();
     updatePriorityButtons();
     hidePriorityHint();
     setAdvPriority(g ? g.priority : getNextFreePriority());
-    if (advGoalOverlay) advGoalOverlay.style.display = "block";
-    requestAnimationFrame(function () {
-      if (advGoalSheet) advGoalSheet.style.transform = "translateY(0)";
-    });
+    ProtoSheet.open(advGoalSheet, advGoalOverlay);
   }
 
   function closeAdvGoalSheet() {
-    if (advGoalSheet) advGoalSheet.style.transform = "translateY(100%)";
-    setTimeout(function () { if (advGoalOverlay) advGoalOverlay.style.display = "none"; }, 550);
+    ProtoSheet.close(advGoalSheet, advGoalOverlay, {
+      onClosed: function () { hidePriorityHint(); }
+    });
     editingGoalId = null;
-    hidePriorityHint();
   }
 
   function getNextFreePriority() {
@@ -4780,6 +4789,7 @@ renderAccountBackCards();
   }
 
   if (advGoalOverlay) { advGoalOverlay.addEventListener("click", closeAdvGoalSheet); }
+  ProtoSheet.initSwipe(advGoalSheet, closeAdvGoalSheet);
 
   if (advGoalAmountInput) {
     advGoalAmountInput.addEventListener("input", function (e) {
@@ -5632,19 +5642,11 @@ function goalSwipeToIndex(idx, goLeft) {
       if (debtCardFields) debtCardFields.style.display = "none";
     }
 
-    if (addDebtOverlay) addDebtOverlay.style.display = "block";
-    hideBottomNav();
-    setTimeout(function () {
-      if (addDebtSheet) addDebtSheet.classList.add("open");
-    }, 10);
+    ProtoSheet.open(addDebtSheet, addDebtOverlay);
   }
 
   function closeAddDebtSheet() {
-    if (addDebtSheet) addDebtSheet.classList.remove("open");
-    setTimeout(function () {
-      if (addDebtOverlay) addDebtOverlay.style.display = "none";
-      showBottomNav();
-    }, 400);
+    ProtoSheet.close(addDebtSheet, addDebtOverlay);
     editingDebtId = null;
   }
 
@@ -5699,6 +5701,7 @@ function goalSwipeToIndex(idx, goLeft) {
       closeAddDebtSheet();
     });
   }
+  ProtoSheet.initSwipe(addDebtSheet, closeAddDebtSheet);
 
   debtTypeToggle.forEach(function (btn) {
     btn.addEventListener("click", function () {
@@ -5883,6 +5886,8 @@ function goalSwipeToIndex(idx, goLeft) {
    ============================================================ */
 
 (function () {
+
+  ProtoSheet.resetAll();
 
   var EXP_CATEGORIES = [
     { key: "food",      name: "Продукты",         color: "#10b981" },
@@ -6149,7 +6154,6 @@ function goalSwipeToIndex(idx, goLeft) {
 
   function openExpenseSheet() {
     _expSelectedCat = null;
-    hideBottomNav();
     var amtInput = document.getElementById("expenseAmount");
     var dateInput = document.getElementById("expenseDate");
     var noteInput = document.getElementById("expenseNote");
@@ -6161,19 +6165,11 @@ function goalSwipeToIndex(idx, goLeft) {
     }
     renderCatGrid();
     hideExpValidation();
-
-    if (sheetOverlay) sheetOverlay.style.display = "block";
-    requestAnimationFrame(function () {
-      if (sheet) sheet.classList.add("open");
-    });
+    ProtoSheet.open(sheet, sheetOverlay);
   }
 
   function closeExpenseSheet() {
-    if (sheet) sheet.classList.remove("open");
-    setTimeout(function () {
-      if (sheetOverlay) sheetOverlay.style.display = "none";
-      showBottomNav();
-    }, 550);
+    ProtoSheet.close(sheet, sheetOverlay);
   }
 
   if (sheetOverlay) {
@@ -6403,11 +6399,7 @@ function goalSwipeToIndex(idx, goLeft) {
       if (listEl) listEl.innerHTML = html;
     }
 
-    hideBottomNav();
-    if (catDetailOverlay) catDetailOverlay.style.display = "block";
-    requestAnimationFrame(function () {
-      if (catDetailSheet) catDetailSheet.classList.add("open");
-    });
+    ProtoSheet.open(catDetailSheet, catDetailOverlay);
   }
 
   function _pluralizeExpense(n) {
@@ -6420,11 +6412,7 @@ function goalSwipeToIndex(idx, goLeft) {
   }
 
   function closeCatDetailSheet() {
-    if (catDetailSheet) catDetailSheet.classList.remove("open");
-    setTimeout(function () {
-      if (catDetailOverlay) catDetailOverlay.style.display = "none";
-      showBottomNav();
-    }, 550);
+    ProtoSheet.close(catDetailSheet, catDetailOverlay);
   }
 
   if (catDetailOverlay) {
@@ -6433,5 +6421,10 @@ function goalSwipeToIndex(idx, goLeft) {
       closeCatDetailSheet();
     });
   }
+
+  /* ── Init swipe-to-dismiss on expense sheets ── */
+
+  ProtoSheet.initSwipe(sheet, closeExpenseSheet);
+  ProtoSheet.initSwipe(catDetailSheet, closeCatDetailSheet);
 
 })();

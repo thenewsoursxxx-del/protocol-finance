@@ -440,8 +440,8 @@ Protocol анализирует цель…
 </div>
 
 <!-- ===== EXPENSE CATEGORY DETAIL SHEET ===== -->
-<div id="expCatDetailOverlay" class="sheet-overlay"></div>
-<div id="expCatDetailSheet" class="sheet expense-editor exp-detail-sheet">
+<div id="expCatDetailOverlay" class="proto-sheet-overlay"></div>
+<div id="expCatDetailSheet" class="proto-sheet proto-sheet--detail exp-detail-sheet">
   <div class="exp-detail-sticky">
     <div class="exp-detail-handle"></div>
     <div class="exp-detail-header">
@@ -476,8 +476,8 @@ Protocol анализирует цель…
 </div>
 
 <!-- ===== ADD EXPENSE SHEET ===== -->
-<div id="expenseSheetOverlay" class="sheet-overlay"></div>
-<div id="expenseSheet" class="sheet expense-editor">
+<div id="expenseSheetOverlay" class="proto-sheet-overlay"></div>
+<div id="expenseSheet" class="proto-sheet proto-sheet--form">
   <h2 style="margin-bottom:18px">Новый расход</h2>
 
   <div class="cf-label" style="margin-bottom:8px">Категория</div>
@@ -912,8 +912,8 @@ Protocol анализирует цель…
 </div>
 
 <!-- ===== ADD DEBT SHEET ===== -->
-<div id="addDebtOverlay" class="sheet-overlay"></div>
-<div id="addDebtSheet" class="sheet debt-editor">
+<div id="addDebtOverlay" class="proto-sheet-overlay"></div>
+<div id="addDebtSheet" class="proto-sheet proto-sheet--form">
   <h2 style="margin-bottom:18px">Новый кредит / долг</h2>
 
   <div class="cf-label" style="margin-bottom:8px">Тип</div>
@@ -969,8 +969,8 @@ Protocol анализирует цель…
 </div>
 
 <!-- ===== BOTTOM SHEET ===== -->
-<div id="sheetOverlay"></div>
-<div id="sheet">
+<div id="sheetOverlay" class="proto-sheet-overlay"></div>
+<div id="sheet" class="proto-sheet">
 <h2>Как копим?</h2>
 
 <div class="card" id="noBuffer">
@@ -1025,15 +1025,9 @@ z-index: 999999;
 </canvas>
 
 <!-- ===== GOAL EDITOR ===== -->
-<div id="goalEditorOverlay" style="
-display:none;
-position:fixed;
-inset:0;
-background:rgba(0,0,0,0.55);
-z-index:30;
-"></div>
+<div id="goalEditorOverlay" class="proto-sheet-overlay"></div>
 
-<div id="goalEditorSheet" class="sheet goal-editor">
+<div id="goalEditorSheet" class="proto-sheet proto-sheet--form goal-editor">
 
 <h2 style="margin-bottom:18px">Редактирование цели</h2>
 
@@ -1053,8 +1047,8 @@ z-index:30;
 </div>
 
 <!-- ===== EVENT EDITOR SHEET ===== -->
-<div id="eventEditorOverlay" class="sheet-overlay"></div>
-<div id="eventEditorSheet" class="sheet event-editor">
+<div id="eventEditorOverlay" class="proto-sheet-overlay"></div>
+<div id="eventEditorSheet" class="proto-sheet proto-sheet--form">
 
   <h2 style="margin-bottom:18px">Новое событие</h2>
 
@@ -1091,8 +1085,8 @@ z-index:30;
 </div>
 
 <!-- ===== GOAL CREATE/EDIT SHEET (ADVANCED) ===== -->
-<div id="advGoalOverlay" class="sheet-overlay"></div>
-<div id="advGoalSheet" class="sheet goal-editor adv-goal-editor">
+<div id="advGoalOverlay" class="proto-sheet-overlay"></div>
+<div id="advGoalSheet" class="proto-sheet proto-sheet--form goal-editor">
   <h2 id="advGoalSheetTitle" style="margin-bottom:18px">Новая цель</h2>
 
   <div class="input-wrap">

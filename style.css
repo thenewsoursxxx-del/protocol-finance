@@ -206,22 +206,90 @@ filter: drop-shadow(0 0 6px rgba(255,255,255,0.6));
 }
 
 /* ===== BOTTOM SHEET ===== */
-#sheetOverlay {
-display: none;
-position: fixed;
-inset: 0;
-background: rgba(0,0,0,.45);
+/* ============================================================
+   Proto Sheet — Unified Sheet System
+   ============================================================ */
+
+.proto-sheet-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 30;
+  -webkit-tap-highlight-color: transparent;
 }
-#sheet {
-position: fixed;
-left: 0;
-right: 0;
-bottom: -100%;
-background: #000;
-border-top-left-radius: 26px;
-border-top-right-radius: 26px;
-padding: 24px;
-transition: bottom .35s ease;
+
+.proto-sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100vw;
+  max-width: 100vw;
+  box-sizing: border-box;
+  background: #0a0a0f;
+  border-top-left-radius: 24px;
+  border-top-right-radius: 24px;
+  padding: 24px;
+  padding-bottom: max(24px, env(safe-area-inset-bottom));
+  z-index: 31;
+  transform: translateY(100%);
+  transition: transform 0.5s cubic-bezier(.32,0.72,.0,1);
+  will-change: transform;
+  max-height: 92vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+.proto-sheet::before {
+  content: "";
+  display: block;
+  width: 36px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255,255,255,0.15);
+  margin: 0 auto 16px;
+  flex-shrink: 0;
+}
+
+.proto-sheet.open {
+  transform: translateY(0);
+}
+
+.proto-sheet h2 {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0 0 18px;
+}
+
+.proto-sheet--form {
+  min-height: 65vh;
+}
+
+.proto-sheet--detail {
+  min-height: 75vh;
+}
+
+.proto-sheet .input-wrap {
+  margin-bottom: 12px;
+}
+
+.proto-sheet .input-wrap input {
+  width: 100%;
+  box-sizing: border-box;
+  display: block;
+}
+
+.proto-sheet input[type="date"] {
+  width: 100%;
+  box-sizing: border-box;
+  display: block;
+  -webkit-appearance: none;
+  appearance: none;
+  min-height: 50px;
+  line-height: 1.2;
+  color-scheme: dark;
 }
 
 /* ===== LOADER ===== */
@@ -1183,38 +1251,6 @@ z-index: 5;
 /* ===== GOAL EDITOR SHEET ===== */
 .goal-editor {
   padding-bottom: 28px;
-}
-
-.goal-editor h2 {
-  font-size: 22px;
-  font-weight: 600;
-  margin-bottom: 18px;
-}
-
-.sheet-overlay {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.55);
-  z-index: 30;
-}
-
-.sheet.goal-editor {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-
-  background: #000;
-  border-top-left-radius: 28px;
-  border-top-right-radius: 28px;
-
-  padding: 24px;
-  z-index: 31;
-
-  transform: translateY(100%);
-transition: transform 0.55s cubic-bezier(.22,1,.36,1);
-  will-change: transform;
 }
 
 .goal-edit-btn .goal-edit-lottie svg {
@@ -2780,87 +2816,9 @@ body.flip-fix-pending .flip-wrapper {
 
 /* ===== EVENT EDITOR SHEET ===== */
 
-.sheet.event-editor {
-  position: fixed;
-  left: 0;
-  bottom: 0;
-  /* Жёстко по видимой ширине экрана — иначе на телефоне поле даты уезжает вправо */
-  width: 100vw;
-  width: 100dvw;
-  max-width: 100vw;
-  max-width: 100dvw;
-  box-sizing: border-box;
-  background: #000;
-  border-top-left-radius: 28px;
-  border-top-right-radius: 28px;
-  padding: 24px;
-  padding-left: max(24px, env(safe-area-inset-left));
-  padding-right: max(24px, env(safe-area-inset-right));
-  z-index: 31;
-  transform: translateY(100%);
-  transition: transform 0.55s cubic-bezier(.22,1,.36,1);
-  will-change: transform;
-  overflow-x: hidden;
-}
-
-.sheet.event-editor.open {
-  transform: translateY(0);
-}
-
-/* Общий контейнер для «Сумма» и «Дата» — одна ширина, поле даты не выезжает вправо */
-.sheet.event-editor .event-editor-fields {
+.event-editor-fields {
   display: flex;
   flex-direction: column;
-  width: 100%;
-  min-width: 0;
-  max-width: 100%;
-}
-
-.sheet.event-editor .event-editor-fields .input-wrap {
-  min-width: 0;
-  max-width: 100%;
-  overflow: hidden;
-  width: 100%;
-}
-
-.sheet.event-editor .event-editor-fields .input-wrap.event-date-wrap {
-  overflow: visible;
-}
-
-.sheet.event-editor .input-wrap {
-  max-width: 100%;
-  min-width: 0;
-  overflow: hidden;
-  width: 100%;
-}
-
-.sheet.event-editor .input-wrap.event-date-wrap {
-  overflow: visible;
-}
-
-.sheet.event-editor .input-wrap input {
-  max-width: 100%;
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.sheet.event-editor .event-date-wrap {
-  width: 100%;
-  max-width: 100%;
-  min-width: 0;
-  box-sizing: border-box;
-  /* жёсткий предел по экрану, чтобы не залезало за край на телефоне */
-  max-width: min(100%, calc(100dvw - 56px));
-}
-
-.sheet.event-editor .event-date-wrap input {
-  width: 100% !important;
-  max-width: 100% !important;
-  min-width: 0 !important;
-  box-sizing: border-box !important;
-  display: block;
-  text-align: left;
-  max-width: min(100%, calc(100dvw - 56px)) !important;
 }
 
 
@@ -4378,37 +4336,14 @@ body.flip-fix-pending .flip-wrapper {
 
 /* ── Debt Editor Sheet ── */
 
-.sheet.debt-editor {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  width: 100vw;
-  max-width: 100vw;
-  box-sizing: border-box;
-  background: #000;
-  border-top-left-radius: 28px;
-  border-top-right-radius: 28px;
-  padding: 24px;
-  z-index: 31;
-  transform: translateY(100%);
-  transition: transform 0.55s cubic-bezier(.22,1,.36,1);
-  will-change: transform;
-  max-height: 85vh;
-  overflow-y: auto;
-}
-
-.sheet.debt-editor.open {
-  transform: translateY(0);
-}
-
 .debt-type-toggle .mode-btn {
   font-size: 12px;
   padding: 10px 0;
 }
 
-.debt-form-fields .input-wrap {
-  margin-bottom: 14px;
+.debt-form-fields {
+  display: flex;
+  flex-direction: column;
 }
 
 /* ===== NAV ANIMATED ICONS ===== */
@@ -4776,30 +4711,11 @@ body.flip-fix-pending .flip-wrapper {
   max-width: 260px;
 }
 
-/* ── Expense Editor Sheet ── */
+/* ── Expense Form Fields ── */
 
-.sheet.expense-editor {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  width: 100vw;
-  max-width: 100vw;
-  box-sizing: border-box;
-  background: #000;
-  border-top-left-radius: 28px;
-  border-top-right-radius: 28px;
-  padding: 24px;
-  z-index: 31;
-  transform: translateY(100%);
-  transition: transform 0.55s cubic-bezier(.22,1,.36,1);
-  will-change: transform;
-  max-height: 90vh;
-  overflow-y: auto;
-}
-
-.sheet.expense-editor.open {
-  transform: translateY(0);
+.expense-form-fields {
+  display: flex;
+  flex-direction: column;
 }
 
 /* ── Category Grid (in sheet) ── */
@@ -4867,6 +4783,10 @@ body.flip-fix-pending .flip-wrapper {
 
 .exp-detail-sheet {
   padding: 0 0 40px;
+}
+
+.exp-detail-sheet::before {
+  display: none;
 }
 
 .exp-detail-sticky {
