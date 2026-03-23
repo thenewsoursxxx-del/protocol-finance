@@ -893,7 +893,7 @@ Protocol анализирует цель…
       <div class="debt-planning-hint" id="debtModeHint">Если включено — ежемесячные платежи по долгам будут уменьшать свободные средства для накоплений</div>
     </div>
 
-    <div id="debtManualRepayBlock" class="debt-manual-repay-block" style="display:none">
+    <div id="debtManualRepayBlock" class="debt-manual-repay-block collapsed">
       <div class="debt-manual-repay-label">На сколько вы погасили долг</div>
       <div class="debt-manual-repay-row">
         <div class="input-wrap" style="flex:1;margin-bottom:0">
@@ -901,7 +901,6 @@ Protocol анализирует цель…
         </div>
         <button id="debtManualRepayBtn" class="debt-manual-repay-btn" type="button">Зафиксировать погашение</button>
       </div>
-      <div id="debtManualRepayValidation" class="debt-manual-repay-validation" style="display:none"></div>
     </div>
 
     <div id="debtList" class="debt-list"></div>
@@ -926,7 +925,6 @@ Protocol анализирует цель…
 <div id="debtHistoryOverlay" class="proto-sheet-overlay"></div>
 <div id="debtHistorySheet" class="proto-sheet proto-sheet--detail dph-sheet">
   <div class="dph-sticky">
-    <div class="dph-handle"></div>
     <div class="dph-header-name" id="debtHistoryName"></div>
     <div class="dph-header-remain" id="debtHistoryRemain"></div>
   </div>

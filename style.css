@@ -4285,6 +4285,19 @@ body.flip-fix-pending .flip-wrapper {
   border-radius: 16px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
+  max-height: 300px;
+  opacity: 1;
+  overflow: hidden;
+  transition: max-height 0.35s ease, opacity 0.3s ease, padding 0.35s ease, margin-bottom 0.35s ease;
+}
+
+.debt-manual-repay-block.collapsed {
+  max-height: 0;
+  opacity: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  margin-bottom: 0;
+  border-color: transparent;
 }
 
 .debt-manual-repay-label {
@@ -4335,17 +4348,6 @@ body.flip-fix-pending .flip-wrapper {
 .debt-manual-repay-btn:active {
   transform: scale(0.97);
   box-shadow: 0 4px 16px rgba(4, 120, 87, 0.45), inset 0 2px 6px rgba(0, 0, 0, 0.2);
-}
-
-.debt-manual-repay-validation {
-  margin-top: 10px;
-  padding: 10px 14px;
-  border-radius: 12px;
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.3);
-  color: #f87171;
-  font-size: 13px;
-  line-height: 1.4;
 }
 
 /* ── Debt Item History Button ── */
@@ -4436,14 +4438,6 @@ body.flip-fix-pending .flip-wrapper {
   background: inherit;
   padding: 16px 20px 12px;
   z-index: 2;
-}
-
-.dph-handle {
-  width: 36px;
-  height: 4px;
-  border-radius: 2px;
-  background: rgba(255, 255, 255, 0.15);
-  margin: 0 auto 14px;
 }
 
 .dph-header-name {

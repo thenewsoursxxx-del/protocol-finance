@@ -5923,6 +5923,8 @@ function goalSwipeToIndex(idx, goLeft) {
       recalcWithDebts();
       if (enabled) {
         showToast("Долги учтены в расчёте", "success");
+      } else {
+        showToast("Долги не учтены в расчёте", "success");
       }
     });
   }
@@ -5933,7 +5935,11 @@ function goalSwipeToIndex(idx, goLeft) {
     var hintEl = document.getElementById("debtModeHint");
 
     if (manualBlock) {
-      manualBlock.style.display = s.debtPlanningMode ? "none" : "";
+      if (s.debtPlanningMode) {
+        manualBlock.classList.add("collapsed");
+      } else {
+        manualBlock.classList.remove("collapsed");
+      }
     }
     if (hintEl) {
       hintEl.textContent = s.debtPlanningMode
@@ -5944,22 +5950,26 @@ function goalSwipeToIndex(idx, goLeft) {
 
   var manualRepayBtn = document.getElementById("debtManualRepayBtn");
   var manualRepayInput = document.getElementById("debtManualRepayInput");
-  var manualRepayValidation = document.getElementById("debtManualRepayValidation");
 
   if (manualRepayBtn && manualRepayInput) {
+    var manualRepayInputWrap = manualRepayInput.closest(".input-wrap");
+
     manualRepayInput.addEventListener("input", function () {
       manualRepayInput.value = formatNumber(manualRepayInput.value);
-      if (manualRepayValidation) manualRepayValidation.style.display = "none";
+      if (manualRepayInputWrap) manualRepayInputWrap.classList.remove("error", "shake");
     });
 
     manualRepayBtn.addEventListener("click", function () {
       if (typeof haptic === "function") haptic("medium");
       var amount = parseNumber(manualRepayInput.value || "0");
 
+      if (manualRepayInputWrap) manualRepayInputWrap.classList.remove("error", "shake");
+
       if (!amount || amount <= 0) {
-        if (manualRepayValidation) {
-          manualRepayValidation.textContent = "Введите корректную сумму больше 0";
-          manualRepayValidation.style.display = "";
+        if (manualRepayInputWrap) {
+          manualRepayInputWrap.classList.add("error");
+          void manualRepayInputWrap.offsetWidth;
+          manualRepayInputWrap.classList.add("shake");
         }
         haptic("error");
         return;
@@ -5969,10 +5979,12 @@ function goalSwipeToIndex(idx, goLeft) {
         return d.isActive !== false && (Number(d.remainingAmount) || 0) > 0;
       });
       if (activeDebts.length === 0) {
-        if (manualRepayValidation) {
-          manualRepayValidation.textContent = "Нет активных долгов для погашения";
-          manualRepayValidation.style.display = "";
+        if (manualRepayInputWrap) {
+          manualRepayInputWrap.classList.add("error");
+          void manualRepayInputWrap.offsetWidth;
+          manualRepayInputWrap.classList.add("shake");
         }
+        haptic("error");
         return;
       }
 
