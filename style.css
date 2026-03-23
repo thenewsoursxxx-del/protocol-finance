@@ -4348,6 +4348,195 @@ body.flip-fix-pending .flip-wrapper {
   line-height: 1.4;
 }
 
+/* ── Debt Item History Button ── */
+
+.debt-item-history-btn {
+  padding: 6px 14px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.7);
+  -webkit-tap-highlight-color: transparent;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.debt-item-history-btn:active {
+  transform: scale(0.96);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: #fff;
+}
+
+/* ── Debt Breakdown Block (Protocol screen) ── */
+
+.debt-breakdown {
+  margin-top: 14px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: rgba(16, 185, 129, 0.06);
+  border: 1px solid rgba(16, 185, 129, 0.15);
+  transition: opacity 0.45s ease, transform 0.45s ease;
+}
+
+.debt-breakdown--visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.debt-breakdown--hidden {
+  opacity: 0;
+  transform: translateY(8px);
+  pointer-events: none;
+}
+
+.debt-breakdown-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+  margin-bottom: 8px;
+}
+
+.debt-breakdown-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.65);
+  line-height: 1.6;
+}
+
+.debt-breakdown-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.debt-breakdown-dot--debt {
+  background: #f59e0b;
+}
+
+.debt-breakdown-dot--save {
+  background: #10b981;
+}
+
+/* ── Debt Payment History Sheet ── */
+
+.dph-sheet {
+  max-height: 80vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.dph-sticky {
+  position: sticky;
+  top: 0;
+  background: inherit;
+  padding: 16px 20px 12px;
+  z-index: 2;
+}
+
+.dph-handle {
+  width: 36px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.15);
+  margin: 0 auto 14px;
+}
+
+.dph-header-name {
+  font-size: 17px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.dph-header-remain {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.5);
+  margin-top: 4px;
+}
+
+.dph-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.07);
+  margin: 0 20px;
+}
+
+.dph-list {
+  padding: 12px 20px 24px;
+}
+
+.dph-entry {
+  display: flex;
+  gap: 12px;
+  padding: 14px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  animation: dphFadeIn 0.3s ease both;
+}
+
+@keyframes dphFadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.dph-entry:last-child {
+  border-bottom: none;
+}
+
+.dph-entry-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(16, 185, 129, 0.6);
+  margin-top: 6px;
+  flex-shrink: 0;
+}
+
+.dph-entry-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.dph-entry-amount {
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.dph-entry-desc {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+  margin-top: 4px;
+  line-height: 1.5;
+}
+
+.dph-entry-date {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.3);
+  margin-top: 4px;
+}
+
+/* ── Debt Payment History Empty ── */
+
+.dph-empty {
+  text-align: center;
+  padding: 48px 20px;
+}
+
+.dph-empty-title {
+  font-size: 15px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.dph-empty-sub {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.3);
+  margin-top: 6px;
+}
+
 /* ── Debt Entry Overlay ── */
 
 .debt-entry-overlay {

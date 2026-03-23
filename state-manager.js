@@ -81,6 +81,7 @@ function getDefaultState() {
     debts: [],
     debtPlanningMode: false,
     debtOverlaySeen: false,
+    debtPaymentHistory: [],
 
     // ── Expenses Tracker (v8) ──
     expensesLog: [],
@@ -273,6 +274,9 @@ function migrateState(saved) {
     if (!Array.isArray(saved.expensesLog)) saved.expensesLog = [];
   }
 
+  // Ensure debtPaymentHistory exists (added post-v7)
+  if (!Array.isArray(saved.debtPaymentHistory)) saved.debtPaymentHistory = [];
+
   // Ensure all goals have the paused field
   if (Array.isArray(saved.goals)) {
     saved.goals.forEach(function (g) {
@@ -350,7 +354,7 @@ function updateState(partial) {
   Object.keys(partial).forEach(key => {
     if (key === "accounts" || key === "goalMeta" || key === "uiState" || key === "accountStats") {
       appState[key] = { ...appState[key], ...partial[key] };
-    } else if (key === "goals" || key === "completedGoals" || key === "debts" || key === "expensesLog") {
+    } else if (key === "goals" || key === "completedGoals" || key === "debts" || key === "expensesLog" || key === "debtPaymentHistory") {
       appState[key] = Array.isArray(partial[key]) ? partial[key].map(g => ({ ...g })) : appState[key];
     } else {
       appState[key] = partial[key];
@@ -465,6 +469,7 @@ function applyState(saved) {
   appState.debts = Array.isArray(saved.debts) ? saved.debts.map(function (d) { return { ...d }; }) : [];
   appState.debtPlanningMode = typeof saved.debtPlanningMode === "boolean" ? saved.debtPlanningMode : false;
   appState.debtOverlaySeen = typeof saved.debtOverlaySeen === "boolean" ? saved.debtOverlaySeen : false;
+  appState.debtPaymentHistory = Array.isArray(saved.debtPaymentHistory) ? saved.debtPaymentHistory.map(function (e) { return { ...e }; }) : [];
 
   // ── Expenses Tracker (v8) ──
   appState.expensesLog = Array.isArray(saved.expensesLog) ? saved.expensesLog.map(function (e) { return { ...e }; }) : [];

@@ -701,6 +701,40 @@ function getActiveDebtMonthlyPayment() {
   return total;
 }
 
+function addDebtPaymentRecord(opts) {
+  var s = getState();
+  var history = Array.isArray(s.debtPaymentHistory) ? s.debtPaymentHistory.slice() : [];
+  history.push({
+    id: "dp_" + Date.now() + "_" + Math.floor(Math.random() * 1000),
+    debtId: opts.debtId,
+    amount: opts.amount,
+    date: new Date().toISOString(),
+    source: opts.source || "manual",
+    totalInput: opts.totalInput || 0,
+    savingsPart: opts.savingsPart || 0
+  });
+  updateState({ debtPaymentHistory: history });
+  saveState();
+}
+
+var _debtBreakdownTimer = null;
+function showDebtBreakdown(total, debtPart, savingsPart) {
+  var el = document.getElementById("debtBreakdownBlock");
+  if (!el) return;
+  el.innerHTML =
+    '<div class="debt-breakdown-title">Из последних ' + total.toLocaleString() + ' ₽:</div>' +
+    '<div class="debt-breakdown-line"><span class="debt-breakdown-dot debt-breakdown-dot--debt"></span>' + debtPart.toLocaleString() + ' ₽ → в долг</div>' +
+    '<div class="debt-breakdown-line"><span class="debt-breakdown-dot debt-breakdown-dot--save"></span>' + savingsPart.toLocaleString() + ' ₽ → в накопления</div>';
+  el.classList.remove("debt-breakdown--hidden");
+  el.classList.add("debt-breakdown--visible");
+
+  if (_debtBreakdownTimer) clearTimeout(_debtBreakdownTimer);
+  _debtBreakdownTimer = setTimeout(function () {
+    el.classList.remove("debt-breakdown--visible");
+    el.classList.add("debt-breakdown--hidden");
+  }, 8000);
+}
+
 function recalcPlan() {
   // ── Engine recalculation (когда план активен) ──
   if (isInitialized && chosenPlan && typeof CashflowEngine !== "undefined") {
@@ -1646,6 +1680,8 @@ style="width:52px;height:52px;border-radius:50%">
 <div id="brainMessageContainer"></div>
 </div>
 
+<div id="debtBreakdownBlock" class="debt-breakdown debt-breakdown--hidden"></div>
+
 <div id="factTooltipContainer" class="fact-tooltip-container graph-tooltip-bottom"></div>
 `;
 
@@ -1757,9 +1793,21 @@ style="width:52px;height:52px;border-radius:50%">
       checkGoalCompletion();
 
       if (debtRepaid > 0) {
+        var savingsPart = fact - debtRepaid;
+        repayResult.details.forEach(function (d) {
+          addDebtPaymentRecord({
+            debtId: d.debtId,
+            amount: d.amount,
+            source: "auto",
+            totalInput: fact,
+            savingsPart: savingsPart
+          });
+        });
+
         if (typeof renderDebtSummaryGlobal === "function") renderDebtSummaryGlobal();
         if (typeof renderDebtListGlobal === "function") renderDebtListGlobal();
         showToast("Часть суммы направлена на погашение долга", "success");
+        showDebtBreakdown(fact, debtRepaid, savingsPart);
       }
 
       factInput.value = "";
@@ -5663,11 +5711,19 @@ function goalSwipeToIndex(idx, goLeft) {
 
       html += '</div>'
         + '<div class="debt-item-actions">'
+        + '<button class="debt-item-history-btn" data-history-id="' + d.id + '">История</button>'
         + '<button class="debt-item-delete-btn" data-delete-id="' + d.id + '">Удалить</button>'
         + '</div>'
         + '</div>';
     });
     listEl.innerHTML = html;
+
+    listEl.querySelectorAll(".debt-item-history-btn").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        if (typeof haptic === "function") haptic("light");
+        openDebtHistorySheet(btn.dataset.historyId);
+      });
+    });
 
     listEl.querySelectorAll(".debt-item-delete-btn").forEach(function (btn) {
       btn.addEventListener("click", function () {
@@ -5922,6 +5978,13 @@ function goalSwipeToIndex(idx, goLeft) {
 
       var result = applyDebtRepayment(amount);
       if (result.applied > 0) {
+        result.details.forEach(function (d) {
+          addDebtPaymentRecord({
+            debtId: d.debtId,
+            amount: d.amount,
+            source: "manual"
+          });
+        });
         renderDebtList();
         renderDebtSummary();
         recalcWithDebts();
@@ -5930,6 +5993,69 @@ function goalSwipeToIndex(idx, goLeft) {
       }
     });
   }
+
+  // ── Debt Payment History Sheet ──
+  var debtHistorySheet = document.getElementById("debtHistorySheet");
+  var debtHistoryOverlay = document.getElementById("debtHistoryOverlay");
+
+  function openDebtHistorySheet(debtId) {
+    var debt = getDebts().find(function (d) { return d.id === debtId; });
+    if (!debt) return;
+
+    var nameEl = document.getElementById("debtHistoryName");
+    var remainEl = document.getElementById("debtHistoryRemain");
+    var listEl = document.getElementById("debtHistoryList");
+    var emptyEl = document.getElementById("debtHistoryEmpty");
+
+    if (nameEl) nameEl.textContent = debt.title || "Без названия";
+    if (remainEl) remainEl.textContent = "Осталось: " + (Number(debt.remainingAmount) || 0).toLocaleString() + " ₽";
+
+    var history = (getState().debtPaymentHistory || [])
+      .filter(function (h) { return h.debtId === debtId; })
+      .sort(function (a, b) { return new Date(b.date) - new Date(a.date); });
+
+    if (listEl) {
+      if (history.length === 0) {
+        listEl.innerHTML = "";
+        if (emptyEl) emptyEl.style.display = "";
+      } else {
+        if (emptyEl) emptyEl.style.display = "none";
+        var html = "";
+        history.forEach(function (h, i) {
+          var dateStr = new Date(h.date).toLocaleDateString("ru-RU", { day: "numeric", month: "short", year: "numeric" });
+          var descHtml = "";
+          if (h.source === "auto" && h.totalInput) {
+            descHtml = '<div class="dph-entry-desc">Из ' + (h.totalInput || 0).toLocaleString() + ' ₽:<br>'
+              + (h.amount || 0).toLocaleString() + ' ₽ в долг<br>'
+              + (h.savingsPart || 0).toLocaleString() + ' ₽ в накопления</div>';
+          } else {
+            descHtml = '<div class="dph-entry-desc">Ручное погашение</div>';
+          }
+
+          html += '<div class="dph-entry" style="animation-delay:' + (i * 0.04) + 's">'
+            + '<div class="dph-entry-dot"></div>'
+            + '<div class="dph-entry-body">'
+            + '<div class="dph-entry-amount">' + (h.amount || 0).toLocaleString() + ' ₽</div>'
+            + descHtml
+            + '<div class="dph-entry-date">' + dateStr + '</div>'
+            + '</div>'
+            + '</div>';
+        });
+        listEl.innerHTML = html;
+      }
+    }
+
+    ProtoSheet.open(debtHistorySheet, debtHistoryOverlay);
+  }
+
+  function closeDebtHistorySheet() {
+    ProtoSheet.close(debtHistorySheet, debtHistoryOverlay);
+  }
+
+  if (debtHistoryOverlay) {
+    debtHistoryOverlay.addEventListener("click", closeDebtHistorySheet);
+  }
+  ProtoSheet.initSwipe(debtHistorySheet, closeDebtHistorySheet);
 
   // Expose for external callers (fact submit handler)
   window.renderDebtSummaryGlobal = renderDebtSummary;
