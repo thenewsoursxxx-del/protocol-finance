@@ -631,6 +631,76 @@ function getDebtMonthlyTotal() {
   return total;
 }
 
+/**
+ * Distribute a repayment amount across active debts.
+ * Priority: earliest nextPaymentDate first, then smallest remainingAmount.
+ * Returns { applied: totalApplied, details: [{debtId, amount}] }.
+ * Mutates debt objects in place (reduces remainingAmount, marks inactive if 0).
+ */
+function applyDebtRepayment(amount) {
+  if (!amount || amount <= 0) return { applied: 0, details: [] };
+
+  var s = getState();
+  var debts = s.debts || [];
+  var active = debts.filter(function (d) {
+    return d.isActive !== false && (Number(d.remainingAmount) || 0) > 0;
+  });
+
+  if (active.length === 0) return { applied: 0, details: [] };
+
+  active.sort(function (a, b) {
+    var dateA = a.nextPaymentDate ? new Date(a.nextPaymentDate).getTime() : Infinity;
+    var dateB = b.nextPaymentDate ? new Date(b.nextPaymentDate).getTime() : Infinity;
+    if (dateA !== dateB) return dateA - dateB;
+    return (Number(a.remainingAmount) || 0) - (Number(b.remainingAmount) || 0);
+  });
+
+  var remaining = amount;
+  var details = [];
+
+  active.forEach(function (debt) {
+    if (remaining <= 0) return;
+    var owed = Number(debt.remainingAmount) || 0;
+    var pay = Math.min(remaining, owed);
+    if (pay <= 0) return;
+
+    debt.remainingAmount = Math.max(0, owed - pay);
+    remaining -= pay;
+    details.push({ debtId: debt.id, amount: pay });
+
+    if (debt.remainingAmount <= 0) {
+      debt.remainingAmount = 0;
+      debt.isActive = false;
+    } else if (debt.nextPaymentDate) {
+      var nd = new Date(debt.nextPaymentDate);
+      nd.setMonth(nd.getMonth() + 1);
+      debt.nextPaymentDate = nd.toISOString().split("T")[0];
+    }
+  });
+
+  var totalApplied = amount - remaining;
+  if (totalApplied > 0) {
+    updateState({ debts: debts });
+    saveState();
+  }
+
+  return { applied: totalApplied, details: details };
+}
+
+/**
+ * Returns total monthly debt payment for active debts (regardless of toggle).
+ */
+function getActiveDebtMonthlyPayment() {
+  var debts = getState().debts || [];
+  var total = 0;
+  debts.forEach(function (d) {
+    if (d.isActive !== false && (Number(d.remainingAmount) || 0) > 0) {
+      total += (Number(d.monthlyPayment) || 0);
+    }
+  });
+  return total;
+}
+
 function recalcPlan() {
   // ── Engine recalculation (когда план активен) ──
   if (isInitialized && chosenPlan && typeof CashflowEngine !== "undefined") {
@@ -1626,10 +1696,22 @@ style="width:52px;height:52px;border-radius:50%">
 
       let toReserve = 0;
       let distributable = fact;
+      let debtRepaid = 0;
+
+      var currentState = getState();
+      if (currentState.debtPlanningMode) {
+        var debtMonthly = getActiveDebtMonthlyPayment();
+        var debtPortion = Math.min(debtMonthly, distributable);
+        if (debtPortion > 0) {
+          var repayResult = applyDebtRepayment(debtPortion);
+          debtRepaid = repayResult.applied;
+          distributable -= debtRepaid;
+        }
+      }
 
       if (chosenPlan === "buffer") {
-        toReserve = Math.round(fact * 0.1);
-        distributable = fact - toReserve;
+        toReserve = Math.round(distributable * 0.1);
+        distributable = distributable - toReserve;
       }
 
       const now = new Date();
@@ -1673,6 +1755,12 @@ style="width:52px;height:52px;border-radius:50%">
       }
 
       checkGoalCompletion();
+
+      if (debtRepaid > 0) {
+        if (typeof renderDebtSummaryGlobal === "function") renderDebtSummaryGlobal();
+        if (typeof renderDebtListGlobal === "function") renderDebtListGlobal();
+        showToast("Часть суммы направлена на погашение долга", "success");
+      }
 
       factInput.value = "";
       factInput.blur();
@@ -5484,6 +5572,7 @@ function goalSwipeToIndex(idx, goLeft) {
 
     renderDebtList();
     renderDebtSummary();
+    updateDebtModeUI();
     openScreen("debts", null);
 
     if (!s.debtOverlaySeen && debtEntryOverlay) {
@@ -5774,12 +5863,81 @@ function goalSwipeToIndex(idx, goLeft) {
       updateState({ debtPlanningMode: enabled });
       saveState();
       renderDebtSummary();
+      updateDebtModeUI();
       recalcWithDebts();
       if (enabled) {
         showToast("Долги учтены в расчёте", "success");
       }
     });
   }
+
+  function updateDebtModeUI() {
+    var s = getState();
+    var manualBlock = document.getElementById("debtManualRepayBlock");
+    var hintEl = document.getElementById("debtModeHint");
+
+    if (manualBlock) {
+      manualBlock.style.display = s.debtPlanningMode ? "none" : "";
+    }
+    if (hintEl) {
+      hintEl.textContent = s.debtPlanningMode
+        ? "Часть суммы из «Сколько вы отложили» будет автоматически направляться на погашение долгов."
+        : "Погашение долгов фиксируется отдельно и не влияет на сумму накоплений автоматически.";
+    }
+  }
+
+  var manualRepayBtn = document.getElementById("debtManualRepayBtn");
+  var manualRepayInput = document.getElementById("debtManualRepayInput");
+  var manualRepayValidation = document.getElementById("debtManualRepayValidation");
+
+  if (manualRepayBtn && manualRepayInput) {
+    manualRepayInput.addEventListener("input", function () {
+      manualRepayInput.value = formatNumber(manualRepayInput.value);
+      if (manualRepayValidation) manualRepayValidation.style.display = "none";
+    });
+
+    manualRepayBtn.addEventListener("click", function () {
+      if (typeof haptic === "function") haptic("medium");
+      var amount = parseNumber(manualRepayInput.value || "0");
+
+      if (!amount || amount <= 0) {
+        if (manualRepayValidation) {
+          manualRepayValidation.textContent = "Введите корректную сумму больше 0";
+          manualRepayValidation.style.display = "";
+        }
+        haptic("error");
+        return;
+      }
+
+      var activeDebts = (getState().debts || []).filter(function (d) {
+        return d.isActive !== false && (Number(d.remainingAmount) || 0) > 0;
+      });
+      if (activeDebts.length === 0) {
+        if (manualRepayValidation) {
+          manualRepayValidation.textContent = "Нет активных долгов для погашения";
+          manualRepayValidation.style.display = "";
+        }
+        return;
+      }
+
+      var result = applyDebtRepayment(amount);
+      if (result.applied > 0) {
+        renderDebtList();
+        renderDebtSummary();
+        recalcWithDebts();
+        manualRepayInput.value = "";
+        showToast("Погашение долга зафиксировано", "success");
+      }
+    });
+  }
+
+  // Expose for external callers (fact submit handler)
+  window.renderDebtSummaryGlobal = renderDebtSummary;
+  window.renderDebtListGlobal = renderDebtList;
+  window.updateDebtModeUI = updateDebtModeUI;
+
+  // Initial mode UI sync on load
+  updateDebtModeUI();
 
 })();
 

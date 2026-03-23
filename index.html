@@ -890,7 +890,18 @@ Protocol анализирует цель…
         <input type="checkbox" id="debtPlanningToggle" class="debt-toggle-input">
         <span class="debt-toggle-slider"></span>
       </label>
-      <div class="debt-planning-hint">Если включено — ежемесячные платежи по долгам будут уменьшать свободные средства для накоплений</div>
+      <div class="debt-planning-hint" id="debtModeHint">Если включено — ежемесячные платежи по долгам будут уменьшать свободные средства для накоплений</div>
+    </div>
+
+    <div id="debtManualRepayBlock" class="debt-manual-repay-block" style="display:none">
+      <div class="debt-manual-repay-label">На сколько вы погасили долг</div>
+      <div class="debt-manual-repay-row">
+        <div class="input-wrap" style="flex:1;margin-bottom:0">
+          <input id="debtManualRepayInput" inputmode="numeric" placeholder="0" />
+        </div>
+        <button id="debtManualRepayBtn" class="debt-manual-repay-btn" type="button">Зафиксировать погашение</button>
+      </div>
+      <div id="debtManualRepayValidation" class="debt-manual-repay-validation" style="display:none"></div>
     </div>
 
     <div id="debtList" class="debt-list"></div>

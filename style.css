@@ -4277,6 +4277,77 @@ body.flip-fix-pending .flip-wrapper {
   width: 100% !important;
 }
 
+/* ── Debt Manual Repayment Block ── */
+
+.debt-manual-repay-block {
+  margin-bottom: 20px;
+  padding: 16px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.debt-manual-repay-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.85);
+  margin-bottom: 12px;
+}
+
+.debt-manual-repay-row {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.debt-manual-repay-row .input-wrap input {
+  margin-bottom: 0;
+}
+
+.debt-manual-repay-btn {
+  width: 100%;
+  padding: 14px;
+  font-size: 15px;
+  font-weight: 600;
+  border-radius: 16px;
+  border: 1px solid rgba(16, 185, 129, 0.45);
+  background:
+    radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.12), transparent 45%),
+    linear-gradient(
+      135deg,
+      #021a16,
+      #063d33,
+      #047857,
+      #10b981,
+      #047857,
+      #063d33,
+      #021a16
+    );
+  background-size: 100% 100%, 350% 350%;
+  animation: emeraldFlow 6s ease-in-out infinite;
+  color: #6ee7b7;
+  cursor: pointer;
+  transition: border-color 0.2s, transform 0.12s, box-shadow 0.2s;
+  box-shadow: 0 8px 24px rgba(4, 120, 87, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.debt-manual-repay-btn:active {
+  transform: scale(0.97);
+  box-shadow: 0 4px 16px rgba(4, 120, 87, 0.45), inset 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.debt-manual-repay-validation {
+  margin-top: 10px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #f87171;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
 /* ── Debt Entry Overlay ── */
 
 .debt-entry-overlay {
