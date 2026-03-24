@@ -350,7 +350,8 @@ var ProtocolGraph = (function () {
   }
 
   return {
-    render: renderGraph
+    render: renderGraph,
+    hideTooltip: hideTooltip
   };
 
 })();

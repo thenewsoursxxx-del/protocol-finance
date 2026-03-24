@@ -4196,6 +4196,47 @@ body.flip-fix-pending .flip-wrapper {
   margin-bottom: 16px;
 }
 
+/* ── Debt Swipe Wrapper ── */
+
+.debt-swipe-wrapper {
+  margin-bottom: 16px;
+  overflow: hidden;
+  touch-action: pan-y;
+}
+
+.debt-swipe-content {
+  will-change: transform, opacity;
+}
+
+.debt-swipe-indicator {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 0 2px;
+}
+
+.debt-swipe-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.debt-swipe-dot.active {
+  background: rgba(255, 255, 255, 0.7);
+  transform: scale(1.3);
+}
+
+.debt-empty-hint {
+  text-align: center;
+  padding: 24px 0;
+  font-size: 14px;
+  opacity: 0.4;
+}
+
 .debt-item-card {
   border-radius: 16px;
   padding: 16px;
@@ -4374,23 +4415,27 @@ body.flip-fix-pending .flip-wrapper {
 /* ── Debt Breakdown Block (Protocol screen) ── */
 
 .debt-breakdown {
-  margin-top: 14px;
-  padding: 14px 16px;
   border-radius: 14px;
   background: rgba(16, 185, 129, 0.06);
   border: 1px solid rgba(16, 185, 129, 0.15);
-  transition: opacity 0.45s ease, transform 0.45s ease;
+  overflow: hidden;
+  transition: max-height 0.45s ease, opacity 0.4s ease, padding 0.45s ease, margin-top 0.45s ease;
 }
 
 .debt-breakdown--visible {
+  max-height: 120px;
   opacity: 1;
-  transform: translateY(0);
+  padding: 14px 16px;
+  margin-top: 14px;
 }
 
 .debt-breakdown--hidden {
+  max-height: 0;
   opacity: 0;
-  transform: translateY(8px);
+  padding: 0 16px;
+  margin-top: 0;
   pointer-events: none;
+  border-color: transparent;
 }
 
 .debt-breakdown-title {

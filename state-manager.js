@@ -82,6 +82,7 @@ function getDefaultState() {
     debtPlanningMode: false,
     debtOverlaySeen: false,
     debtPaymentHistory: [],
+    activeDebtIndex: 0,
 
     // ── Expenses Tracker (v8) ──
     expensesLog: [],
@@ -470,6 +471,7 @@ function applyState(saved) {
   appState.debtPlanningMode = typeof saved.debtPlanningMode === "boolean" ? saved.debtPlanningMode : false;
   appState.debtOverlaySeen = typeof saved.debtOverlaySeen === "boolean" ? saved.debtOverlaySeen : false;
   appState.debtPaymentHistory = Array.isArray(saved.debtPaymentHistory) ? saved.debtPaymentHistory.map(function (e) { return { ...e }; }) : [];
+  appState.activeDebtIndex = typeof saved.activeDebtIndex === "number" ? saved.activeDebtIndex : 0;
 
   // ── Expenses Tracker (v8) ──
   appState.expensesLog = Array.isArray(saved.expensesLog) ? saved.expensesLog.map(function (e) { return { ...e }; }) : [];

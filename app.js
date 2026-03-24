@@ -642,24 +642,31 @@ function applyDebtRepayment(amount) {
 
   var s = getState();
   var debts = s.debts || [];
-  var active = debts.filter(function (d) {
-    return d.isActive !== false && (Number(d.remainingAmount) || 0) > 0;
+  var active = [];
+  debts.forEach(function (d, idx) {
+    if (d.isActive !== false && (Number(d.remainingAmount) || 0) > 0) {
+      active.push({ debt: d, _origIdx: idx });
+    }
   });
 
   if (active.length === 0) return { applied: 0, details: [] };
 
   active.sort(function (a, b) {
-    var dateA = a.nextPaymentDate ? new Date(a.nextPaymentDate).getTime() : Infinity;
-    var dateB = b.nextPaymentDate ? new Date(b.nextPaymentDate).getTime() : Infinity;
+    var dateA = a.debt.nextPaymentDate ? new Date(a.debt.nextPaymentDate).getTime() : Infinity;
+    var dateB = b.debt.nextPaymentDate ? new Date(b.debt.nextPaymentDate).getTime() : Infinity;
     if (dateA !== dateB) return dateA - dateB;
-    return (Number(a.remainingAmount) || 0) - (Number(b.remainingAmount) || 0);
+    var remA = Number(a.debt.remainingAmount) || 0;
+    var remB = Number(b.debt.remainingAmount) || 0;
+    if (remA !== remB) return remA - remB;
+    return a._origIdx - b._origIdx;
   });
 
   var remaining = amount;
   var details = [];
 
-  active.forEach(function (debt) {
+  active.forEach(function (entry) {
     if (remaining <= 0) return;
+    var debt = entry.debt;
     var owed = Number(debt.remainingAmount) || 0;
     var pay = Math.min(remaining, owed);
     if (pay <= 0) return;
@@ -4422,6 +4429,7 @@ renderAccountBackCards();
     activeGoalIndex = index;
     updateState({ activeGoalIndex: index });
     saveState();
+    if (typeof ProtocolGraph !== "undefined" && ProtocolGraph.hideTooltip) ProtocolGraph.hideTooltip();
     recalcPlan();
     resetAccountFlips();
     updateFactInputVisibility();
@@ -4447,6 +4455,8 @@ renderAccountBackCards();
     if (count <= 1) return;
     idx = ((idx % count) + count) % count;
     if (idx === activeGoalIndex || _slideAnimating) return;
+
+    if (typeof ProtocolGraph !== "undefined" && ProtocolGraph.hideTooltip) ProtocolGraph.hideTooltip();
 
     var advCard = document.getElementById("adviceCard");
     if (!advCard) { setActiveGoal(idx); return; }
@@ -5367,6 +5377,8 @@ function goalSwipeToIndex(idx, goLeft) {
   idx = ((idx % count) + count) % count;
   if (idx === activeGoalIndex || _goalSwipeAnimating) return;
 
+  if (typeof ProtocolGraph !== "undefined" && ProtocolGraph.hideTooltip) ProtocolGraph.hideTooltip();
+
   var content = document.getElementById("goalSwipeContent");
   if (!content) { setActiveGoal(idx); return; }
 
@@ -5617,6 +5629,8 @@ function goalSwipeToIndex(idx, goLeft) {
   function openDebtsScreen() {
     var s = getState();
     if (debtPlanningToggle) debtPlanningToggle.checked = !!s.debtPlanningMode;
+    _activeDebtIdx = s.activeDebtIndex || 0;
+    clampDebtIndex();
 
     renderDebtList();
     renderDebtSummary();
@@ -5672,65 +5686,116 @@ function goalSwipeToIndex(idx, goLeft) {
     }
   }
 
+  var _activeDebtIdx = getState().activeDebtIndex || 0;
+
+  function clampDebtIndex() {
+    var debts = getDebts();
+    if (debts.length === 0) { _activeDebtIdx = 0; return; }
+    if (_activeDebtIdx >= debts.length) _activeDebtIdx = debts.length - 1;
+    if (_activeDebtIdx < 0) _activeDebtIdx = 0;
+  }
+
+  function setActiveDebtIndex(idx) {
+    var debts = getDebts();
+    if (debts.length === 0) { _activeDebtIdx = 0; return; }
+    _activeDebtIdx = Math.max(0, Math.min(idx, debts.length - 1));
+    updateState({ activeDebtIndex: _activeDebtIdx });
+    saveState();
+  }
+
+  function renderDebtCard(d) {
+    var typeLabel = TYPE_LABELS[d.type] || d.type;
+    var endStr = d.endDate ? new Date(d.endDate).toLocaleDateString("ru-RU", { month: "short", year: "numeric" }) : "—";
+    var nextStr = d.nextPaymentDate ? new Date(d.nextPaymentDate).toLocaleDateString("ru-RU", { day: "numeric", month: "short" }) : "—";
+
+    var html = '<div class="debt-item-card" data-debt-id="' + d.id + '">'
+      + '<div class="debt-item-header">'
+      + '<div class="debt-item-title">' + (d.title || "Без названия") + '</div>'
+      + '<span class="debt-item-type-badge">' + typeLabel + '</span>'
+      + '</div>'
+      + '<div class="debt-item-rows">'
+      + '<div class="debt-item-row"><span>Общая сумма</span><span>' + (Number(d.totalAmount) || 0).toLocaleString() + ' ₽</span></div>'
+      + '<div class="debt-item-row"><span>Осталось</span><span>' + (Number(d.remainingAmount) || 0).toLocaleString() + ' ₽</span></div>'
+      + '<div class="debt-item-row"><span>Ежемесячный платёж</span><span>' + (Number(d.monthlyPayment) || 0).toLocaleString() + ' ₽</span></div>'
+      + '<div class="debt-item-row"><span>Следующий платёж</span><span>' + nextStr + '</span></div>'
+      + '<div class="debt-item-row"><span>Окончание</span><span>' + endStr + '</span></div>';
+
+    if (d.type === "card" && d.creditLimit) {
+      html += '<div class="debt-item-row"><span>Кредитный лимит</span><span>' + (Number(d.creditLimit) || 0).toLocaleString() + ' ₽</span></div>';
+      html += '<div class="debt-item-row"><span>Свободный лимит</span><span>' + (Number(d.freeLimit) || 0).toLocaleString() + ' ₽</span></div>';
+    }
+
+    if (d.note) {
+      html += '<div class="debt-item-row"><span>Заметка</span><span>' + d.note + '</span></div>';
+    }
+
+    html += '</div>'
+      + '<div class="debt-item-actions">'
+      + '<button class="debt-item-history-btn" data-history-id="' + d.id + '">История</button>'
+      + '<button class="debt-item-delete-btn" data-delete-id="' + d.id + '">Удалить</button>'
+      + '</div>'
+      + '</div>';
+    return html;
+  }
+
+  function renderDebtSwipeIndicator() {
+    var indicator = document.getElementById("debtSwipeIndicator");
+    if (!indicator) return;
+    var debts = getDebts();
+    if (debts.length <= 1) { indicator.innerHTML = ""; return; }
+
+    var html = "";
+    debts.forEach(function (d, i) {
+      html += '<span class="debt-swipe-dot' + (i === _activeDebtIdx ? ' active' : '') + '" data-didx="' + i + '"></span>';
+    });
+    indicator.innerHTML = html;
+
+    indicator.querySelectorAll(".debt-swipe-dot").forEach(function (dot) {
+      dot.addEventListener("click", function () {
+        var target = parseInt(dot.getAttribute("data-didx"), 10);
+        if (target !== _activeDebtIdx) {
+          if (typeof haptic === "function") haptic("light");
+          debtSwipeToIndex(target, target > _activeDebtIdx);
+        }
+      });
+    });
+  }
+
   function renderDebtList() {
-    var listEl = document.getElementById("debtList");
-    if (!listEl) return;
+    var cardEl = document.getElementById("debtActiveCard");
+    var wrapperEl = document.getElementById("debtSwipeWrapper");
+    if (!cardEl) return;
     var debts = getDebts();
 
     if (debts.length === 0) {
-      listEl.innerHTML = '<div style="text-align:center;padding:24px 0;font-size:14px;opacity:0.4;">Добавьте свой первый кредит или долг</div>';
+      cardEl.innerHTML = '<div class="debt-empty-hint">Добавьте свой первый кредит или долг</div>';
+      if (wrapperEl) wrapperEl.style.display = "";
+      renderDebtSwipeIndicator();
       return;
     }
 
-    var html = "";
-    debts.forEach(function (d) {
-      var typeLabel = TYPE_LABELS[d.type] || d.type;
-      var endStr = d.endDate ? new Date(d.endDate).toLocaleDateString("ru-RU", { month: "short", year: "numeric" }) : "—";
-      var nextStr = d.nextPaymentDate ? new Date(d.nextPaymentDate).toLocaleDateString("ru-RU", { day: "numeric", month: "short" }) : "—";
+    clampDebtIndex();
+    var d = debts[_activeDebtIdx];
+    cardEl.innerHTML = renderDebtCard(d);
+    if (wrapperEl) wrapperEl.style.display = "";
 
-      html += '<div class="debt-item-card" data-debt-id="' + d.id + '">'
-        + '<div class="debt-item-header">'
-        + '<div class="debt-item-title">' + (d.title || "Без названия") + '</div>'
-        + '<span class="debt-item-type-badge">' + typeLabel + '</span>'
-        + '</div>'
-        + '<div class="debt-item-rows">'
-        + '<div class="debt-item-row"><span>Общая сумма</span><span>' + (Number(d.totalAmount) || 0).toLocaleString() + ' ₽</span></div>'
-        + '<div class="debt-item-row"><span>Осталось</span><span>' + (Number(d.remainingAmount) || 0).toLocaleString() + ' ₽</span></div>'
-        + '<div class="debt-item-row"><span>Ежемесячный платёж</span><span>' + (Number(d.monthlyPayment) || 0).toLocaleString() + ' ₽</span></div>'
-        + '<div class="debt-item-row"><span>Следующий платёж</span><span>' + nextStr + '</span></div>'
-        + '<div class="debt-item-row"><span>Окончание</span><span>' + endStr + '</span></div>';
+    renderDebtSwipeIndicator();
 
-      if (d.type === "card" && d.creditLimit) {
-        html += '<div class="debt-item-row"><span>Кредитный лимит</span><span>' + (Number(d.creditLimit) || 0).toLocaleString() + ' ₽</span></div>';
-        html += '<div class="debt-item-row"><span>Свободный лимит</span><span>' + (Number(d.freeLimit) || 0).toLocaleString() + ' ₽</span></div>';
-      }
-
-      if (d.note) {
-        html += '<div class="debt-item-row"><span>Заметка</span><span>' + d.note + '</span></div>';
-      }
-
-      html += '</div>'
-        + '<div class="debt-item-actions">'
-        + '<button class="debt-item-history-btn" data-history-id="' + d.id + '">История</button>'
-        + '<button class="debt-item-delete-btn" data-delete-id="' + d.id + '">Удалить</button>'
-        + '</div>'
-        + '</div>';
-    });
-    listEl.innerHTML = html;
-
-    listEl.querySelectorAll(".debt-item-history-btn").forEach(function (btn) {
+    cardEl.querySelectorAll(".debt-item-history-btn").forEach(function (btn) {
       btn.addEventListener("click", function () {
         if (typeof haptic === "function") haptic("light");
         openDebtHistorySheet(btn.dataset.historyId);
       });
     });
 
-    listEl.querySelectorAll(".debt-item-delete-btn").forEach(function (btn) {
+    cardEl.querySelectorAll(".debt-item-delete-btn").forEach(function (btn) {
       btn.addEventListener("click", function () {
         if (typeof haptic === "function") haptic("medium");
         var id = btn.dataset.deleteId;
         var debts = getDebts().filter(function (d) { return d.id !== id; });
         persistDebts(debts);
+        clampDebtIndex();
+        setActiveDebtIndex(_activeDebtIdx);
         renderDebtList();
         renderDebtSummary();
         recalcWithDebts();
@@ -5738,6 +5803,137 @@ function goalSwipeToIndex(idx, goLeft) {
       });
     });
   }
+
+  // ── Debt swipe system ──
+  var _debtSwipeAnimating = false;
+
+  function debtSwipeToIndex(idx, goLeft) {
+    var debts = getDebts();
+    if (debts.length <= 1) return;
+    idx = Math.max(0, Math.min(idx, debts.length - 1));
+    if (idx === _activeDebtIdx || _debtSwipeAnimating) return;
+
+    var content = document.getElementById("debtSwipeContent");
+    if (!content) { setActiveDebtIndex(idx); renderDebtList(); return; }
+
+    _debtSwipeAnimating = true;
+    content.style.transition = "transform 0.3s cubic-bezier(.4,0,.2,1), opacity 0.25s ease";
+    content.style.transform = goLeft ? "translateX(-100%)" : "translateX(100%)";
+    content.style.opacity = "0";
+
+    setTimeout(function () {
+      setActiveDebtIndex(idx);
+      renderDebtList();
+
+      content.style.transition = "none";
+      content.style.transform = goLeft ? "translateX(60px)" : "translateX(-60px)";
+      content.style.opacity = "0";
+
+      requestAnimationFrame(function () {
+        requestAnimationFrame(function () {
+          content.style.transition = "transform 0.3s cubic-bezier(.4,0,.2,1), opacity 0.25s ease";
+          content.style.transform = "translateX(0)";
+          content.style.opacity = "1";
+
+          setTimeout(function () {
+            content.style.transform = "";
+            content.style.opacity = "";
+            content.style.transition = "";
+            _debtSwipeAnimating = false;
+          }, 320);
+        });
+      });
+    }, 300);
+  }
+
+  // ── Debt touch swipe ──
+  (function initDebtSwipe() {
+    var wrapper = document.getElementById("debtSwipeWrapper");
+    if (!wrapper) return;
+
+    var _dsStartX = 0, _dsStartY = 0, _dsDeltaX = 0, _dsActive = false, _dsLocked = false, _dsRafId = null;
+    var DS_THRESHOLD = 60;
+
+    wrapper.addEventListener("touchstart", function (e) {
+      if (_debtSwipeAnimating) return;
+      _dsStartX = e.touches[0].clientX;
+      _dsStartY = e.touches[0].clientY;
+      _dsDeltaX = 0;
+      _dsActive = true;
+      _dsLocked = false;
+      var content = document.getElementById("debtSwipeContent");
+      if (content) content.style.transition = "none";
+    }, { passive: true });
+
+    wrapper.addEventListener("touchmove", function (e) {
+      if (!_dsActive) return;
+      var rawDx = e.touches[0].clientX - _dsStartX;
+      var rawDy = e.touches[0].clientY - _dsStartY;
+
+      if (!_dsLocked) {
+        if (Math.abs(rawDx) < 8 && Math.abs(rawDy) < 8) return;
+        if (Math.abs(rawDy) > Math.abs(rawDx)) {
+          _dsActive = false;
+          var c = document.getElementById("debtSwipeContent");
+          if (c) { c.style.transform = ""; c.style.opacity = ""; }
+          return;
+        }
+        _dsLocked = true;
+      }
+
+      e.preventDefault();
+      _dsDeltaX = rawDx;
+
+      if (_dsRafId) cancelAnimationFrame(_dsRafId);
+      _dsRafId = requestAnimationFrame(function () {
+        _dsRafId = null;
+        var content = document.getElementById("debtSwipeContent");
+        if (!content) return;
+        content.style.transform = "translateX(" + _dsDeltaX + "px)";
+        var progress = Math.min(Math.abs(_dsDeltaX) / 200, 1);
+        content.style.opacity = String(1 - progress * 0.4);
+      });
+    }, { passive: false });
+
+    function finishDebtSwipe() {
+      if (!_dsActive && !_dsLocked) return;
+      _dsActive = false;
+      _dsLocked = false;
+
+      if (_dsRafId) { cancelAnimationFrame(_dsRafId); _dsRafId = null; }
+
+      var content = document.getElementById("debtSwipeContent");
+      if (!content) return;
+
+      var debts = getDebts();
+      var dx = _dsDeltaX;
+
+      if (Math.abs(dx) > DS_THRESHOLD && debts.length > 1) {
+        var goLeft = dx < 0;
+        var next;
+        if (goLeft) next = Math.min(_activeDebtIdx + 1, debts.length - 1);
+        else next = Math.max(_activeDebtIdx - 1, 0);
+
+        if (next !== _activeDebtIdx) {
+          if (typeof haptic === "function") haptic("light");
+          debtSwipeToIndex(next, goLeft);
+          return;
+        }
+      }
+
+      content.style.transition = "transform 0.25s ease, opacity 0.15s ease";
+      content.style.transform = "translateX(0)";
+      content.style.opacity = "1";
+      setTimeout(function () {
+        content.style.transform = "";
+        content.style.opacity = "";
+        content.style.transition = "";
+      }, 260);
+    }
+
+    wrapper.addEventListener("touchend", finishDebtSwipe, { passive: true });
+    wrapper.addEventListener("touchcancel", finishDebtSwipe, { passive: true });
+  })();
 
   function recalcWithDebts() {
     var s = getState();
@@ -5904,6 +6100,10 @@ function goalSwipeToIndex(idx, goLeft) {
       }
       persistDebts(debts);
 
+      if (!editingDebtId) {
+        setActiveDebtIndex(debts.length - 1);
+      }
+
       closeAddDebtSheet();
       renderDebtList();
       renderDebtSummary();
@@ -6037,9 +6237,8 @@ function goalSwipeToIndex(idx, goLeft) {
           var dateStr = new Date(h.date).toLocaleDateString("ru-RU", { day: "numeric", month: "short", year: "numeric" });
           var descHtml = "";
           if (h.source === "auto" && h.totalInput) {
-            descHtml = '<div class="dph-entry-desc">Из ' + (h.totalInput || 0).toLocaleString() + ' ₽:<br>'
-              + (h.amount || 0).toLocaleString() + ' ₽ в долг<br>'
-              + (h.savingsPart || 0).toLocaleString() + ' ₽ в накопления</div>';
+            descHtml = '<div class="dph-entry-desc">Из ' + (h.totalInput || 0).toLocaleString() + ' ₽ → '
+              + (h.amount || 0).toLocaleString() + ' ₽ в этот долг</div>';
           } else {
             descHtml = '<div class="dph-entry-desc">Ручное погашение</div>';
           }
