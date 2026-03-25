@@ -3922,13 +3922,13 @@ body.flip-fix-pending .flip-wrapper {
 
 .plan-actions {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   gap: 10px;
   margin-top: 16px;
 }
 
 .plan-action-btn {
-  width: 100%;
+  flex: 1;
   padding: 13px 16px;
   font-size: 14px;
   font-weight: 600;
