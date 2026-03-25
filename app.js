@@ -5687,10 +5687,10 @@ function goalSwipeToIndex(idx, goLeft) {
       b.classList.toggle("active", b.dataset.mode === draftPace);
     });
 
-    if (pacePreviewCard) pacePreviewCard.style.display = "none";
     updatePaceHint(draftPace);
-
     openScreen("pace", null);
+    hideBottomNav();
+    updatePacePreview();
   }
 
   function updatePacePreview() {
@@ -5757,7 +5757,8 @@ function goalSwipeToIndex(idx, goLeft) {
       if (typeof haptic === "function") haptic("light");
       draftPace = null;
       originalPace = null;
-      openScreen(lastScreenBeforeProfile || "calc", buttons[0]);
+      showBottomNav();
+      openScreen("calc", buttons[0]);
     });
   }
 
@@ -5795,6 +5796,7 @@ function goalSwipeToIndex(idx, goLeft) {
       originalPace = draftPace;
       showToast("Темп накоплений обновлён", "success");
 
+      showBottomNav();
       openScreen("calc", buttons[0]);
     });
   }

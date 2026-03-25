@@ -4117,7 +4117,7 @@ body.flip-fix-pending .flip-wrapper {
 }
 
 .pace-info-card {
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 }
 
 .pace-info-label {
@@ -4146,53 +4146,123 @@ body.flip-fix-pending .flip-wrapper {
 
 .pace-selector-label {
   font-size: 14px;
-  opacity: 0.6;
+  opacity: 0.45;
   margin-bottom: 10px;
   font-weight: 500;
+  letter-spacing: 0.01em;
 }
 
+/* ── Segmented control container ── */
+
 .pace-mode-buttons {
-  margin-bottom: 8px;
+  display: flex;
+  gap: 6px;
+  padding: 5px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 10px;
 }
+
+/* ── Segment options ── */
+
+.pace-mode-buttons .mode-btn {
+  flex: 1;
+  padding: 11px 6px;
+  border-radius: 14px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.55);
+  border: 1px solid transparent;
+  font-size: 14px;
+  font-weight: 500;
+  opacity: 1;
+  text-align: center;
+  cursor: pointer;
+  position: relative;
+  z-index: 1;
+  transition:
+    background 0.22s cubic-bezier(0.4, 0, 0.2, 1),
+    color 0.22s cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 0.22s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.22s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.1s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ── Active pill ── */
+
+.pace-mode-buttons .mode-btn.active {
+  background: #fff;
+  color: #0a0a0a;
+  border-color: rgba(255, 255, 255, 0.1);
+  font-weight: 600;
+  opacity: 1;
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.3),
+    0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* ── Press feedback ── */
+
+.pace-mode-buttons .mode-btn:active:not(.active) {
+  transform: scale(0.96);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.pace-mode-buttons .mode-btn.active:active {
+  transform: scale(0.98);
+}
+
+/* ── Hint under segment ── */
 
 .pace-hint {
   font-size: 13px;
-  opacity: 0.5;
-  line-height: 1.4;
-  min-height: 18px;
-  margin-bottom: 12px;
-  transition: opacity 0.2s;
+  color: rgba(255, 255, 255, 0.45);
+  line-height: 1.45;
+  min-height: 20px;
+  margin-bottom: 18px;
+  transition: opacity 0.25s ease;
 }
 
+/* ── Preview card ── */
+
 .pace-preview-card {
-  border-radius: 16px;
+  border-radius: 18px;
   padding: 16px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  margin-bottom: 20px;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.055),
+      rgba(255, 255, 255, 0.02)
+    );
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 24px;
 }
 
 .pace-preview-text {
   font-size: 14px;
   line-height: 1.55;
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(255, 255, 255, 0.75);
   margin-bottom: 12px;
 }
 
 .pace-preview-values {
   padding-top: 10px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
 }
 
 .pace-preview-row {
   font-size: 14px;
-  color: rgba(255, 255, 255, 0.65);
-  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.75;
 }
 
 .pace-preview-row b {
   color: #6ee7b7;
+  font-weight: 600;
 }
+
+/* ── Save button ── */
 
 .save-pace-btn {
   position: relative !important;
@@ -4200,6 +4270,7 @@ body.flip-fix-pending .flip-wrapper {
   left: auto !important;
   right: auto !important;
   width: 100% !important;
+  margin-top: 4px;
 }
 
 /* ===== DEBTS SCREEN ===== */
