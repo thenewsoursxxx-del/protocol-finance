@@ -3979,6 +3979,11 @@ body.flip-fix-pending .flip-wrapper {
   cursor: pointer;
   transition: background .15s, opacity .15s;
   -webkit-tap-highlight-color: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  padding: 0;
 }
 
 .goal-timeline-step-btn:active:not(:disabled) {
@@ -3997,6 +4002,7 @@ body.flip-fix-pending .flip-wrapper {
   font-weight: 600;
   color: #fff;
   padding: 0 4px;
+  line-height: 38px;
 }
 
 .goal-timeline-preview {

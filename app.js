@@ -5211,7 +5211,7 @@ renderAccountBackCards();
     if (monthly > 0 && draft.length > 0) {
       var totalEl = document.createElement("div");
       totalEl.className = "goal-mgmt-total";
-      totalEl.innerHTML = "Ежемесячный взнос: <b>" + monthly.toLocaleString() + " ₽</b>" +
+      totalEl.innerHTML = "В накопления: <b>" + monthly.toLocaleString() + " ₽</b>" +
         (usedTotal > monthly
           ? ' <span class="timeline-over-limit">Превышен на ' + (usedTotal - monthly).toLocaleString() + ' ₽</span>'
           : "");
