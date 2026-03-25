@@ -278,10 +278,13 @@ function migrateState(saved) {
   // Ensure debtPaymentHistory exists (added post-v7)
   if (!Array.isArray(saved.debtPaymentHistory)) saved.debtPaymentHistory = [];
 
-  // Ensure all goals have the paused field
+  // Ensure all goals have the paused field and timeline override
   if (Array.isArray(saved.goals)) {
     saved.goals.forEach(function (g) {
       if (typeof g.paused !== "boolean") g.paused = false;
+      if (g.timelineOverrideMonths !== undefined && g.timelineOverrideMonths !== null) {
+        g.timelineOverrideMonths = Number(g.timelineOverrideMonths) || null;
+      }
     });
   }
 

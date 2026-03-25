@@ -405,19 +405,56 @@ function computeGoalsAllocation(goals, monthlyContribution) {
 
   if (active.length === 0) return goals;
 
-  var totalWeight = 0;
-  active.forEach(function (g) {
-    totalWeight += 1 / (g.priority || 1);
-  });
+  var overridden = [];
+  var natural = [];
+  var overriddenTotal = 0;
 
   active.forEach(function (g) {
-    var weight = (1 / (g.priority || 1)) / totalWeight;
-    g.monthlyShare = Math.round(monthlyContribution * weight);
     var remaining = Math.max(0, g.amount - (g.saved || 0));
-    g.monthsLeft = g.monthlyShare > 0 ? Math.ceil(remaining / g.monthlyShare) : 0;
+    if (g.timelineOverrideMonths && g.timelineOverrideMonths > 0) {
+      var needed = Math.ceil(remaining / g.timelineOverrideMonths);
+      if (needed <= monthlyContribution && (overriddenTotal + needed) <= monthlyContribution) {
+        g.monthlyShare = needed;
+        g.monthsLeft = g.timelineOverrideMonths;
+        overriddenTotal += needed;
+        overridden.push(g);
+        return;
+      }
+    }
+    natural.push(g);
   });
+
+  var poolForNatural = Math.max(0, monthlyContribution - overriddenTotal);
+
+  if (natural.length > 0 && poolForNatural > 0) {
+    var totalWeight = 0;
+    natural.forEach(function (g) {
+      totalWeight += 1 / (g.priority || 1);
+    });
+    natural.forEach(function (g) {
+      var weight = (1 / (g.priority || 1)) / totalWeight;
+      g.monthlyShare = Math.round(poolForNatural * weight);
+      var remaining = Math.max(0, g.amount - (g.saved || 0));
+      g.monthsLeft = g.monthlyShare > 0 ? Math.ceil(remaining / g.monthlyShare) : 0;
+    });
+  } else if (natural.length > 0) {
+    natural.forEach(function (g) { g.monthlyShare = 0; g.monthsLeft = 0; });
+  }
 
   return goals;
+}
+
+function computeMinAllowedMonths(goal, totalMonthlyPool) {
+  var remaining = Math.max(0, (goal.amount || 0) - (goal.saved || 0));
+  if (remaining <= 0) return 1;
+  if (!totalMonthlyPool || totalMonthlyPool <= 0) return 1;
+  return Math.max(1, Math.ceil(remaining / totalMonthlyPool));
+}
+
+function computeTimelinePreview(draftGoals, totalMonthly) {
+  var preview = JSON.parse(JSON.stringify(draftGoals));
+  computeGoalsAllocation(preview, totalMonthly);
+  return preview;
 }
 
 /**
@@ -4722,7 +4759,14 @@ renderAccountBackCards();
     updateAdvCards();
   }
 
+  var goalTimelineDraft = null;
+  var goalTimelineOriginal = null;
+
   function openGoalTimelineManager() {
+    var real = getGoals();
+    goalTimelineOriginal = JSON.parse(JSON.stringify(real));
+    goalTimelineDraft = JSON.parse(JSON.stringify(real));
+
     hideAdvancedFog();
     document.getElementById("screen-advanced").classList.remove("active");
     document.getElementById("screen-goal-timeline").classList.add("active");
@@ -4730,6 +4774,8 @@ renderAccountBackCards();
   }
 
   function closeGoalTimelineScreen() {
+    goalTimelineDraft = null;
+    goalTimelineOriginal = null;
     document.getElementById("screen-goal-timeline").classList.remove("active");
     document.getElementById("screen-advanced").classList.add("active");
     showAdvancedFog();
@@ -5143,35 +5189,190 @@ renderAccountBackCards();
 
   var goalTimelineAllocation = document.getElementById("goalTimelineAllocation");
 
+  function getEffectiveDuration(draftGoal, previewGoal, minMonths) {
+    if (draftGoal.timelineOverrideMonths && draftGoal.timelineOverrideMonths >= minMonths) {
+      return draftGoal.timelineOverrideMonths;
+    }
+    return previewGoal.monthsLeft || minMonths || 1;
+  }
+
   function renderGoalTimeline() {
-    var goals = getGoals();
+    var draft = goalTimelineDraft || getGoals();
     var monthly = plannedMonthly || 0;
 
     if (!goalTimelineAllocation) return;
     goalTimelineAllocation.innerHTML = "";
 
-    if (monthly > 0 && goals.length > 0) {
+    var preview = computeTimelinePreview(draft, monthly);
+
+    var usedTotal = 0;
+    preview.forEach(function (g) { usedTotal += (g.monthlyShare || 0); });
+
+    if (monthly > 0 && draft.length > 0) {
       var totalEl = document.createElement("div");
       totalEl.className = "goal-mgmt-total";
-      totalEl.innerHTML = "Ежемесячный взнос: <b>" + monthly.toLocaleString() + " ₽</b>";
+      totalEl.innerHTML = "Ежемесячный взнос: <b>" + monthly.toLocaleString() + " ₽</b>" +
+        (usedTotal > monthly
+          ? ' <span class="timeline-over-limit">Превышен на ' + (usedTotal - monthly).toLocaleString() + ' ₽</span>'
+          : "");
       goalTimelineAllocation.appendChild(totalEl);
     }
 
-    goals.forEach(function (g) {
-      var pct = monthly > 0 ? Math.round(((g.monthlyShare || 0) / monthly) * 100) : 0;
-      var row = document.createElement("div");
-      row.className = "goal-mgmt-alloc-row";
-      row.innerHTML =
-        '<div class="goal-mgmt-alloc-header">' +
-          '<span class="goal-mgmt-alloc-name">' + escapeHtml(g.title) + '</span>' +
-          '<span class="goal-mgmt-alloc-amount">' + (g.monthlyShare || 0).toLocaleString() + ' ₽ <span class="goal-mgmt-alloc-pct">(' + pct + '%)</span></span>' +
+    preview.forEach(function (gPreview, idx) {
+      var draftGoal = draft[idx];
+      var remaining = Math.max(0, (draftGoal.amount || 0) - (draftGoal.saved || 0));
+      var minMonths = computeMinAllowedMonths(draftGoal, monthly);
+      var isComplete = remaining <= 0;
+      var isPaused = !!draftGoal.paused;
+      var pctDone = draftGoal.amount > 0 ? Math.min(100, Math.round(((draftGoal.saved || 0) / draftGoal.amount) * 100)) : 0;
+
+      var effectiveDur = getEffectiveDuration(draftGoal, gPreview, minMonths);
+      var hasOverride = !!draftGoal.timelineOverrideMonths;
+      var overrideInvalid = hasOverride && draftGoal.timelineOverrideMonths < minMonths;
+      var requiredMonthly = effectiveDur > 0 ? Math.ceil(remaining / effectiveDur) : 0;
+
+      var card = document.createElement("div");
+      card.className = "goal-timeline-card" + (isPaused ? " paused" : "") + (isComplete ? " completed" : "");
+
+      var pausedTag = isPaused ? '<span class="goal-prio-paused-tag">На паузе</span>' : '';
+      var completedTag = isComplete ? '<span class="goal-timeline-done-tag">Выполнена</span>' : '';
+
+      var html =
+        '<div class="goal-timeline-header">' +
+          '<div class="goal-timeline-name">' + escapeHtml(draftGoal.title) + ' ' + pausedTag + completedTag + '</div>' +
         '</div>' +
-        '<div class="goal-mgmt-alloc-bar-bg">' +
-          '<div class="goal-mgmt-alloc-bar" style="width:' + pct + '%"></div>' +
-        '</div>' +
-        '<div class="goal-mgmt-alloc-meta">Осталось: ' + (g.monthsLeft || "—") + ' мес.</div>';
-      goalTimelineAllocation.appendChild(row);
+        '<div class="goal-timeline-progress">' +
+          '<span>' + pctDone + '% выполнено</span>' +
+          '<span>' + (draftGoal.saved || 0).toLocaleString() + ' / ' + (draftGoal.amount || 0).toLocaleString() + ' ₽</span>' +
+        '</div>';
+
+      if (!isComplete) {
+        html +=
+          '<div class="goal-timeline-duration-row">' +
+            '<div class="goal-timeline-duration-label">Срок достижения</div>' +
+            '<div class="goal-timeline-stepper" data-idx="' + idx + '">' +
+              '<button class="goal-timeline-step-btn minus" data-idx="' + idx + '"' +
+                (effectiveDur <= minMonths ? ' disabled' : '') + '>−</button>' +
+              '<span class="goal-timeline-step-value">' + effectiveDur + ' мес</span>' +
+              '<button class="goal-timeline-step-btn plus" data-idx="' + idx + '">+</button>' +
+            '</div>' +
+          '</div>' +
+          '<div class="goal-timeline-preview">' +
+            'Потребуется откладывать: <b>' + requiredMonthly.toLocaleString() + ' ₽ / мес</b>' +
+          '</div>' +
+          '<div class="goal-timeline-minmax">' +
+            'Минимум: ' + minMonths + ' мес' +
+            (hasOverride && !overrideInvalid
+              ? ' · <span class="goal-timeline-custom-tag">Пользовательский срок</span>'
+              : ' · Авто') +
+          '</div>';
+
+        if (isPaused) {
+          html += '<div class="goal-timeline-paused-hint">Цель на паузе — срок начнёт влиять на расчёт после возобновления</div>';
+        }
+
+        if (overrideInvalid) {
+          html += '<div class="goal-timeline-limit-hint">Установленный срок стал нереалистичным — используется автоматический расчёт</div>';
+        } else if (effectiveDur <= minMonths && minMonths > 1) {
+          html += '<div class="goal-timeline-limit-hint">Ниже нельзя — срок станет нереалистичным при текущем темпе накоплений</div>';
+        }
+      }
+
+      card.innerHTML = html;
+      goalTimelineAllocation.appendChild(card);
     });
+
+    goalTimelineAllocation.querySelectorAll(".goal-timeline-step-btn").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        if (this.disabled) return;
+        if (typeof haptic === "function") haptic("light");
+        var idx = Number(this.dataset.idx);
+        var draftGoal = goalTimelineDraft[idx];
+        if (!draftGoal) return;
+
+        var minMonths = computeMinAllowedMonths(draftGoal, monthly);
+        var previewClone = computeTimelinePreview(goalTimelineDraft, monthly);
+        var effectiveDur = getEffectiveDuration(draftGoal, previewClone[idx], minMonths);
+
+        if (this.classList.contains("minus")) {
+          var newDur = effectiveDur - 1;
+          if (newDur < minMonths) return;
+          draftGoal.timelineOverrideMonths = newDur;
+        } else {
+          draftGoal.timelineOverrideMonths = effectiveDur + 1;
+        }
+
+        renderGoalTimeline();
+      });
+    });
+
+    var goalTimelineBody = document.getElementById("goalTimelineBody");
+    var existingSaveBtn = document.getElementById("saveGoalTimelineBtn");
+    if (!existingSaveBtn && goalTimelineBody) {
+      var saveBtn = document.createElement("button");
+      saveBtn.id = "saveGoalTimelineBtn";
+      saveBtn.className = "advanced-settings-btn save-priority-btn";
+      saveBtn.type = "button";
+      saveBtn.textContent = "Сохранить сроки";
+      goalTimelineBody.appendChild(saveBtn);
+    }
+
+    var saveTimelineBtn = document.getElementById("saveGoalTimelineBtn");
+    if (saveTimelineBtn) {
+      saveTimelineBtn.onclick = function () {
+        if (typeof haptic === "function") haptic("medium");
+
+        if (!goalTimelineDraft || !goalTimelineOriginal) {
+          showToast("Сроки целей не были изменены", "info");
+          return;
+        }
+
+        var changed = false;
+        for (var i = 0; i < goalTimelineDraft.length; i++) {
+          var origVal = goalTimelineOriginal[i] ? (goalTimelineOriginal[i].timelineOverrideMonths || null) : null;
+          var draftVal = goalTimelineDraft[i].timelineOverrideMonths || null;
+          if (origVal !== draftVal) {
+            changed = true;
+            break;
+          }
+        }
+
+        if (!changed) {
+          showToast("Сроки целей не были изменены", "info");
+          return;
+        }
+
+        var realGoals = getGoals();
+        goalTimelineDraft.forEach(function (dg) {
+          for (var k = 0; k < realGoals.length; k++) {
+            if (realGoals[k].id === dg.id) {
+              var dgMin = computeMinAllowedMonths(dg, monthly);
+              if (dg.timelineOverrideMonths && dg.timelineOverrideMonths >= dgMin) {
+                realGoals[k].timelineOverrideMonths = dg.timelineOverrideMonths;
+              } else {
+                realGoals[k].timelineOverrideMonths = null;
+              }
+              break;
+            }
+          }
+        });
+
+        computeGoalsAllocation(realGoals, monthly);
+        persistGoals(realGoals);
+        recalcPlan();
+
+        goalTimelineOriginal = JSON.parse(JSON.stringify(getGoals()));
+        goalTimelineDraft = JSON.parse(JSON.stringify(getGoals()));
+        renderGoalTimeline();
+
+        renderGoals();
+        if (typeof renderProtocolAdviceGraph === "function") renderProtocolAdviceGraph();
+        renderAccountsUI();
+        if (typeof updateGraphGoalIndicator === "function") updateGraphGoalIndicator();
+        if (typeof updateAccountsLocalNav === "function") updateAccountsLocalNav();
+        showToast("Сроки целей сохранены", "success");
+      };
+    }
   }
 
   /* ───── Render: Goal Priority (screen-goal-priority) ───── */
