@@ -779,6 +779,153 @@ function showDebtBreakdown(total, debtPart, savingsPart) {
   }, 8000);
 }
 
+/**
+ * Returns a stable period key string for the given debt.
+ * Uses nextPaymentDate month if available, otherwise current calendar month.
+ */
+function getDebtPeriodKey(debt) {
+  if (debt.nextPaymentDate) {
+    var d = new Date(debt.nextPaymentDate);
+    if (!isNaN(d.getTime())) {
+      return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0");
+    }
+  }
+  var now = new Date();
+  return now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0");
+}
+
+/**
+ * Advances debt periods when the current date has moved past nextPaymentDate.
+ * Resets paidInCurrentPeriod when a new cycle begins.
+ * Also initializes period-tracking fields for debts that lack them.
+ */
+function advanceDebtPeriods() {
+  var s = getState();
+  var debts = s.debts || [];
+  if (debts.length === 0) return;
+
+  var changed = false;
+  var now = new Date();
+  now.setHours(0, 0, 0, 0);
+
+  debts.forEach(function (d) {
+    if (d.isActive === false) return;
+    if ((Number(d.remainingAmount) || 0) <= 0) return;
+
+    if (typeof d.paidInCurrentPeriod !== "number") { d.paidInCurrentPeriod = 0; changed = true; }
+    if (typeof d.currentPeriodKey !== "string") { d.currentPeriodKey = ""; changed = true; }
+
+    if (d.nextPaymentDate) {
+      var dueDate = new Date(d.nextPaymentDate);
+      dueDate.setHours(0, 0, 0, 0);
+      while (now.getTime() > dueDate.getTime() && (Number(d.remainingAmount) || 0) > 0) {
+        dueDate.setMonth(dueDate.getMonth() + 1);
+        d.nextPaymentDate = dueDate.toISOString().split("T")[0];
+        d.paidInCurrentPeriod = 0;
+        changed = true;
+      }
+    }
+
+    var expectedKey = getDebtPeriodKey(d);
+    if (d.currentPeriodKey !== expectedKey) {
+      d.paidInCurrentPeriod = 0;
+      d.currentPeriodKey = expectedKey;
+      changed = true;
+    }
+  });
+
+  if (changed) {
+    updateState({ debts: debts });
+    saveState();
+  }
+}
+
+/**
+ * Returns current-period obligations for all active debts.
+ * Each obligation has: debt ref, dueForPeriod, paidSoFar, stillOwed.
+ * Sorted by earliest nextPaymentDate, then smallest remainingAmount, then creation order.
+ */
+function getCurrentDebtObligations() {
+  var s = getState();
+  var debts = s.debts || [];
+  var obligations = [];
+  var totalDue = 0;
+
+  debts.forEach(function (d, idx) {
+    if (d.isActive === false) return;
+    var remaining = Number(d.remainingAmount) || 0;
+    if (remaining <= 0) return;
+    var monthly = Number(d.monthlyPayment) || 0;
+    if (monthly <= 0) return;
+
+    var dueForPeriod = Math.min(monthly, remaining);
+    var paidSoFar = Number(d.paidInCurrentPeriod) || 0;
+    var stillOwed = Math.max(0, dueForPeriod - paidSoFar);
+
+    if (stillOwed > 0) {
+      obligations.push({ debt: d, _origIdx: idx, dueForPeriod: dueForPeriod, paidSoFar: paidSoFar, stillOwed: stillOwed });
+      totalDue += stillOwed;
+    }
+  });
+
+  obligations.sort(function (a, b) {
+    var dateA = a.debt.nextPaymentDate ? new Date(a.debt.nextPaymentDate).getTime() : Infinity;
+    var dateB = b.debt.nextPaymentDate ? new Date(b.debt.nextPaymentDate).getTime() : Infinity;
+    if (dateA !== dateB) return dateA - dateB;
+    var remA = Number(a.debt.remainingAmount) || 0;
+    var remB = Number(b.debt.remainingAmount) || 0;
+    if (remA !== remB) return remA - remB;
+    return a._origIdx - b._origIdx;
+  });
+
+  return { obligations: obligations, totalDue: totalDue };
+}
+
+/**
+ * Auto-repayment: covers only the CURRENT period's unpaid obligations.
+ * Does NOT advance nextPaymentDate (that is handled by advanceDebtPeriods).
+ * Returns { applied, details: [{debtId, amount}] }.
+ */
+function applyAutoDebtRepayment(amount) {
+  if (!amount || amount <= 0) return { applied: 0, details: [] };
+
+  advanceDebtPeriods();
+
+  var info = getCurrentDebtObligations();
+  if (info.totalDue <= 0) return { applied: 0, details: [] };
+
+  var pool = Math.min(amount, info.totalDue);
+  var remaining = pool;
+  var details = [];
+
+  var s = getState();
+  var debts = s.debts || [];
+
+  info.obligations.forEach(function (ob) {
+    if (remaining <= 0) return;
+    var pay = Math.min(remaining, ob.stillOwed);
+    if (pay <= 0) return;
+
+    ob.debt.remainingAmount = Math.max(0, (Number(ob.debt.remainingAmount) || 0) - pay);
+    ob.debt.paidInCurrentPeriod = (Number(ob.debt.paidInCurrentPeriod) || 0) + pay;
+    remaining -= pay;
+    details.push({ debtId: ob.debt.id, amount: pay });
+
+    if (ob.debt.remainingAmount <= 0) {
+      ob.debt.remainingAmount = 0;
+      ob.debt.isActive = false;
+    }
+  });
+
+  var totalApplied = pool - remaining;
+  if (totalApplied > 0) {
+    updateState({ debts: debts });
+    saveState();
+  }
+
+  return { applied: totalApplied, details: details };
+}
+
 function recalcPlan() {
   // ── Engine recalculation (когда план активен) ──
   if (isInitialized && chosenPlan && typeof CashflowEngine !== "undefined") {
@@ -948,6 +1095,7 @@ function loadFullState() {
 
     if (typeof s.activeGoalIndex === "number") activeGoalIndex = s.activeGoalIndex;
     ensureDefaultGoal();
+    advanceDebtPeriods();
 
     if (isInitialized) {
       lockTabs(false);
@@ -1787,13 +1935,9 @@ style="width:52px;height:52px;border-radius:50%">
 
       var currentState = getState();
       if (currentState.debtPlanningMode) {
-        var debtMonthly = getActiveDebtMonthlyPayment();
-        var debtPortion = Math.min(debtMonthly, distributable);
-        if (debtPortion > 0) {
-          var repayResult = applyDebtRepayment(debtPortion);
-          debtRepaid = repayResult.applied;
-          distributable -= debtRepaid;
-        }
+        var repayResult = applyAutoDebtRepayment(distributable);
+        debtRepaid = repayResult.applied;
+        distributable -= debtRepaid;
       }
 
       if (chosenPlan === "buffer") {
@@ -5845,6 +5989,7 @@ function goalSwipeToIndex(idx, goLeft) {
   }
 
   function openDebtsScreen() {
+    advanceDebtPeriods();
     var s = getState();
     if (debtPlanningToggle) debtPlanningToggle.checked = !!s.debtPlanningMode;
     _activeDebtIdx = s.activeDebtIndex || 0;
@@ -6305,11 +6450,30 @@ function goalSwipeToIndex(idx, goLeft) {
         creditLimit: type === "card" ? parseNumber(document.getElementById("debtCreditLimit").value || "0") : 0,
         freeLimit: type === "card" ? parseNumber(document.getElementById("debtFreeLimit").value || "0") : 0,
         note: (document.getElementById("debtNote").value || "").trim(),
-        isActive: true
+        isActive: true,
+        paidInCurrentPeriod: 0,
+        currentPeriodKey: ""
       };
+
+      var nextDateVal = document.getElementById("debtNextDate").value || "";
+      if (nextDateVal) {
+        var tmpD = new Date(nextDateVal);
+        if (!isNaN(tmpD.getTime())) {
+          entry.currentPeriodKey = tmpD.getFullYear() + "-" + String(tmpD.getMonth() + 1).padStart(2, "0");
+        }
+      }
+      if (!entry.currentPeriodKey) {
+        var nowD = new Date();
+        entry.currentPeriodKey = nowD.getFullYear() + "-" + String(nowD.getMonth() + 1).padStart(2, "0");
+      }
 
       var debts = getDebts();
       if (editingDebtId) {
+        var existingDebtForEdit = debts.find(function(dd) { return dd.id === editingDebtId; });
+        if (existingDebtForEdit) {
+          entry.paidInCurrentPeriod = existingDebtForEdit.paidInCurrentPeriod || 0;
+          entry.currentPeriodKey = existingDebtForEdit.currentPeriodKey || entry.currentPeriodKey;
+        }
         for (var i = 0; i < debts.length; i++) {
           if (debts[i].id === editingDebtId) { debts[i] = entry; break; }
         }

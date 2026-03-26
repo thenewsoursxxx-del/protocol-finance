@@ -288,6 +288,14 @@ function migrateState(saved) {
     });
   }
 
+  // Ensure all debts have period-tracking fields
+  if (Array.isArray(saved.debts)) {
+    saved.debts.forEach(function (d) {
+      if (typeof d.paidInCurrentPeriod !== "number") d.paidInCurrentPeriod = 0;
+      if (typeof d.currentPeriodKey !== "string") d.currentPeriodKey = "";
+    });
+  }
+
   return saved;
 }
 
