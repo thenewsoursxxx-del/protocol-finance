@@ -1652,6 +1652,11 @@ ProtoSheet.close(sheet, sheetOverlay);
 ProtoSheet.initSwipe(sheet, closeSheet);
 
 function renderProtocolResult({ scenariosHTML, advice }) {
+var _actionsEl = document.getElementById("protocolActionsContainer");
+if (_actionsEl) { _actionsEl.innerHTML = ""; _actionsEl.style.display = "none"; }
+var _indicatorEl = document.getElementById("graphGoalIndicator");
+if (_indicatorEl) { _indicatorEl.classList.remove("visible"); _indicatorEl.innerHTML = ""; }
+
 adviceCard.innerHTML = `
 <div style="margin-bottom:12px">
 <div style="font-size:14px;opacity:.7;margin-bottom:6px">
