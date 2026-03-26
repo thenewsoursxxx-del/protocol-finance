@@ -840,11 +840,18 @@ function recalcPlan() {
     persistGoals(goalsArr);
   }
 
+  // After allocation, sync state to active goal's derived values
+  var activeGoalForState = goalsArr[activeGoalIndex] || null;
+  if (goalsArr.length > 1 && activeGoalForState) {
+    state.monthlyContribution = activeGoalForState.monthlyShare || 0;
+    state.monthsLeft = activeGoalForState.monthsLeft || 0;
+  }
+
   renderGoals();
   renderAccountsUI();
 
   const summaryMonthsEl = document.getElementById("summaryMonths");
-  if (summaryMonthsEl && lastCalc.months) {
+  if (summaryMonthsEl && state.monthsLeft) {
     summaryMonthsEl.innerText = state.monthsLeft;
   }
 
@@ -3003,6 +3010,8 @@ if (goalPausePlayBtn) {
     renderGoals();
     if (typeof renderAccountsUI === "function") renderAccountsUI();
     if (typeof renderSVGGraph === "function") renderSVGGraph();
+    updatePlanHeader();
+    saveFullState();
 
     var currentAnim = goal.paused ? goalPauseLottieAnim : goalPlayLottieAnim;
     if (currentAnim) {
@@ -3158,8 +3167,14 @@ if (activeGoalIndex > 0 && activeGoal) {
   return;
 }
 
+var hasMultiGoals = goals.length > 1 && activeGoal;
+var goalMonthly = hasMultiGoals ? (activeGoal.monthlyShare || 0) : plannedMonthly;
+var goalMonthlySave = hasMultiGoals ? (activeGoal.monthlyShare || 0) : (lastCalc.monthlySave || 0);
+var goalMonthsLeft = hasMultiGoals ? (activeGoal.monthsLeft || 0) : (lastCalc.months || 0);
+var goalPace = (lastCalc.free && lastCalc.free > 0) ? (goalMonthlySave / lastCalc.free) : (lastCalc.pace || 0);
+
 monthlyEl.innerText =
-  "План: " + plannedMonthly.toLocaleString() + " ₽ / месяц";
+  "План: " + goalMonthly.toLocaleString() + " ₽ / месяц";
 
 var s = getState();
 var isCashflow = (s.financialModel === "cashflow");
@@ -3168,9 +3183,9 @@ var explainText = lastCalc.ok
   ? (isCashflow ? "Прогноз дохода: " + (lastCalc.forecastIncome || 0).toLocaleString() + " ₽ / мес\n"
       + "Прогноз расхода: " + (lastCalc.forecastExpense || 0).toLocaleString() + " ₽ / мес\n" : "")
     + "Свободно в месяц: " + (lastCalc.free || 0).toLocaleString() + " ₽\n"
-    + "Откладываете: " + (lastCalc.monthlySave || 0).toLocaleString() + " ₽\n"
-    + "Это ~" + Math.round((lastCalc.pace || 0) * 100) + "% от свободных средств\n"
-    + "Цель будет достигнута примерно за " + (lastCalc.months || 0) + " мес"
+    + "Откладываете: " + goalMonthlySave.toLocaleString() + " ₽\n"
+    + "Это ~" + Math.round(goalPace * 100) + "% от свободных средств\n"
+    + "Цель будет достигнута примерно за " + goalMonthsLeft + " мес"
   : "Когда расходы больше доходов, любой план будет нестабильным.";
 explainEl.innerHTML = explainText.replace(/\n/g, "<br>");
 
