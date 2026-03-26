@@ -61,7 +61,7 @@ var ProtocolGraph = (function () {
           storedMax = maxValue;
           existingSvg.setAttribute("data-max-value", storedMax);
         }
-        updateFactLine(existingSvg, W, H, drawW, drawH, goalMonths, storedMax, factBalance, actualMonths, hasFact, existingWrap);
+        updateFactLine(existingSvg, W, H, drawW, drawH, goalMonths, vMonths, storedMax, factBalance, actualMonths, hasFact, existingWrap);
         return;
       }
     }
@@ -90,7 +90,7 @@ var ProtocolGraph = (function () {
     }
 
     if (hasFact && goalMonths > 0 && actualMonths > 0) {
-      renderFactLine(svg, W, H, drawW, drawH, goalMonths, maxValue, factBalance, actualMonths, true);
+      renderFactLine(svg, W, H, drawW, drawH, goalMonths, vMonths, maxValue, factBalance, actualMonths, true);
     }
 
     renderMonthLabels(svg, W, H, drawW, vMonths);
@@ -109,7 +109,7 @@ var ProtocolGraph = (function () {
     }
   }
 
-  function updateFactLine(svg, W, H, drawW, drawH, goalMonths, maxValue, factBalance, actualMonths, hasFact, wrap) {
+  function updateFactLine(svg, W, H, drawW, drawH, goalMonths, visibleMonths, maxValue, factBalance, actualMonths, hasFact, wrap) {
     var oldLine = svg.querySelector(".fact-line");
     if (oldLine) oldLine.remove();
     var oldPoint = svg.querySelector(".fact-point");
@@ -117,7 +117,7 @@ var ProtocolGraph = (function () {
 
     if (!hasFact || goalMonths <= 0 || actualMonths <= 0) return;
 
-    renderFactLine(svg, W, H, drawW, drawH, goalMonths, maxValue, factBalance, actualMonths, true);
+    renderFactLine(svg, W, H, drawW, drawH, goalMonths, visibleMonths, maxValue, factBalance, actualMonths, true);
   }
 
   function bindTooltipEvents(wrap, svg) {
@@ -212,10 +212,12 @@ var ProtocolGraph = (function () {
     });
   }
 
-  function renderFactLine(svg, W, H, drawW, drawH, goalMonths, maxValue, factBalance, actualMonths, animate) {
+  function renderFactLine(svg, W, H, drawW, drawH, goalMonths, visibleMonths, maxValue, factBalance, actualMonths, animate) {
     var startX = PAD_X;
     var startY = H - PAD_BOT;
-    var endX = PAD_X + (actualMonths / goalMonths) * drawW;
+    var rangeMonths = visibleMonths || goalMonths || 1;
+    var endX = PAD_X + (actualMonths / rangeMonths) * drawW;
+    endX = Math.min(endX, PAD_X + drawW);
     var endY = (H - PAD_BOT) - (factBalance / maxValue) * drawH;
     endY = Math.max(PAD_TOP, Math.min(endY, H - PAD_BOT));
 

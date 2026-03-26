@@ -639,7 +639,9 @@ function computeGraphState() {
 
   var visibleMonths = Math.max(3, actualMonths + 2, Math.min(goalMonths, actualMonths + 6));
   if (goalMonths > 0) visibleMonths = Math.min(visibleMonths, goalMonths);
-  visibleMonths = Math.max(3, visibleMonths);
+  if (actualMonths > visibleMonths) visibleMonths = actualMonths;
+  var minVisible = (goalMonths > 0 && goalMonths <= 3) ? Math.max(2, goalMonths) : 3;
+  visibleMonths = Math.max(minVisible, visibleMonths);
 
   return {
     factBalance: factBalance,
