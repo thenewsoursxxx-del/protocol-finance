@@ -2806,6 +2806,85 @@ function showFactTooltip({ value, onHide }) {
   }, 4000);
 }
 
+/* ===== MONTHLY STATUS (current-month deposit tracker) ===== */
+
+function computeMonthlyStatus() {
+  if (activeGoalIndex > 0) {
+    return { required: 0, actual: 0, complete: false, show: false };
+  }
+
+  var monthlyRequired = plannedMonthly || 0;
+  if (monthlyRequired <= 0) {
+    return { required: 0, actual: 0, complete: false, show: true };
+  }
+
+  var mainDeposits = [];
+  if (factHistory && factHistory.length > 0) {
+    factHistory.forEach(function (f) {
+      if (f.to === "main" && f.value > 0) {
+        mainDeposits.push(f);
+      }
+    });
+  }
+
+  var totalContributed = 0;
+  mainDeposits.forEach(function (f) { totalContributed += f.value; });
+
+  if (mainDeposits.length === 0) {
+    return { required: monthlyRequired, actual: 0, complete: false, show: true };
+  }
+
+  var now = new Date();
+  var currentMK = now.getFullYear() * 12 + now.getMonth();
+
+  var startMK = currentMK;
+  mainDeposits.forEach(function (f) {
+    var d = new Date(f.date);
+    var mk = d.getFullYear() * 12 + d.getMonth();
+    if (mk < startMK) startMK = mk;
+  });
+
+  var monthsBefore = currentMK - startMK;
+  var previousRequired = monthsBefore * monthlyRequired;
+  var currentActual = Math.max(0, totalContributed - previousRequired);
+  var complete = currentActual >= monthlyRequired;
+
+  return {
+    required: monthlyRequired,
+    actual: Math.round(currentActual),
+    complete: complete,
+    show: true
+  };
+}
+
+function renderMonthlyStatus() {
+  var block = document.getElementById("monthlyStatusBlock");
+  if (!block) return;
+
+  var st = computeMonthlyStatus();
+
+  if (!st.show) {
+    block.classList.add("monthly-status--hidden");
+    return;
+  }
+  block.classList.remove("monthly-status--hidden");
+
+  var labelEl = document.getElementById("monthlyStatusLabel");
+  var valueEl = document.getElementById("monthlyStatusValue");
+  if (!labelEl || !valueEl) return;
+
+  if (st.complete) {
+    block.classList.add("monthly-status--complete");
+    labelEl.textContent = "Полностью";
+    valueEl.textContent = "отложено";
+  } else {
+    block.classList.remove("monthly-status--complete");
+    labelEl.textContent = "Внесено";
+    valueEl.textContent = Math.round(st.actual).toLocaleString()
+      + " / " + Math.round(st.required).toLocaleString() + " ₽";
+  }
+}
+
 /**
  * Обновляет UI элементов счетов
  * ⚠️ ВАЖНО: Эта функция вызывается из recalcPlan().
@@ -2860,6 +2939,7 @@ reserveBlock.classList.remove("show-reserve");
 }
 
 if (typeof renderAccountBackCards === "function") renderAccountBackCards();
+renderMonthlyStatus();
 }
 
 function updateGoalVerdict(text) {

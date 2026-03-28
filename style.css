@@ -948,6 +948,50 @@ border-top: 1px dashed rgba(58,123,253,0.45);
 }
 
 
+/* ===== MONTHLY STATUS (Main Account Card) ===== */
+.account-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.account-card-left {
+  flex: 1;
+  min-width: 0;
+}
+.monthly-status {
+  flex-shrink: 0;
+  text-align: right;
+  padding: 4px 0 0;
+  min-width: 80px;
+}
+.monthly-status-label {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+  color: rgba(255,255,255,0.45);
+  margin-bottom: 4px;
+}
+.monthly-status-value {
+  font-size: 15px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.85);
+  white-space: nowrap;
+}
+.monthly-status--complete .monthly-status-label {
+  color: #34d399;
+  font-weight: 600;
+  font-size: 13px;
+}
+.monthly-status--complete .monthly-status-value {
+  color: #34d399;
+  font-size: 13px;
+  font-weight: 500;
+}
+.monthly-status--hidden {
+  display: none;
+}
+
 /* ===== ACCOUNT HINT TYPOGRAPHY FIX ===== */
 .account-hint {
 font-size: 14px; /* меньше базового */
