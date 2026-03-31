@@ -12,9 +12,29 @@ viewport-fit=cover" />
 <title>Protocol</title>
 
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
+<!-- Supabase JS v2 (UMD): глобальный объект window.supabase с методом createClient -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
 
 <link rel="stylesheet" href="style.css?v=20001">
+
+<!-- Базовая инициализация Telegram Mini App (ранний вызов ready — рекомендация Telegram) -->
+<script>
+(function () {
+  if (!window.Telegram || !window.Telegram.WebApp) return;
+  var tg = window.Telegram.WebApp;
+  tg.ready();
+  tg.expand();
+  // Опционально: проброс цветов темы в CSS-переменные (можно использовать в style.css)
+  var tp = tg.themeParams || {};
+  if (tp.bg_color) {
+    document.documentElement.style.setProperty("--tg-theme-bg-color", tp.bg_color);
+  }
+  if (tp.text_color) {
+    document.documentElement.style.setProperty("--tg-theme-text-color", tp.text_color);
+  }
+})();
+</script>
 </head>
 <body>
   
@@ -1154,6 +1174,8 @@ z-index: 999999;
 <script src="financial-events.js"></script>
 <script src="cashflow-engine.js"></script>
 <script src="graph-engine-svg.js?v=20001"></script>
+<!-- Supabase: после CDN в <head>; замените anon-ключ внутри файла -->
+<script src="supabase.js"></script>
 <script src="app.js?v=20002"></script>
 </body>
 </html>
