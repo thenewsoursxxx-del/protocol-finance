@@ -10,7 +10,7 @@
 // ---------------------------------------------------------------------------
 // Замените на ваш anon (public) ключ. Не публикуйте service_role в клиенте.
 // ---------------------------------------------------------------------------
-var SUPABASE_ANON_KEY = "ВСТАВЬТЕ_СЮДА_ВАШ_ANON_KEY";
+var SUPABASE_ANON_KEY = "sb_publishable_Ava2_GYcJBWjcFIL_VFzWQ_-r1DYIiU";
 
 var SUPABASE_URL = "https://cztfcseyzeincbwotvt.supabase.co";
 
