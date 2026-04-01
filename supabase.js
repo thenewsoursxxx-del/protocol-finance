@@ -155,17 +155,47 @@ async function saveCurrentUser() {
     last_name:   user.last_name  || null
   };
 
-  console.log("[Supabase] upsert row:", JSON.stringify(row));
+  console.log("[Supabase] save row:", JSON.stringify(row));
 
+  // Без upsert/onConflict: нужен UNIQUE/PK на telegram_id, иначе 42P10.
+  // Делаем «псевдо-upsert»: есть строка → update, нет → insert.
   var maxRetries = 3;
   for (var attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      var result = await supabaseClient
+      var existing = await supabaseClient
         .from("users")
-        .upsert(row, { onConflict: "telegram_id" });
+        .select("telegram_id")
+        .eq("telegram_id", row.telegram_id)
+        .maybeSingle();
+
+      if (existing.error) {
+        console.error("[Supabase] select users (попытка " + attempt + "):",
+          existing.error.message, existing.error.code, existing.error);
+        if (attempt < maxRetries) {
+          var wSel = attempt * 1500;
+          console.log("[Supabase] Повтор через " + wSel + " мс...");
+          await new Promise(function(r) { setTimeout(r, wSel); });
+          continue;
+        }
+        return;
+      }
+
+      var result;
+      if (existing.data) {
+        result = await supabaseClient
+          .from("users")
+          .update({
+            username: row.username,
+            first_name: row.first_name,
+            last_name: row.last_name
+          })
+          .eq("telegram_id", row.telegram_id);
+      } else {
+        result = await supabaseClient.from("users").insert(row);
+      }
 
       if (result.error) {
-        console.error("[Supabase] upsert ошибка (попытка " + attempt + "):",
+        console.error("[Supabase] insert/update ошибка (попытка " + attempt + "):",
           result.error.message, result.error.code, result.error);
         if (attempt < maxRetries) {
           var wait = attempt * 1500;
