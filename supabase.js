@@ -17,7 +17,7 @@
  * Он создаёт глобальный объект window.supabase с методом createClient.
  */
 
-var SUPABASE_URL = "https://cztfcseyzeincbwotvt.supabase.co";
+var SUPABASE_URL = "https://cztfcseyzezincbwotvt.supabase.co";
 var SUPABASE_ANON_KEY = "sb_publishable_Ava2_GYcJBWjcFIL_VFzWQ_-r1DYIiU";
 
 var supabaseClient = null;
