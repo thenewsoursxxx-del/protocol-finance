@@ -22,6 +22,71 @@ var SUPABASE_ANON_KEY = "sb_publishable_Ava2_GYcJBWjcFIL_VFzWQ_-r1DYIiU";
 
 var supabaseClient = null;
 
+/* ── XHR-обёртка, совместимая с fetch-интерфейсом (для iOS WKWebView) ── */
+function _xhrFetch(url, opts) {
+  return new Promise(function (resolve, reject) {
+    var xhr = new XMLHttpRequest();
+    var method = (opts && opts.method) ? opts.method.toUpperCase() : "GET";
+    xhr.open(method, url, true);
+
+    var h = (opts && opts.headers) || {};
+    if (h instanceof Headers) {
+      h.forEach(function (v, k) { xhr.setRequestHeader(k, v); });
+    } else if (typeof h === "object") {
+      Object.keys(h).forEach(function (k) { xhr.setRequestHeader(k, h[k]); });
+    }
+
+    xhr.onload = function () {
+      var rh = {};
+      xhr.getAllResponseHeaders().trim().split(/[\r\n]+/).forEach(function (line) {
+        var p = line.split(": ");
+        var key = p.shift().toLowerCase();
+        rh[key] = p.join(": ");
+      });
+
+      resolve({
+        ok: xhr.status >= 200 && xhr.status < 300,
+        status: xhr.status,
+        statusText: xhr.statusText,
+        headers: {
+          get: function (n) { return rh[n.toLowerCase()] || null; },
+          forEach: function (cb) { Object.keys(rh).forEach(function (k) { cb(rh[k], k); }); }
+        },
+        json: function () {
+          try { return Promise.resolve(JSON.parse(xhr.responseText)); }
+          catch (e) { return Promise.reject(e); }
+        },
+        text: function () { return Promise.resolve(xhr.responseText); }
+      });
+    };
+
+    xhr.onerror = function () { reject(new TypeError("XHR network error")); };
+    xhr.ontimeout = function () { reject(new TypeError("XHR timeout")); };
+    xhr.timeout = 15000;
+    xhr.send(opts && opts.body ? opts.body : null);
+  });
+}
+
+/* ── iOS-safe fetch: native fetch с безопасными опциями → XHR fallback ── */
+function _iosSafeFetch(url, opts) {
+  if (typeof fetch !== "function") {
+    console.log("[Supabase] fetch() не доступен, используем XHR.");
+    return _xhrFetch(url, opts);
+  }
+
+  var safeOpts = {};
+  if (opts) {
+    Object.keys(opts).forEach(function (k) { safeOpts[k] = opts[k]; });
+  }
+  safeOpts.cache = "no-store";
+  safeOpts.credentials = "omit";
+
+  return fetch(url, safeOpts).catch(function (err) {
+    console.warn("[Supabase] fetch() упал:", err.message, "— fallback → XHR");
+    return _xhrFetch(url, opts);
+  });
+}
+
 function initSupabaseClient() {
   if (supabaseClient) return true;
 
@@ -33,18 +98,31 @@ function initSupabaseClient() {
   }
 
   if (typeof sb.createClient !== "function") {
-    console.error("[Supabase] window.supabase.createClient не является функцией.",
-      "Ключи объекта:", Object.keys(sb).join(", "));
+    console.error("[Supabase] window.supabase.createClient — не функция.",
+      "Ключи:", Object.keys(sb).join(", "));
     return false;
   }
 
   try {
-    supabaseClient = sb.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    supabaseClient = sb.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+        detectSessionInUrl: false
+      },
+      global: {
+        headers: {
+          "X-Client-Info": "protocol-mini-app"
+        },
+        fetch: _iosSafeFetch
+      }
+    });
+
     window.supabaseClient = supabaseClient;
-    console.log("[Supabase] Клиент создан. URL:", SUPABASE_URL);
+    console.log("[Supabase] Клиент создан (iOS-safe). URL:", SUPABASE_URL);
     return true;
   } catch (e) {
-    console.error("[Supabase] Ошибка createClient:", e.message, e);
+    console.error("[Supabase] createClient ошибка:", e.message, e);
     return false;
   }
 }
