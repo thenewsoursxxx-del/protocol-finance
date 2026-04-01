@@ -1,3 +1,13 @@
+// === Eruda — консоль для iOS и Android ===
+(function() {
+  const script = document.createElement('script');
+  script.src = 'https://cdn.jsdelivr.net/npm/eruda';
+  script.onload = function() {
+    eruda.init();
+    console.log('✅ Eruda загружена. Нажми на иконку в правом нижнем углу экрана для открытия консоли.');
+  };
+  document.head.appendChild(script);
+})();
 /**
  * Supabase для Protocol Mini App (vanilla JS + CDN, без npm).
  *
