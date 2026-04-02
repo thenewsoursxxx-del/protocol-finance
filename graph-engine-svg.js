@@ -93,7 +93,7 @@ var ProtocolGraph = (function () {
       renderFactLine(svg, W, H, drawW, drawH, goalMonths, vMonths, maxValue, factBalance, actualMonths, true);
     }
 
-    renderMonthLabels(svg, W, H, drawW, vMonths);
+    renderMonthLabels(svg, W, H, drawW, vMonths, actualMonths);
 
     wrap.appendChild(svg);
 
@@ -318,7 +318,7 @@ var ProtocolGraph = (function () {
     }, g).textContent = "Protocol\u2122";
   }
 
-  function renderMonthLabels(svg, W, H, drawW, vMonths) {
+  function renderMonthLabels(svg, W, H, drawW, vMonths, actualMonths) {
     var g = el("g", { "class": "graph-month-labels" }, svg);
     var monthNames = ["Янв", "Фев", "Мар", "Апр", "Май", "Июн", "Июл", "Авг", "Сен", "Окт", "Ноя", "Дек"];
     var base = new Date();
@@ -327,24 +327,60 @@ var ProtocolGraph = (function () {
     var minGap = 60;
     var maxLabels = Math.max(2, Math.floor(drawW / minGap));
     var step = Math.max(1, Math.ceil(vMonths / maxLabels));
-    var lastX = -Infinity;
+    var isCompressed = step > 1;
+    var elapsed = actualMonths || 0;
 
-    for (var i = 0; i <= vMonths; i++) {
-      if (i % step !== 0 && i !== 0) continue;
-      var x = PAD_X + (i / vMonths) * drawW;
-      if (x - lastX < minGap - 5 && i !== 0) continue;
+    var labelIndices;
+
+    if (!isCompressed) {
+      labelIndices = [];
+      for (var i = 0; i <= vMonths; i++) {
+        labelIndices.push(i);
+      }
+    } else {
+      var set = {};
+      set[0] = true;
+      if (elapsed > 0 && elapsed <= vMonths) set[elapsed] = true;
+
+      var remaining = maxLabels - Object.keys(set).length;
+      if (remaining > 0) {
+        var dynamicStep = Math.max(1, Math.floor(vMonths / (remaining + 1)));
+        for (var s = dynamicStep; s <= vMonths; s += dynamicStep) {
+          if (!set[s]) {
+            set[s] = true;
+            if (Object.keys(set).length >= maxLabels) break;
+          }
+        }
+      }
+
+      if (!set[vMonths] && Object.keys(set).length < maxLabels) {
+        set[vMonths] = true;
+      }
+
+      labelIndices = Object.keys(set).map(Number).sort(function (a, b) { return a - b; });
+    }
+
+    var lastX = -Infinity;
+    for (var li = 0; li < labelIndices.length; li++) {
+      var idx = labelIndices[li];
+      var x = PAD_X + (idx / vMonths) * drawW;
+      if (x - lastX < minGap - 5 && idx !== 0) continue;
 
       var d = new Date(base);
-      d.setMonth(d.getMonth() + i);
+      d.setMonth(d.getMonth() + idx);
       var label = monthNames[d.getMonth()] + " " + String(d.getFullYear()).slice(2);
+
+      var isCurrent = (elapsed > 0 && idx === elapsed);
+      var fillColor = isCurrent ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.35)";
 
       el("text", {
         x: x.toFixed(1),
         y: (H - PAD_BOT + 16).toFixed(0),
         "text-anchor": "middle",
         "font-size": "10",
+        "font-weight": isCurrent ? "600" : "normal",
         "font-family": "Inter, system-ui, sans-serif",
-        fill: "rgba(255,255,255,0.35)"
+        fill: fillColor
       }, g).textContent = label;
 
       lastX = x;

@@ -617,24 +617,35 @@ function computeGraphState() {
   }
 
   var actualMonths = 0;
+  var now = new Date();
+  var nowMK = now.getFullYear() * 12 + now.getMonth();
+
   if (activeGoalIndex === 0 && factHistory && factHistory.length > 0) {
     var mainFacts = factHistory.filter(function (f) { return f.to === "main"; });
-    var uniqueM = {};
-    mainFacts.forEach(function (f) {
-      var d = new Date(f.date);
-      uniqueM[d.getFullYear() + "-" + d.getMonth()] = true;
-    });
-    actualMonths = Object.keys(uniqueM).length;
+    if (mainFacts.length > 0) {
+      var startMK = nowMK;
+      mainFacts.forEach(function (f) {
+        var d = new Date(f.date);
+        var mk = d.getFullYear() * 12 + d.getMonth();
+        if (mk < startMK) startMK = mk;
+      });
+      actualMonths = Math.max(1, nowMK - startMK + 1);
+    }
   } else if (activeGoalIndex > 0 && hasFact) {
     var secondaryFacts = factHistory ? factHistory.filter(function (f) {
       return f.goalIndex === activeGoalIndex;
     }) : [];
-    var uniqueSecondary = {};
-    secondaryFacts.forEach(function (f) {
-      var d = new Date(f.date);
-      uniqueSecondary[d.getFullYear() + "-" + d.getMonth()] = true;
-    });
-    actualMonths = Math.max(1, Object.keys(uniqueSecondary).length);
+    if (secondaryFacts.length > 0) {
+      var startMKSec = nowMK;
+      secondaryFacts.forEach(function (f) {
+        var d = new Date(f.date);
+        var mk = d.getFullYear() * 12 + d.getMonth();
+        if (mk < startMKSec) startMKSec = mk;
+      });
+      actualMonths = Math.max(1, nowMK - startMKSec + 1);
+    } else {
+      actualMonths = 1;
+    }
   }
 
   var visibleMonths = Math.max(3, actualMonths + 2, Math.min(goalMonths, actualMonths + 6));
