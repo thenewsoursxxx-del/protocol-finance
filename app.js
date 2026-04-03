@@ -1032,6 +1032,8 @@ function recalcPlan() {
  * Сохраняет все данные приложения через storage layer.
  * Синхронизирует глобальные переменные → appState → storage.
  */
+var _supabaseSaveTimer = null;
+
 function saveFullState() {
   var fixedIncomeEl = document.getElementById("fixedIncomeInput");
   var fixedExpenseEl = document.getElementById("fixedExpenseInput");
@@ -1059,7 +1061,18 @@ function saveFullState() {
     fixedIncomeAmount: fixedIncomeEl ? fixedIncomeEl.value.trim() : (getState().fixedIncomeAmount || ""),
     fixedExpenseAmount: fixedExpenseEl ? fixedExpenseEl.value.trim() : (getState().fixedExpenseAmount || "")
   });
-  saveState();
+  var serialized = saveState();
+
+  if (typeof window.saveAppState === "function") {
+    if (_supabaseSaveTimer) clearTimeout(_supabaseSaveTimer);
+    var stateSnapshot = JSON.parse(JSON.stringify(serialized));
+    _supabaseSaveTimer = setTimeout(function () {
+      _supabaseSaveTimer = null;
+      window.saveAppState(stateSnapshot).catch(function (err) {
+        console.error("[App] Supabase saveAppState ошибка:", err);
+      });
+    }, 1200);
+  }
 }
 
 /**
@@ -1236,8 +1249,36 @@ s.id === "buffer"
   }
 }
 
-// Загружаем сохранённые данные при запуске
+// Загружаем сохранённые данные при запуске (localStorage — мгновенно)
 loadFullState();
+
+// Async: попытка загрузить актуальное состояние из Supabase (remote source of truth)
+(function restoreStateFromSupabaseFirst() {
+  if (typeof window.loadAppState !== "function") return;
+
+  setTimeout(function () {
+    window.loadAppState().then(function (remoteData) {
+      if (!remoteData || typeof remoteData !== "object") {
+        console.log("[App] Supabase: удалённого состояния нет, используем localStorage.");
+        return;
+      }
+      try {
+        console.log("[App] Supabase: найдено удалённое состояние, применяем…");
+        storage.save(remoteData);
+        loadFullState();
+        setTimeout(function () {
+          repairAdviceScreenIfStuck();
+          ensureNavVisibleAfterRestore();
+        }, 200);
+        console.log("[App] Supabase: состояние успешно восстановлено из облака.");
+      } catch (e) {
+        console.error("[App] Supabase: ошибка при применении удалённого состояния:", e);
+      }
+    }).catch(function (err) {
+      console.error("[App] Supabase: loadAppState ошибка:", err);
+    });
+  }, 800);
+})();
 
 // Убираем зависший экран «Protocol анализирует данные…» (при повторном входе и при возврате без перезагрузки)
 function repairAdviceScreenIfStuck() {

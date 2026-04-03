@@ -250,6 +250,106 @@ async function getMyData() {
   }
 }
 
+/* ── saveAppState: save full app state to user_state table ── */
+async function saveAppState(state) {
+  try {
+    if (!initSupabaseClient()) {
+      console.warn("[Supabase] saveAppState: клиент не инициализирован, пропускаем.");
+      return;
+    }
+
+    var user = getTelegramUser();
+    if (!user) {
+      console.warn("[Supabase] saveAppState: нет Telegram-пользователя, пропускаем.");
+      return;
+    }
+
+    var payload = {
+      telegram_id: user.id,
+      data: state,
+      updated_at: new Date().toISOString()
+    };
+
+    var existing = await supabaseClient
+      .from("user_state")
+      .select("telegram_id")
+      .eq("telegram_id", user.id)
+      .maybeSingle();
+
+    if (existing.error) {
+      console.error("[Supabase] saveAppState select ошибка:", existing.error.message,
+        existing.error.code, existing.error.hint || "");
+      return;
+    }
+
+    var result;
+    if (existing.data) {
+      result = await supabaseClient
+        .from("user_state")
+        .update({ data: state, updated_at: payload.updated_at })
+        .eq("telegram_id", user.id);
+    } else {
+      result = await supabaseClient
+        .from("user_state")
+        .insert(payload);
+    }
+
+    if (result.error) {
+      console.error("[Supabase] saveAppState insert/update ошибка:", result.error.message,
+        result.error.code, result.error.hint || "",
+        result.error.details || "");
+      return;
+    }
+
+    console.log("[Supabase] saveAppState: состояние сохранено для telegram_id=" + user.id);
+
+  } catch (e) {
+    console.error("[Supabase] saveAppState exception:", e.name, e.message);
+  }
+}
+
+/* ── loadAppState: load saved app state from user_state table ── */
+async function loadAppState() {
+  try {
+    if (!initSupabaseClient()) {
+      console.warn("[Supabase] loadAppState: клиент не инициализирован.");
+      return null;
+    }
+
+    var user = getTelegramUser();
+    if (!user) {
+      console.warn("[Supabase] loadAppState: нет Telegram-пользователя.");
+      return null;
+    }
+
+    var result = await supabaseClient
+      .from("user_state")
+      .select("data")
+      .eq("telegram_id", user.id)
+      .maybeSingle();
+
+    if (result.error) {
+      console.error("[Supabase] loadAppState ошибка:", result.error.message,
+        result.error.code, result.error.hint || "");
+      return null;
+    }
+
+    if (result.data && result.data.data) {
+      console.log("[Supabase] loadAppState: состояние загружено для telegram_id=" + user.id);
+      return result.data.data;
+    }
+
+    console.log("[Supabase] loadAppState: нет сохранённого состояния для telegram_id=" + user.id);
+    return null;
+
+  } catch (e) {
+    console.error("[Supabase] loadAppState exception:", e.name, e.message);
+    return null;
+  }
+}
+
+window.saveAppState = saveAppState;
+window.loadAppState = loadAppState;
 window.saveCurrentUser = saveCurrentUser;
 window.getMyData = getMyData;
 

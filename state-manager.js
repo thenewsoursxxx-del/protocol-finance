@@ -385,6 +385,7 @@ function saveState() {
     derivedState: appState.derivedState || {}
   };
   storage.save(toSave);
+  return toSave;
 }
 
 function loadState() {
