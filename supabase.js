@@ -324,7 +324,7 @@ async function loadAppState() {
 
     var result = await supabaseClient
       .from("user_state")
-      .select("data")
+      .select("data, updated_at")
       .eq("telegram_id", user.id)
       .maybeSingle();
 
@@ -336,7 +336,10 @@ async function loadAppState() {
 
     if (result.data && result.data.data) {
       console.log("[Supabase] loadAppState: состояние загружено для telegram_id=" + user.id);
-      return result.data.data;
+      return {
+        data: result.data.data,
+        updated_at: result.data.updated_at || null
+      };
     }
 
     console.log("[Supabase] loadAppState: нет сохранённого состояния для telegram_id=" + user.id);

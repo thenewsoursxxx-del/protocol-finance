@@ -382,7 +382,8 @@ function saveState() {
       ? FinancialEvents.serialize()
       : (appState.financialEvents || []),
     cashflowEvents: serializeCashflowEvents(appState.cashflowEvents),
-    derivedState: appState.derivedState || {}
+    derivedState: appState.derivedState || {},
+    lastSavedAt: new Date().toISOString()
   };
   storage.save(toSave);
   return toSave;
@@ -512,6 +513,8 @@ function applyState(saved) {
   if (appState.planStartValue === 0 && appState.initialBalance > 0) {
     appState.planStartValue = appState.initialBalance;
   }
+
+  appState.lastSavedAt = saved.lastSavedAt || null;
 }
 
 function clearState() {

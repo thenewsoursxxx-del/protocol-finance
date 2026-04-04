@@ -1259,28 +1259,65 @@ loadFullState();
 
 (async () => {
   try {
-    if (window.loadAppState) {
-      const remote = await window.loadAppState();
-      if (remote) {
-        console.log("[Supabase] applying remote state");
+    if (!window.loadAppState) return;
 
-        updateState(remote);
-        saveState();
+    var remote = await window.loadAppState();
 
-        if (typeof recalcPlan === "function") recalcPlan();
-        if (typeof renderGoalsList === "function") renderGoalsList();
-        if (typeof updateUI === "function") updateUI();
-        if (typeof updateAllScreens === "function") updateAllScreens();
-
-        var active = document.querySelector(".screen.active");
-        if (active && typeof openScreen === "function") {
-          var name = active.id.replace("screen-", "");
-          openScreen(name);
-        }
-      }
+    if (!remote || !remote.data || typeof remote.data !== "object") {
+      console.log("[Sync] No remote state found");
+      return;
     }
+
+    var localState = loadState();
+
+    var localTimestamp = (localState && localState.lastSavedAt) ? localState.lastSavedAt : null;
+    var remoteTimestamp = (remote.data && remote.data.lastSavedAt)
+      ? remote.data.lastSavedAt
+      : (remote.updated_at || null);
+
+    console.log("[Sync] Local timestamp:", localTimestamp || "(none)");
+    console.log("[Sync] Remote timestamp:", remoteTimestamp || "(none)");
+
+    if (!localState) {
+      console.log("[Sync] No local state — applying remote state");
+      applyState(migrateState(remote.data));
+      saveState();
+      loadFullState();
+      return;
+    }
+
+    if (!remoteTimestamp) {
+      console.log("[Sync] No valid remote timestamp — keeping local state");
+      return;
+    }
+
+    var localDate = localTimestamp ? new Date(localTimestamp) : null;
+    var remoteDate = new Date(remoteTimestamp);
+
+    if (isNaN(remoteDate.getTime())) {
+      console.log("[Sync] Invalid remote timestamp — keeping local state");
+      return;
+    }
+
+    if (!localDate || isNaN(localDate.getTime())) {
+      console.log("[Sync] Invalid or missing local timestamp — applying remote state");
+      applyState(migrateState(remote.data));
+      saveState();
+      loadFullState();
+      return;
+    }
+
+    if (remoteDate.getTime() > localDate.getTime()) {
+      console.log("[Sync] Remote is newer — applying remote state");
+      applyState(migrateState(remote.data));
+      saveState();
+      loadFullState();
+    } else {
+      console.log("[Sync] Keeping local state (local is newer or equal)");
+    }
+
   } catch (e) {
-    console.error("[App] loadAppState:", e);
+    console.error("[Sync] Error during remote state comparison:", e);
   }
 })();
 
