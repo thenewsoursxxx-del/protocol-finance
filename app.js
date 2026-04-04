@@ -1032,8 +1032,6 @@ function recalcPlan() {
  * Сохраняет все данные приложения через storage layer.
  * Синхронизирует глобальные переменные → appState → storage.
  */
-var _supabaseSaveTimer = null;
-
 function saveFullState() {
   var fixedIncomeEl = document.getElementById("fixedIncomeInput");
   var fixedExpenseEl = document.getElementById("fixedExpenseInput");
@@ -1061,17 +1059,15 @@ function saveFullState() {
     fixedIncomeAmount: fixedIncomeEl ? fixedIncomeEl.value.trim() : (getState().fixedIncomeAmount || ""),
     fixedExpenseAmount: fixedExpenseEl ? fixedExpenseEl.value.trim() : (getState().fixedExpenseAmount || "")
   });
-  var serialized = saveState();
+  saveState();
 
-  if (typeof window.saveAppState === "function") {
-    if (_supabaseSaveTimer) clearTimeout(_supabaseSaveTimer);
-    var stateSnapshot = JSON.parse(JSON.stringify(serialized));
-    _supabaseSaveTimer = setTimeout(function () {
-      _supabaseSaveTimer = null;
-      window.saveAppState(stateSnapshot).catch(function (err) {
-        console.error("[App] Supabase saveAppState ошибка:", err);
+  if (window.saveAppState) {
+    var p = window.saveAppState(getState());
+    if (p && typeof p.catch === "function") {
+      p.catch(function (err) {
+        console.error("[App] saveAppState:", err);
       });
-    }, 1200);
+    }
   }
 }
 
@@ -1249,35 +1245,27 @@ s.id === "buffer"
   }
 }
 
-// Загружаем сохранённые данные при запуске (localStorage — мгновенно)
+// Загружаем сохранённые данные при запуске
 loadFullState();
 
-// Async: попытка загрузить актуальное состояние из Supabase (remote source of truth)
-(function restoreStateFromSupabaseFirst() {
-  if (typeof window.loadAppState !== "function") return;
-
-  setTimeout(function () {
-    window.loadAppState().then(function (remoteData) {
-      if (!remoteData || typeof remoteData !== "object") {
-        console.log("[App] Supabase: удалённого состояния нет, используем localStorage.");
-        return;
+(async () => {
+  try {
+    if (sessionStorage.getItem("protocol_skip_supabase_reload")) {
+      sessionStorage.removeItem("protocol_skip_supabase_reload");
+      return;
+    }
+    if (window.loadAppState) {
+      const remote = await window.loadAppState();
+      if (remote) {
+        updateState(remote);
+        saveState();
+        sessionStorage.setItem("protocol_skip_supabase_reload", "1");
+        location.reload();
       }
-      try {
-        console.log("[App] Supabase: найдено удалённое состояние, применяем…");
-        storage.save(remoteData);
-        loadFullState();
-        setTimeout(function () {
-          repairAdviceScreenIfStuck();
-          ensureNavVisibleAfterRestore();
-        }, 200);
-        console.log("[App] Supabase: состояние успешно восстановлено из облака.");
-      } catch (e) {
-        console.error("[App] Supabase: ошибка при применении удалённого состояния:", e);
-      }
-    }).catch(function (err) {
-      console.error("[App] Supabase: loadAppState ошибка:", err);
-    });
-  }, 800);
+    }
+  } catch (e) {
+    console.error("[App] loadAppState:", e);
+  }
 })();
 
 // Убираем зависший экран «Protocol анализирует данные…» (при повторном входе и при возврате без перезагрузки)
