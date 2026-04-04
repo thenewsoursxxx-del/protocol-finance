@@ -1059,10 +1059,10 @@ function saveFullState() {
     fixedIncomeAmount: fixedIncomeEl ? fixedIncomeEl.value.trim() : (getState().fixedIncomeAmount || ""),
     fixedExpenseAmount: fixedExpenseEl ? fixedExpenseEl.value.trim() : (getState().fixedExpenseAmount || "")
   });
-  saveState();
+  var serialized = saveState();
 
-  if (window.saveAppState) {
-    var p = window.saveAppState(getState());
+  if (window.saveAppState && serialized) {
+    var p = window.saveAppState(serialized);
     if (p && typeof p.catch === "function") {
       p.catch(function (err) {
         console.error("[App] saveAppState:", err);
@@ -1250,17 +1250,24 @@ loadFullState();
 
 (async () => {
   try {
-    if (sessionStorage.getItem("protocol_skip_supabase_reload")) {
-      sessionStorage.removeItem("protocol_skip_supabase_reload");
-      return;
-    }
     if (window.loadAppState) {
       const remote = await window.loadAppState();
       if (remote) {
+        console.log("[Supabase] applying remote state");
+
         updateState(remote);
         saveState();
-        sessionStorage.setItem("protocol_skip_supabase_reload", "1");
-        location.reload();
+
+        if (typeof recalcPlan === "function") recalcPlan();
+        if (typeof renderGoalsList === "function") renderGoalsList();
+        if (typeof updateUI === "function") updateUI();
+        if (typeof updateAllScreens === "function") updateAllScreens();
+
+        var active = document.querySelector(".screen.active");
+        if (active && typeof openScreen === "function") {
+          var name = active.id.replace("screen-", "");
+          openScreen(name);
+        }
       }
     }
   } catch (e) {
