@@ -328,7 +328,7 @@ function getGoals() {
 /** Writes goals array back into state-manager and persists. */
 function persistGoals(goals) {
   updateState({ goals: goals.map(function (g) { return { ...g }; }) });
-  saveState();
+  saveFullState();
 }
 
 function syncGoalsFromPrimary() {
@@ -738,7 +738,7 @@ function applyDebtRepayment(amount) {
   var totalApplied = amount - remaining;
   if (totalApplied > 0) {
     updateState({ debts: debts });
-    saveState();
+    saveFullState();
   }
 
   return { applied: totalApplied, details: details };
@@ -771,7 +771,7 @@ function addDebtPaymentRecord(opts) {
     savingsPart: opts.savingsPart || 0
   });
   updateState({ debtPaymentHistory: history });
-  saveState();
+  saveFullState();
 }
 
 var _debtBreakdownTimer = null;
@@ -849,7 +849,7 @@ function advanceDebtPeriods() {
 
   if (changed) {
     updateState({ debts: debts });
-    saveState();
+    saveFullState();
   }
 }
 
@@ -933,7 +933,7 @@ function applyAutoDebtRepayment(amount) {
   var totalApplied = pool - remaining;
   if (totalApplied > 0) {
     updateState({ debts: debts });
-    saveState();
+    saveFullState();
   }
 
   return { applied: totalApplied, details: details };
@@ -1031,7 +1031,11 @@ function recalcPlan() {
 /**
  * Сохраняет все данные приложения через storage layer.
  * Синхронизирует глобальные переменные → appState → storage.
+ * localStorage — мгновенно. Supabase — через debounce (1 с).
  */
+var _supabaseSaveTimer = null;
+var SUPABASE_SAVE_DELAY = 1000;
+
 function saveFullState() {
   var fixedIncomeEl = document.getElementById("fixedIncomeInput");
   var fixedExpenseEl = document.getElementById("fixedExpenseInput");
@@ -1062,12 +1066,17 @@ function saveFullState() {
   var serialized = saveState();
 
   if (window.saveAppState && serialized) {
-    var p = window.saveAppState(serialized);
-    if (p && typeof p.catch === "function") {
-      p.catch(function (err) {
-        console.error("[App] saveAppState:", err);
-      });
-    }
+    if (_supabaseSaveTimer) clearTimeout(_supabaseSaveTimer);
+    var snapshot = JSON.parse(JSON.stringify(serialized));
+    _supabaseSaveTimer = setTimeout(function () {
+      _supabaseSaveTimer = null;
+      var p = window.saveAppState(snapshot);
+      if (p && typeof p.catch === "function") {
+        p.catch(function (err) {
+          console.error("[App] saveAppState:", err);
+        });
+      }
+    }, SUPABASE_SAVE_DELAY);
   }
 }
 
@@ -1527,7 +1536,7 @@ const navScreens = ["calc", "advice", "accounts", "goals", "ai"];
 if (navScreens.includes(name) && isInitialized) {
   const navIndex = navScreens.indexOf(name);
   updateState({ lastActiveScreen: name, lastActiveNavIndex: navIndex });
-  saveState();
+  saveFullState();
 }
 
 if (name === "advice") syncFlexibleUI();
@@ -2366,7 +2375,7 @@ function checkGoalCompletion() {
     }
     persistGoals(goals);
     updateState({ completedGoals: completed });
-    saveState();
+    saveFullState();
     if (activeGoalIndex >= goals.length) activeGoalIndex = goals.length - 1;
   }
 }
@@ -4758,7 +4767,7 @@ renderAccountBackCards();
     if (index < 0 || index >= goals.length) return;
     activeGoalIndex = index;
     updateState({ activeGoalIndex: index });
-    saveState();
+    saveFullState();
     if (typeof ProtocolGraph !== "undefined" && ProtocolGraph.hideTooltip) ProtocolGraph.hideTooltip();
     recalcPlan();
     resetAccountFlips();
@@ -5891,7 +5900,7 @@ function goalSwipeToIndex(idx, goLeft) {
     } else {
       activeGoalIndex = idx;
       updateState({ activeGoalIndex: idx });
-      saveState();
+      saveFullState();
     }
     renderGoals();
 
@@ -6119,7 +6128,7 @@ function goalSwipeToIndex(idx, goLeft) {
 
   function persistDebts(debts) {
     updateState({ debts: debts.map(function (d) { return { ...d }; }) });
-    saveState();
+    saveFullState();
   }
 
   function openDebtsScreen() {
@@ -6197,7 +6206,7 @@ function goalSwipeToIndex(idx, goLeft) {
     if (debts.length === 0) { _activeDebtIdx = 0; return; }
     _activeDebtIdx = Math.max(0, Math.min(idx, debts.length - 1));
     updateState({ activeDebtIndex: _activeDebtIdx });
-    saveState();
+    saveFullState();
   }
 
   function renderDebtCard(d) {
@@ -6511,7 +6520,7 @@ function goalSwipeToIndex(idx, goLeft) {
     debtEntryNo.addEventListener("click", function () {
       if (typeof haptic === "function") haptic("light");
       updateState({ debtOverlaySeen: true });
-      saveState();
+      saveFullState();
       if (debtEntryOverlay) debtEntryOverlay.classList.remove("visible");
       showToast("Вы можете рассчитать кредиты и долги, чтобы protocol учёл их в своей системе.", "info", { duration: 6000, screenScope: "debts" });
     });
@@ -6521,7 +6530,7 @@ function goalSwipeToIndex(idx, goLeft) {
     debtEntryYes.addEventListener("click", function () {
       if (typeof haptic === "function") haptic("light");
       updateState({ debtOverlaySeen: true });
-      saveState();
+      saveFullState();
       if (debtEntryOverlay) debtEntryOverlay.classList.remove("visible");
       showToast("Вы можете рассчитать кредиты и долги точнее, если сумма расходов была указана приблизительно.", "info", { duration: 6000, screenScope: "debts" });
     });
@@ -6633,7 +6642,7 @@ function goalSwipeToIndex(idx, goLeft) {
       if (typeof haptic === "function") haptic("light");
       var enabled = debtPlanningToggle.checked;
       updateState({ debtPlanningMode: enabled });
-      saveState();
+      saveFullState();
       renderDebtSummary();
       updateDebtModeUI();
       recalcWithDebts();
@@ -7247,7 +7256,7 @@ function goalSwipeToIndex(idx, goLeft) {
       var log = Array.isArray(s.expensesLog) ? s.expensesLog.slice() : [];
       log.push(entry);
       updateState({ expensesLog: log });
-      saveState();
+      saveFullState();
 
       closeExpenseSheet();
       renderExpensesScreen();
