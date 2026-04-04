@@ -1661,18 +1661,22 @@ type === "reserve"
 ? f.to === "reserve"
 : f.to === "main"
 )
-.map(f => ({
-value: f.value,
-date: new Date(f.date),
-isInitial: false,
-isSpent: f.value < 0
-}));
+.map(f => {
+var displayDate = f.timestamp ? new Date(f.timestamp) : new Date(f.date);
+if (isNaN(displayDate.getTime())) displayDate = new Date();
+return {
+  value: f.value,
+  date: displayDate,
+  isInitial: false,
+  isSpent: f.value < 0
+};
+});
 
 // 2️⃣ добавляем стартовый баланс как самую старую запись
 if (type === "main" && initialBalance > 0) {
 entries.push({
 value: initialBalance,
-date: new Date(0), // 1970 год — гарантированно самый старый
+date: new Date(0),
 isInitial: true
 });
 }
@@ -1693,6 +1697,10 @@ entries.sort((a, b) => b.date - a.date);
 
 // 5️⃣ рисуем
 entries.forEach(e => {
+var dd = String(e.date.getDate()).padStart(2, "0");
+var mm = String(e.date.getMonth() + 1).padStart(2, "0");
+var yyyy = e.date.getFullYear();
+var formatted = dd + "." + mm + "." + yyyy;
 
 if (e.isInitial) {
 list.innerHTML += `
@@ -1712,7 +1720,7 @@ list.innerHTML += `
 −${Math.abs(e.value).toLocaleString()} ₽
 </div>
 <div style="font-size:13px;opacity:.6;margin-top:4px">
-${e.date.toLocaleDateString("ru-RU")}
+${formatted}
 </div>
 <div style="font-size:12px;opacity:.7;margin-top:2px">
 Незапланированный расход
@@ -1726,7 +1734,7 @@ list.innerHTML += `
 +${e.value.toLocaleString()} ₽
 </div>
 <div style="font-size:13px;opacity:.6;margin-top:4px">
-${e.date.toLocaleDateString("ru-RU")}
+${formatted}
 </div>
 </div>
 `;
@@ -2046,8 +2054,10 @@ style="width:52px;height:52px;border-radius:50%">
       }
 
       const now = new Date();
-      now.setDate(1);
-      now.setHours(0, 0, 0, 0);
+      const realTimestamp = now.toISOString();
+      const periodDate = new Date(now);
+      periodDate.setDate(1);
+      periodDate.setHours(0, 0, 0, 0);
 
       var goals = getGoals();
       var alloc = allocateFactByPriority(goals, distributable);
@@ -2057,14 +2067,14 @@ style="width:52px;height:52px;border-radius:50%">
         var g = getGoalById(entry.goalId);
         if (!g) return;
         if (g.priority === 1 || goals.indexOf(g) === 0) {
-          factHistory.push({ value: entry.amount, date: now, to: "main" });
+          factHistory.push({ value: entry.amount, date: periodDate, to: "main", timestamp: realTimestamp });
         } else {
           g.saved = (g.saved || 0) + entry.amount;
         }
       });
 
       if (toReserve > 0) {
-        factHistory.push({ value: toReserve, date: now, to: "reserve" });
+        factHistory.push({ value: toReserve, date: periodDate, to: "reserve", timestamp: realTimestamp });
       }
 
       factRatio = fact / plannedMonthly;
@@ -3877,12 +3887,15 @@ function applyFinancialEvent(source, amount) {
 
   if (source !== "skip") {
     const now = new Date();
-    now.setDate(1);
-    now.setHours(0, 0, 0, 0);
+    const realTimestamp = now.toISOString();
+    const periodDate = new Date(now);
+    periodDate.setDate(1);
+    periodDate.setHours(0, 0, 0, 0);
     factHistory.push({
       value: -amount,
-      date: now,
-      to: source === "reserve" ? "reserve" : "main"
+      date: periodDate,
+      to: source === "reserve" ? "reserve" : "main",
+      timestamp: realTimestamp
     });
   }
 
@@ -4477,9 +4490,10 @@ if (eventSubmitBtn) {
       updateState({ cashflowEvents: evtsExp });
 
       var now = new Date(eventDate);
+      var realTimestamp = new Date().toISOString();
       now.setDate(1);
       now.setHours(0, 0, 0, 0);
-      factHistory.push({ value: -rawAmount, date: now, to: "main" });
+      factHistory.push({ value: -rawAmount, date: now, to: "main", timestamp: realTimestamp });
     }
 
     haptic("success");

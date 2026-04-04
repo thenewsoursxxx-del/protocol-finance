@@ -15,6 +15,41 @@
  * CDN-скрипт в index.html:
  *   https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js
  * Он создаёт глобальный объект window.supabase с методом createClient.
+ *
+ * ── SECURITY MODE: CLIENT-TRUST (DEVELOPMENT / INTERNAL BETA) ──
+ *
+ * Current implementation trusts the Telegram user identity provided by
+ * window.Telegram.WebApp.initDataUnsafe on the client side.
+ * This is acceptable for local testing and internal beta, but NOT
+ * suitable for public production because a malicious client can spoof
+ * the telegram_id and read/write another user's data.
+ *
+ * For production, the secure path is:
+ *   1. Client sends raw Telegram initData string to a backend
+ *      (Supabase Edge Function, Cloudflare Worker, own server, etc.)
+ *   2. Backend validates initData with the bot secret (HMAC-SHA-256)
+ *      per https://core.telegram.org/bots/webapps#validating-data
+ *   3. Backend resolves the verified telegram_id and either:
+ *      a) returns a signed JWT / session token to the client, or
+ *      b) performs the DB operation itself on behalf of the user
+ *   4. Supabase RLS policies restrict rows to the verified identity
+ *
+ * The single future upgrade point is getVerifiedUserIdentity().
+ * When a verification backend is ready, only that function needs
+ * to change — all save/load functions already depend on it.
+ *
+ * ── RLS PREPARATION (NEXT PRODUCTION STEP) ──
+ *
+ * Tables used: `users`, `user_state`
+ * Both are currently accessed with the anon key and NO RLS.
+ *
+ * Recommended steps before going fully public:
+ *   - Enable RLS on `users` and `user_state`
+ *   - Create policies that restrict SELECT/INSERT/UPDATE to rows
+ *     matching the authenticated user's telegram_id
+ *   - Move writes behind a verified server-side identity
+ *     (Edge Function that validates initData → performs DB ops)
+ *   - Do NOT rely permanently on unrestricted client writes
  */
 
 var SUPABASE_URL = "https://cztfcseyzezincbwotvt.supabase.co";
@@ -127,17 +162,63 @@ function initSupabaseClient() {
   }
 }
 
-function getTelegramUser() {
+/* ── Centralized Telegram identity extraction ── */
+
+function getTelegramIdentity() {
   if (!window.Telegram || !window.Telegram.WebApp) {
-    console.warn("[Supabase] Telegram WebApp не доступен.");
+    console.warn("[Identity] Telegram WebApp не доступен.");
     return null;
   }
   var ud = window.Telegram.WebApp.initDataUnsafe;
   if (!ud || !ud.user || ud.user.id == null) {
-    console.warn("[Supabase] initDataUnsafe.user отсутствует (браузер без Telegram).");
+    console.warn("[Identity] initDataUnsafe.user отсутствует (браузер без Telegram).");
     return null;
   }
-  return ud.user;
+
+  var rawId = ud.user.id;
+  var numId = Number(rawId);
+  if (!Number.isFinite(numId) || numId <= 0 || Math.floor(numId) !== numId) {
+    console.warn("[Identity] telegram_id не является валидным целым числом:", rawId);
+    return null;
+  }
+
+  return {
+    telegram_id: numId,
+    username:    ud.user.username   || null,
+    first_name:  ud.user.first_name || null,
+    last_name:   ud.user.last_name  || null
+  };
+}
+
+/**
+ * Single future upgrade point for verified user identity.
+ *
+ * Currently returns the client-side Telegram identity directly.
+ * When a verification backend is ready (Edge Function / own server),
+ * this function should:
+ *   1. Send window.Telegram.WebApp.initData to the backend
+ *   2. Backend validates HMAC-SHA-256 with bot secret
+ *   3. Backend returns verified { telegram_id, ... }
+ *   4. This function returns that verified identity
+ *
+ * All save/load functions depend on this single entry point,
+ * so upgrading to server verification requires changing only here.
+ */
+async function getVerifiedUserIdentity() {
+  // TODO: replace with server-side initData verification
+  return getTelegramIdentity();
+}
+
+/* ── Backward-compatible alias (used by app.js for UI-only access) ── */
+function getTelegramUser() {
+  var identity = getTelegramIdentity();
+  if (!identity) return null;
+  return {
+    id:         identity.telegram_id,
+    username:   identity.username,
+    first_name: identity.first_name,
+    last_name:  identity.last_name
+  };
 }
 
 async function saveCurrentUser() {
@@ -145,20 +226,18 @@ async function saveCurrentUser() {
 
   if (!initSupabaseClient()) return;
 
-  var user = getTelegramUser();
-  if (!user) return;
+  var identity = await getVerifiedUserIdentity();
+  if (!identity) return;
 
   var row = {
-    telegram_id: user.id,
-    username:    user.username   || null,
-    first_name:  user.first_name || null,
-    last_name:   user.last_name  || null
+    telegram_id: identity.telegram_id,
+    username:    identity.username,
+    first_name:  identity.first_name,
+    last_name:   identity.last_name
   };
 
   console.log("[Supabase] save row:", JSON.stringify(row));
 
-  // Без upsert/onConflict: нужен UNIQUE/PK на telegram_id, иначе 42P10.
-  // Делаем «псевдо-upsert»: есть строка → update, нет → insert.
   var maxRetries = 3;
   for (var attempt = 1; attempt <= maxRetries; attempt++) {
     try {
@@ -226,14 +305,14 @@ async function getMyData() {
 
   if (!initSupabaseClient()) return null;
 
-  var user = getTelegramUser();
-  if (!user) return null;
+  var identity = await getVerifiedUserIdentity();
+  if (!identity) return null;
 
   try {
     var result = await supabaseClient
       .from("users")
       .select("*")
-      .eq("telegram_id", user.id)
+      .eq("telegram_id", identity.telegram_id)
       .maybeSingle();
 
     if (result.error) {
@@ -258,14 +337,15 @@ async function saveAppState(state) {
       return;
     }
 
-    var user = getTelegramUser();
-    if (!user) {
-      console.warn("[Supabase] saveAppState: нет Telegram-пользователя, пропускаем.");
+    var identity = await getVerifiedUserIdentity();
+    if (!identity) {
+      console.warn("[Supabase] saveAppState: нет пользователя, пропускаем.");
       return;
     }
 
+    var tid = identity.telegram_id;
     var payload = {
-      telegram_id: user.id,
+      telegram_id: tid,
       data: state,
       updated_at: new Date().toISOString()
     };
@@ -273,7 +353,7 @@ async function saveAppState(state) {
     var existing = await supabaseClient
       .from("user_state")
       .select("telegram_id")
-      .eq("telegram_id", user.id)
+      .eq("telegram_id", tid)
       .maybeSingle();
 
     if (existing.error) {
@@ -287,7 +367,7 @@ async function saveAppState(state) {
       result = await supabaseClient
         .from("user_state")
         .update({ data: state, updated_at: payload.updated_at })
-        .eq("telegram_id", user.id);
+        .eq("telegram_id", tid);
     } else {
       result = await supabaseClient
         .from("user_state")
@@ -301,7 +381,7 @@ async function saveAppState(state) {
       return;
     }
 
-    console.log("[Supabase] saveAppState: состояние сохранено для telegram_id=" + user.id);
+    console.log("[Supabase] saveAppState: состояние сохранено для telegram_id=" + tid);
 
   } catch (e) {
     console.error("[Supabase] saveAppState exception:", e.name, e.message);
@@ -316,16 +396,17 @@ async function loadAppState() {
       return null;
     }
 
-    var user = getTelegramUser();
-    if (!user) {
-      console.warn("[Supabase] loadAppState: нет Telegram-пользователя.");
+    var identity = await getVerifiedUserIdentity();
+    if (!identity) {
+      console.warn("[Supabase] loadAppState: нет пользователя.");
       return null;
     }
 
+    var tid = identity.telegram_id;
     var result = await supabaseClient
       .from("user_state")
       .select("data, updated_at")
-      .eq("telegram_id", user.id)
+      .eq("telegram_id", tid)
       .maybeSingle();
 
     if (result.error) {
@@ -335,14 +416,14 @@ async function loadAppState() {
     }
 
     if (result.data && result.data.data) {
-      console.log("[Supabase] loadAppState: состояние загружено для telegram_id=" + user.id);
+      console.log("[Supabase] loadAppState: состояние загружено для telegram_id=" + tid);
       return {
         data: result.data.data,
         updated_at: result.data.updated_at || null
       };
     }
 
-    console.log("[Supabase] loadAppState: нет сохранённого состояния для telegram_id=" + user.id);
+    console.log("[Supabase] loadAppState: нет сохранённого состояния для telegram_id=" + tid);
     return null;
 
   } catch (e) {
@@ -351,6 +432,8 @@ async function loadAppState() {
   }
 }
 
+window.getTelegramIdentity = getTelegramIdentity;
+window.getVerifiedUserIdentity = getVerifiedUserIdentity;
 window.saveAppState = saveAppState;
 window.loadAppState = loadAppState;
 window.saveCurrentUser = saveCurrentUser;

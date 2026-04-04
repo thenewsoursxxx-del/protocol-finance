@@ -302,18 +302,19 @@ function migrateState(saved) {
 // ─── Serialization Helpers ────────────────────────────────────
 
 function serializeFactHistory(history) {
-  return history.map(({ value, date, to }) => ({
+  return history.map(({ value, date, to, timestamp }) => ({
     value: Number(value) || 0,
     date: date instanceof Date
       ? date.toISOString()
       : (typeof date === "string" ? date : new Date().toISOString()),
-    to: to || "main"
+    to: to || "main",
+    timestamp: timestamp || null
   }));
 }
 
 function deserializeFactHistory(arr) {
   if (!Array.isArray(arr)) return [];
-  return arr.map(({ value, date, to }) => {
+  return arr.map(({ value, date, to, timestamp }) => {
     let parsedDate;
     if (date) {
       parsedDate = new Date(date);
@@ -327,10 +328,18 @@ function deserializeFactHistory(arr) {
       parsedDate.setDate(1);
       parsedDate.setHours(0, 0, 0, 0);
     }
+
+    var ts = timestamp || null;
+    if (!ts && date) {
+      var fallback = new Date(date);
+      if (!isNaN(fallback.getTime())) ts = fallback.toISOString();
+    }
+
     return {
       value: Number(value) || 0,
       date: parsedDate,
-      to: to || "main"
+      to: to || "main",
+      timestamp: ts
     };
   });
 }
