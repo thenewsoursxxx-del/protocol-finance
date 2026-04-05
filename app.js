@@ -3954,6 +3954,18 @@ function shakeFlexHint() {
   setTimeout(function () { hint.classList.remove("shake"); }, 400);
 }
 
+function cfFlowFreqLabel(freq, days) {
+  switch (freq) {
+    case "weekly": return "раз в неделю";
+    case "biweekly": return "раз в 2 недели";
+    case "monthly": return "ежемесячно";
+    case "custom":
+      var daysStr = Array.isArray(days) && days.length ? days.join(", ") + " числа" : "свой график";
+      return daysStr;
+    default: return "ежемесячно";
+  }
+}
+
 function syncFlexibleUI() {
   var unconfigured = isFlexibleUnconfigured();
   var noData = isCashflowNoData();
@@ -4039,6 +4051,23 @@ function syncFlexibleUI() {
     } else {
       reportEl.style.display = "none";
     }
+  }
+
+  // ── In-panel flow summary ──
+  var flowSummary = document.getElementById("cfFlowSummary");
+  var flowText = document.getElementById("cfFlowSummaryText");
+  if (flowSummary && flowText) {
+    var incType = s.incomeType || "fixed";
+    var expType = s.expenseType || "fixed";
+    var incSummary = incType === "fixed"
+      ? "фиксированный"
+      : cfFlowFreqLabel(s.incomeFrequency, s.incomeMonthDays);
+    var expSummary = expType === "fixed"
+      ? "фиксированные"
+      : cfFlowFreqLabel(s.expenseFrequency, s.expenseMonthDays);
+    flowText.innerHTML =
+      '<div class="cf-summary-row"><span class="cf-summary-dot"></span>Доход: ' + incSummary + '</div>' +
+      '<div class="cf-summary-row"><span class="cf-summary-dot"></span>Расходы: ' + expSummary + '</div>';
   }
 }
 

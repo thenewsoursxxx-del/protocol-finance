@@ -2720,6 +2720,109 @@ body.flip-fix-pending .flip-wrapper {
   display: flex;
 }
 
+/* ── Card-based flow layout ── */
+
+.cf-card {
+  padding: 16px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 12px;
+}
+
+.cf-card:last-child {
+  margin-bottom: 0;
+}
+
+.cf-card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.cf-step-num {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  color: #6ee7b7;
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1px;
+}
+
+.cf-step-num--check {
+  background: rgba(16, 185, 129, 0.25);
+  font-size: 14px;
+}
+
+.cf-card-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+  line-height: 1.3;
+}
+
+.cf-card-subtitle {
+  font-size: 13px;
+  opacity: 0.5;
+  margin-top: 2px;
+  line-height: 1.3;
+}
+
+.cf-freq-label {
+  font-size: 13px;
+  opacity: 0.6;
+  margin-bottom: 10px;
+  font-weight: 500;
+}
+
+/* ── Summary card ── */
+
+.cf-card--summary {
+  background: rgba(16, 185, 129, 0.06);
+  border-color: rgba(16, 185, 129, 0.2);
+}
+
+.cf-summary-text {
+  font-size: 14px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.cf-summary-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cf-summary-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #6ee7b7;
+  flex-shrink: 0;
+}
+
+/* ── Events card ── */
+
+.cf-card--events {
+  background: rgba(58, 123, 253, 0.04);
+  border-color: rgba(58, 123, 253, 0.18);
+}
+
+.cf-card--events .add-event-btn {
+  margin-top: 0;
+}
+
+/* ── Legacy compat ── */
+
 .cf-group {
   margin-bottom: 16px;
 }
@@ -2755,7 +2858,8 @@ body.flip-fix-pending .flip-wrapper {
   white-space: nowrap;
 }
 
-.cf-group .toggle-group .mode-btn.active {
+.cf-group .toggle-group .mode-btn.active,
+.cf-card .toggle-group .mode-btn.active {
   background: #fff;
   color: #000;
   opacity: 1;
@@ -2789,14 +2893,18 @@ body.flip-fix-pending .flip-wrapper {
   overflow: hidden;
   transition: max-height 0.4s cubic-bezier(.22,1,.36,1),
               opacity 0.3s ease,
-              margin 0.3s ease;
+              margin 0.3s ease,
+              padding 0.3s ease;
   margin-top: 0;
+  padding-top: 0;
 }
 
 .frequency-selector.visible {
   max-height: 380px;
   opacity: 1;
-  margin-top: 16px;
+  margin-top: 4px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .freq-grid {
