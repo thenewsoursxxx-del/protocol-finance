@@ -66,8 +66,8 @@ function getDefaultState() {
     // ── Premium (v4) ──
     isPremium: false,
 
-    // ── Flexible onboarding (v5) ──
-    hasSeenFlexibleOnboarding: false,
+    // ── Flexible onboarding (v5) — legacy, always true after redesign ──
+    hasSeenFlexibleOnboarding: true,
     incomeMonthDays: [],
     expenseMonthDays: [],
 
@@ -215,7 +215,7 @@ function migrateState(saved) {
   // v4 → v5: flexible onboarding + monthDays
   if (version < 5) {
     saved.stateVersion = 5;
-    if (typeof saved.hasSeenFlexibleOnboarding !== "boolean") saved.hasSeenFlexibleOnboarding = false;
+    if (typeof saved.hasSeenFlexibleOnboarding !== "boolean") saved.hasSeenFlexibleOnboarding = true;
     if (!Array.isArray(saved.incomeMonthDays)) saved.incomeMonthDays = [];
     if (!Array.isArray(saved.expenseMonthDays)) saved.expenseMonthDays = [];
   }

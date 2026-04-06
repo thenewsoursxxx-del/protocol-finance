@@ -135,14 +135,18 @@ viewport-fit=cover" />
     <div class="flexible-content-inner">
 
     <!-- Step 1: Income -->
-    <div class="cf-card">
+    <div class="cf-card cf-card--configured" id="cfCardIncome">
       <div class="cf-card-header">
         <div class="cf-step-num">1</div>
-        <div>
+        <div class="cf-card-header-text">
           <div class="cf-card-title">Ваш доход</div>
           <div class="cf-card-subtitle">Как вы получаете деньги?</div>
         </div>
+        <div class="cf-card-status" id="incomeCardStatus">
+          <span class="cf-status-dot"></span>Настроено
+        </div>
       </div>
+      <div class="cf-micro-hint">Это нужно, чтобы точно понимать, когда у вас появляются деньги</div>
       <div class="toggle-group cf-toggle-income" id="incomeToggle">
         <button class="mode-btn active" data-value="fixed">Фиксированный</button>
         <button class="mode-btn" data-value="variable">Нефиксированный</button>
@@ -153,7 +157,7 @@ viewport-fit=cover" />
         </div>
       </div>
       <div id="incomeFrequencySelector" class="frequency-selector" data-for="income">
-        <div class="cf-freq-label">Как часто?</div>
+        <div class="cf-freq-label">Как часто вы получаете доход?</div>
         <div class="freq-grid">
           <button class="freq-btn active" data-freq="monthly">Ежемесячно</button>
           <button class="freq-btn" data-freq="weekly">Раз в неделю</button>
@@ -161,22 +165,27 @@ viewport-fit=cover" />
           <button class="freq-btn" data-freq="custom">Свой график</button>
         </div>
         <div class="monthdays-input" id="incomeMonthDaysWrap" style="display:none">
-          <div class="cf-hint" style="margin-top:8px">Выберите даты — учитывается день месяца</div>
+          <div class="cf-hint" style="margin-top:8px">Выберите дни месяца, когда приходит доход</div>
           <input type="date" id="incomeMonthDaysDate" class="monthdays-date-input" />
           <div id="incomeMonthDaysList" class="monthdays-list"></div>
         </div>
       </div>
+      <div class="cf-card-inline-summary" id="incomeInlineSummary"></div>
     </div>
 
     <!-- Step 2: Expenses -->
-    <div class="cf-card">
+    <div class="cf-card cf-card--configured" id="cfCardExpense">
       <div class="cf-card-header">
         <div class="cf-step-num">2</div>
-        <div>
+        <div class="cf-card-header-text">
           <div class="cf-card-title">Ваши расходы</div>
           <div class="cf-card-subtitle">Как происходят ваши расходы?</div>
         </div>
+        <div class="cf-card-status" id="expenseCardStatus">
+          <span class="cf-status-dot"></span>Настроено
+        </div>
       </div>
+      <div class="cf-micro-hint">Это влияет на расчёт свободных средств и срок достижения цели</div>
       <div class="toggle-group cf-toggle-expense" id="expenseToggle">
         <button class="mode-btn active" data-value="fixed">Фиксированный</button>
         <button class="mode-btn" data-value="variable">Нефиксированный</button>
@@ -187,7 +196,7 @@ viewport-fit=cover" />
         </div>
       </div>
       <div id="expenseFrequencySelector" class="frequency-selector" data-for="expense">
-        <div class="cf-freq-label">Как часто?</div>
+        <div class="cf-freq-label">Как часто вы тратите деньги?</div>
         <div class="freq-grid">
           <button class="freq-btn active" data-freq="monthly">Ежемесячно</button>
           <button class="freq-btn" data-freq="weekly">Раз в неделю</button>
@@ -195,11 +204,12 @@ viewport-fit=cover" />
           <button class="freq-btn" data-freq="custom">Свой график</button>
         </div>
         <div class="monthdays-input" id="expenseMonthDaysWrap" style="display:none">
-          <div class="cf-hint" style="margin-top:8px">Выберите даты — учитывается день месяца</div>
+          <div class="cf-hint" style="margin-top:8px">Выберите дни месяца, когда происходят расходы</div>
           <input type="date" id="expenseMonthDaysDate" class="monthdays-date-input" />
           <div id="expenseMonthDaysList" class="monthdays-list"></div>
         </div>
       </div>
+      <div class="cf-card-inline-summary" id="expenseInlineSummary"></div>
     </div>
 
     <!-- Step 3: Summary -->
@@ -215,11 +225,12 @@ viewport-fit=cover" />
     <div class="cf-card cf-card--events">
       <div class="cf-card-header">
         <div class="cf-step-num">3</div>
-        <div>
+        <div class="cf-card-header-text">
           <div class="cf-card-title">Финансовые события</div>
           <div class="cf-card-subtitle">Добавляйте реальные поступления и расходы</div>
         </div>
       </div>
+      <div class="cf-micro-hint">Отслеживайте каждое финансовое событие для точного прогноза</div>
       <button id="addFinancialEvent" class="add-event-btn">+ Добавить событие</button>
     </div>
 
@@ -1083,20 +1094,6 @@ Protocol анализирует цель…
 </div>
 </div>
 
-<!-- ===== FLEXIBLE ONBOARDING ===== -->
-<div id="flexibleOnboarding">
-<div class="confirmCard">
-<p class="confirmCard-text">
-В этом разделе можно указать нефиксированный доход и расход.<br><br>
-При переходе в гибкий режим текущий расчёт будет сброшен.
-Доход, расход, цель и график будут очищены.
-</p>
-<div class="confirmCard-actions">
-<button id="flexOnboardCancel" class="confirmBtn confirmBtn--cancel">Отмена</button>
-<button id="flexOnboardConfirm" class="confirmBtn confirmBtn--danger">Перейти в гибкий режим</button>
-</div>
-</div>
-</div>
 
 <canvas
 id="confetti-canvas"

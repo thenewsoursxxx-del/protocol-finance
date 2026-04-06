@@ -1939,15 +1939,14 @@ return d;
 
 function renderProtocolAdviceGraph() {
   const advice = CashflowEngine.buildAdvice(lastCalc);
-  const unconfigured = isFlexibleUnconfigured();
-  const adviceBlockHtml = unconfigured ? "" : `<div style="
+  const adviceBlockHtml = (advice && advice.text) ? `<div style="
 margin-top:10px;
 padding:10px 12px;
 border-radius:14px;
 background:#111;
 border:1px solid #222;
 font-size:14px;
-">${advice.text}</div>`;
+">${advice.text}</div>` : "";
 
   adviceCard.innerHTML = `
 <div id="planHeader">
@@ -2120,11 +2119,10 @@ style="width:52px;height:52px;border-radius:50%">
     };
   }
 
-  // Кнопка «Непредвиденный расход» — при ненастроенной гибкой модели только трясём подсказку, визуально кнопка не меняется
   const unexpBtn = document.getElementById("unexpectedExpenseBtn");
   if (unexpBtn) {
     unexpBtn.onclick = () => {
-      if (isFlexibleUnconfigured()) {
+      if (isCashflowNoData()) {
         shakeFlexHint();
         haptic("error");
         return;
@@ -3465,12 +3463,6 @@ var explainEl = document.getElementById("planExplanation");
 
 if (!monthlyEl || !explainEl) return;
 
-if (isFlexibleUnconfigured()) {
-  monthlyEl.innerText = "";
-  explainEl.innerHTML = "";
-  return;
-}
-
 if (isCashflowNoData()) {
   monthlyEl.innerText = "Заполните гибкую финансовую модель";
   explainEl.innerHTML = "Добавьте хотя бы одно событие дохода через «Добавить событие»,<br>чтобы Protocol рассчитал прогноз.";
@@ -3923,14 +3915,7 @@ function checkPremiumGate() {
 }
 
 function isFlexibleUnconfigured() {
-  var s = getState();
-  if (s.financialModel !== "cashflow") return false;
-  var events = s.cashflowEvents || [];
-  for (var i = 0; i < events.length; i++) {
-    var freq = events[i].frequency || "once";
-    if (freq !== "once") return false;
-  }
-  return true;
+  return false;
 }
 
 function freqLabel(freq, days) {
@@ -3960,16 +3945,18 @@ function cfFlowFreqLabel(freq, days) {
     case "biweekly": return "раз в 2 недели";
     case "monthly": return "ежемесячно";
     case "custom":
-      var daysStr = Array.isArray(days) && days.length ? days.join(", ") + " числа" : "свой график";
-      return daysStr;
+      if (Array.isArray(days) && days.length) {
+        var count = days.length;
+        var word = count === 1 ? "дата" : (count < 5 ? "даты" : "дат");
+        return "свой график (" + count + " " + word + ")";
+      }
+      return "свой график";
     default: return "ежемесячно";
   }
 }
 
 function syncFlexibleUI() {
-  var unconfigured = isFlexibleUnconfigured();
   var noData = isCashflowNoData();
-  var blocked = unconfigured || noData;
   var s = getState();
   var isCashflow = (s.financialModel === "cashflow");
 
@@ -3977,14 +3964,14 @@ function syncFlexibleUI() {
   var factInput = document.getElementById("factInput");
   var applyBtn = document.getElementById("applyFact");
 
-  if (factRow) factRow.classList.toggle("fact-row-disabled", blocked);
-  if (factInput) factInput.disabled = blocked;
-  if (applyBtn) applyBtn.disabled = blocked;
+  if (factRow) factRow.classList.toggle("fact-row-disabled", noData);
+  if (factInput) factInput.disabled = noData;
+  if (applyBtn) applyBtn.disabled = noData;
 
   if (factRow && !factRow.dataset.flexShakeBound) {
     factRow.dataset.flexShakeBound = "1";
     factRow.addEventListener("click", function () {
-      if (isFlexibleUnconfigured() || isCashflowNoData()) {
+      if (isCashflowNoData()) {
         shakeFlexHint();
         haptic("error");
       }
@@ -4000,22 +3987,20 @@ function syncFlexibleUI() {
   }
   if (hint) {
     hint.classList.add("flex-hint--alert");
-    if (unconfigured) {
-      hint.textContent = "Сначала настройте гибкую финансовую модель";
-    } else if (noData) {
+    if (noData) {
       hint.textContent = "Добавьте событие дохода, чтобы построить прогноз";
     }
-    hint.classList.toggle("visible", blocked);
+    hint.classList.toggle("visible", noData);
   }
 
   var summaryMonthlyEl = document.getElementById("summaryMonthly");
   var summaryMonthsEl = document.getElementById("summaryMonths");
   var summaryModeEl = document.getElementById("summaryMode");
 
-  if (unconfigured || noData) {
+  if (noData) {
     if (summaryMonthlyEl) summaryMonthlyEl.innerText = "—";
     if (summaryMonthsEl) summaryMonthsEl.innerText = "—";
-    if (summaryModeEl) summaryModeEl.innerText = noData ? "Гибкий (нет данных)" : "Гибкий (не настроен)";
+    if (summaryModeEl) summaryModeEl.innerText = "Гибкий (нет данных)";
   } else if (isCashflow && lastCalc.ok) {
     if (summaryMonthlyEl) summaryMonthlyEl.innerText = lastCalc.monthlySave.toLocaleString();
     if (summaryMonthsEl) summaryMonthsEl.innerText = lastCalc.months;
@@ -4025,7 +4010,7 @@ function syncFlexibleUI() {
   var freqHintEl = document.getElementById("summaryFreqHint");
   if (freqHintEl) {
     var incFreq = s.incomeFrequency || "monthly";
-    if (isCashflow && lastCalc.ok && lastCalc.monthlySave && !unconfigured) {
+    if (isCashflow && lastCalc.ok && lastCalc.monthlySave && !noData) {
       if (incFreq === "weekly") {
         freqHintEl.innerText = "≈ " + Math.round(lastCalc.monthlySave / 4.33).toLocaleString() + " ₽ в неделю";
         freqHintEl.style.display = "";
@@ -4043,7 +4028,7 @@ function syncFlexibleUI() {
   // ── Model report ──
   var reportEl = document.getElementById("summaryModelReport");
   if (reportEl) {
-    if (isCashflow && !unconfigured) {
+    if (isCashflow && !noData) {
       var incLabel = freqLabel(s.incomeFrequency, s.incomeMonthDays);
       var expLabel = freqLabel(s.expenseFrequency, s.expenseMonthDays);
       reportEl.innerHTML = "Доход: " + incLabel + "<br>Расход: " + expLabel;
@@ -4053,22 +4038,50 @@ function syncFlexibleUI() {
     }
   }
 
+  // ── Build labels ──
+  var incType = s.incomeType || "fixed";
+  var expType = s.expenseType || "fixed";
+  var incTypeName = incType === "fixed" ? "фиксированный" : "нефиксированный";
+  var expTypeName = expType === "fixed" ? "фиксированные" : "нефиксированные";
+  var incFreqName = incType === "fixed"
+    ? ""
+    : ", " + cfFlowFreqLabel(s.incomeFrequency, s.incomeMonthDays);
+  var expFreqName = expType === "fixed"
+    ? ""
+    : ", " + cfFlowFreqLabel(s.expenseFrequency, s.expenseMonthDays);
+
   // ── In-panel flow summary ──
   var flowSummary = document.getElementById("cfFlowSummary");
   var flowText = document.getElementById("cfFlowSummaryText");
   if (flowSummary && flowText) {
-    var incType = s.incomeType || "fixed";
-    var expType = s.expenseType || "fixed";
-    var incSummary = incType === "fixed"
-      ? "фиксированный"
-      : cfFlowFreqLabel(s.incomeFrequency, s.incomeMonthDays);
-    var expSummary = expType === "fixed"
-      ? "фиксированные"
-      : cfFlowFreqLabel(s.expenseFrequency, s.expenseMonthDays);
     flowText.innerHTML =
-      '<div class="cf-summary-row"><span class="cf-summary-dot"></span>Доход: ' + incSummary + '</div>' +
-      '<div class="cf-summary-row"><span class="cf-summary-dot"></span>Расходы: ' + expSummary + '</div>';
+      '<div class="cf-summary-row"><span class="cf-summary-dot"></span>Доход: ' + incTypeName + incFreqName + '</div>' +
+      '<div class="cf-summary-row"><span class="cf-summary-dot"></span>Расходы: ' + expTypeName + expFreqName + '</div>';
   }
+
+  // ── Inline per-card summaries ──
+  var incInline = document.getElementById("incomeInlineSummary");
+  if (incInline) {
+    incInline.textContent = "Доход: " + incTypeName + incFreqName;
+    incInline.classList.add("visible");
+  }
+  var expInline = document.getElementById("expenseInlineSummary");
+  if (expInline) {
+    expInline.textContent = "Расходы: " + expTypeName + expFreqName;
+    expInline.classList.add("visible");
+  }
+
+  // ── Card status indicators ──
+  var incStatus = document.getElementById("incomeCardStatus");
+  if (incStatus) incStatus.classList.add("visible");
+  var expStatus = document.getElementById("expenseCardStatus");
+  if (expStatus) expStatus.classList.add("visible");
+
+  // ── Card configured border ──
+  var incCard = document.getElementById("cfCardIncome");
+  if (incCard) incCard.classList.add("cf-card--configured");
+  var expCard = document.getElementById("cfCardExpense");
+  if (expCard) expCard.classList.add("cf-card--configured");
 }
 
 function applyPremiumUI(isPremium) {
@@ -4100,50 +4113,9 @@ function parseMonthDays(str) {
     .filter(function (n) { return n >= 1 && n <= 31; });
 }
 
-function resetToFlexibleMode() {
-  if (incomeInput) incomeInput.value = "";
-  if (expensesInput) expensesInput.value = "";
-  if (goalInput) goalInput.value = "";
-  if (savedInput) savedInput.value = "";
-
-  factHistory.length = 0;
-  chosenPlan = null;
-  plannedMonthly = 0;
-  accounts.main = 0;
-  accounts.reserve = 0;
-  lastCalc = {};
-  goalCompleted = false;
-  isInitialized = false;
-  initialBalance = 0;
-
-  updateState({
-    financialModel: "cashflow",
-    hasSeenFlexibleOnboarding: true,
-    income: "", expenses: "", goal: "", saved: "",
-    factHistory: [], cashflowEvents: [],
-    chosenPlan: null, plannedMonthly: 0,
-    accounts: { main: 0, reserve: 0 },
-    derivedState: {},
-    lastCalc: {},
-    goalCompleted: false,
-    isInitialized: false,
-    initialBalance: 0
-  });
-  saveFullState();
-
-  if (planSummary) planSummary.style.display = "none";
-  document.querySelectorAll(
-    "#screen-calc label, #screen-calc .input-wrap, .mode-buttons, #calculate"
-  ).forEach(function (el) { el.style.display = ""; });
-
-  openScreen("calc", buttons[0]);
-  hideBottomNav();
-}
-
 function enableFlexibleMode() {
   updateState({
-    financialModel: "cashflow",
-    hasSeenFlexibleOnboarding: true
+    financialModel: "cashflow"
   });
   recalcPlan();
 }
@@ -4213,10 +4185,6 @@ function initCashflowSettings() {
   var fixedIncomeInput = document.getElementById("fixedIncomeInput");
   var fixedExpenseInput = document.getElementById("fixedExpenseInput");
 
-  var onboardingModal = document.getElementById("flexibleOnboarding");
-  var onboardConfirm = document.getElementById("flexOnboardConfirm");
-  var onboardCancel = document.getElementById("flexOnboardCancel");
-
   if (!flexToggle || !flexContent) return;
 
   var currentState = getState();
@@ -4227,7 +4195,7 @@ function initCashflowSettings() {
 
   applyPremiumUI(true);
 
-  if (currentState.financialModel === "cashflow" || currentState.hasSeenFlexibleOnboarding) {
+  if (currentState.financialModel === "cashflow") {
     flexContent.classList.add("open");
     flexToggle.classList.add("open");
   }
@@ -4248,12 +4216,6 @@ function initCashflowSettings() {
 
   flexToggle.addEventListener("click", function () {
     haptic("light");
-    var s = getState();
-
-    if (s.financialModel === "simple" && !s.hasSeenFlexibleOnboarding) {
-      if (onboardingModal) onboardingModal.classList.add("visible");
-      return;
-    }
 
     if (flexContent.classList.contains("open")) {
       flexContent.classList.remove("open");
@@ -4265,23 +4227,6 @@ function initCashflowSettings() {
       });
     }
   });
-
-  if (onboardConfirm) {
-    onboardConfirm.addEventListener("click", function () {
-      haptic("medium");
-      if (onboardingModal) onboardingModal.classList.remove("visible");
-      enableFlexibleMode();
-      flexContent.classList.add("open");
-      flexToggle.classList.add("open");
-    });
-  }
-
-  if (onboardCancel) {
-    onboardCancel.addEventListener("click", function () {
-      haptic("light");
-      if (onboardingModal) onboardingModal.classList.remove("visible");
-    });
-  }
 
   if (incomeToggle) {
     incomeToggle.addEventListener("click", function (e) {
