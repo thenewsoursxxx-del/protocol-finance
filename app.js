@@ -6298,12 +6298,20 @@ function goalSwipeToIndex(idx, goLeft) {
     if (!cardEl) return;
     var debts = getDebts();
 
+    var toggleWrap = document.querySelector(".debt-planning-toggle-wrap");
+    var manualBlock = document.getElementById("debtManualRepayBlock");
+
     if (debts.length === 0) {
+      if (toggleWrap) toggleWrap.style.display = "none";
+      if (manualBlock) manualBlock.style.display = "none";
       cardEl.innerHTML = '<div class="debt-empty-hint">Добавьте свой первый кредит или долг</div>';
       if (wrapperEl) wrapperEl.style.display = "";
       renderDebtSwipeIndicator();
       return;
     }
+
+    if (toggleWrap) toggleWrap.style.display = "";
+    if (manualBlock) manualBlock.style.display = "";
 
     clampDebtIndex();
     var d = debts[_activeDebtIdx];
@@ -6329,6 +6337,7 @@ function goalSwipeToIndex(idx, goLeft) {
         setActiveDebtIndex(_activeDebtIdx);
         renderDebtList();
         renderDebtSummary();
+        updateDebtModeUI();
         recalcWithDebts();
         showToast("Удалено", "success");
       });
@@ -6657,6 +6666,7 @@ function goalSwipeToIndex(idx, goLeft) {
       closeAddDebtSheet();
       renderDebtList();
       renderDebtSummary();
+      updateDebtModeUI();
       recalcWithDebts();
       showToast(editingDebtId ? "Изменения сохранены" : "Кредит / долг добавлен", "success");
     });
@@ -6681,10 +6691,21 @@ function goalSwipeToIndex(idx, goLeft) {
 
   function updateDebtModeUI() {
     var s = getState();
+    var debts = getDebts();
+    var toggleWrap = document.querySelector(".debt-planning-toggle-wrap");
     var manualBlock = document.getElementById("debtManualRepayBlock");
     var hintEl = document.getElementById("debtModeHint");
 
+    if (debts.length === 0) {
+      if (toggleWrap) toggleWrap.style.display = "none";
+      if (manualBlock) manualBlock.style.display = "none";
+      return;
+    }
+
+    if (toggleWrap) toggleWrap.style.display = "";
+
     if (manualBlock) {
+      manualBlock.style.display = "";
       if (s.debtPlanningMode) {
         manualBlock.classList.add("collapsed");
       } else {
