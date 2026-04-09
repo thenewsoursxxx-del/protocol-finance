@@ -592,9 +592,227 @@ Protocol анализирует цель…
 </div>
 </div>
 
-<button class="profile-btn">⚙️ Настройки</button>
+<button id="settingsBtn" class="profile-btn">⚙️ Настройки</button>
 <button id="goalHistoryBtn" class="profile-btn">📋 История целей</button>
 <button id="profileResetPlan" class="profile-btn danger">🔄 Сбросить план</button>
+</div>
+
+<!-- ===== SETTINGS SCREEN ===== -->
+<div class="screen" id="screen-settings">
+  <div class="app-header">
+    <div class="header-left">
+      <button id="settingsBack" class="header-back">←</button>
+    </div>
+    <div class="header-center">
+      <div class="header-title" id="settingsTitle">Настройки</div>
+    </div>
+    <div class="header-right"></div>
+  </div>
+
+  <div class="settings-body">
+
+    <!-- SECTION: Финансы -->
+    <div class="settings-section">
+      <div class="settings-section-title" data-i18n="settings.section.finance">Финансы</div>
+      <div class="settings-card">
+        <div class="settings-row">
+          <div class="settings-row-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v12M8 9.5c0-1.1 1.8-2 4-2s4 .9 4 2-1.8 2-4 2-4 .9-4 2 1.8 2 4 2 4-.9 4-2"/></svg>
+          </div>
+          <div class="settings-row-info">
+            <div class="settings-row-label" data-i18n="settings.currency">Валюта</div>
+            <div class="settings-row-hint" data-i18n="settings.currency.hint">Используется для отображения сумм в приложении</div>
+          </div>
+          <div class="settings-segment" id="settingsCurrency">
+            <button class="settings-seg-btn" data-value="RUB">₽</button>
+            <button class="settings-seg-btn" data-value="USD">$</button>
+            <button class="settings-seg-btn" data-value="EUR">€</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION: План -->
+    <div class="settings-section">
+      <div class="settings-section-title" data-i18n="settings.section.plan">План</div>
+      <div class="settings-card">
+
+        <div class="settings-row">
+          <div class="settings-row-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M2 12h20"/><path d="M17 7l-5 5-5-5"/></svg>
+          </div>
+          <div class="settings-row-info">
+            <div class="settings-row-label" data-i18n="settings.carryOver">Автоматически переносить остаток</div>
+            <div class="settings-row-hint" id="settingsCarryOverHint">Остаток за месяц будет автоматически переноситься на следующий период</div>
+          </div>
+          <label class="settings-toggle">
+            <input type="checkbox" id="settingsCarryOver" class="settings-toggle-input">
+            <span class="settings-toggle-slider"></span>
+          </label>
+        </div>
+
+        <div class="settings-divider"></div>
+
+        <div class="settings-row">
+          <div class="settings-row-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h18v18H3z"/><path d="M3 12h18M12 3v18"/></svg>
+          </div>
+          <div class="settings-row-info">
+            <div class="settings-row-label" data-i18n="settings.allocation">Приоритет распределения</div>
+            <div class="settings-row-hint" data-i18n="settings.allocation.hint">Определяет, как свободные деньги распределяются внутри плана</div>
+          </div>
+          <div class="settings-segment" id="settingsAllocation">
+            <button class="settings-seg-btn" data-value="goal" data-i18n="settings.allocation.goal">Всё в цель</button>
+            <button class="settings-seg-btn" data-value="buffer" data-i18n="settings.allocation.buffer">С резервом</button>
+          </div>
+        </div>
+
+        <div class="settings-divider"></div>
+
+        <div class="settings-row">
+          <div class="settings-row-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+          </div>
+          <div class="settings-row-info">
+            <div class="settings-row-label" data-i18n="settings.allowOverpay">Разрешить перевыполнение плана</div>
+            <div class="settings-row-hint" id="settingsOverpayHint">Можно откладывать больше плана — лишняя сумма будет учтена в следующих периодах</div>
+          </div>
+          <label class="settings-toggle">
+            <input type="checkbox" id="settingsOverpay" class="settings-toggle-input">
+            <span class="settings-toggle-slider"></span>
+          </label>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- SECTION: Интерфейс -->
+    <div class="settings-section">
+      <div class="settings-section-title" data-i18n="settings.section.interface">Интерфейс</div>
+      <div class="settings-card">
+
+        <div class="settings-row">
+          <div class="settings-row-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z"/><path d="M12 7v5l3 3"/></svg>
+          </div>
+          <div class="settings-row-info">
+            <div class="settings-row-label" data-i18n="settings.animations">Анимации</div>
+            <div class="settings-row-hint" data-i18n="settings.animations.hint">Управляет плавными анимациями интерфейса</div>
+          </div>
+          <label class="settings-toggle">
+            <input type="checkbox" id="settingsAnimations" class="settings-toggle-input">
+            <span class="settings-toggle-slider"></span>
+          </label>
+        </div>
+
+        <div class="settings-divider"></div>
+
+        <div class="settings-row">
+          <div class="settings-row-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h10M4 17h6"/></svg>
+          </div>
+          <div class="settings-row-info">
+            <div class="settings-row-label" data-i18n="settings.numberFormat">Формат чисел</div>
+            <div class="settings-row-hint" data-i18n="settings.numberFormat.hint">Выберите, как отображать разделители тысяч</div>
+          </div>
+          <div class="settings-segment" id="settingsNumberFormat">
+            <button class="settings-seg-btn" data-value="dots">100.000</button>
+            <button class="settings-seg-btn" data-value="spaces">100 000</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- SECTION: Уведомления -->
+    <div class="settings-section">
+      <div class="settings-section-title" data-i18n="settings.section.notifications">Уведомления</div>
+      <div class="settings-card">
+
+        <div class="settings-row">
+          <div class="settings-row-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          </div>
+          <div class="settings-row-info">
+            <div class="settings-row-label" data-i18n="settings.notifications">Напоминания</div>
+            <div class="settings-row-hint" data-i18n="settings.notifications.hint">Напоминания помогут не пропускать взносы и выплаты</div>
+          </div>
+          <label class="settings-toggle">
+            <input type="checkbox" id="settingsNotifications" class="settings-toggle-input">
+            <span class="settings-toggle-slider"></span>
+          </label>
+        </div>
+
+        <div id="settingsNotifNested" class="settings-nested" style="display:none">
+          <div class="settings-divider"></div>
+
+          <div class="settings-row settings-row--nested">
+            <div class="settings-row-icon settings-row-icon--nested">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+            </div>
+            <div class="settings-row-info">
+              <div class="settings-row-label" data-i18n="settings.depositReminder">Напоминание о внесении</div>
+            </div>
+            <label class="settings-toggle">
+              <input type="checkbox" id="settingsDepositReminder" class="settings-toggle-input">
+              <span class="settings-toggle-slider"></span>
+            </label>
+          </div>
+
+          <div class="settings-row settings-row--nested">
+            <div class="settings-row-icon settings-row-icon--nested">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+            </div>
+            <div class="settings-row-info">
+              <div class="settings-row-label" data-i18n="settings.debtReminder">Напоминание о долгах</div>
+            </div>
+            <label class="settings-toggle">
+              <input type="checkbox" id="settingsDebtReminder" class="settings-toggle-input">
+              <span class="settings-toggle-slider"></span>
+            </label>
+          </div>
+
+          <div class="settings-divider"></div>
+
+          <div class="settings-row settings-row--nested">
+            <div class="settings-row-icon settings-row-icon--nested">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+            </div>
+            <div class="settings-row-info">
+              <div class="settings-row-label" data-i18n="settings.reminderTime">Время напоминаний</div>
+            </div>
+            <div class="settings-segment settings-segment--time" id="settingsReminderTime">
+              <button class="settings-seg-btn" data-value="09:00">09:00</button>
+              <button class="settings-seg-btn" data-value="12:00">12:00</button>
+              <button class="settings-seg-btn" data-value="18:00">18:00</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- SECTION: Язык -->
+    <div class="settings-section">
+      <div class="settings-section-title" data-i18n="settings.section.language">Язык</div>
+      <div class="settings-card">
+        <div class="settings-row">
+          <div class="settings-row-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          </div>
+          <div class="settings-row-info">
+            <div class="settings-row-label" data-i18n="settings.language">Язык интерфейса</div>
+            <div class="settings-row-hint" data-i18n="settings.language.hint">Язык интерфейса приложения</div>
+          </div>
+          <div class="settings-segment" id="settingsLanguage">
+            <button class="settings-seg-btn" data-value="ru">Рус</button>
+            <button class="settings-seg-btn" data-value="en">Eng</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
 </div>
 
 <!-- ===== GOAL HISTORY SCREEN ===== -->

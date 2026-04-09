@@ -148,11 +148,25 @@ document.addEventListener("pointerdown", e => {
 
 /* ===== FORMAT ===== */
 function formatNumber(v) {
-const d = v.replace(/\D/g, "");
-return d.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  var d = v.replace(/\D/g, "");
+  var sep = (window._protocolNumberFormat === "dots") ? "." : " ";
+  return d.replace(/\B(?=(\d{3})+(?!\d))/g, sep);
 }
 function parseNumber(v) {
-return Number(v.replace(/\./g, ""));
+  return Number(v.replace(/[\.\s\u00A0]/g, ""));
+}
+function getCurrencySymbol() {
+  var c = window._protocolCurrency || "RUB";
+  if (c === "USD") return "$";
+  if (c === "EUR") return "€";
+  return "₽";
+}
+function protocolFormatAmount(n) {
+  var num = Number(n) || 0;
+  var sep = (window._protocolNumberFormat === "dots") ? "." : "\u00A0";
+  var str = Math.abs(num).toString();
+  var formatted = str.replace(/\B(?=(\d{3})+(?!\d))/g, sep);
+  return (num < 0 ? "−" : "") + formatted + " " + getCurrencySymbol();
 }
 
 /* ===== ELEMENTS ===== */
@@ -2324,6 +2338,262 @@ if (goalHistoryBack) {
   });
 }
 
+/* ===== SETTINGS SCREEN ===== */
+
+(function initSettingsScreen() {
+
+  var settingsBtn = document.getElementById("settingsBtn");
+  var settingsBack = document.getElementById("settingsBack");
+
+  // ── i18n placeholder layer ──
+  var _i18n = {
+    ru: {
+      "settings.title": "Настройки",
+      "settings.section.finance": "Финансы",
+      "settings.currency": "Валюта",
+      "settings.currency.hint": "Используется для отображения сумм в приложении",
+      "settings.section.plan": "План",
+      "settings.carryOver": "Автоматически переносить остаток",
+      "settings.carryOver.on": "Остаток за месяц будет автоматически переноситься на следующий период",
+      "settings.carryOver.off": "Неиспользованный остаток не будет учитываться в следующем периоде",
+      "settings.allocation": "Приоритет распределения",
+      "settings.allocation.hint": "Определяет, как свободные деньги распределяются внутри плана",
+      "settings.allocation.goal": "Всё в цель",
+      "settings.allocation.buffer": "С резервом",
+      "settings.allowOverpay": "Разрешить перевыполнение плана",
+      "settings.allowOverpay.on": "Можно откладывать больше плана — лишняя сумма будет учтена в следующих периодах",
+      "settings.allowOverpay.off": "Сумма выше плана не будет переноситься как перевыполнение",
+      "settings.section.interface": "Интерфейс",
+      "settings.animations": "Анимации",
+      "settings.animations.hint": "Управляет плавными анимациями интерфейса",
+      "settings.numberFormat": "Формат чисел",
+      "settings.numberFormat.hint": "Выберите, как отображать разделители тысяч",
+      "settings.section.notifications": "Уведомления",
+      "settings.notifications": "Напоминания",
+      "settings.notifications.hint": "Напоминания помогут не пропускать взносы и выплаты",
+      "settings.depositReminder": "Напоминание о внесении",
+      "settings.debtReminder": "Напоминание о долгах",
+      "settings.reminderTime": "Время напоминаний",
+      "settings.section.language": "Язык",
+      "settings.language": "Язык интерфейса",
+      "settings.language.hint": "Язык интерфейса приложения"
+    },
+    en: {
+      "settings.title": "Settings",
+      "settings.section.finance": "Finance",
+      "settings.currency": "Currency",
+      "settings.currency.hint": "Used to display amounts in the app",
+      "settings.section.plan": "Plan",
+      "settings.carryOver": "Carry over balance automatically",
+      "settings.carryOver.on": "Monthly balance will carry over to the next period",
+      "settings.carryOver.off": "Unused balance will not be carried over",
+      "settings.allocation": "Allocation priority",
+      "settings.allocation.hint": "Controls how free money is allocated within the plan",
+      "settings.allocation.goal": "All to goal",
+      "settings.allocation.buffer": "With reserve",
+      "settings.allowOverpay": "Allow overpayment",
+      "settings.allowOverpay.on": "You can save more than planned — excess will count in future periods",
+      "settings.allowOverpay.off": "Amounts above the plan will not carry forward",
+      "settings.section.interface": "Interface",
+      "settings.animations": "Animations",
+      "settings.animations.hint": "Controls smooth UI animations",
+      "settings.numberFormat": "Number format",
+      "settings.numberFormat.hint": "Choose how to display thousand separators",
+      "settings.section.notifications": "Notifications",
+      "settings.notifications": "Reminders",
+      "settings.notifications.hint": "Reminders help you stay on track with deposits and payments",
+      "settings.depositReminder": "Deposit reminder",
+      "settings.debtReminder": "Debt reminder",
+      "settings.reminderTime": "Reminder time",
+      "settings.section.language": "Language",
+      "settings.language": "App language",
+      "settings.language.hint": "Application interface language"
+    }
+  };
+
+  function t(key) {
+    var lang = (getState().settings || {}).language || "ru";
+    var dict = _i18n[lang] || _i18n["ru"];
+    return dict[key] || (_i18n["ru"][key] || key);
+  }
+
+  function applyI18nToSettings() {
+    var els = document.querySelectorAll("#screen-settings [data-i18n]");
+    els.forEach(function (el) {
+      var key = el.getAttribute("data-i18n");
+      var text = t(key);
+      if (text) el.textContent = text;
+    });
+    var titleEl = document.getElementById("settingsTitle");
+    if (titleEl) titleEl.textContent = t("settings.title");
+  }
+
+  // ── Segment helper ──
+  function initSegment(containerId, stateKey) {
+    var container = document.getElementById(containerId);
+    if (!container) return;
+    var btns = container.querySelectorAll(".settings-seg-btn");
+
+    function sync() {
+      var val = (getState().settings || {})[stateKey];
+      btns.forEach(function (b) {
+        b.classList.toggle("active", b.dataset.value === val);
+      });
+    }
+
+    btns.forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        if (typeof haptic === "function") haptic("light");
+        var patch = {};
+        patch[stateKey] = btn.dataset.value;
+        updateState({ settings: patch });
+        saveFullState();
+        sync();
+        onSettingChanged(stateKey, btn.dataset.value);
+      });
+    });
+
+    sync();
+    return { sync: sync };
+  }
+
+  // ── Toggle helper ──
+  function initToggle(inputId, stateKey, hintId, hintOnKey, hintOffKey) {
+    var input = document.getElementById(inputId);
+    if (!input) return;
+
+    function sync() {
+      var val = (getState().settings || {})[stateKey];
+      input.checked = !!val;
+      if (hintId) {
+        var hint = document.getElementById(hintId);
+        if (hint) hint.textContent = val ? t(hintOnKey) : t(hintOffKey);
+      }
+    }
+
+    input.addEventListener("change", function () {
+      if (typeof haptic === "function") haptic("light");
+      var patch = {};
+      patch[stateKey] = input.checked;
+      updateState({ settings: patch });
+      saveFullState();
+      sync();
+      onSettingChanged(stateKey, input.checked);
+    });
+
+    sync();
+    return { sync: sync };
+  }
+
+  // ── Reactions when a setting changes ──
+  function onSettingChanged(key, value) {
+    if (key === "animationsEnabled") {
+      document.body.classList.toggle("reduce-motion", !value);
+    }
+
+    if (key === "notificationsEnabled") {
+      var nested = document.getElementById("settingsNotifNested");
+      if (nested) nested.style.display = value ? "" : "none";
+    }
+
+    if (key === "language") {
+      applyI18nToSettings();
+      updateDynamicHints();
+    }
+
+    if (key === "currency") {
+      window._protocolCurrency = value;
+    }
+
+    if (key === "numberFormat") {
+      window._protocolNumberFormat = value;
+    }
+  }
+
+  function updateDynamicHints() {
+    var s = getState().settings || {};
+    var carryHint = document.getElementById("settingsCarryOverHint");
+    if (carryHint) carryHint.textContent = s.carryOverEnabled ? t("settings.carryOver.on") : t("settings.carryOver.off");
+    var overpayHint = document.getElementById("settingsOverpayHint");
+    if (overpayHint) overpayHint.textContent = s.allowOverpay ? t("settings.allowOverpay.on") : t("settings.allowOverpay.off");
+  }
+
+  // ── Init all controls ──
+  var segments = {};
+  segments.currency = initSegment("settingsCurrency", "currency");
+  segments.allocation = initSegment("settingsAllocation", "allocationMode");
+  segments.numberFormat = initSegment("settingsNumberFormat", "numberFormat");
+  segments.reminderTime = initSegment("settingsReminderTime", "reminderTime");
+  segments.language = initSegment("settingsLanguage", "language");
+
+  var toggles = {};
+  toggles.carryOver = initToggle("settingsCarryOver", "carryOverEnabled", "settingsCarryOverHint", "settings.carryOver.on", "settings.carryOver.off");
+  toggles.overpay = initToggle("settingsOverpay", "allowOverpay", "settingsOverpayHint", "settings.allowOverpay.on", "settings.allowOverpay.off");
+  toggles.animations = initToggle("settingsAnimations", "animationsEnabled");
+  toggles.notifications = initToggle("settingsNotifications", "notificationsEnabled");
+  toggles.depositReminder = initToggle("settingsDepositReminder", "depositReminderEnabled");
+  toggles.debtReminder = initToggle("settingsDebtReminder", "debtReminderEnabled");
+
+  function syncAllControls() {
+    Object.keys(segments).forEach(function (k) { if (segments[k]) segments[k].sync(); });
+    Object.keys(toggles).forEach(function (k) { if (toggles[k]) toggles[k].sync(); });
+
+    var s = getState().settings || {};
+    var nested = document.getElementById("settingsNotifNested");
+    if (nested) nested.style.display = s.notificationsEnabled ? "" : "none";
+
+    document.body.classList.toggle("reduce-motion", !s.animationsEnabled);
+    window._protocolCurrency = s.currency || "RUB";
+    window._protocolNumberFormat = s.numberFormat || "spaces";
+
+    applyI18nToSettings();
+    updateDynamicHints();
+  }
+
+  // ── Navigation ──
+  if (settingsBtn) {
+    settingsBtn.addEventListener("click", function () {
+      if (typeof haptic === "function") haptic("light");
+      syncAllControls();
+      document.querySelectorAll(".screen").forEach(function (s) { s.classList.remove("active"); });
+      document.getElementById("screen-settings").classList.add("active");
+      if (typeof moveProfileToActiveHeader === "function") moveProfileToActiveHeader();
+    });
+  }
+
+  if (settingsBack) {
+    settingsBack.addEventListener("click", function () {
+      if (typeof haptic === "function") haptic("light");
+      document.querySelectorAll(".screen").forEach(function (s) { s.classList.remove("active"); });
+      document.getElementById("screen-profile").classList.add("active");
+      if (typeof moveProfileToActiveHeader === "function") moveProfileToActiveHeader();
+    });
+  }
+
+  // Apply persisted settings on load
+  var s = getState().settings || {};
+  document.body.classList.toggle("reduce-motion", !s.animationsEnabled);
+  window._protocolCurrency = s.currency || "RUB";
+  window._protocolNumberFormat = s.numberFormat || "spaces";
+
+  /*
+   * Real notification delivery requires backend / bot / scheduler
+   * or platform-specific support (e.g. Telegram Bot API sendMessage
+   * on a cron schedule). The UI and persistence are fully functional,
+   * but actual push/local notification delivery is NOT implemented
+   * because Telegram Mini Apps do not support client-side local
+   * notifications or service workers with push capability.
+   *
+   * To enable real notifications in the future:
+   * 1. Store notification preferences in Supabase (already done via state sync)
+   * 2. Create a backend scheduler (Edge Function / cron) that queries
+   *    user_state for users with notificationsEnabled: true
+   * 3. Use the Telegram Bot API sendMessage to the user's chat_id
+   *    at the configured reminderTime
+   */
+
+})();
+
 function renderGoalHistory() {
   var list = document.getElementById("goalHistoryList");
   var emptyMsg = document.getElementById("goalHistoryEmpty");
@@ -2982,7 +3252,7 @@ function renderMonthlyStatus() {
     block.classList.remove("monthly-status--complete");
     labelEl.textContent = "Внесено";
     valueEl.textContent = Math.round(st.actual).toLocaleString()
-      + " / " + Math.round(st.required).toLocaleString() + " ₽";
+      + " / " + Math.round(st.required).toLocaleString() + " " + getCurrencySymbol();
   }
 }
 
@@ -3481,9 +3751,10 @@ if (activeGoalIndex > 0 && activeGoal) {
   var rawInput = factEl ? parseNumber(factEl.value || "0") : 0;
   var preview = getFactPreviewForGoal(activeGoalIndex, rawInput);
 
-  var lines = "Откладывается: " + (activeGoal.monthlyShare || 0).toLocaleString() + " ₽ / мес"
+  var _cs = getCurrencySymbol();
+  var lines = "Откладывается: " + (activeGoal.monthlyShare || 0).toLocaleString() + " " + _cs + " / мес"
     + "<br>Приоритет: " + (activeGoal.priority || 1)
-    + "<br>При вводе суммы сюда пойдёт: " + preview.toLocaleString() + " ₽"
+    + "<br>При вводе суммы сюда пойдёт: " + preview.toLocaleString() + " " + _cs
     + "<br>Цель будет достигнута за: " + (activeGoal.monthsLeft || "—") + " мес";
 
   explainEl.innerHTML = lines;
@@ -3499,17 +3770,18 @@ var goalMonthlySave = hasMultiGoals ? (activeGoal.monthlyShare || 0) : (lastCalc
 var goalMonthsLeft = hasMultiGoals ? (activeGoal.monthsLeft || 0) : (lastCalc.months || 0);
 var goalPace = (lastCalc.free && lastCalc.free > 0) ? (goalMonthlySave / lastCalc.free) : (lastCalc.pace || 0);
 
+var _cs2 = getCurrencySymbol();
 monthlyEl.innerText =
-  "План: " + goalMonthly.toLocaleString() + " ₽ / месяц";
+  "План: " + goalMonthly.toLocaleString() + " " + _cs2 + " / месяц";
 
 var s = getState();
 var isCashflow = (s.financialModel === "cashflow");
 
 var explainText = lastCalc.ok
-  ? (isCashflow ? "Прогноз дохода: " + (lastCalc.forecastIncome || 0).toLocaleString() + " ₽ / мес\n"
-      + "Прогноз расхода: " + (lastCalc.forecastExpense || 0).toLocaleString() + " ₽ / мес\n" : "")
-    + "Свободно в месяц: " + (lastCalc.free || 0).toLocaleString() + " ₽\n"
-    + "Откладываете: " + goalMonthlySave.toLocaleString() + " ₽\n"
+  ? (isCashflow ? "Прогноз дохода: " + (lastCalc.forecastIncome || 0).toLocaleString() + " " + _cs2 + " / мес\n"
+      + "Прогноз расхода: " + (lastCalc.forecastExpense || 0).toLocaleString() + " " + _cs2 + " / мес\n" : "")
+    + "Свободно в месяц: " + (lastCalc.free || 0).toLocaleString() + " " + _cs2 + "\n"
+    + "Откладываете: " + goalMonthlySave.toLocaleString() + " " + _cs2 + "\n"
     + "Это ~" + Math.round(goalPace * 100) + "% от свободных средств\n"
     + "Цель будет достигнута примерно за " + goalMonthsLeft + " мес"
   : "Когда расходы больше доходов, любой план будет нестабильным.";
@@ -6195,8 +6467,8 @@ function goalSwipeToIndex(idx, goLeft) {
     var nextEl = document.getElementById("debtSummaryNext");
     var statusEl = document.getElementById("debtSummaryStatus");
 
-    if (totalEl) totalEl.textContent = totalAmount.toLocaleString() + " ₽";
-    if (remainEl) remainEl.textContent = totalRemaining.toLocaleString() + " ₽";
+    if (totalEl) totalEl.textContent = totalAmount.toLocaleString() + " " + getCurrencySymbol();
+    if (remainEl) remainEl.textContent = totalRemaining.toLocaleString() + " " + getCurrencySymbol();
     if (nextEl) {
       if (nextPayment) {
         nextEl.textContent = nextPayment.toLocaleDateString("ru-RU", { day: "numeric", month: "short" });
@@ -6245,15 +6517,15 @@ function goalSwipeToIndex(idx, goLeft) {
       + '<span class="debt-item-type-badge">' + typeLabel + '</span>'
       + '</div>'
       + '<div class="debt-item-rows">'
-      + '<div class="debt-item-row"><span>Общая сумма</span><span>' + (Number(d.totalAmount) || 0).toLocaleString() + ' ₽</span></div>'
-      + '<div class="debt-item-row"><span>Осталось</span><span>' + (Number(d.remainingAmount) || 0).toLocaleString() + ' ₽</span></div>'
-      + '<div class="debt-item-row"><span>Ежемесячный платёж</span><span>' + (Number(d.monthlyPayment) || 0).toLocaleString() + ' ₽</span></div>'
+      + '<div class="debt-item-row"><span>Общая сумма</span><span>' + (Number(d.totalAmount) || 0).toLocaleString() + ' ' + getCurrencySymbol() + '</span></div>'
+      + '<div class="debt-item-row"><span>Осталось</span><span>' + (Number(d.remainingAmount) || 0).toLocaleString() + ' ' + getCurrencySymbol() + '</span></div>'
+      + '<div class="debt-item-row"><span>Ежемесячный платёж</span><span>' + (Number(d.monthlyPayment) || 0).toLocaleString() + ' ' + getCurrencySymbol() + '</span></div>'
       + '<div class="debt-item-row"><span>Следующий платёж</span><span>' + nextStr + '</span></div>'
       + '<div class="debt-item-row"><span>Окончание</span><span>' + endStr + '</span></div>';
 
     if (d.type === "card" && d.creditLimit) {
-      html += '<div class="debt-item-row"><span>Кредитный лимит</span><span>' + (Number(d.creditLimit) || 0).toLocaleString() + ' ₽</span></div>';
-      html += '<div class="debt-item-row"><span>Свободный лимит</span><span>' + (Number(d.freeLimit) || 0).toLocaleString() + ' ₽</span></div>';
+      html += '<div class="debt-item-row"><span>Кредитный лимит</span><span>' + (Number(d.creditLimit) || 0).toLocaleString() + ' ' + getCurrencySymbol() + '</span></div>';
+      html += '<div class="debt-item-row"><span>Свободный лимит</span><span>' + (Number(d.freeLimit) || 0).toLocaleString() + ' ' + getCurrencySymbol() + '</span></div>';
     }
 
     if (d.note) {
@@ -6791,7 +7063,7 @@ function goalSwipeToIndex(idx, goLeft) {
     var emptyEl = document.getElementById("debtHistoryEmpty");
 
     if (nameEl) nameEl.textContent = debt.title || "Без названия";
-    if (remainEl) remainEl.textContent = "Осталось: " + (Number(debt.remainingAmount) || 0).toLocaleString() + " ₽";
+    if (remainEl) remainEl.textContent = "Осталось: " + (Number(debt.remainingAmount) || 0).toLocaleString() + " " + getCurrencySymbol();
 
     var history = (getState().debtPaymentHistory || [])
       .filter(function (h) { return h.debtId === debtId; })

@@ -9,7 +9,7 @@
  * Загружается ДО app.js.
  */
 
-const STATE_VERSION = 8;
+const STATE_VERSION = 9;
 const STORAGE_KEY = "protocol_app_state";
 
 // ─── Default State ────────────────────────────────────────────
@@ -86,6 +86,21 @@ function getDefaultState() {
 
     // ── Expenses Tracker (v8) ──
     expensesLog: [],
+
+    // ── Settings (v9) ──
+    settings: {
+      currency: "RUB",
+      carryOverEnabled: true,
+      allocationMode: "goal",
+      allowOverpay: true,
+      notificationsEnabled: false,
+      depositReminderEnabled: false,
+      debtReminderEnabled: false,
+      reminderTime: "12:00",
+      animationsEnabled: true,
+      numberFormat: "spaces",
+      language: "ru"
+    },
 
     uiState: {
       goalTotal: 0,
@@ -275,6 +290,24 @@ function migrateState(saved) {
     if (!Array.isArray(saved.expensesLog)) saved.expensesLog = [];
   }
 
+  // v8 → v9: settings
+  if (version < 9) {
+    saved.stateVersion = 9;
+    if (!saved.settings || typeof saved.settings !== "object") {
+      saved.settings = getDefaultState().settings;
+    }
+  }
+
+  // Ensure settings has all expected keys
+  if (saved.settings && typeof saved.settings === "object") {
+    var ds = getDefaultState().settings;
+    Object.keys(ds).forEach(function (k) {
+      if (saved.settings[k] === undefined) saved.settings[k] = ds[k];
+    });
+  } else {
+    saved.settings = getDefaultState().settings;
+  }
+
   // Ensure debtPaymentHistory exists (added post-v7)
   if (!Array.isArray(saved.debtPaymentHistory)) saved.debtPaymentHistory = [];
 
@@ -373,7 +406,7 @@ function initState() {
 function updateState(partial) {
   if (!partial || typeof partial !== "object") return;
   Object.keys(partial).forEach(key => {
-    if (key === "accounts" || key === "goalMeta" || key === "uiState" || key === "accountStats") {
+    if (key === "accounts" || key === "goalMeta" || key === "uiState" || key === "accountStats" || key === "settings") {
       appState[key] = { ...appState[key], ...partial[key] };
     } else if (key === "goals" || key === "completedGoals" || key === "debts" || key === "expensesLog" || key === "debtPaymentHistory") {
       appState[key] = Array.isArray(partial[key]) ? partial[key].map(g => ({ ...g })) : appState[key];
@@ -497,6 +530,11 @@ function applyState(saved) {
 
   // ── Expenses Tracker (v8) ──
   appState.expensesLog = Array.isArray(saved.expensesLog) ? saved.expensesLog.map(function (e) { return { ...e }; }) : [];
+
+  // ── Settings (v9) ──
+  appState.settings = saved.settings && typeof saved.settings === "object"
+    ? { ...defaults.settings, ...saved.settings }
+    : { ...defaults.settings };
 
   if (saved.accountStats && typeof saved.accountStats === "object") {
     if (saved.accountStats.main !== undefined || saved.accountStats.reserve !== undefined) {
