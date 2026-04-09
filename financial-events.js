@@ -166,14 +166,15 @@ const FinancialEvents = (() => {
 
     let message = "";
 
+    var _t = typeof t === "function" ? t : function (k) { return k; };
     if (skips.length >= 3) {
-      message = "Уже " + skips.length + " пропущенных месяцев. Стоит пересмотреть план или режим.";
+      message = _t("events.tooManySkips", { count: skips.length });
     } else if (totalFromGoal > 0 && fromGoal.length >= 2) {
-      message = "Частые расходы из накоплений замедляют цель. Подумайте о резервном фонде.";
+      message = _t("events.frequentExpenses");
     } else if (expenseEvents.length === 1) {
-      message = "Зафиксирован непредвиденный расход. Plan скорректирован.";
+      message = _t("events.unexpectedSingle");
     } else {
-      message = "Непредвиденных расходов: " + expenseEvents.length + ". План пересчитан.";
+      message = _t("events.unexpectedMultiple", { count: expenseEvents.length });
     }
 
     return {

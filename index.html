@@ -48,86 +48,86 @@ viewport-fit=cover" />
 <div class="app-header">
 <div class="header-left"></div>
 <div class="header-center">
-<div class="header-title">Расчёт</div>
+<div class="header-title" data-i18n="calc.title">Расчёт</div>
 </div>
 <div class="header-right"></div>
 </div>
 
-<label>Доход</label>
+<label data-i18n="calc.income">Доход</label>
 <div class="input-wrap">
 <input id="income" inputmode="numeric" placeholder="100.000">
-<div class="input-hint">
+<div class="input-hint" data-i18n="calc.income.hint">
 Укажите ваш ежемесячный доход после налогов
 </div>
 </div>
 
-<label>Расходы</label>
+<label data-i18n="calc.expenses">Расходы</label>
 <div class="input-wrap">
 <input id="expenses" inputmode="numeric" placeholder="50.000">
-<div class="input-hint">
+<div class="input-hint" data-i18n="calc.expenses.hint">
 Сумма обязательных ежемесячных расходов
 </div>
 </div>
 
-<label>Цель</label>
+<label data-i18n="calc.goal">Цель</label>
 <div class="input-wrap">
 <input id="goal" inputmode="numeric" placeholder="300.000">
-<div class="input-hint">
+<div class="input-hint" data-i18n="calc.goal.hint">
 Сумма, которую вы хотите накопить
 </div>
 </div>
 
-<label>Уже накоплено</label>
+<label data-i18n="calc.saved">Уже накоплено</label>
 <div class="input-wrap">
 <input id="saved" inputmode="numeric" placeholder="0">
-<div class="input-hint">
+<div class="input-hint" data-i18n="calc.saved.hint">
 Сумма, которую вы уже накопили
 </div>
 </div>
 
 <!-- ===== SLIDER ===== -->
-<label>Режим накопления</label>
+<label data-i18n="calc.mode">Режим накопления</label>
 
 <div class="mode-buttons">
-<button class="mode-btn active" data-mode="calm">Спокойно</button>
-<button class="mode-btn" data-mode="normal">Умеренно</button>
-<button class="mode-btn" data-mode="aggressive">Агрессивно</button>
+<button class="mode-btn active" data-mode="calm" data-i18n="calc.mode.calm">Спокойно</button>
+<button class="mode-btn" data-mode="normal" data-i18n="calc.mode.normal">Умеренно</button>
+<button class="mode-btn" data-mode="aggressive" data-i18n="calc.mode.aggressive">Агрессивно</button>
 </div>
 
-<button id="calculate">Продолжить</button>
+<button id="calculate" data-i18n="calc.continue">Продолжить</button>
 
 <!-- ===== PLAN SUMMARY (HIDDEN BY DEFAULT) ===== -->
 <div id="planSummary" style="display:none">
 
 <div class="card">
-<div style="font-size:14px;opacity:.7">Текущий план</div>
+<div style="font-size:14px;opacity:.7" data-i18n="plan.current">Текущий план</div>
 
 <div style="margin-top:8px;font-size:18px;font-weight:600">
-<span id="summaryMonthly">—</span> ₽ / месяц
+<span id="summaryMonthly">—</span> <span id="summaryCurrencyUnit"></span> <span data-i18n="plan.perMonth">/ месяц</span>
 </div>
 <div id="summaryFreqHint" class="summary-freq-hint" style="display:none"></div>
 
 <div style="margin-top:4px;font-size:14px;opacity:.7">
-Примерно <span id="summaryMonths">—</span> месяцев
+<span data-i18n="plan.approx">Примерно</span> <span id="summaryMonths">—</span> <span data-i18n="plan.months">месяцев</span>
 </div>
 
 <div style="margin-top:8px;font-size:13px;opacity:.6">
-Режим: <span id="summaryMode">—</span>
+<span data-i18n="plan.mode">Режим</span>: <span id="summaryMode">—</span>
 </div>
 <div id="summaryModelReport" class="summary-model-report" style="display:none"></div>
 
 </div>
 
 <div class="plan-actions">
-<button id="changePaceBtn" class="plan-action-btn" type="button">Изменить темп накоплений</button>
-<button id="addDebtsBtn" class="plan-action-btn" type="button">Добавить кредиты и долги</button>
+<button id="changePaceBtn" class="plan-action-btn" type="button" data-i18n="plan.changePace">Изменить темп накоплений</button>
+<button id="addDebtsBtn" class="plan-action-btn" type="button" data-i18n="plan.addDebts">Добавить кредиты и долги</button>
 </div>
 
 <!-- ===== FLEXIBLE MODEL ===== -->
 <section id="cashflowSettings" class="cashflow-settings">
 
   <button type="button" id="flexibleToggle" class="flexible-toggle">
-    Гибкая финансовая модель
+    <span data-i18n="flex.toggle">Гибкая финансовая модель</span>
     <span class="chevron">&#9656;</span>
   </button>
 
@@ -139,33 +139,33 @@ viewport-fit=cover" />
       <div class="cf-card-header">
         <div class="cf-step-num">1</div>
         <div class="cf-card-header-text">
-          <div class="cf-card-title">Ваш доход</div>
-          <div class="cf-card-subtitle">Как вы получаете деньги?</div>
+          <div class="cf-card-title" data-i18n="flex.income.title">Ваш доход</div>
+          <div class="cf-card-subtitle" data-i18n="flex.income.subtitle">Как вы получаете деньги?</div>
         </div>
         <div class="cf-card-status" id="incomeCardStatus">
-          <span class="cf-status-dot"></span>Настроено
+          <span class="cf-status-dot"></span><span data-i18n="flex.configured">Настроено</span>
         </div>
       </div>
-      <div class="cf-micro-hint">Это нужно, чтобы точно понимать, когда у вас появляются деньги</div>
+      <div class="cf-micro-hint" data-i18n="flex.income.hint">Это нужно, чтобы точно понимать, когда у вас появляются деньги</div>
       <div class="toggle-group cf-toggle-income" id="incomeToggle">
-        <button class="mode-btn active" data-value="fixed">Фиксированный</button>
-        <button class="mode-btn" data-value="variable">Нефиксированный</button>
+        <button class="mode-btn active" data-value="fixed" data-i18n="flex.fixed">Фиксированный</button>
+        <button class="mode-btn" data-value="variable" data-i18n="flex.variable">Нефиксированный</button>
       </div>
       <div id="fixedIncomeWrap" class="cf-fixed-amount-wrap" style="display:none">
         <div class="input-wrap">
-          <input id="fixedIncomeInput" type="text" inputmode="numeric" placeholder="Сумма дохода, ₽" class="cf-amount-input" />
+          <input id="fixedIncomeInput" type="text" inputmode="numeric" class="cf-amount-input" data-i18n-placeholder="flex.incomeAmount.placeholder" placeholder="Сумма дохода" />
         </div>
       </div>
       <div id="incomeFrequencySelector" class="frequency-selector" data-for="income">
-        <div class="cf-freq-label">Как часто вы получаете доход?</div>
+        <div class="cf-freq-label" data-i18n="flex.freq.label.income">Как часто вы получаете доход?</div>
         <div class="freq-grid">
-          <button class="freq-btn active" data-freq="monthly">Ежемесячно</button>
-          <button class="freq-btn" data-freq="weekly">Раз в неделю</button>
-          <button class="freq-btn" data-freq="biweekly">Раз в 2 нед.</button>
-          <button class="freq-btn" data-freq="custom">Свой график</button>
+          <button class="freq-btn active" data-freq="monthly" data-i18n="flex.freq.monthly">Ежемесячно</button>
+          <button class="freq-btn" data-freq="weekly" data-i18n="flex.freq.weekly">Раз в неделю</button>
+          <button class="freq-btn" data-freq="biweekly" data-i18n="flex.freq.biweekly">Раз в 2 нед.</button>
+          <button class="freq-btn" data-freq="custom" data-i18n="flex.freq.custom">Свой график</button>
         </div>
         <div class="monthdays-input" id="incomeMonthDaysWrap" style="display:none">
-          <div class="cf-hint" style="margin-top:8px">Выберите дни месяца, когда приходит доход</div>
+          <div class="cf-hint" style="margin-top:8px" data-i18n="flex.customDays.income">Выберите дни месяца, когда приходит доход</div>
           <input type="date" id="incomeMonthDaysDate" class="monthdays-date-input" />
           <div id="incomeMonthDaysList" class="monthdays-list"></div>
         </div>
@@ -178,33 +178,33 @@ viewport-fit=cover" />
       <div class="cf-card-header">
         <div class="cf-step-num">2</div>
         <div class="cf-card-header-text">
-          <div class="cf-card-title">Ваши расходы</div>
-          <div class="cf-card-subtitle">Как происходят ваши расходы?</div>
+          <div class="cf-card-title" data-i18n="flex.expense.title">Ваши расходы</div>
+          <div class="cf-card-subtitle" data-i18n="flex.expense.subtitle">Как происходят ваши расходы?</div>
         </div>
         <div class="cf-card-status" id="expenseCardStatus">
-          <span class="cf-status-dot"></span>Настроено
+          <span class="cf-status-dot"></span><span data-i18n="flex.configured">Настроено</span>
         </div>
       </div>
-      <div class="cf-micro-hint">Это влияет на расчёт свободных средств и срок достижения цели</div>
+      <div class="cf-micro-hint" data-i18n="flex.expense.hint">Это влияет на расчёт свободных средств и срок достижения цели</div>
       <div class="toggle-group cf-toggle-expense" id="expenseToggle">
-        <button class="mode-btn active" data-value="fixed">Фиксированный</button>
-        <button class="mode-btn" data-value="variable">Нефиксированный</button>
+        <button class="mode-btn active" data-value="fixed" data-i18n="flex.fixed">Фиксированный</button>
+        <button class="mode-btn" data-value="variable" data-i18n="flex.variable">Нефиксированный</button>
       </div>
       <div id="fixedExpenseWrap" class="cf-fixed-amount-wrap" style="display:none">
         <div class="input-wrap">
-          <input id="fixedExpenseInput" type="text" inputmode="numeric" placeholder="Сумма расхода, ₽" class="cf-amount-input" />
+          <input id="fixedExpenseInput" type="text" inputmode="numeric" class="cf-amount-input" data-i18n-placeholder="flex.expenseAmount.placeholder" placeholder="Сумма расхода" />
         </div>
       </div>
       <div id="expenseFrequencySelector" class="frequency-selector" data-for="expense">
-        <div class="cf-freq-label">Как часто вы тратите деньги?</div>
+        <div class="cf-freq-label" data-i18n="flex.freq.label.expense">Как часто вы тратите деньги?</div>
         <div class="freq-grid">
-          <button class="freq-btn active" data-freq="monthly">Ежемесячно</button>
-          <button class="freq-btn" data-freq="weekly">Раз в неделю</button>
-          <button class="freq-btn" data-freq="biweekly">Раз в 2 нед.</button>
-          <button class="freq-btn" data-freq="custom">Свой график</button>
+          <button class="freq-btn active" data-freq="monthly" data-i18n="flex.freq.monthly">Ежемесячно</button>
+          <button class="freq-btn" data-freq="weekly" data-i18n="flex.freq.weekly">Раз в неделю</button>
+          <button class="freq-btn" data-freq="biweekly" data-i18n="flex.freq.biweekly">Раз в 2 нед.</button>
+          <button class="freq-btn" data-freq="custom" data-i18n="flex.freq.custom">Свой график</button>
         </div>
         <div class="monthdays-input" id="expenseMonthDaysWrap" style="display:none">
-          <div class="cf-hint" style="margin-top:8px">Выберите дни месяца, когда происходят расходы</div>
+          <div class="cf-hint" style="margin-top:8px" data-i18n="flex.customDays.expense">Выберите дни месяца, когда происходят расходы</div>
           <input type="date" id="expenseMonthDaysDate" class="monthdays-date-input" />
           <div id="expenseMonthDaysList" class="monthdays-list"></div>
         </div>
@@ -216,7 +216,7 @@ viewport-fit=cover" />
     <div class="cf-card cf-card--summary" id="cfFlowSummary">
       <div class="cf-card-header">
         <div class="cf-step-num cf-step-num--check">✓</div>
-        <div class="cf-card-title">Ваша модель</div>
+        <div class="cf-card-title" data-i18n="flex.model.title">Ваша модель</div>
       </div>
       <div id="cfFlowSummaryText" class="cf-summary-text"></div>
     </div>
@@ -226,12 +226,12 @@ viewport-fit=cover" />
       <div class="cf-card-header">
         <div class="cf-step-num">3</div>
         <div class="cf-card-header-text">
-          <div class="cf-card-title">Финансовые события</div>
-          <div class="cf-card-subtitle">Добавляйте реальные поступления и расходы</div>
+          <div class="cf-card-title" data-i18n="flex.events.title">Финансовые события</div>
+          <div class="cf-card-subtitle" data-i18n="flex.events.subtitle">Добавляйте реальные поступления и расходы</div>
         </div>
       </div>
-      <div class="cf-micro-hint">Отслеживайте каждое финансовое событие для точного прогноза</div>
-      <button id="addFinancialEvent" class="add-event-btn">+ Добавить событие</button>
+      <div class="cf-micro-hint" data-i18n="flex.events.hint">Отслеживайте каждое финансовое событие для точного прогноза</div>
+      <button id="addFinancialEvent" class="add-event-btn" data-i18n="flex.events.add">+ Добавить событие</button>
     </div>
 
     </div>
@@ -246,7 +246,7 @@ viewport-fit=cover" />
 <div class="lockCard">
 <div class="lockIcon">🔒</div>
 <div id="lockText"></div>
-<button id="resetPlan">Начать сначала</button>
+<button id="resetPlan" data-i18n="lock.reset">Начать сначала</button>
 </div>
 </div>
 </div>
@@ -301,7 +301,7 @@ Protocol анализирует данные…
     <button id="historyBack" class="header-back">←</button>
   </div>
   <div class="header-center">
-    <div class="header-title" id="historyTitle">История счёта</div>
+    <div class="header-title" id="historyTitle" data-i18n="history.title">История счёта</div>
   </div>
   <div class="header-right"></div>
 </div>
@@ -315,7 +315,7 @@ Protocol анализирует данные…
 <div class="app-header">
 <div class="header-left"></div>
 <div class="header-center">
-<div class="header-title">Счета</div>
+<div class="header-title" data-i18n="accounts.title">Счета</div>
 </div>
 <div class="header-right"></div>
 </div>
@@ -332,19 +332,19 @@ Protocol анализирует данные…
 <div class="card">
 <div class="account-card-top">
 <div class="account-card-left">
-<div id="mainAccountTitle" style="font-size:17px;font-weight:600">Основной счёт</div>
-<div style="opacity:.6;font-size:14px;margin-top:4px">Накоплено</div>
+<div id="mainAccountTitle" style="font-size:17px;font-weight:600" data-i18n="accounts.main">Основной счёт</div>
+<div style="opacity:.6;font-size:14px;margin-top:4px" data-i18n="accounts.saved">Накоплено</div>
 <div style="margin-top:8px;font-size:22px;font-weight:600">
-<span id="mainAmount">0</span> ₽
+<span id="mainAmount">0</span> <span class="currency-symbol">₽</span>
 </div>
 </div>
 <div class="monthly-status" id="monthlyStatusBlock">
-<div class="monthly-status-label" id="monthlyStatusLabel">Внесено</div>
+<div class="monthly-status-label" id="monthlyStatusLabel" data-i18n="monthly.deposited">Внесено</div>
 <div class="monthly-status-value" id="monthlyStatusValue">0 / 0 ₽</div>
 </div>
 </div>
 </div>
-<div class="account-hint neutral">
+<div class="account-hint neutral" data-i18n="accounts.mainHint">
 Этот счёт отражает ваши накопления по плану Protocol.
 Это может быть банковский или инвестиционный счёт
 либо наличные — главное, чтобы сумма соответствовала расчётам.
@@ -361,15 +361,15 @@ Protocol анализирует данные…
 <div class="flip-inner">
 <div class="flip-front account-flip-front account-flip-front--reserve">
 <div class="card">
-<div style="font-size:17px;font-weight:600">Резерв</div>
-<div style="opacity:.6;font-size:14px;margin-top:4px">
+<div style="font-size:17px;font-weight:600" data-i18n="accounts.reserve">Резерв</div>
+<div style="opacity:.6;font-size:14px;margin-top:4px" data-i18n="accounts.reserveSub">
 Подушка безопасности
 </div>
 <div style="margin-top:8px;font-size:22px;font-weight:600">
-<span id="reserveAmount">0</span> ₽
+<span id="reserveAmount">0</span> <span class="currency-symbol">₽</span>
 </div>
 </div>
-<div class="account-hint">
+<div class="account-hint" data-i18n="accounts.reserveHint">
 Резерв — это средства для экстренных ситуаций.
 Эти деньги не участвуют в достижении цели и
 используются только при необходимости.
@@ -387,7 +387,7 @@ Protocol анализирует данные…
 <div class="app-header">
 <div class="header-left"></div>
 <div class="header-center">
-<div class="header-title">Цели</div>
+<div class="header-title" data-i18n="goals.title">Цели</div>
 </div>
 <div class="header-right"></div>
 </div>
@@ -396,8 +396,8 @@ Protocol анализирует данные…
 <div class="goal-swipe-content" id="goalSwipeContent">
 
 <div class="card" id="activeGoalCard">
-<div id="goalPausedBadge" class="goal-paused-badge">На паузе</div>
-<div style="font-size:14px;opacity:.6">Активная цель</div>
+<div id="goalPausedBadge" class="goal-paused-badge" data-i18n="goals.paused">На паузе</div>
+<div style="font-size:14px;opacity:.6" data-i18n="goals.active">Активная цель</div>
 
 <div class="goal-title-row">
 <h3 id="goalTitle">Основная цель</h3>
@@ -415,16 +415,16 @@ Protocol анализирует данные…
 </div>
 
 <div class="goal-meta">
-Цель: <b><span id="goalTotal">—</span> ₽</b><br>
-Накоплено: <b><span id="goalSaved">—</span> ₽</b>
+<span data-i18n="goals.goalLabel">Цель</span>: <b><span id="goalTotal">—</span> <span class="currency-symbol">₽</span></b><br>
+<span data-i18n="goals.savedLabel">Накоплено</span>: <b><span id="goalSaved">—</span> <span class="currency-symbol">₽</span></b>
 </div>
 
 <div class="card goal-reserve-card" id="goalReserveCard" style="display:none">
 <div style="font-size:14px;opacity:.6">Резерв</div>
 <div style="font-size:22px;font-weight:600;margin-top:4px">
-<span id="goalReserveAmount">0</span> ₽
+<span id="goalReserveAmount">0</span> <span class="currency-symbol">₽</span>
 </div>
-<div style="font-size:14px;line-height:1.4;opacity:.75;margin-top:8px">
+<div style="font-size:14px;line-height:1.4;opacity:.75;margin-top:8px" data-i18n="goals.reserveHint">
 Эти средства не участвуют в достижении цели и
 используются как подушка безопасности.
 </div>
@@ -444,11 +444,11 @@ Protocol анализирует данные…
 <div class="goal-swipe-indicator" id="goalSwipeIndicator"></div>
 </div>
 
-<div class="protocol-verdict" id="goalVerdict">
+<div class="protocol-verdict" id="goalVerdict" data-i18n="goals.analyzing">
 Protocol анализирует цель…
 </div>
 
-<button id="advancedSettingsGoals" class="advanced-settings-btn" type="button">
+<button id="advancedSettingsGoals" class="advanced-settings-btn" type="button" data-i18n="goals.advancedSettings">
 Расширенные настройки
 </button>
 </div>
@@ -458,7 +458,7 @@ Protocol анализирует цель…
 <div class="app-header">
 <div class="header-left"></div>
 <div class="header-center">
-<div class="header-title">Расходы</div>
+<div class="header-title" data-i18n="expenses.title">Расходы</div>
 </div>
 <div class="header-right"></div>
 </div>
@@ -469,24 +469,24 @@ Protocol анализирует цель…
   <!-- A) Top Summary -->
   <div class="exp-summary-card" id="expSummaryCard">
     <div class="exp-summary-row">
-      <span class="exp-summary-label">Потрачено</span>
-      <span class="exp-summary-value"><span id="expSpent">0</span> ₽ / <span id="expLimit">0</span> ₽</span>
+      <span class="exp-summary-label" data-i18n="expenses.spent">Потрачено</span>
+      <span class="exp-summary-value"><span id="expSpent">0</span> <span class="currency-symbol">₽</span> / <span id="expLimit">0</span> <span class="currency-symbol">₽</span></span>
     </div>
     <div class="exp-summary-remaining">
-      Осталось: <span id="expRemaining">0</span> ₽
+      <span data-i18n="expenses.remaining">Осталось</span>: <span id="expRemaining">0</span> <span class="currency-symbol">₽</span>
     </div>
     <div class="exp-progress-track">
       <div class="exp-progress-fill" id="expProgressFill"></div>
     </div>
-    <div class="exp-status" id="expStatus">Добавьте расход</div>
+    <div class="exp-status" id="expStatus" data-i18n="expenses.addPrompt">Добавьте расход</div>
   </div>
 
   <!-- B) Donut Chart -->
   <div class="exp-donut-wrap" id="expDonutWrap">
     <canvas id="expDonutCanvas" width="220" height="220"></canvas>
     <div class="exp-donut-center">
-      <div class="exp-donut-center-label">Потрачено</div>
-      <div class="exp-donut-center-value" id="expDonutTotal">0 ₽</div>
+      <div class="exp-donut-center-label" data-i18n="expenses.spent">Потрачено</div>
+      <div class="exp-donut-center-value" id="expDonutTotal">0</div>
     </div>
   </div>
 
@@ -494,13 +494,13 @@ Protocol анализирует цель…
   <div class="exp-categories" id="expCategories"></div>
 
   <!-- D) Add Expense Button -->
-  <button class="exp-add-btn" id="expAddBtn">Добавить расход</button>
+  <button class="exp-add-btn" id="expAddBtn" data-i18n="expenses.addExpense">Добавить расход</button>
 
   <!-- Empty State -->
   <div class="exp-empty" id="expEmpty" style="display:none">
     <div class="exp-empty-ring"></div>
-    <div class="exp-empty-text">Добавьте первый расход, чтобы начать отслеживание бюджета</div>
-    <button class="exp-add-btn exp-add-btn--empty" id="expAddBtnEmpty">Добавить расход</button>
+    <div class="exp-empty-text" data-i18n="expenses.addFirst">Добавьте первый расход, чтобы начать отслеживание бюджета</div>
+    <button class="exp-add-btn exp-add-btn--empty" id="expAddBtnEmpty" data-i18n="expenses.addExpense">Добавить расход</button>
   </div>
 
 </div>
@@ -518,7 +518,7 @@ Protocol анализирует цель…
       </div>
       <div class="exp-detail-count" id="expDetailCount"></div>
     </div>
-    <div class="exp-detail-total" id="expDetailTotal">0 ₽</div>
+    <div class="exp-detail-total" id="expDetailTotal">0</div>
     <div class="exp-detail-meta" id="expDetailMeta"></div>
     <div class="exp-detail-progress-wrap" id="expDetailProgressWrap" style="display:none">
       <div class="exp-detail-progress-track">
@@ -537,37 +537,37 @@ Protocol анализирует цель…
         <circle cx="29" cy="22" r="1.5" fill="rgba(255,255,255,0.15)"/>
       </svg>
     </div>
-    <div class="exp-detail-empty-title">Здесь пока нет расходов</div>
-    <div class="exp-detail-empty-sub">Добавьте первый расход в этой категории</div>
+    <div class="exp-detail-empty-title" data-i18n="expenses.emptyCategory">Здесь пока нет расходов</div>
+    <div class="exp-detail-empty-sub" data-i18n="expenses.emptyCategorySub">Добавьте первый расход в этой категории</div>
   </div>
 </div>
 
 <!-- ===== ADD EXPENSE SHEET ===== -->
 <div id="expenseSheetOverlay" class="proto-sheet-overlay"></div>
 <div id="expenseSheet" class="proto-sheet proto-sheet--form">
-  <h2 style="margin-bottom:18px">Новый расход</h2>
+  <h2 style="margin-bottom:18px" data-i18n="expenses.newExpense">Новый расход</h2>
 
-  <div class="cf-label" style="margin-bottom:8px">Категория</div>
+  <div class="cf-label" style="margin-bottom:8px" data-i18n="expenses.category">Категория</div>
   <div class="exp-cat-grid" id="expCatGrid"></div>
 
   <div class="expense-form-fields">
     <div class="input-wrap" style="margin-top:16px">
-      <label>Сумма</label>
+      <label data-i18n="expenses.amount">Сумма</label>
       <input id="expenseAmount" inputmode="numeric" placeholder="0" />
     </div>
     <div class="input-wrap" style="margin-top:8px">
-      <label>Дата</label>
+      <label data-i18n="expenses.date">Дата</label>
       <input id="expenseDate" type="date" />
     </div>
     <div class="input-wrap" style="margin-top:8px">
-      <label>Заметка (необязательно)</label>
-      <input id="expenseNote" placeholder="Комментарий" />
+      <label data-i18n="expenses.note">Заметка (необязательно)</label>
+      <input id="expenseNote" data-i18n-placeholder="expenses.notePlaceholder" placeholder="Комментарий" />
     </div>
   </div>
 
   <div class="exp-validation" id="expValidation" style="display:none"></div>
 
-  <button id="expenseSaveBtn" class="unexpected-confirm-btn" style="margin-top:20px">Сохранить расход</button>
+  <button id="expenseSaveBtn" class="unexpected-confirm-btn" style="margin-top:20px" data-i18n="expenses.saveExpense">Сохранить расход</button>
 </div>
 
 <!-- ===== PROFILE ===== -->
@@ -575,7 +575,7 @@ Protocol анализирует цель…
 
 <div class="profile-header">
 <button id="profileBack">←</button>
-<div class="profile-title">Профиль</div>
+<div class="profile-title" data-i18n="profile.title">Профиль</div>
 </div>
 
 <div class="profile-card">
@@ -587,14 +587,14 @@ Protocol анализирует цель…
 </div>
 
 <div>
-<div class="profile-name">Пользователь</div>
+<div class="profile-name" data-i18n="profile.user">Пользователь</div>
 <div class="profile-status">Protocol Finance</div>
 </div>
 </div>
 
-<button id="settingsBtn" class="profile-btn">⚙️ Настройки</button>
-<button id="goalHistoryBtn" class="profile-btn">📋 История целей</button>
-<button id="profileResetPlan" class="profile-btn danger">🔄 Сбросить план</button>
+<button id="settingsBtn" class="profile-btn" data-i18n="profile.settings">⚙️ Настройки</button>
+<button id="goalHistoryBtn" class="profile-btn" data-i18n="profile.goalHistory">📋 История целей</button>
+<button id="profileResetPlan" class="profile-btn danger" data-i18n="profile.resetPlan">🔄 Сбросить план</button>
 </div>
 
 <!-- ===== SETTINGS SCREEN ===== -->
@@ -822,12 +822,12 @@ Protocol анализирует цель…
       <button id="goalHistoryBack" class="header-back">←</button>
     </div>
     <div class="header-center">
-      <div class="header-title">История целей</div>
+      <div class="header-title" data-i18n="goalHistory.title">История целей</div>
     </div>
     <div class="header-right"></div>
   </div>
   <div class="goal-history-body" id="goalHistoryBody">
-    <div class="goal-history-empty" id="goalHistoryEmpty">
+    <div class="goal-history-empty" id="goalHistoryEmpty" data-i18n="goalHistory.empty">
       Завершённых целей пока нет
     </div>
     <div id="goalHistoryList" class="goal-history-list"></div>
@@ -840,27 +840,27 @@ Protocol анализирует цель…
 
 <button class="nav-btn nav-btn--labeled active" data-screen="calc">
 <div id="nav-calc-lottie" class="nav-lottie"></div>
-<span class="nav-label">Расчёт</span>
+<span class="nav-label" data-i18n="nav.calc">Расчёт</span>
 </button>
 
 <button class="nav-btn nav-btn--labeled" data-screen="advice">
 <div id="nav-protocol-lottie" class="nav-lottie"></div>
-<span class="nav-label">Protocol</span>
+<span class="nav-label" data-i18n="nav.protocol">Protocol</span>
 </button>
 
 <button class="nav-btn nav-btn--labeled" data-screen="accounts">
 <div id="nav-accounts-lottie" class="nav-lottie"></div>
-<span class="nav-label">Счета</span>
+<span class="nav-label" data-i18n="nav.accounts">Счета</span>
 </button>
 
 <button class="nav-btn nav-btn--labeled" data-screen="goals">
 <div id="nav-goals-lottie" class="nav-lottie"></div>
-<span class="nav-label">Цели</span>
+<span class="nav-label" data-i18n="nav.goals">Цели</span>
 </button>
 
 <button class="nav-btn nav-btn--labeled" data-screen="ai">
 <div id="nav-expenses-lottie" class="nav-lottie"></div>
-<span class="nav-label">Расходы</span>
+<span class="nav-label" data-i18n="nav.expenses">Расходы</span>
 </button>
 </div>
 
@@ -873,12 +873,12 @@ Protocol анализирует цель…
       <button id="addAccountBack" class="header-back">←</button>
     </div>
     <div class="header-center">
-      <div class="header-title">Новый счёт</div>
+      <div class="header-title" data-i18n="accounts.newAccount">Новый счёт</div>
     </div>
     <div class="header-right"></div>
   </div>
 
-  <div style="padding:20px; opacity:.7">
+  <div style="padding:20px; opacity:.7" data-i18n="accounts.newAccountHint">
     Здесь будет создание нового счёта.
   </div>
 
@@ -892,19 +892,19 @@ Protocol анализирует цель…
       <button id="accountStatsBack" class="header-back">←</button>
     </div>
     <div class="header-center">
-      <div class="header-title">Статистика счёта</div>
+      <div class="header-title" data-i18n="accounts.statsTitle">Статистика счёта</div>
     </div>
     <div class="header-right"></div>
   </div>
 
   <div class="stats-body">
 
-    <div class="stats-section-label">Тип хранения</div>
+    <div class="stats-section-label" data-i18n="accounts.storageType">Тип хранения</div>
     <div class="stats-type-grid" id="statsTypeGrid">
-      <div class="card stats-type-card" data-stype="cash">Наличные</div>
-      <div class="card stats-type-card" data-stype="stock">Фондовый рынок</div>
-      <div class="card stats-type-card" data-stype="deposit">Вклад / копилка в банке</div>
-      <div class="card stats-type-card" data-stype="metals">Драгоценные металлы</div>
+      <div class="card stats-type-card" data-stype="cash" data-i18n="accounts.cash">Наличные</div>
+      <div class="card stats-type-card" data-stype="stock" data-i18n="accounts.stock">Фондовый рынок</div>
+      <div class="card stats-type-card" data-stype="deposit" data-i18n="accounts.deposit">Вклад / копилка в банке</div>
+      <div class="card stats-type-card" data-stype="metals" data-i18n="accounts.metals">Драгоценные металлы</div>
     </div>
 
     <div id="statsCashFields" class="stats-cash-fields" style="display:none">
@@ -932,7 +932,7 @@ Protocol анализирует цель…
       </div>
     </div>
 
-    <button id="statsSubmit" class="stats-submit-btn" disabled>Добавить статистику</button>
+    <button id="statsSubmit" class="stats-submit-btn" disabled data-i18n="accounts.addStats">Добавить статистику</button>
 
   </div>
 
@@ -950,23 +950,23 @@ Protocol анализирует цель…
       <button id="advancedBack" class="header-back">←</button>
     </div>
     <div class="header-center">
-      <div class="header-title">Расширенные настройки</div>
+      <div class="header-title" data-i18n="advanced.title">Расширенные настройки</div>
     </div>
     <div class="header-right"></div>
   </div>
 
   <div class="advanced-settings">
     <div class="advanced-setting-card adv-card-goals" id="advCardGoalsBtn">
-      <div class="advanced-setting-title" id="advCardGoalsTitle">Новая цель</div>
-      <div class="advanced-setting-desc" id="advCardGoalsDesc">Создайте новую цель и управляйте несколькими накоплениями одновременно</div>
+      <div class="advanced-setting-title" id="advCardGoalsTitle" data-i18n="advanced.newGoal">Новая цель</div>
+      <div class="advanced-setting-desc" id="advCardGoalsDesc" data-i18n="advanced.newGoalDesc">Создайте новую цель и управляйте несколькими накоплениями одновременно</div>
     </div>
     <div class="advanced-setting-card" id="advCardDeadlines">
-      <div class="advanced-setting-title">Управление сроками целей</div>
-      <div class="advanced-setting-desc">Продлите или сократите срок достижения своих целей</div>
+      <div class="advanced-setting-title" data-i18n="advanced.deadlines">Управление сроками целей</div>
+      <div class="advanced-setting-desc" data-i18n="advanced.deadlinesDesc">Продлите или сократите срок достижения своих целей</div>
     </div>
     <div class="advanced-setting-card" id="advCardPriorities">
-      <div class="advanced-setting-title">Приоритеты накоплений</div>
-      <div class="advanced-setting-desc">Определите, какая цель важнее — и перераспределите средства</div>
+      <div class="advanced-setting-title" data-i18n="advanced.priorities">Приоритеты накоплений</div>
+      <div class="advanced-setting-desc" data-i18n="advanced.prioritiesDesc">Определите, какая цель важнее — и перераспределите средства</div>
     </div>
   </div>
 
@@ -979,13 +979,13 @@ Protocol анализирует цель…
       <button id="advancedGoalsBack" class="header-back">←</button>
     </div>
     <div class="header-center">
-      <div class="header-title">Ваши цели</div>
+      <div class="header-title" data-i18n="advGoals.title">Ваши цели</div>
     </div>
     <div class="header-right"></div>
   </div>
   <div class="advanced-goals-screen-body">
     <div id="advancedGoalsList" class="advanced-goals-list"></div>
-    <button id="addGoalBtn" class="advanced-add-goal-btn">+ Добавить цель</button>
+    <button id="addGoalBtn" class="advanced-add-goal-btn" data-i18n="advGoals.add">+ Добавить цель</button>
   </div>
 </div>
 
@@ -996,14 +996,14 @@ Protocol анализирует цель…
       <button id="goalTimelineBack" class="header-back">←</button>
     </div>
     <div class="header-center">
-      <div class="header-title">Сроки целей</div>
+      <div class="header-title" data-i18n="timeline.title">Сроки целей</div>
     </div>
     <div class="header-right"></div>
   </div>
   <div class="goal-mgmt-body" id="goalTimelineBody">
     <div class="goal-mgmt-section">
-      <div class="goal-mgmt-section-title">Управление сроками</div>
-      <div class="goal-mgmt-hint">Увеличивайте или сокращайте срок достижения каждой цели. Изменения применяются после сохранения.</div>
+      <div class="goal-mgmt-section-title" data-i18n="timeline.manage">Управление сроками</div>
+      <div class="goal-mgmt-hint" data-i18n="timeline.hint">Увеличивайте или сокращайте срок достижения каждой цели. Изменения применяются после сохранения.</div>
       <div id="goalTimelineAllocation" class="goal-mgmt-allocation"></div>
     </div>
   </div>
@@ -1016,14 +1016,14 @@ Protocol анализирует цель…
       <button id="goalPriorityBack" class="header-back">←</button>
     </div>
     <div class="header-center">
-      <div class="header-title">Приоритеты</div>
+      <div class="header-title" data-i18n="priority.title">Приоритеты</div>
     </div>
     <div class="header-right"></div>
   </div>
   <div class="goal-mgmt-body" id="goalPriorityBody">
     <div class="goal-mgmt-section">
-      <div class="goal-mgmt-section-title">Приоритеты и порядок</div>
-      <div class="goal-mgmt-hint">Определите приоритет каждой цели и порядок распределения средств</div>
+      <div class="goal-mgmt-section-title" data-i18n="priority.manage">Приоритеты и порядок</div>
+      <div class="goal-mgmt-hint" data-i18n="priority.hint">Определите приоритет каждой цели и порядок распределения средств</div>
       <div id="goalPriorityList" class="goal-mgmt-priorities"></div>
     </div>
   </div>
@@ -1036,12 +1036,12 @@ Protocol анализирует цель…
       <button id="unexpectedBack" class="header-back">←</button>
     </div>
     <div class="header-center">
-      <div class="header-title">Непредвиденный расход</div>
+      <div class="header-title" data-i18n="unexpected.title">Непредвиденный расход</div>
     </div>
     <div class="header-right"></div>
   </div>
 
-  <div class="unexpected-desc">
+  <div class="unexpected-desc" data-i18n="unexpected.desc">
     Этот механизм фиксирует внеплановые расходы.
     После подтверждения Protocol пересчитает финансовый план,
     скорректирует срок цели и обновит аналитику.
@@ -1055,8 +1055,8 @@ Protocol анализирует цель…
         </svg>
       </div>
       <div>
-        <div class="unexpected-option-title">Потратил из накоплений</div>
-        <div class="unexpected-option-desc">Сумма будет вычтена из основного счёта</div>
+        <div class="unexpected-option-title" data-i18n="unexpected.fromGoal">Потратил из накоплений</div>
+        <div class="unexpected-option-desc" data-i18n="unexpected.fromGoalDesc">Сумма будет вычтена из основного счёта</div>
       </div>
     </div>
 
@@ -1067,8 +1067,8 @@ Protocol анализирует цель…
         </svg>
       </div>
       <div>
-        <div class="unexpected-option-title">Потратил из резерва</div>
-        <div class="unexpected-option-desc">Сумма будет вычтена из резервного счёта</div>
+        <div class="unexpected-option-title" data-i18n="unexpected.fromReserve">Потратил из резерва</div>
+        <div class="unexpected-option-desc" data-i18n="unexpected.fromReserveDesc">Сумма будет вычтена из резервного счёта</div>
       </div>
     </div>
 
@@ -1079,25 +1079,25 @@ Protocol анализирует цель…
         </svg>
       </div>
       <div>
-        <div class="unexpected-option-title">Пропускаю взнос</div>
-        <div class="unexpected-option-desc">Этот месяц будет пропущен в плане</div>
+        <div class="unexpected-option-title" data-i18n="unexpected.skip">Пропускаю взнос</div>
+        <div class="unexpected-option-desc" data-i18n="unexpected.skipDesc">Этот месяц будет пропущен в плане</div>
       </div>
     </div>
   </div>
 
   <div id="unexpectedAmountBlock" class="unexpected-amount-block" style="display:none">
-    <label>Сумма расхода</label>
+    <label data-i18n="unexpected.amount">Сумма расхода</label>
     <div class="input-wrap">
       <input id="unexpectedAmount" inputmode="numeric" placeholder="10.000">
     </div>
-    <button id="unexpectedConfirm" class="unexpected-confirm-btn">Подтвердить</button>
+    <button id="unexpectedConfirm" class="unexpected-confirm-btn" data-i18n="unexpected.confirm">Подтвердить</button>
   </div>
 
   <div id="unexpectedSkipBlock" class="unexpected-skip-block" style="display:none">
-    <div class="unexpected-skip-info">
+    <div class="unexpected-skip-info" data-i18n="unexpected.skipInfo">
       Месяц будет пропущен. Срок цели увеличится на 1 месяц.
     </div>
-    <button id="unexpectedSkipConfirm" class="unexpected-confirm-btn">Подтвердить пропуск</button>
+    <button id="unexpectedSkipConfirm" class="unexpected-confirm-btn" data-i18n="unexpected.skipConfirm">Подтвердить пропуск</button>
   </div>
 </div>
 
@@ -1108,36 +1108,36 @@ Protocol анализирует цель…
       <button id="paceBack" class="header-back">←</button>
     </div>
     <div class="header-center">
-      <div class="header-title">Темп накоплений</div>
+      <div class="header-title" data-i18n="pace.title">Темп накоплений</div>
     </div>
     <div class="header-right"></div>
   </div>
 
   <div class="pace-body">
     <div class="pace-info-card card">
-      <div class="pace-info-label">Текущий темп</div>
+      <div class="pace-info-label" data-i18n="pace.current">Текущий темп</div>
       <div class="pace-info-value" id="paceCurrentMode">—</div>
-      <div class="pace-info-sub">Сейчас вы откладываете: <b id="paceCurrentMonthly">—</b> ₽ / мес</div>
-      <div class="pace-info-sub">Текущая цель будет достигнута за: <b id="paceCurrentMonths">—</b> мес</div>
+      <div class="pace-info-sub"><span data-i18n="pace.currentSaving">Сейчас вы откладываете</span>: <b id="paceCurrentMonthly">—</b> <span class="currency-symbol">₽</span> <span data-i18n="pace.perMonth">/ мес</span></div>
+      <div class="pace-info-sub"><span data-i18n="pace.goalAchieved">Текущая цель будет достигнута за</span>: <b id="paceCurrentMonths">—</b> <span data-i18n="pace.months">мес</span></div>
     </div>
 
-    <div class="pace-selector-label">Выберите новый темп</div>
+    <div class="pace-selector-label" data-i18n="pace.selectNew">Выберите новый темп</div>
     <div class="pace-mode-buttons" id="paceModeButtons">
-      <button class="mode-btn" data-mode="calm">Спокойно</button>
-      <button class="mode-btn" data-mode="normal">Умеренно</button>
-      <button class="mode-btn" data-mode="aggressive">Агрессивно</button>
+      <button class="mode-btn" data-mode="calm" data-i18n="calc.mode.calm">Спокойно</button>
+      <button class="mode-btn" data-mode="normal" data-i18n="calc.mode.normal">Умеренно</button>
+      <button class="mode-btn" data-mode="aggressive" data-i18n="calc.mode.aggressive">Агрессивно</button>
     </div>
     <div class="pace-hint" id="paceHint"></div>
 
     <div class="pace-preview-card" id="pacePreviewCard" style="display:none">
       <div id="pacePreviewText" class="pace-preview-text"></div>
       <div class="pace-preview-values">
-        <div class="pace-preview-row">Новый объём накоплений: <b id="pacePreviewMonthly">—</b> ₽ / мес</div>
-        <div class="pace-preview-row">Новый срок: <b id="pacePreviewMonths">—</b> мес</div>
+        <div class="pace-preview-row"><span data-i18n="pace.newVolume">Новый объём накоплений</span>: <b id="pacePreviewMonthly">—</b> <span class="currency-symbol">₽</span> <span data-i18n="pace.perMonth">/ мес</span></div>
+        <div class="pace-preview-row"><span data-i18n="pace.newTerm">Новый срок</span>: <b id="pacePreviewMonths">—</b> <span data-i18n="pace.months">мес</span></div>
       </div>
     </div>
 
-    <button id="paceConfirmBtn" class="advanced-settings-btn save-pace-btn" type="button">Сохранить темп накоплений</button>
+    <button id="paceConfirmBtn" class="advanced-settings-btn save-pace-btn" type="button" data-i18n="pace.save">Сохранить темп накоплений</button>
   </div>
 </div>
 
@@ -1148,7 +1148,7 @@ Protocol анализирует цель…
       <button id="debtsBack" class="header-back">←</button>
     </div>
     <div class="header-center">
-      <div class="header-title">Кредиты и долги</div>
+      <div class="header-title" data-i18n="debts.title">Кредиты и долги</div>
     </div>
     <div class="header-right"></div>
   </div>
@@ -1156,14 +1156,14 @@ Protocol анализирует цель…
   <div class="debts-body" id="debtsBody">
     <div class="debt-summary-card" id="debtSummaryCard">
       <div class="debt-summary-chip">Protocol Finance</div>
-      <div class="debt-summary-total-label">Общий долг</div>
+      <div class="debt-summary-total-label" data-i18n="debts.totalDebt">Общий долг</div>
       <div class="debt-summary-total" id="debtSummaryTotal">0 ₽</div>
       <div class="debt-summary-row">
-        <span>Осталось выплатить</span>
+        <span data-i18n="debts.remaining">Осталось выплатить</span>
         <span id="debtSummaryRemaining">0 ₽</span>
       </div>
       <div class="debt-summary-row">
-        <span>Ближайший платёж</span>
+        <span data-i18n="debts.nextPayment">Ближайший платёж</span>
         <span id="debtSummaryNext">—</span>
       </div>
       <div class="debt-summary-status" id="debtSummaryStatus"></div>
@@ -1171,20 +1171,20 @@ Protocol анализирует цель…
 
     <div class="debt-planning-toggle-wrap">
       <label class="debt-planning-toggle-label">
-        <span>Учитывать долги отдельно в расчёте</span>
+        <span data-i18n="debts.planToggle">Учитывать долги отдельно в расчёте</span>
         <input type="checkbox" id="debtPlanningToggle" class="debt-toggle-input">
         <span class="debt-toggle-slider"></span>
       </label>
-      <div class="debt-planning-hint" id="debtModeHint">Если включено — ежемесячные платежи по долгам будут уменьшать свободные средства для накоплений</div>
+      <div class="debt-planning-hint" id="debtModeHint" data-i18n="debts.planHint">Если включено — ежемесячные платежи по долгам будут уменьшать свободные средства для накоплений</div>
     </div>
 
     <div id="debtManualRepayBlock" class="debt-manual-repay-block collapsed">
-      <div class="debt-manual-repay-label">На сколько вы погасили долг</div>
+      <div class="debt-manual-repay-label" data-i18n="debts.repayLabel">На сколько вы погасили долг</div>
       <div class="debt-manual-repay-row">
         <div class="input-wrap" style="flex:1;margin-bottom:0">
           <input id="debtManualRepayInput" inputmode="numeric" placeholder="0" />
         </div>
-        <button id="debtManualRepayBtn" class="debt-manual-repay-btn" type="button">Зафиксировать погашение</button>
+        <button id="debtManualRepayBtn" class="debt-manual-repay-btn" type="button" data-i18n="debts.repayBtn">Зафиксировать погашение</button>
       </div>
     </div>
 
@@ -1195,18 +1195,18 @@ Protocol анализирует цель…
       <div id="debtSwipeIndicator" class="debt-swipe-indicator"></div>
     </div>
 
-    <button id="addDebtBtn" class="advanced-settings-btn add-debt-btn" type="button">Добавить кредит или долг</button>
+    <button id="addDebtBtn" class="advanced-settings-btn add-debt-btn" type="button" data-i18n="debts.addDebt">Добавить кредит или долг</button>
   </div>
 </div>
 
 <!-- ===== DEBT ENTRY OVERLAY ===== -->
 <div id="debtEntryOverlay" class="debt-entry-overlay">
   <div class="debt-entry-modal">
-    <div class="debt-entry-question">Учтены ли кредиты и долги в указанной вами сумме расходов?</div>
-    <div class="debt-entry-hint">Это поможет Protocol точнее рассчитать ваш финансовый план</div>
+    <div class="debt-entry-question" data-i18n="debts.entryQuestion">Учтены ли кредиты и долги в указанной вами сумме расходов?</div>
+    <div class="debt-entry-hint" data-i18n="debts.entryHint">Это поможет Protocol точнее рассчитать ваш финансовый план</div>
     <div class="debt-entry-actions">
-      <button id="debtEntryNo" class="confirmBtn confirmBtn--cancel">Нет</button>
-      <button id="debtEntryYes" class="confirmBtn debt-entry-yes-btn">Да, примерно</button>
+      <button id="debtEntryNo" class="confirmBtn confirmBtn--cancel" data-i18n="debts.entryNo">Нет</button>
+      <button id="debtEntryYes" class="confirmBtn debt-entry-yes-btn" data-i18n="debts.entryYes">Да, примерно</button>
     </div>
   </div>
 </div>
@@ -1221,93 +1221,93 @@ Protocol анализирует цель…
   <div class="dph-divider"></div>
   <div class="dph-list" id="debtHistoryList"></div>
   <div class="dph-empty" id="debtHistoryEmpty" style="display:none">
-    <div class="dph-empty-title">История платежей пуста</div>
-    <div class="dph-empty-sub">Погашения появятся здесь</div>
+    <div class="dph-empty-title" data-i18n="debts.paymentHistory">История платежей пуста</div>
+    <div class="dph-empty-sub" data-i18n="debts.paymentHistorySub">Погашения появятся здесь</div>
   </div>
 </div>
 
 <!-- ===== ADD DEBT SHEET ===== -->
 <div id="addDebtOverlay" class="proto-sheet-overlay"></div>
 <div id="addDebtSheet" class="proto-sheet proto-sheet--form">
-  <h2 style="margin-bottom:18px">Новый кредит / долг</h2>
+  <h2 style="margin-bottom:18px" data-i18n="debts.newDebt">Новый кредит / долг</h2>
 
-  <div class="cf-label" style="margin-bottom:8px">Тип</div>
+  <div class="cf-label" style="margin-bottom:8px" data-i18n="debts.type">Тип</div>
   <div class="toggle-group debt-type-toggle" id="debtTypeToggle">
-    <button class="mode-btn active" data-value="credit">Кредит</button>
-    <button class="mode-btn" data-value="debt">Долг</button>
-    <button class="mode-btn" data-value="installment">Рассрочка</button>
-    <button class="mode-btn" data-value="card">Карта</button>
+    <button class="mode-btn active" data-value="credit" data-i18n="debts.credit">Кредит</button>
+    <button class="mode-btn" data-value="debt" data-i18n="debts.debt">Долг</button>
+    <button class="mode-btn" data-value="installment" data-i18n="debts.installment">Рассрочка</button>
+    <button class="mode-btn" data-value="card" data-i18n="debts.card">Карта</button>
   </div>
 
   <div class="debt-form-fields">
     <div class="input-wrap" style="margin-top:16px">
-      <label>Название</label>
-      <input id="debtTitle" placeholder="Например: Ипотека" />
+      <label data-i18n="debts.name">Название</label>
+      <input id="debtTitle" data-i18n-placeholder="debts.namePlaceholder" placeholder="Например: Ипотека" />
     </div>
     <div class="input-wrap">
-      <label>Общая сумма</label>
+      <label data-i18n="debts.totalAmount">Общая сумма</label>
       <input id="debtTotalAmount" inputmode="numeric" placeholder="1.000.000" />
     </div>
     <div class="input-wrap">
-      <label>Осталось выплатить</label>
+      <label data-i18n="debts.remainingAmount">Осталось выплатить</label>
       <input id="debtRemainingAmount" inputmode="numeric" placeholder="800.000" />
     </div>
     <div class="input-wrap">
-      <label>Ежемесячный платёж</label>
+      <label data-i18n="debts.monthlyPayment">Ежемесячный платёж</label>
       <input id="debtMonthlyPayment" inputmode="numeric" placeholder="25.000" />
     </div>
     <div class="input-wrap">
-      <label>Дата следующего платежа</label>
+      <label data-i18n="debts.nextDate">Дата следующего платежа</label>
       <input id="debtNextDate" type="date" />
     </div>
     <div class="input-wrap">
-      <label>Дата окончания</label>
+      <label data-i18n="debts.endDate">Дата окончания</label>
       <input id="debtEndDate" type="date" />
     </div>
     <div class="debt-card-fields" id="debtCardFields" style="display:none">
       <div class="input-wrap">
-        <label>Кредитный лимит</label>
+        <label data-i18n="debts.creditLimit">Кредитный лимит</label>
         <input id="debtCreditLimit" inputmode="numeric" placeholder="500.000" />
       </div>
       <div class="input-wrap">
-        <label>Свободный лимит</label>
+        <label data-i18n="debts.freeLimit">Свободный лимит</label>
         <input id="debtFreeLimit" inputmode="numeric" placeholder="200.000" />
       </div>
     </div>
     <div class="input-wrap">
-      <label>Комментарий (необязательно)</label>
-      <input id="debtNote" placeholder="Заметка" />
+      <label data-i18n="debts.note">Комментарий (необязательно)</label>
+      <input id="debtNote" data-i18n-placeholder="debts.notePlaceholder" placeholder="Заметка" />
     </div>
   </div>
 
-  <button id="debtSaveBtn" class="unexpected-confirm-btn" style="margin-top:20px">Сохранить</button>
+  <button id="debtSaveBtn" class="unexpected-confirm-btn" style="margin-top:20px" data-i18n="debts.save">Сохранить</button>
 </div>
 
 <!-- ===== BOTTOM SHEET ===== -->
 <div id="sheetOverlay" class="proto-sheet-overlay"></div>
 <div id="sheet" class="proto-sheet">
-<h2>Как копим?</h2>
+<h2 data-i18n="scenario.sheet.title">Как копим?</h2>
 
 <div class="card" id="noBuffer">
-<b>Без подушки</b>
+<b data-i18n="scenario.noBuf">Без подушки</b>
 
-Все деньги идут напрямую в цель.
+<span data-i18n="scenario.noBuf.desc">Все деньги идут напрямую в цель.</span>
 </div>
 
 <div class="card" id="withBuffer">
-<b>С подушкой</b>
+<b data-i18n="scenario.withBuf">С подушкой</b>
 
-Часть средств идёт в резерв — защита от непредвиденных расходов.
+<span data-i18n="scenario.withBuf.desc">Часть средств идёт в резерв — защита от непредвиденных расходов.</span>
 </div>
 </div>
 
 <!-- ===== CONFIRM RESET ===== -->
 <div id="confirmReset">
 <div class="confirmCard">
-<p class="confirmCard-text">Если вы нажмёте «Начать сначала», весь прогресс и накопления будут сброшены.</p>
+<p class="confirmCard-text" data-i18n="reset.text">Если вы нажмёте «Начать сначала», весь прогресс и накопления будут сброшены.</p>
 <div class="confirmCard-actions">
-<button id="confirmNo" class="confirmBtn confirmBtn--cancel">Отменить</button>
-<button id="confirmYes" class="confirmBtn confirmBtn--danger">Начать сначала</button>
+<button id="confirmNo" class="confirmBtn confirmBtn--cancel" data-i18n="reset.cancel">Отменить</button>
+<button id="confirmYes" class="confirmBtn confirmBtn--danger" data-i18n="reset.confirm">Начать сначала</button>
 </div>
 </div>
 </div>
@@ -1330,20 +1330,20 @@ z-index: 999999;
 
 <div id="goalEditorSheet" class="proto-sheet proto-sheet--form goal-editor">
 
-<h2 style="margin-bottom:18px">Редактирование цели</h2>
+<h2 style="margin-bottom:18px" data-i18n="goalEdit.title">Редактирование цели</h2>
 
 <div class="input-wrap">
-<label>Название цели</label>
-<input id="goalEditTitle" placeholder="Например: Квартира" />
+<label data-i18n="goalEdit.name">Название цели</label>
+<input id="goalEditTitle" data-i18n-placeholder="goalEdit.namePlaceholder" placeholder="Например: Квартира" />
 </div>
 
 <div class="input-wrap">
-<label>Сумма цели</label>
+<label data-i18n="goalEdit.amount">Сумма цели</label>
 <input id="goalEditAmount" inputmode="numeric" placeholder="300.000" />
 </div>
 <div id="goalEditHint" class="goal-edit-hint"></div>
 
-<button id="goalEditSave">Готово</button>
+<button id="goalEditSave" data-i18n="goalEdit.save">Готово</button>
 </div>
 </div>
 
@@ -1351,26 +1351,26 @@ z-index: 999999;
 <div id="eventEditorOverlay" class="proto-sheet-overlay"></div>
 <div id="eventEditorSheet" class="proto-sheet proto-sheet--form">
 
-  <h2 style="margin-bottom:18px">Новое событие</h2>
+  <h2 style="margin-bottom:18px" data-i18n="event.title">Новое событие</h2>
 
-  <div class="cf-label" style="margin-bottom:8px">Тип</div>
+  <div class="cf-label" style="margin-bottom:8px" data-i18n="event.type">Тип</div>
   <div class="toggle-group" id="eventTypeToggle">
-    <button class="mode-btn active" data-value="income">Доход</button>
-    <button class="mode-btn" data-value="expense">Расход</button>
+    <button class="mode-btn active" data-value="income" data-i18n="event.income">Доход</button>
+    <button class="mode-btn" data-value="expense" data-i18n="event.expense">Расход</button>
   </div>
 
   <div class="event-editor-fields">
     <div class="input-wrap" style="margin-top:16px">
-      <label>Сумма</label>
+      <label data-i18n="event.amount">Сумма</label>
       <input id="eventAmount" inputmode="numeric" placeholder="10.000" />
     </div>
     <div class="input-wrap event-date-wrap" style="margin-top:12px">
-      <label>Дата</label>
+      <label data-i18n="event.date">Дата</label>
       <input id="eventDate" type="date" />
     </div>
   </div>
 
-  <button id="eventSubmit" class="unexpected-confirm-btn" style="margin-top:20px">Добавить</button>
+  <button id="eventSubmit" class="unexpected-confirm-btn" style="margin-top:20px" data-i18n="event.add">Добавить</button>
 </div>
 
 <!-- Иконка профиля: фиксирована справа сверху, выровнена по высоте с названием вкладки -->
@@ -1413,6 +1413,7 @@ z-index: 999999;
 
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 <script src="state-manager.js"></script>
+<script src="i18n.js"></script>
 <script src="financial-events.js"></script>
 <script src="cashflow-engine.js"></script>
 <script src="graph-engine-svg.js?v=20001"></script>

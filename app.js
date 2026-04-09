@@ -326,7 +326,7 @@ reserve: 0
 };
 let initialBalance = 0;
 let goalMeta = {
-title: "Основная цель"
+title: ""
 };
 
 /* ===== MULTI-GOAL SYSTEM ===== */
@@ -361,7 +361,7 @@ function ensureDefaultGoal() {
     var goalSaved = accounts.main || 0;
     goals.push({
       id: "goal_1",
-      title: goalMeta.title || "Основная цель",
+      title: goalMeta.title || t("advGoals.mainGoal"),
       amount: goalAmount,
       saved: goalSaved,
       priority: 1,
@@ -793,9 +793,9 @@ function showDebtBreakdown(total, debtPart, savingsPart) {
   var el = document.getElementById("debtBreakdownBlock");
   if (!el) return;
   el.innerHTML =
-    '<div class="debt-breakdown-title">Из последних ' + total.toLocaleString() + ' ₽:</div>' +
-    '<div class="debt-breakdown-line"><span class="debt-breakdown-dot debt-breakdown-dot--debt"></span>' + debtPart.toLocaleString() + ' ₽ → в долг</div>' +
-    '<div class="debt-breakdown-line"><span class="debt-breakdown-dot debt-breakdown-dot--save"></span>' + savingsPart.toLocaleString() + ' ₽ → в накопления</div>';
+    '<div class="debt-breakdown-title">' + t("debts.breakdown.from", {amount: fmtAmount(total)}) + '</div>' +
+    '<div class="debt-breakdown-line"><span class="debt-breakdown-dot debt-breakdown-dot--debt"></span>' + fmtNum(debtPart) + ' ' + getCurrencySymbol() + ' ' + t("debts.breakdown.toDebt") + '</div>' +
+    '<div class="debt-breakdown-line"><span class="debt-breakdown-dot debt-breakdown-dot--save"></span>' + fmtNum(savingsPart) + ' ' + getCurrencySymbol() + ' ' + t("debts.breakdown.toSavings") + '</div>';
   el.classList.remove("debt-breakdown--hidden");
   el.classList.add("debt-breakdown--visible");
 
@@ -1139,15 +1139,23 @@ function loadFullState() {
     if (s.uiState && typeof s.uiState === "object") Object.assign(state, s.uiState);
 
     if (typeof s.activeGoalIndex === "number") activeGoalIndex = s.activeGoalIndex;
+
+    if (s.settings) {
+      window._protocolCurrency = s.settings.currency || "RUB";
+      window._protocolNumberFormat = s.settings.numberFormat || "spaces";
+      document.body.classList.toggle("reduce-motion", !s.settings.animationsEnabled);
+    }
+    if (typeof applyLanguageToDOM === "function") applyLanguageToDOM();
+
     ensureDefaultGoal();
     advanceDebtPeriods();
 
     if (isInitialized) {
       lockTabs(false);
       planSummary.style.display = "block";
-      if (summaryMonthly && lastCalc.monthlySave) summaryMonthly.innerText = lastCalc.monthlySave.toLocaleString();
+      if (summaryMonthly && lastCalc.monthlySave) summaryMonthly.innerText = fmtNum(lastCalc.monthlySave);
       if (summaryMonths && lastCalc.months) summaryMonths.innerText = lastCalc.months;
-      if (summaryMode) summaryMode.innerText = saveMode === "calm" ? "Спокойный" : saveMode === "normal" ? "Умеренный" : "Агрессивный";
+      if (summaryMode) summaryMode.innerText = t("mode." + saveMode);
       document.querySelectorAll("#screen-calc label, #screen-calc .input-wrap, .mode-buttons, #calculate").forEach(el => el.style.display = "none");
       renderAccountsUI();
       renderGoals();
@@ -1205,22 +1213,22 @@ function loadFullState() {
         const scenarios = [
           {
             id: "direct",
-            title: "Всё в цель",
+            title: t("scenario.direct"),
             toGoal: baseMonthly,
             toBuffer: 0,
             months: lastCalc.months,
-            risk: "Выше"
+            risk: t("scenario.riskHigh")
           },
           {
             id: "buffer",
-            title: "С резервом",
+            title: t("scenario.buffer"),
             toGoal: Math.round(baseMonthly * (1 - bufferRate)),
             toBuffer: Math.round(baseMonthly * bufferRate),
             months: Math.ceil(
               lastCalc.effectiveGoal /
               Math.round(baseMonthly * (1 - bufferRate))
             ),
-            risk: "Ниже"
+            risk: t("scenario.riskLow")
           }
         ];
         const scenariosHTML = scenarios.map(s => `
@@ -1229,22 +1237,18 @@ function loadFullState() {
 ${s.title}
 </div>
 
-В цель: ${s.toGoal.toLocaleString()} ₽ / мес<br>
-${s.toBuffer ? `В резерв: ${s.toBuffer.toLocaleString()} ₽<br>` : ""}
-Срок: ~${s.months} мес<br>
+${t("scenario.toGoal")}: ${fmtNum(s.toGoal)} ${getCurrencySymbol()} ${t("scenario.perMonth")}<br>
+${s.toBuffer ? `${t("scenario.toReserve")}: ${fmtNum(s.toBuffer)} ${getCurrencySymbol()}<br>` : ""}
+${t("scenario.term")}: ~${s.months} ${t("scenario.months")}<br>
 
-<span style="opacity:.6">Риск: ${s.risk}</span>
+<span style="opacity:.6">${t("scenario.risk")}: ${s.risk}</span>
 
 ${
 s.id === "buffer"
 ? `
 <div class="reserve-info reserve-ui">
-<b>Резерв</b><br>
-Это ваша подушка безопасности.
-Эти средства можно откладывать на отдельный накопительный
-или инвестиционный счёт.<br><br>
-Резерв защищает от непредвиденных расходов
-и снижает риск срыва цели.
+<b>${t("scenario.reserveInfo")}</b><br>
+${t("scenario.reserveDesc").replace(/\n/g, "<br>")}
 </div>
 `
 : ""
@@ -1663,8 +1667,8 @@ const list = document.getElementById("historyList");
 
 title.innerText =
 type === "reserve"
-? "История резерва"
-: "История основного счёта";
+? t("history.reserveTitle")
+: t("history.mainTitle");
 
 list.innerHTML = "";
 
@@ -1720,7 +1724,7 @@ if (e.isInitial) {
 list.innerHTML += `
 <div class="card" style="opacity:.85">
 <div style="font-size:15px;font-weight:600">
-Начальный баланс: ${e.value.toLocaleString()} ₽
+${t("history.initialBalance")}: ${fmtNum(e.value)} ${getCurrencySymbol()}
 </div>
 <div style="font-size:13px;opacity:.6;margin-top:4px">
 Указано при создании плана
@@ -1731,7 +1735,7 @@ list.innerHTML += `
 list.innerHTML += `
 <div class="card">
 <div style="font-size:15px;font-weight:600;color:#f59e0b">
-−${Math.abs(e.value).toLocaleString()} ₽
+−${fmtNum(Math.abs(e.value))} ${getCurrencySymbol()}
 </div>
 <div style="font-size:13px;opacity:.6;margin-top:4px">
 ${formatted}
@@ -1745,7 +1749,7 @@ ${formatted}
 list.innerHTML += `
 <div class="card">
 <div style="font-size:15px;font-weight:600">
-+${e.value.toLocaleString()} ₽
++${fmtNum(e.value)} ${getCurrencySymbol()}
 </div>
 <div style="font-size:13px;opacity:.6;margin-top:4px">
 ${formatted}
@@ -1843,7 +1847,7 @@ const engine = new CashflowEngine({
 const derived = engine.recalculate();
 
 if (!derived.ok) {
-  alert("Расходы превышают доходы");
+  alert(t("engine.noBalance"));
   return;
 }
 
@@ -1865,22 +1869,22 @@ const bufferRate = 0.1; // 10% в подушку
 const scenarios = [
 {
 id: "direct",
-title: "Всё в цель",
+title: t("scenario.direct"),
 toGoal: baseMonthly,
 toBuffer: 0,
 months: lastCalc.months,
-risk: "Выше"
+risk: t("scenario.riskHigh")
 },
 {
 id: "buffer",
-title: "С резервом",
+title: t("scenario.buffer"),
 toGoal: Math.round(baseMonthly * (1 - bufferRate)),
 toBuffer: Math.round(baseMonthly * bufferRate),
 months: Math.ceil(
 lastCalc.effectiveGoal /
 Math.round(baseMonthly * (1 - bufferRate))
 ),
-risk: "Ниже"
+risk: t("scenario.riskLow")
 }
 ];
 
@@ -1890,22 +1894,18 @@ const scenariosHTML = scenarios.map(s => `
 ${s.title}
 </div>
 
-В цель: ${s.toGoal.toLocaleString()} ₽ / мес<br>
-${s.toBuffer ? `В резерв: ${s.toBuffer.toLocaleString()} ₽<br>` : ""}
-Срок: ~${s.months} мес<br>
+${t("scenario.toGoal")}: ${fmtNum(s.toGoal)} ${getCurrencySymbol()} ${t("scenario.perMonth")}<br>
+${s.toBuffer ? `${t("scenario.toReserve")}: ${fmtNum(s.toBuffer)} ${getCurrencySymbol()}<br>` : ""}
+${t("scenario.term")}: ~${s.months} ${t("scenario.months")}<br>
 
-<span style="opacity:.6">Риск: ${s.risk}</span>
+<span style="opacity:.6">${t("scenario.risk")}: ${s.risk}</span>
 
 ${
 s.id === "buffer"
 ? `
 <div class="reserve-info reserve-ui">
-<b>Резерв</b><br>
-Это ваша подушка безопасности.
-Эти средства можно откладывать на отдельный накопительный
-или инвестиционный счёт.<br><br>
-Резерв защищает от непредвиденных расходов
-и снижает риск срыва цели.
+<b>${t("scenario.reserveInfo")}</b><br>
+${t("scenario.reserveDesc").replace(/\n/g, "<br>")}
 </div>
 `
 : ""
@@ -1928,12 +1928,10 @@ if (protocolBack) protocolBack.style.display = "block";
 planSummary.style.display = "block";
 
 // заполнить данные
-summaryMonthly.innerText = lastCalc.monthlySave.toLocaleString();
+summaryMonthly.innerText = fmtNum(lastCalc.monthlySave);
 summaryMonths.innerText = lastCalc.months;
 summaryMode.innerText =
-saveMode === "calm" ? "Спокойный"
-: saveMode === "normal" ? "Умеренный"
-: "Агрессивный";
+t("mode." + saveMode);
 
 // спрятать форму
 document.querySelectorAll(
@@ -1985,12 +1983,12 @@ ${adviceBlockHtml}
 
 <div class="graph-block">
 <div class="timeline-controls">
-<button id="timelineBackBtn" class="timeline-back-btn" type="button" style="display:none">← Обзор</button>
+<button id="timelineBackBtn" class="timeline-back-btn" type="button" style="display:none">← ${t("misc.overview")}</button>
 </div>
 <div class="chart-card"></div>
 <div class="fact-input-row">
 <input id="factInput" inputmode="numeric"
-placeholder="Сколько вы отложили"
+placeholder="${t("calc.factPlaceholder")}"
 style="flex:1"/>
 <button id="applyFact"
 style="width:52px;height:52px;border-radius:50%">
@@ -2124,7 +2122,7 @@ style="width:52px;height:52px;border-radius:50%">
 
         if (typeof renderDebtSummaryGlobal === "function") renderDebtSummaryGlobal();
         if (typeof renderDebtListGlobal === "function") renderDebtListGlobal();
-        showToast("Часть суммы направлена на погашение долга", "success");
+        showToast(t("toast.debtRepaid"), "success");
         showDebtBreakdown(fact, debtRepaid, savingsPart);
       }
 
@@ -2152,6 +2150,7 @@ style="width:52px;height:52px;border-radius:50%">
 /* ===== STAGED FLOW ===== */
 function protocolFlow(mode) {
 chosenPlan = mode;
+updateState({ settings: { allocationMode: mode === "buffer" ? "buffer" : "goal" } });
 if (protocolBack) protocolBack.style.display = "none";
 // initialBalance устанавливается ТОЛЬКО при создании плана из поля "Уже накоплено"
 const initialSaved = parseNumber(savedInput?.value || "0");
@@ -2191,17 +2190,17 @@ plannedMonthly = lastCalc.monthlySave;
 
 if (mode === "buffer") plannedMonthly = Math.round(plannedMonthly * 0.9);
 
-adviceCard.innerText = "Protocol анализирует данные…";
+adviceCard.innerText = t("flow.analyzing");
 
 setTimeout(() => {
 adviceCard.innerText =
 mode === "buffer"
-? "Часть средств будет направляться в резерв."
-: "Все средства идут напрямую в цель.";
+? t("flow.bufferChosen")
+: t("flow.directChosen");
 }, 2000);
 
 setTimeout(() => {
-adviceCard.innerText = "Готово.";
+adviceCard.innerText = t("flow.done");
 }, 4000);
 
 setTimeout(() => {
@@ -2237,7 +2236,7 @@ function performFullReset() {
   state.hasReserve = false;
 
   activeGoalIndex = 0;
-  goalMeta.title = "Основная цель";
+  goalMeta.title = t("goals.default");
 
   clearState();
 
@@ -2345,87 +2344,8 @@ if (goalHistoryBack) {
   var settingsBtn = document.getElementById("settingsBtn");
   var settingsBack = document.getElementById("settingsBack");
 
-  // ── i18n placeholder layer ──
-  var _i18n = {
-    ru: {
-      "settings.title": "Настройки",
-      "settings.section.finance": "Финансы",
-      "settings.currency": "Валюта",
-      "settings.currency.hint": "Используется для отображения сумм в приложении",
-      "settings.section.plan": "План",
-      "settings.carryOver": "Автоматически переносить остаток",
-      "settings.carryOver.on": "Остаток за месяц будет автоматически переноситься на следующий период",
-      "settings.carryOver.off": "Неиспользованный остаток не будет учитываться в следующем периоде",
-      "settings.allocation": "Приоритет распределения",
-      "settings.allocation.hint": "Определяет, как свободные деньги распределяются внутри плана",
-      "settings.allocation.goal": "Всё в цель",
-      "settings.allocation.buffer": "С резервом",
-      "settings.allowOverpay": "Разрешить перевыполнение плана",
-      "settings.allowOverpay.on": "Можно откладывать больше плана — лишняя сумма будет учтена в следующих периодах",
-      "settings.allowOverpay.off": "Сумма выше плана не будет переноситься как перевыполнение",
-      "settings.section.interface": "Интерфейс",
-      "settings.animations": "Анимации",
-      "settings.animations.hint": "Управляет плавными анимациями интерфейса",
-      "settings.numberFormat": "Формат чисел",
-      "settings.numberFormat.hint": "Выберите, как отображать разделители тысяч",
-      "settings.section.notifications": "Уведомления",
-      "settings.notifications": "Напоминания",
-      "settings.notifications.hint": "Напоминания помогут не пропускать взносы и выплаты",
-      "settings.depositReminder": "Напоминание о внесении",
-      "settings.debtReminder": "Напоминание о долгах",
-      "settings.reminderTime": "Время напоминаний",
-      "settings.section.language": "Язык",
-      "settings.language": "Язык интерфейса",
-      "settings.language.hint": "Язык интерфейса приложения"
-    },
-    en: {
-      "settings.title": "Settings",
-      "settings.section.finance": "Finance",
-      "settings.currency": "Currency",
-      "settings.currency.hint": "Used to display amounts in the app",
-      "settings.section.plan": "Plan",
-      "settings.carryOver": "Carry over balance automatically",
-      "settings.carryOver.on": "Monthly balance will carry over to the next period",
-      "settings.carryOver.off": "Unused balance will not be carried over",
-      "settings.allocation": "Allocation priority",
-      "settings.allocation.hint": "Controls how free money is allocated within the plan",
-      "settings.allocation.goal": "All to goal",
-      "settings.allocation.buffer": "With reserve",
-      "settings.allowOverpay": "Allow overpayment",
-      "settings.allowOverpay.on": "You can save more than planned — excess will count in future periods",
-      "settings.allowOverpay.off": "Amounts above the plan will not carry forward",
-      "settings.section.interface": "Interface",
-      "settings.animations": "Animations",
-      "settings.animations.hint": "Controls smooth UI animations",
-      "settings.numberFormat": "Number format",
-      "settings.numberFormat.hint": "Choose how to display thousand separators",
-      "settings.section.notifications": "Notifications",
-      "settings.notifications": "Reminders",
-      "settings.notifications.hint": "Reminders help you stay on track with deposits and payments",
-      "settings.depositReminder": "Deposit reminder",
-      "settings.debtReminder": "Debt reminder",
-      "settings.reminderTime": "Reminder time",
-      "settings.section.language": "Language",
-      "settings.language": "App language",
-      "settings.language.hint": "Application interface language"
-    }
-  };
-
-  function t(key) {
-    var lang = (getState().settings || {}).language || "ru";
-    var dict = _i18n[lang] || _i18n["ru"];
-    return dict[key] || (_i18n["ru"][key] || key);
-  }
-
   function applyI18nToSettings() {
-    var els = document.querySelectorAll("#screen-settings [data-i18n]");
-    els.forEach(function (el) {
-      var key = el.getAttribute("data-i18n");
-      var text = t(key);
-      if (text) el.textContent = text;
-    });
-    var titleEl = document.getElementById("settingsTitle");
-    if (titleEl) titleEl.textContent = t("settings.title");
+    applyLanguageToDOM();
   }
 
   // ── Segment helper ──
@@ -2489,6 +2409,10 @@ if (goalHistoryBack) {
   function onSettingChanged(key, value) {
     if (key === "animationsEnabled") {
       document.body.classList.toggle("reduce-motion", !value);
+      if (typeof lottie !== "undefined") {
+        if (!value) lottie.pause();
+        else lottie.play();
+      }
     }
 
     if (key === "notificationsEnabled") {
@@ -2497,17 +2421,35 @@ if (goalHistoryBack) {
     }
 
     if (key === "language") {
-      applyI18nToSettings();
+      applyLanguageToDOM();
       updateDynamicHints();
     }
 
     if (key === "currency") {
       window._protocolCurrency = value;
+      applyLanguageToDOM();
+      _refreshDisplayedAmounts();
     }
 
     if (key === "numberFormat") {
       window._protocolNumberFormat = value;
+      _refreshDisplayedAmounts();
     }
+
+    if (key === "allocationMode") {
+      if (typeof chosenPlan !== "undefined" && chosenPlan !== null) {
+        chosenPlan = (value === "buffer") ? "buffer" : "direct";
+        if (typeof recalcPlan === "function") recalcPlan();
+        if (typeof renderAccountsUI === "function") renderAccountsUI();
+        if (typeof renderGoals === "function") renderGoals();
+      }
+    }
+  }
+
+  function _refreshDisplayedAmounts() {
+    if (typeof renderAccountsUI === "function") renderAccountsUI();
+    if (typeof renderGoals === "function") renderGoals();
+    if (typeof renderExpensesScreen === "function") renderExpensesScreen();
   }
 
   function updateDynamicHints() {
@@ -2609,7 +2551,7 @@ function renderGoalHistory() {
 
   if (emptyMsg) emptyMsg.style.display = "none";
 
-  var monthNames = ["Январь","Февраль","Март","Апрель","Май","Июнь","Июль","Август","Сентябрь","Октябрь","Ноябрь","Декабрь"];
+  var monthNames = null; // replaced by getMonthName()
 
   completed.forEach(function (g) {
     var card = document.createElement("div");
@@ -2618,14 +2560,14 @@ function renderGoalHistory() {
     var dateStr = "";
     if (g.completedDate) {
       var d = new Date(g.completedDate);
-      dateStr = monthNames[d.getMonth()] + " " + d.getFullYear();
+      dateStr = getMonthName(d.getMonth()) + " " + d.getFullYear();
     }
 
-    var durationStr = g.durationMonths ? ("Достигнута за " + g.durationMonths + " мес.") : "";
+    var durationStr = g.durationMonths ? t("goalHistory.achieved", {n: g.durationMonths}) : "";
 
     card.innerHTML =
-      '<div class="goal-history-card-title">' + escapeHtmlSafe(g.title || "Цель") + '</div>' +
-      '<div class="goal-history-card-amount">' + (g.amount || 0).toLocaleString() + ' ₽</div>' +
+      '<div class="goal-history-card-title">' + escapeHtmlSafe(g.title || t("goals.default")) + '</div>' +
+      '<div class="goal-history-card-amount">' + fmtNum(g.amount || 0) + ' ' + getCurrencySymbol() + '</div>' +
       '<div class="goal-history-card-meta">' +
         '<span>' + durationStr + '</span>' +
         '<span>' + dateStr + '</span>' +
@@ -2679,7 +2621,7 @@ function checkGoalCompletion() {
     if (goals.length === 0) {
       goals.push({
         id: "goal_" + Date.now(),
-        title: "Основная цель",
+        title: t("goals.default"),
         amount: 0,
         saved: 0,
         priority: 1,
@@ -2787,7 +2729,7 @@ input.dataset.placeholder = input.placeholder;
 }
 
 input.value = "";
-input.placeholder = "Обязательное поле";
+input.placeholder = t("misc.required.field");
 
 haptic("error");
 
@@ -3073,11 +3015,11 @@ const diff = actual - planned;
 let text = "";
 
 if (diff >= 0) {
-text = "Ты идёшь по плану или лучше. Всё под контролем.";
+text = t("status.onTrack");
 } else if (diff > -planned * 0.1) {
-text = "Есть небольшое отставание. Пока не критично.";
+text = t("status.slightlyBehind");
 } else {
-text = "Ты заметно отстаёшь от плана. Стоит пересмотреть стратегию.";
+text = t("status.behind");
 }
 
 showBrainMessage(text);
@@ -3156,7 +3098,7 @@ function showFactTooltip({ value, onHide }) {
   block.innerHTML = `
 <div class="fact-date">${date}</div>
 <div class="fact-value">
-Отложено: ${factOnly.toLocaleString()} ₽
+${t("history.deposited")}: ${fmtNum(factOnly)} ${getCurrencySymbol()}
 </div>
 `;
 
@@ -3189,6 +3131,8 @@ function computeMonthlyStatus() {
     return { required: 0, actual: 0, complete: false, show: true };
   }
 
+  var settings = (getState().settings) || {};
+
   var mainDeposits = [];
   if (factHistory && factHistory.length > 0) {
     factHistory.forEach(function (f) {
@@ -3218,6 +3162,24 @@ function computeMonthlyStatus() {
   var monthsBefore = currentMK - startMK;
   var previousRequired = monthsBefore * monthlyRequired;
   var currentActual = Math.max(0, totalContributed - previousRequired);
+
+  // carryOverEnabled: if ON, surplus from past months carries into current period
+  // If OFF, only count deposits from the current month
+  if (!settings.carryOverEnabled) {
+    var currentMonthDeposits = 0;
+    mainDeposits.forEach(function (f) {
+      var d = new Date(f.date);
+      var mk = d.getFullYear() * 12 + d.getMonth();
+      if (mk === currentMK) currentMonthDeposits += f.value;
+    });
+    currentActual = currentMonthDeposits;
+  }
+
+  // allowOverpay: if OFF, cap the actual at the required amount
+  if (!settings.allowOverpay && currentActual > monthlyRequired) {
+    currentActual = monthlyRequired;
+  }
+
   var complete = currentActual >= monthlyRequired;
 
   return {
@@ -3246,13 +3208,13 @@ function renderMonthlyStatus() {
 
   if (st.complete) {
     block.classList.add("monthly-status--complete");
-    labelEl.textContent = "Полностью";
-    valueEl.textContent = "отложено";
+    labelEl.textContent = t("monthly.complete");
+    valueEl.textContent = t("monthly.completeValue");
   } else {
     block.classList.remove("monthly-status--complete");
-    labelEl.textContent = "Внесено";
-    valueEl.textContent = Math.round(st.actual).toLocaleString()
-      + " / " + Math.round(st.required).toLocaleString() + " " + getCurrencySymbol();
+    labelEl.textContent = t("monthly.deposited");
+    valueEl.textContent = fmtNum(Math.round(st.actual))
+      + " / " + fmtNum(Math.round(st.required)) + " " + getCurrencySymbol();
   }
 }
 
@@ -3272,22 +3234,22 @@ var activeGoal = goals[activeGoalIndex] || goals[0] || null;
 
 if (mainEl) {
   if (activeGoal) {
-    mainEl.innerText = (activeGoal.saved || 0).toLocaleString();
+    mainEl.innerText = fmtNum(activeGoal.saved || 0);
   } else {
-    mainEl.innerText = accounts.main.toLocaleString();
+    mainEl.innerText = fmtNum(accounts.main);
   }
 }
 
 if (mainTitleEl) {
   if (activeGoalIndex === 0 || !activeGoal) {
-    mainTitleEl.innerText = "Основной счёт";
+    mainTitleEl.innerText = t("accounts.main");
   } else {
-    mainTitleEl.innerText = activeGoal.title || "Счёт";
+    mainTitleEl.innerText = activeGoal.title || t("accounts.account");
   }
 }
 
 if (reserveEl) {
-reserveEl.innerText = accounts.reserve.toLocaleString();
+reserveEl.innerText = fmtNum(accounts.reserve);
 }
 
 const reserveBlock = document.querySelector(
@@ -3357,7 +3319,7 @@ if (idx === 0) {
   saved = accounts.main;
   total = parseNumber(goalInput.value || "0");
 } else if (goal) {
-  title = goal.title || "Цель " + (idx + 1);
+  title = goal.title || t("goals.goalN", {n: idx + 1});
   saved = goal.saved || 0;
   total = goal.amount || 0;
 } else {
@@ -3370,8 +3332,8 @@ if (titleEl) titleEl.innerText = title;
 
 var percent = total ? Math.min(100, Math.round((saved / total) * 100)) : 0;
 
-if (totalEl) totalEl.innerText = total.toLocaleString();
-if (savedEl) savedEl.innerText = saved.toLocaleString();
+if (totalEl) totalEl.innerText = fmtNum(total);
+if (savedEl) savedEl.innerText = fmtNum(saved);
 if (percentEl) percentEl.innerText = percent;
 if (progressBar) progressBar.style.width = percent + "%";
 
@@ -3396,13 +3358,13 @@ var isPaused = goal && goal.paused;
 if (verdict) {
   var verdictText;
   if (isPaused) {
-    verdictText = "Цель на паузе — средства не начисляются.";
+    verdictText = t("verdict.paused");
   } else if (percent >= 100) {
-    verdictText = "Цель достигнута. Protocol фиксирует успех.";
+    verdictText = t("verdict.complete");
   } else if (percent >= 70) {
-    verdictText = "Цель близка к завершению. Темп хороший.";
+    verdictText = t("verdict.almostDone");
   } else {
-    verdictText = "Цель в процессе. Стабильность важнее скорости.";
+    verdictText = t("verdict.inProgress");
   }
   updateGoalVerdict(verdictText);
 }
@@ -3411,7 +3373,7 @@ if (reserveCard) {
   if (chosenPlan === "buffer" && idx === 0) {
     reserveCard.style.display = "block";
     var reserveEl = document.getElementById("goalReserveAmount");
-    if (reserveEl) reserveEl.innerText = accounts.reserve.toLocaleString();
+    if (reserveEl) reserveEl.innerText = fmtNum(accounts.reserve);
   } else {
     reserveCard.style.display = "none";
   }
@@ -3734,8 +3696,8 @@ var explainEl = document.getElementById("planExplanation");
 if (!monthlyEl || !explainEl) return;
 
 if (isCashflowNoData()) {
-  monthlyEl.innerText = "Заполните гибкую финансовую модель";
-  explainEl.innerHTML = "Добавьте хотя бы одно событие дохода через «Добавить событие»,<br>чтобы Protocol рассчитал прогноз.";
+  monthlyEl.innerText = t("flex.noDataTitle");
+  explainEl.innerHTML = t("flex.noDataHint");
   return;
 }
 
@@ -3745,17 +3707,17 @@ var goals = getGoals();
 var activeGoal = goals[activeGoalIndex] || null;
 
 if (activeGoalIndex > 0 && activeGoal) {
-  monthlyEl.innerText = activeGoal.title || ("Цель " + (activeGoalIndex + 1));
+  monthlyEl.innerText = activeGoal.title || (t("misc.goalLabel") + " " + (activeGoalIndex + 1));
 
   var factEl = document.getElementById("factInput");
   var rawInput = factEl ? parseNumber(factEl.value || "0") : 0;
   var preview = getFactPreviewForGoal(activeGoalIndex, rawInput);
 
   var _cs = getCurrencySymbol();
-  var lines = "Откладывается: " + (activeGoal.monthlyShare || 0).toLocaleString() + " " + _cs + " / мес"
-    + "<br>Приоритет: " + (activeGoal.priority || 1)
-    + "<br>При вводе суммы сюда пойдёт: " + preview.toLocaleString() + " " + _cs
-    + "<br>Цель будет достигнута за: " + (activeGoal.monthsLeft || "—") + " мес";
+  var lines = t("misc.saving") + ": " + fmtNum(activeGoal.monthlyShare || 0) + " " + _cs + " " + t("pace.perMonth")
+    + "<br>" + t("advGoals.priority") + ": " + (activeGoal.priority || 1)
+    + "<br>" + fmtNum(preview) + " " + _cs
+    + "<br>" + (activeGoal.monthsLeft || "—") + " " + t("misc.monthShort");
 
   explainEl.innerHTML = lines;
 
@@ -3772,26 +3734,26 @@ var goalPace = (lastCalc.free && lastCalc.free > 0) ? (goalMonthlySave / lastCal
 
 var _cs2 = getCurrencySymbol();
 monthlyEl.innerText =
-  "План: " + goalMonthly.toLocaleString() + " " + _cs2 + " / месяц";
+  t("plan.current") + ": " + fmtNum(goalMonthly) + " " + _cs2 + " " + t("plan.perMonth");
 
 var s = getState();
 var isCashflow = (s.financialModel === "cashflow");
 
 var explainText = lastCalc.ok
-  ? (isCashflow ? "Прогноз дохода: " + (lastCalc.forecastIncome || 0).toLocaleString() + " " + _cs2 + " / мес\n"
-      + "Прогноз расхода: " + (lastCalc.forecastExpense || 0).toLocaleString() + " " + _cs2 + " / мес\n" : "")
-    + "Свободно в месяц: " + (lastCalc.free || 0).toLocaleString() + " " + _cs2 + "\n"
-    + "Откладываете: " + goalMonthlySave.toLocaleString() + " " + _cs2 + "\n"
-    + "Это ~" + Math.round(goalPace * 100) + "% от свободных средств\n"
-    + "Цель будет достигнута примерно за " + goalMonthsLeft + " мес"
-  : "Когда расходы больше доходов, любой план будет нестабильным.";
+  ? (isCashflow ? fmtNum(lastCalc.forecastIncome || 0) + " " + _cs2 + " " + t("pace.perMonth") + "\n"
+      + fmtNum(lastCalc.forecastExpense || 0) + " " + _cs2 + " " + t("pace.perMonth") + "\n" : "")
+    + fmtNum(lastCalc.free || 0) + " " + _cs2 + "\n"
+    + fmtNum(goalMonthlySave) + " " + _cs2 + "\n"
+    + "~" + Math.round(goalPace * 100) + "%\n"
+    + "~" + goalMonthsLeft + " " + t("misc.monthShort")
+  : t("engine.noBalance");
 explainEl.innerHTML = explainText.replace(/\n/g, "<br>");
 
 var inflationEl = document.getElementById("inflationHint");
 if (inflationEl) {
   var infl = (typeof getActiveInflation === "function") ? getActiveInflation() : null;
   if (infl != null && infl > 0) {
-    inflationEl.textContent = "Текущая инфляция: " + infl + "%";
+    inflationEl.textContent = t("misc.inflation") + ": " + infl + "%";
     inflationEl.style.display = "";
   } else {
     inflationEl.textContent = "";
@@ -3811,14 +3773,11 @@ return;
 let text = "";
 
 if (ratio >= 3) {
-text =
-"Цель увеличена более чем в 3 раза. План станет значительно длиннее — убедитесь, что это осознанное решение.";
+text = t("goalEdit.warn3x");
 } else if (ratio >= 2) {
-text =
-"Цель увеличена в 2 раза. Срок и нагрузка изменятся.";
+text = t("goalEdit.warn2x");
 } else {
-text =
-"Цель заметно увеличена. Protocol пересчитает план.";
+text = t("goalEdit.warnIncrease");
 }
 
 goalEditHint.innerText = text;
@@ -4028,7 +3987,7 @@ document.querySelectorAll(".unexpected-option").forEach(opt => {
   opt.addEventListener("click", function () {
     if (this.classList.contains("disabled")) {
       if (this.dataset.source === "reserve") {
-        showToast("Недостаточно средств в резерве.", "error");
+        showToast(t("toast.insufficientReserve"), "error");
       }
       haptic("error");
       return;
@@ -4192,12 +4151,12 @@ function isFlexibleUnconfigured() {
 
 function freqLabel(freq, days) {
   switch (freq) {
-    case "weekly": return "раз в неделю";
-    case "biweekly": return "раз в 2 недели";
+    case "weekly": return t("freq.weekly");
+    case "biweekly": return t("freq.biweekly");
     case "custom":
       var daysStr = Array.isArray(days) && days.length ? days.join(", ") : "—";
-      return "свой график (" + daysStr + ")";
-    default: return "фиксированный";
+      return t("freq.custom") + " (" + daysStr + ")";
+    default: return t("freq.fixed");
   }
 }
 
@@ -4213,17 +4172,15 @@ function shakeFlexHint() {
 
 function cfFlowFreqLabel(freq, days) {
   switch (freq) {
-    case "weekly": return "раз в неделю";
-    case "biweekly": return "раз в 2 недели";
-    case "monthly": return "ежемесячно";
+    case "weekly": return t("freq.weekly");
+    case "biweekly": return t("freq.biweekly");
+    case "monthly": return t("freq.monthly");
     case "custom":
       if (Array.isArray(days) && days.length) {
-        var count = days.length;
-        var word = count === 1 ? "дата" : (count < 5 ? "даты" : "дат");
-        return "свой график (" + count + " " + word + ")";
+        return t("freq.custom") + " (" + days.length + ")";
       }
-      return "свой график";
-    default: return "ежемесячно";
+      return t("freq.custom");
+    default: return t("freq.monthly");
   }
 }
 
@@ -4260,7 +4217,7 @@ function syncFlexibleUI() {
   if (hint) {
     hint.classList.add("flex-hint--alert");
     if (noData) {
-      hint.textContent = "Добавьте событие дохода, чтобы построить прогноз";
+      hint.textContent = t("flex.addIncomeHint");
     }
     hint.classList.toggle("visible", noData);
   }
@@ -4272,9 +4229,9 @@ function syncFlexibleUI() {
   if (noData) {
     if (summaryMonthlyEl) summaryMonthlyEl.innerText = "—";
     if (summaryMonthsEl) summaryMonthsEl.innerText = "—";
-    if (summaryModeEl) summaryModeEl.innerText = "Гибкий (нет данных)";
+    if (summaryModeEl) summaryModeEl.innerText = t("flex.noData");
   } else if (isCashflow && lastCalc.ok) {
-    if (summaryMonthlyEl) summaryMonthlyEl.innerText = lastCalc.monthlySave.toLocaleString();
+    if (summaryMonthlyEl) summaryMonthlyEl.innerText = fmtNum(lastCalc.monthlySave);
     if (summaryMonthsEl) summaryMonthsEl.innerText = lastCalc.months;
   }
 
@@ -4284,10 +4241,10 @@ function syncFlexibleUI() {
     var incFreq = s.incomeFrequency || "monthly";
     if (isCashflow && lastCalc.ok && lastCalc.monthlySave && !noData) {
       if (incFreq === "weekly") {
-        freqHintEl.innerText = "≈ " + Math.round(lastCalc.monthlySave / 4.33).toLocaleString() + " ₽ в неделю";
+        freqHintEl.innerText = "≈ " + fmtNum(Math.round(lastCalc.monthlySave / 4.33)) + " " + getCurrencySymbol() + " " + t("misc.perWeek");
         freqHintEl.style.display = "";
       } else if (incFreq === "biweekly") {
-        freqHintEl.innerText = "≈ " + Math.round(lastCalc.monthlySave / 2.16).toLocaleString() + " ₽ раз в 2 недели";
+        freqHintEl.innerText = "≈ " + fmtNum(Math.round(lastCalc.monthlySave / 2.16)) + " " + getCurrencySymbol() + " " + t("misc.perBiweek");
         freqHintEl.style.display = "";
       } else {
         freqHintEl.style.display = "none";
@@ -4303,7 +4260,7 @@ function syncFlexibleUI() {
     if (isCashflow && !noData) {
       var incLabel = freqLabel(s.incomeFrequency, s.incomeMonthDays);
       var expLabel = freqLabel(s.expenseFrequency, s.expenseMonthDays);
-      reportEl.innerHTML = "Доход: " + incLabel + "<br>Расход: " + expLabel;
+      reportEl.innerHTML = t("flex.income") + ": " + incLabel + "<br>" + t("flex.expense") + ": " + expLabel;
       reportEl.style.display = "";
     } else {
       reportEl.style.display = "none";
@@ -4313,8 +4270,8 @@ function syncFlexibleUI() {
   // ── Build labels ──
   var incType = s.incomeType || "fixed";
   var expType = s.expenseType || "fixed";
-  var incTypeName = incType === "fixed" ? "фиксированный" : "нефиксированный";
-  var expTypeName = expType === "fixed" ? "фиксированные" : "нефиксированные";
+  var incTypeName = incType === "fixed" ? t("freq.fixed") : t("freq.variable");
+  var expTypeName = expType === "fixed" ? t("freq.fixedPlural") : t("freq.variablePlural");
   var incFreqName = incType === "fixed"
     ? ""
     : ", " + cfFlowFreqLabel(s.incomeFrequency, s.incomeMonthDays);
@@ -4327,19 +4284,19 @@ function syncFlexibleUI() {
   var flowText = document.getElementById("cfFlowSummaryText");
   if (flowSummary && flowText) {
     flowText.innerHTML =
-      '<div class="cf-summary-row"><span class="cf-summary-dot"></span>Доход: ' + incTypeName + incFreqName + '</div>' +
-      '<div class="cf-summary-row"><span class="cf-summary-dot"></span>Расходы: ' + expTypeName + expFreqName + '</div>';
+      '<div class="cf-summary-row"><span class="cf-summary-dot"></span>' + t("flex.income") + ': ' + incTypeName + incFreqName + '</div>' +
+      '<div class="cf-summary-row"><span class="cf-summary-dot"></span>' + t("flex.expenses") + ': ' + expTypeName + expFreqName + '</div>';
   }
 
   // ── Inline per-card summaries ──
   var incInline = document.getElementById("incomeInlineSummary");
   if (incInline) {
-    incInline.textContent = "Доход: " + incTypeName + incFreqName;
+    incInline.textContent = t("flex.income") + ": " + incTypeName + incFreqName;
     incInline.classList.add("visible");
   }
   var expInline = document.getElementById("expenseInlineSummary");
   if (expInline) {
-    expInline.textContent = "Расходы: " + expTypeName + expFreqName;
+    expInline.textContent = t("flex.expenses") + ": " + expTypeName + expFreqName;
     expInline.classList.add("visible");
   }
 
@@ -4984,10 +4941,10 @@ function renderAccountBackCards() {
       if (result) {
         html +=
           '<div class="stats-purchasing-label">Покупательная способность</div>' +
-          '<div class="stats-purchasing-value">' + result.adjustedValue.toLocaleString() + ' ₽</div>' +
+          '<div class="stats-purchasing-value">' + fmtNum(result.adjustedValue) + ' ' + getCurrencySymbol() + '</div>' +
           '<div class="loss-inflation">' +
             'Потеря из-за инфляции' +
-            '<br>−' + result.loss.toLocaleString() + ' ₽ ' +
+            '<br>−' + fmtNum(result.loss) + ' ' + getCurrencySymbol() + ' ' +
             '<span class="arrow-down">↓</span>' +
           '</div>';
       }
@@ -4996,7 +4953,7 @@ function renderAccountBackCards() {
         html +=
           '<div class="compensation-block">' +
             '<div class="compensation-label">Чтобы сохранить покупательную способность:</div>' +
-            '<div class="extra-monthly">+' + comp.extraMonthly.toLocaleString() + ' ₽ / месяц</div>' +
+            '<div class="extra-monthly">+' + fmtNum(comp.extraMonthly) + ' ' + getCurrencySymbol() + ' ' + t("stats.extraMonthly") + '</div>' +
           '</div>';
       }
 
@@ -5750,11 +5707,11 @@ renderAccountBackCards();
           '<div class="' + pClass + '">P' + g.priority + '</div>' +
         '</div>' +
         '<div class="adv-goal-card-info">' +
-          '<span>Накоплено: <b>' + (g.saved || 0).toLocaleString() + ' ₽</b></span>' +
-          '<span>Цель: <b>' + (g.amount || 0).toLocaleString() + ' ₽</b></span>' +
+          '<span>Накоплено: <b>' + fmtNum(g.saved || 0) + ' ' + getCurrencySymbol() + '</b></span>' +
+          '<span>Цель: <b>' + fmtNum(g.amount || 0) + ' ' + getCurrencySymbol() + '</b></span>' +
         '</div>' +
         '<div class="adv-goal-card-info">' +
-          '<span>В месяц: <b>' + (g.monthlyShare || 0).toLocaleString() + ' ₽</b></span>' +
+          '<span>В месяц: <b>' + fmtNum(g.monthlyShare || 0) + ' ' + getCurrencySymbol() + '</b></span>' +
           '<span>Срок: <b>' + (g.monthsLeft || "—") + ' мес.</b></span>' +
         '</div>' +
         '<div class="adv-goal-card-progress">' +
@@ -5810,9 +5767,9 @@ renderAccountBackCards();
     if (monthly > 0 && draft.length > 0) {
       var totalEl = document.createElement("div");
       totalEl.className = "goal-mgmt-total";
-      totalEl.innerHTML = "В накопления: <b>" + monthly.toLocaleString() + " ₽</b>" +
+      totalEl.innerHTML = "В накопления: <b>" + fmtNum(monthly) + " " + getCurrencySymbol() + "</b>" +
         (usedTotal > monthly
-          ? ' <span class="timeline-over-limit">Превышен на ' + (usedTotal - monthly).toLocaleString() + ' ₽</span>'
+          ? ' <span class="timeline-over-limit">Превышен на ' + fmtNum(usedTotal - monthly) + ' ' + getCurrencySymbol() + '</span>'
           : "");
       goalTimelineAllocation.appendChild(totalEl);
     }
@@ -5842,7 +5799,7 @@ renderAccountBackCards();
         '</div>' +
         '<div class="goal-timeline-progress">' +
           '<span>' + pctDone + '% выполнено</span>' +
-          '<span>' + (draftGoal.saved || 0).toLocaleString() + ' / ' + (draftGoal.amount || 0).toLocaleString() + ' ₽</span>' +
+          '<span>' + fmtNum(draftGoal.saved || 0) + ' / ' + fmtNum(draftGoal.amount || 0) + ' ' + getCurrencySymbol() + '</span>' +
         '</div>';
 
       if (!isComplete) {
@@ -5857,7 +5814,7 @@ renderAccountBackCards();
             '</div>' +
           '</div>' +
           '<div class="goal-timeline-preview">' +
-            'Потребуется откладывать: <b>' + requiredMonthly.toLocaleString() + ' ₽ / мес</b>' +
+            'Потребуется откладывать: <b>' + fmtNum(requiredMonthly) + ' ' + getCurrencySymbol() + ' / мес</b>' +
           '</div>' +
           '<div class="goal-timeline-minmax">' +
             'Минимум: ' + minMonths + ' мес' +
@@ -6022,10 +5979,10 @@ renderAccountBackCards();
         '</div>' +
         '<div class="goal-mgmt-prio-info">' +
           '<span>' + pctDone + '% выполнено</span>' +
-          '<span>' + (g.saved || 0).toLocaleString() + ' / ' + (g.amount || 0).toLocaleString() + ' ₽</span>' +
+          '<span>' + fmtNum(g.saved || 0) + ' / ' + fmtNum(g.amount || 0) + ' ' + getCurrencySymbol() + '</span>' +
         '</div>' +
         '<div class="goal-mgmt-prio-detail">' +
-          'Откладывается: ' + (g.monthlyShare || 0).toLocaleString() + ' ₽ / мес' +
+          'Откладывается: ' + fmtNum(g.monthlyShare || 0) + ' ' + getCurrencySymbol() + ' / мес' +
           '<br>Цель будет достигнута за: ' + (g.monthsLeft || "—") + ' мес' +
         '</div>' +
         '<div class="goal-mgmt-prio-controls">' +
@@ -6233,7 +6190,7 @@ function goalSwipeToIndex(idx, goLeft) {
   var draftPace = null;
   var originalPace = null;
 
-  var PACE_LABELS = { calm: "Спокойно", normal: "Умеренно", aggressive: "Агрессивно" };
+  function getPaceLabel(mode) { return t("calc.mode." + mode); }
   var PACE_HINTS = {
     calm: "~40% от свободных средств. Комфортный режим без лишнего давления на бюджет.",
     normal: "~60% от свободных средств. Баланс между скоростью и комфортом.",
@@ -6274,12 +6231,12 @@ function goalSwipeToIndex(idx, goLeft) {
     originalPace = saveMode || "calm";
     draftPace = originalPace;
 
-    var curLabel = PACE_LABELS[originalPace] || originalPace;
+    var curLabel = getPaceLabel(originalPace);
     var curModeEl = document.getElementById("paceCurrentMode");
     var curMonthlyEl = document.getElementById("paceCurrentMonthly");
     var curMonthsEl = document.getElementById("paceCurrentMonths");
     if (curModeEl) curModeEl.textContent = curLabel;
-    if (curMonthlyEl) curMonthlyEl.textContent = (lastCalc.monthlySave || plannedMonthly || 0).toLocaleString();
+    if (curMonthlyEl) curMonthlyEl.textContent = fmtNum(lastCalc.monthlySave || plannedMonthly || 0);
     if (curMonthsEl) curMonthsEl.textContent = lastCalc.months || "—";
 
     paceModeButtons.forEach(function (b) {
@@ -6297,10 +6254,10 @@ function goalSwipeToIndex(idx, goLeft) {
     if (draftPace === originalPace) {
       pacePreviewCard.style.display = "block";
       var txtEl = document.getElementById("pacePreviewText");
-      if (txtEl) txtEl.innerHTML = "Это ваш текущий темп накоплений.";
+      if (txtEl) txtEl.innerHTML = t("pace.current");
       var pmEl = document.getElementById("pacePreviewMonthly");
       var pmoEl = document.getElementById("pacePreviewMonths");
-      if (pmEl) pmEl.textContent = (lastCalc.monthlySave || 0).toLocaleString();
+      if (pmEl) pmEl.textContent = fmtNum(lastCalc.monthlySave || 0);
       if (pmoEl) pmoEl.textContent = lastCalc.months || "—";
       return;
     }
@@ -6319,16 +6276,16 @@ function goalSwipeToIndex(idx, goLeft) {
     var txtEl = document.getElementById("pacePreviewText");
 
     if (diff > 0) {
-      txtEl.innerHTML = "Ваш темп увеличится.<br>Вы будете откладывать на " + Math.abs(diff).toLocaleString() + " ₽ больше в месяц.<br>Срок достижения цели сократится на " + Math.abs(monthsDiff) + " мес.";
+      txtEl.innerHTML = t("pace.increased", {amount: fmtNum(Math.abs(diff)) + " " + getCurrencySymbol(), months: Math.abs(monthsDiff)}).replace(/\n/g, "<br>");
     } else if (diff < 0) {
-      txtEl.innerHTML = "Ваш темп уменьшится.<br>Вы будете откладывать на " + Math.abs(diff).toLocaleString() + " ₽ меньше в месяц.<br>Срок достижения цели увеличится на " + Math.abs(monthsDiff) + " мес.";
+      txtEl.innerHTML = t("pace.decreased", {amount: fmtNum(Math.abs(diff)) + " " + getCurrencySymbol(), months: Math.abs(monthsDiff)}).replace(/\n/g, "<br>");
     } else {
-      txtEl.innerHTML = "Это ваш текущий темп накоплений.";
+      txtEl.innerHTML = t("pace.current");
     }
 
     var pmEl = document.getElementById("pacePreviewMonthly");
     var pmoEl = document.getElementById("pacePreviewMonths");
-    if (pmEl) pmEl.textContent = sim.monthlySave.toLocaleString();
+    if (pmEl) pmEl.textContent = fmtNum(sim.monthlySave);
     if (pmoEl) pmoEl.textContent = sim.months;
   }
 
@@ -6386,9 +6343,9 @@ function goalSwipeToIndex(idx, goLeft) {
       var smEl = document.getElementById("summaryMonthly");
       var smoEl = document.getElementById("summaryMonths");
       var smoodeEl = document.getElementById("summaryMode");
-      if (smEl && lastCalc.monthlySave) smEl.innerText = lastCalc.monthlySave.toLocaleString();
+      if (smEl && lastCalc.monthlySave) smEl.innerText = fmtNum(lastCalc.monthlySave);
       if (smoEl && lastCalc.months) smoEl.innerText = lastCalc.months;
-      if (smoodeEl) smoodeEl.innerText = PACE_LABELS[saveMode] || saveMode;
+      if (smoodeEl) smoodeEl.innerText = getPaceLabel(saveMode);
 
       saveFullState();
 
@@ -6416,7 +6373,10 @@ function goalSwipeToIndex(idx, goLeft) {
   var debtTypeToggle = document.querySelectorAll("#debtTypeToggle .mode-btn");
   var debtCardFields = document.getElementById("debtCardFields");
 
-  var TYPE_LABELS = { credit: "Кредит", debt: "Долг", installment: "Рассрочка", card: "Кредитная карта" };
+  function getTypeLabel(type) {
+    var map = { credit: "debts.credit", debt: "debts.debt", installment: "debts.installment", card: "debts.creditCard" };
+    return t(map[type] || "debts.debt");
+  }
   var editingDebtId = null;
 
   function getDebts() {
@@ -6467,11 +6427,11 @@ function goalSwipeToIndex(idx, goLeft) {
     var nextEl = document.getElementById("debtSummaryNext");
     var statusEl = document.getElementById("debtSummaryStatus");
 
-    if (totalEl) totalEl.textContent = totalAmount.toLocaleString() + " " + getCurrencySymbol();
-    if (remainEl) remainEl.textContent = totalRemaining.toLocaleString() + " " + getCurrencySymbol();
+    if (totalEl) totalEl.textContent = fmtNum(totalAmount) + " " + getCurrencySymbol();
+    if (remainEl) remainEl.textContent = fmtNum(totalRemaining) + " " + getCurrencySymbol();
     if (nextEl) {
       if (nextPayment) {
-        nextEl.textContent = nextPayment.toLocaleDateString("ru-RU", { day: "numeric", month: "short" });
+        nextEl.textContent = nextPayment.getDate() + " " + getMonthNameShort(nextPayment.getMonth());
       } else {
         nextEl.textContent = "—";
       }
@@ -6482,9 +6442,9 @@ function goalSwipeToIndex(idx, goLeft) {
       if (debts.length === 0) {
         statusEl.textContent = "";
       } else if (s.debtPlanningMode) {
-        statusEl.textContent = "Платежи учтены в финансовом плане";
+        statusEl.textContent = t("debts.accounted");
       } else {
-        statusEl.textContent = "Долги отслеживаются, но не влияют на расчёт";
+        statusEl.textContent = t("debts.tracked");
       }
     }
   }
@@ -6507,29 +6467,29 @@ function goalSwipeToIndex(idx, goLeft) {
   }
 
   function renderDebtCard(d) {
-    var typeLabel = TYPE_LABELS[d.type] || d.type;
+    var typeLabel = getTypeLabel(d.type);
     var endStr = d.endDate ? new Date(d.endDate).toLocaleDateString("ru-RU", { month: "short", year: "numeric" }) : "—";
     var nextStr = d.nextPaymentDate ? new Date(d.nextPaymentDate).toLocaleDateString("ru-RU", { day: "numeric", month: "short" }) : "—";
 
     var html = '<div class="debt-item-card" data-debt-id="' + d.id + '">'
       + '<div class="debt-item-header">'
-      + '<div class="debt-item-title">' + (d.title || "Без названия") + '</div>'
+      + '<div class="debt-item-title">' + (d.title || t("misc.noTitle")) + '</div>'
       + '<span class="debt-item-type-badge">' + typeLabel + '</span>'
       + '</div>'
       + '<div class="debt-item-rows">'
-      + '<div class="debt-item-row"><span>Общая сумма</span><span>' + (Number(d.totalAmount) || 0).toLocaleString() + ' ' + getCurrencySymbol() + '</span></div>'
-      + '<div class="debt-item-row"><span>Осталось</span><span>' + (Number(d.remainingAmount) || 0).toLocaleString() + ' ' + getCurrencySymbol() + '</span></div>'
-      + '<div class="debt-item-row"><span>Ежемесячный платёж</span><span>' + (Number(d.monthlyPayment) || 0).toLocaleString() + ' ' + getCurrencySymbol() + '</span></div>'
-      + '<div class="debt-item-row"><span>Следующий платёж</span><span>' + nextStr + '</span></div>'
-      + '<div class="debt-item-row"><span>Окончание</span><span>' + endStr + '</span></div>';
+      + '<div class="debt-item-row"><span>' + t("debts.totalAmount") + '</span><span>' + fmtNum(Number(d.totalAmount) || 0) + ' ' + getCurrencySymbol() + '</span></div>'
+      + '<div class="debt-item-row"><span>' + t("debts.remaining") + '</span><span>' + fmtNum(Number(d.remainingAmount) || 0) + ' ' + getCurrencySymbol() + '</span></div>'
+      + '<div class="debt-item-row"><span>' + t("debts.monthlyPayment") + '</span><span>' + fmtNum(Number(d.monthlyPayment) || 0) + ' ' + getCurrencySymbol() + '</span></div>'
+      + '<div class="debt-item-row"><span>' + t("debts.nextPayment") + '</span><span>' + nextStr + '</span></div>'
+      + '<div class="debt-item-row"><span>' + t("debts.endDate") + '</span><span>' + endStr + '</span></div>';
 
     if (d.type === "card" && d.creditLimit) {
-      html += '<div class="debt-item-row"><span>Кредитный лимит</span><span>' + (Number(d.creditLimit) || 0).toLocaleString() + ' ' + getCurrencySymbol() + '</span></div>';
-      html += '<div class="debt-item-row"><span>Свободный лимит</span><span>' + (Number(d.freeLimit) || 0).toLocaleString() + ' ' + getCurrencySymbol() + '</span></div>';
+      html += '<div class="debt-item-row"><span>' + t("debts.creditLimit") + '</span><span>' + fmtNum(Number(d.creditLimit) || 0) + ' ' + getCurrencySymbol() + '</span></div>';
+      html += '<div class="debt-item-row"><span>' + t("debts.freeLimit") + '</span><span>' + fmtNum(Number(d.freeLimit) || 0) + ' ' + getCurrencySymbol() + '</span></div>';
     }
 
     if (d.note) {
-      html += '<div class="debt-item-row"><span>Заметка</span><span>' + d.note + '</span></div>';
+      html += '<div class="debt-item-row"><span>' + t("debts.note") + '</span><span>' + d.note + '</span></div>';
     }
 
     html += '</div>'
@@ -7062,8 +7022,8 @@ function goalSwipeToIndex(idx, goLeft) {
     var listEl = document.getElementById("debtHistoryList");
     var emptyEl = document.getElementById("debtHistoryEmpty");
 
-    if (nameEl) nameEl.textContent = debt.title || "Без названия";
-    if (remainEl) remainEl.textContent = "Осталось: " + (Number(debt.remainingAmount) || 0).toLocaleString() + " " + getCurrencySymbol();
+    if (nameEl) nameEl.textContent = debt.title || t("misc.noTitle");
+    if (remainEl) remainEl.textContent = t("debts.remaining") + ": " + fmtNum(Number(debt.remainingAmount) || 0) + " " + getCurrencySymbol();
 
     var history = (getState().debtPaymentHistory || [])
       .filter(function (h) { return h.debtId === debtId; })
@@ -7077,11 +7037,12 @@ function goalSwipeToIndex(idx, goLeft) {
         if (emptyEl) emptyEl.style.display = "none";
         var html = "";
         history.forEach(function (h, i) {
-          var dateStr = new Date(h.date).toLocaleDateString("ru-RU", { day: "numeric", month: "short", year: "numeric" });
+          var _hd = new Date(h.date);
+          var dateStr = _hd.getDate() + " " + getMonthNameShort(_hd.getMonth()) + " " + _hd.getFullYear();
           var descHtml = "";
           if (h.source === "auto" && h.totalInput) {
-            descHtml = '<div class="dph-entry-desc">Из ' + (h.totalInput || 0).toLocaleString() + ' ₽ → '
-              + (h.amount || 0).toLocaleString() + ' ₽ в этот долг</div>';
+            descHtml = '<div class="dph-entry-desc">Из ' + fmtNum(h.totalInput || 0) + ' ' + getCurrencySymbol() + ' → '
+              + fmtNum(h.amount || 0) + ' ' + getCurrencySymbol() + ' в этот долг</div>';
           } else {
             descHtml = '<div class="dph-entry-desc">Ручное погашение</div>';
           }
@@ -7089,7 +7050,7 @@ function goalSwipeToIndex(idx, goLeft) {
           html += '<div class="dph-entry" style="animation-delay:' + (i * 0.04) + 's">'
             + '<div class="dph-entry-dot"></div>'
             + '<div class="dph-entry-body">'
-            + '<div class="dph-entry-amount">' + (h.amount || 0).toLocaleString() + ' ₽</div>'
+            + '<div class="dph-entry-amount">' + fmtNum(h.amount || 0) + ' ' + getCurrencySymbol() + '</div>'
             + descHtml
             + '<div class="dph-entry-date">' + dateStr + '</div>'
             + '</div>'
@@ -7243,9 +7204,13 @@ function goalSwipeToIndex(idx, goLeft) {
 
   function getCatByKey(key) {
     for (var i = 0; i < EXP_CATEGORIES.length; i++) {
-      if (EXP_CATEGORIES[i].key === key) return EXP_CATEGORIES[i];
+      if (EXP_CATEGORIES[i].key === key) {
+        var c = EXP_CATEGORIES[i];
+        return { key: c.key, name: t("cat." + c.key), color: c.color };
+      }
     }
-    return EXP_CATEGORIES[EXP_CATEGORIES.length - 1];
+    var last = EXP_CATEGORIES[EXP_CATEGORIES.length - 1];
+    return { key: last.key, name: t("cat." + last.key), color: last.color };
   }
 
   function getMonthlyExpenseLimit() {
@@ -7368,7 +7333,7 @@ function goalSwipeToIndex(idx, goLeft) {
         '<div class="exp-cat-dot" style="background:' + cat.color + '"></div>' +
         '<div class="exp-cat-info">' +
           '<div class="exp-cat-name">' + cat.name + '</div>' +
-          '<div class="exp-cat-amount">' + seg.amount.toLocaleString("ru-RU") + ' ₽</div>' +
+          '<div class="exp-cat-amount">' + fmtNum(seg.amount) + ' ' + getCurrencySymbol() + '</div>' +
         '</div>' +
         '<div class="exp-cat-pct">' + seg.pct + '%</div>' +
       '</div>';
@@ -7420,13 +7385,13 @@ function goalSwipeToIndex(idx, goLeft) {
     if (elCats) elCats.style.display = "";
     if (elAddBtn) elAddBtn.style.display = "";
 
-    if (elSpent) elSpent.textContent = spent.toLocaleString("ru-RU");
-    if (elLimit) elLimit.textContent = limit > 0 ? limit.toLocaleString("ru-RU") : "—";
+    if (elSpent) elSpent.textContent = fmtNum(spent);
+    if (elLimit) elLimit.textContent = limit > 0 ? fmtNum(limit) : "—";
 
     if (remaining >= 0) {
-      if (elRemaining) elRemaining.textContent = remaining.toLocaleString("ru-RU");
+      if (elRemaining) elRemaining.textContent = fmtNum(remaining);
     } else {
-      if (elRemaining) elRemaining.textContent = "−" + Math.abs(remaining).toLocaleString("ru-RU");
+      if (elRemaining) elRemaining.textContent = "−" + fmtNum(Math.abs(remaining));
     }
 
     var pct = limit > 0 ? Math.min((spent / limit) * 100, 100) : 0;
@@ -7443,7 +7408,7 @@ function goalSwipeToIndex(idx, goLeft) {
         elStatus.textContent = "Лимит не задан";
         elStatus.classList.add("status-warn");
       } else if (spent > limit) {
-        elStatus.textContent = "Лимит превышен на " + Math.abs(remaining).toLocaleString("ru-RU") + " ₽";
+        elStatus.textContent = t("expenses.limitExceeded", {amount: fmtNum(Math.abs(remaining)) + " " + getCurrencySymbol()});
         elStatus.classList.add("status-over");
       } else if (pct >= 80) {
         elStatus.textContent = "Лимит почти исчерпан";
@@ -7454,7 +7419,7 @@ function goalSwipeToIndex(idx, goLeft) {
       }
     }
 
-    if (elDonutTotal) elDonutTotal.textContent = spent.toLocaleString("ru-RU") + " ₽";
+    if (elDonutTotal) elDonutTotal.textContent = fmtNum(spent) + " " + getCurrencySymbol();
 
     drawDonut(data.categories, data.totalSpent);
     renderCategoryList(data.categories, data.totalSpent);
@@ -7648,7 +7613,7 @@ function goalSwipeToIndex(idx, goLeft) {
     var d = new Date(dateStr);
     if (isNaN(d.getTime())) return dateStr;
     var now = new Date();
-    var base = d.getDate() + " " + MONTH_NAMES_RU[d.getMonth()];
+    var base = d.getDate() + " " + getMonthNameGenitive(d.getMonth());
     if (d.getFullYear() !== now.getFullYear()) base += " " + d.getFullYear();
     return base;
   }
@@ -7683,7 +7648,7 @@ function goalSwipeToIndex(idx, goLeft) {
       countEl.textContent = entries.length + " " + _pluralizeExpense(entries.length);
     }
 
-    if (totalEl) totalEl.textContent = catTotal.toLocaleString("ru-RU") + " ₽";
+    if (totalEl) totalEl.textContent = fmtNum(catTotal) + " " + getCurrencySymbol();
 
     var totalAllSpent = 0;
     for (var k = 0; k < allMonth.length; k++) totalAllSpent += allMonth[k].amount;
@@ -7693,7 +7658,7 @@ function goalSwipeToIndex(idx, goLeft) {
     if (metaEl) {
       var metaParts = [];
       metaParts.push(pctOfTotal + "% от всех расходов");
-      if (limit > 0) metaParts.push(catTotal.toLocaleString("ru-RU") + " из " + limit.toLocaleString("ru-RU") + " ₽");
+      if (limit > 0) metaParts.push(fmtNum(catTotal) + " из " + fmtNum(limit) + " " + getCurrencySymbol());
       metaEl.textContent = metaParts.join("  ·  ");
     }
 
@@ -7727,7 +7692,7 @@ function goalSwipeToIndex(idx, goLeft) {
         html += '<div class="exp-detail-entry" style="animation-delay:' + delay + 'ms">' +
           '<div class="exp-detail-entry-dot" style="background:' + cat.color + '"></div>' +
           '<div class="exp-detail-entry-body">' +
-            '<div class="exp-detail-entry-amount">' + e.amount.toLocaleString("ru-RU") + ' ₽</div>' +
+            '<div class="exp-detail-entry-amount">' + fmtNum(e.amount) + ' ' + getCurrencySymbol() + '</div>' +
             noteHtml +
           '</div>' +
           '<div class="exp-detail-entry-date">' + formatExpDate(e.date) + '</div>' +

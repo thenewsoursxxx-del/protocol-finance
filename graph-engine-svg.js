@@ -279,8 +279,8 @@ var ProtocolGraph = (function () {
     if (_tooltipHideTimer) { clearTimeout(_tooltipHideTimer); _tooltipHideTimer = null; }
 
     tooltip.innerHTML =
-      '<div class="graph-tooltip-value">Отложено: ' + Math.max(0, Math.round(balance)).toLocaleString() + ' ₽</div>' +
-      '<div class="graph-tooltip-month">Месяц: ' + month + '</div>';
+      '<div class="graph-tooltip-value">' + (typeof t === "function" ? t("misc.saved") : "Отложено") + ': ' + (typeof fmtNum === "function" ? fmtNum(Math.max(0, Math.round(balance))) : Math.max(0, Math.round(balance)).toLocaleString()) + ' ' + (typeof getCurrencySymbol === "function" ? getCurrencySymbol() : "₽") + '</div>' +
+      '<div class="graph-tooltip-month">' + month + '</div>';
 
     tooltip.classList.remove("visible");
     requestAnimationFrame(function () { tooltip.classList.add("visible"); });

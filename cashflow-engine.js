@@ -474,29 +474,31 @@
    * Replaces ProtocolCore.buildAdvice — single source of truth.
    */
   CashflowEngine.buildAdvice = function (derived) {
+    var _t = typeof t === "function" ? t : function (k) { return k; };
+
     if (!derived || !derived.ok) {
       return {
         tone: "warning",
-        text: "Сначала нужно привести расходы и доходы в баланс."
+        text: _t("engine.noBalance")
       };
     }
 
     var advice = [];
 
     if (derived.monthsLeft > 36) {
-      advice.push("Цель долгосрочная — подумайте, готовы ли вы ждать так долго.");
+      advice.push(_t("engine.longTerm"));
     }
 
     if (derived.pace >= 0.8) {
-      advice.push("Агрессивный режим требует дисциплины и стабильного дохода.");
+      advice.push(_t("engine.aggressive"));
     }
 
     if (derived.monthlySave < 0.15 * derived.free) {
-      advice.push("Вы откладываете слишком мало — цель будет достигаться медленно.");
+      advice.push(_t("engine.tooLow"));
     }
 
     if (advice.length === 0) {
-      advice.push("План выглядит устойчивым и реалистичным.");
+      advice.push(_t("engine.stable"));
     }
 
     return {

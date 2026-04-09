@@ -6052,11 +6052,52 @@ body.reduce-motion,
 body.reduce-motion * {
   transition-duration: 0.01ms !important;
   animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
 }
 
 body.reduce-motion #screen-settings.active .settings-body,
 body.reduce-motion #screen-settings.active .settings-section {
   animation: none !important;
+}
+
+body.reduce-motion .flip-inner {
+  transition: none !important;
+}
+
+body.reduce-motion .goal-progress-fill,
+body.reduce-motion .exp-progress-fill,
+body.reduce-motion .exp-detail-progress-fill {
+  transition: none !important;
+}
+
+body.reduce-motion .verdict-fade-out,
+body.reduce-motion .verdict-fade-in {
+  opacity: 1 !important;
+  transition: none !important;
+}
+
+body.reduce-motion .nav-lottie svg {
+  animation: none !important;
+}
+
+body.reduce-motion .proto-sheet {
+  transition: none !important;
+}
+
+body.reduce-motion .proto-sheet-overlay {
+  transition: none !important;
+}
+
+body.reduce-motion .advanced-fog {
+  animation: none !important;
+}
+
+body.reduce-motion .goal-pulse {
+  animation: none !important;
+}
+
+body.reduce-motion .confetti-canvas {
+  display: none !important;
 }
 
 /* ═════════════════════════════════════════════════
