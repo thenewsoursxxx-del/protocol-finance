@@ -5820,23 +5820,23 @@ body.flip-fix-pending .flip-wrapper {
 /* ── Body ── */
 
 .settings-body {
-  padding: 12px 16px 48px;
+  padding: 16px 16px 48px;
 }
 
 /* ── Section ── */
 
 .settings-section {
-  margin-bottom: 22px;
+  margin-bottom: 28px;
 }
 
 .settings-section-title {
-  font-size: 12px;
+  font-size: 12.5px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.8px;
   color: rgba(255,255,255,0.38);
-  margin-bottom: 8px;
-  padding-left: 6px;
+  margin-bottom: 10px;
+  padding-left: 4px;
 }
 
 /* ── Card (section container) ── */
@@ -5853,16 +5853,17 @@ body.flip-fix-pending .flip-wrapper {
   box-shadow:
     0 1px 3px rgba(0,0,0,0.24),
     0 0 0 0.5px rgba(255,255,255,0.04) inset;
-  padding: 2px 16px;
+  padding: 6px 18px;
 }
 
 /* ── Row ── */
 
 .settings-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 12px;
-  padding: 13px 0;
+  gap: 14px;
+  padding: 16px 0;
   -webkit-tap-highlight-color: transparent;
   transition: transform 0.12s ease;
 }
@@ -5879,20 +5880,20 @@ body.flip-fix-pending .flip-wrapper {
 
 .settings-row-icon {
   flex-shrink: 0;
-  width: 34px;
-  height: 34px;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 9px;
+  border-radius: 10px;
   background: rgba(16,185,129,0.10);
   color: #10b981;
 }
 
 .settings-row-icon--nested {
-  width: 30px;
-  height: 30px;
-  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
   background: rgba(255,255,255,0.05);
   color: rgba(255,255,255,0.45);
 }
@@ -5905,23 +5906,23 @@ body.flip-fix-pending .flip-wrapper {
 
 .settings-row-info {
   flex: 1;
-  min-width: 0;
+  min-width: 120px;
 }
 
 .settings-row-label {
-  font-size: 14.5px;
+  font-size: 15px;
   font-weight: 500;
   color: rgba(255,255,255,0.92);
-  line-height: 1.3;
+  line-height: 1.35;
 }
 
 .settings-row-hint {
-  font-size: 12px;
-  color: rgba(255,255,255,0.34);
-  margin-top: 3px;
-  line-height: 1.4;
-  max-height: 2.8em;
-  overflow: hidden;
+  font-size: 12.5px;
+  color: rgba(255,255,255,0.38);
+  margin-top: 4px;
+  line-height: 1.45;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
 }
 
 /* ── Divider ── */
@@ -5935,7 +5936,7 @@ body.flip-fix-pending .flip-wrapper {
     rgba(255,255,255,0.06) 85%,
     transparent 100%
   );
-  margin-left: 46px;
+  margin-left: 50px;
 }
 
 /* ═════════════════════════════════════════════════
@@ -5944,6 +5945,7 @@ body.flip-fix-pending .flip-wrapper {
 
 .settings-toggle {
   flex-shrink: 0;
+  margin-left: auto;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 }
@@ -5954,10 +5956,10 @@ body.flip-fix-pending .flip-wrapper {
 
 .settings-toggle-slider {
   display: block;
-  width: 48px;
-  height: 28px;
-  min-width: 48px;
-  border-radius: 14px;
+  width: 50px;
+  height: 30px;
+  min-width: 50px;
+  border-radius: 15px;
   background: rgba(255,255,255,0.10);
   position: relative;
   transition: background 0.18s ease, box-shadow 0.25s ease;
@@ -5969,8 +5971,8 @@ body.flip-fix-pending .flip-wrapper {
   position: absolute;
   top: 3px;
   left: 3px;
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   background: #fff;
   box-shadow: 0 1px 3px rgba(0,0,0,0.3);
@@ -5993,19 +5995,20 @@ body.flip-fix-pending .flip-wrapper {
 .settings-segment {
   display: flex;
   flex-shrink: 0;
+  margin-left: auto;
   background: rgba(255,255,255,0.06);
-  border-radius: 10px;
+  border-radius: 11px;
   padding: 3px;
   gap: 2px;
 }
 
 .settings-seg-btn {
-  padding: 7px 13px;
+  padding: 8px 14px;
   border: none;
-  border-radius: 8px;
+  border-radius: 9px;
   background: transparent;
-  color: rgba(255,255,255,0.40);
-  font-size: 13px;
+  color: rgba(255,255,255,0.42);
+  font-size: 13.5px;
   font-weight: 600;
   cursor: pointer;
   transition: background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
@@ -6029,8 +6032,8 @@ body.flip-fix-pending .flip-wrapper {
 }
 
 .settings-segment--time .settings-seg-btn {
-  padding: 6px 11px;
-  font-size: 12.5px;
+  padding: 7px 12px;
+  font-size: 13px;
   font-variant-numeric: tabular-nums;
 }
 
@@ -6054,4 +6057,25 @@ body.reduce-motion * {
 body.reduce-motion #screen-settings.active .settings-body,
 body.reduce-motion #screen-settings.active .settings-section {
   animation: none !important;
+}
+
+/* ═════════════════════════════════════════════════
+   Settings — responsive stacking for narrow widths
+   ═════════════════════════════════════════════════ */
+
+@media (max-width: 399px) {
+  .settings-row .settings-segment {
+    margin-left: 50px;
+    margin-right: auto;
+    margin-top: -4px;
+  }
+
+  .settings-row--nested .settings-segment {
+    margin-left: 54px;
+  }
+
+  .settings-seg-btn {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
 }
