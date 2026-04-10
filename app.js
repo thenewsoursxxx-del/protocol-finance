@@ -3716,8 +3716,8 @@ if (activeGoalIndex > 0 && activeGoal) {
   var _cs = getCurrencySymbol();
   var lines = t("misc.saving") + ": " + fmtNum(activeGoal.monthlyShare || 0) + " " + _cs + " " + t("pace.perMonth")
     + "<br>" + t("advGoals.priority") + ": " + (activeGoal.priority || 1)
-    + "<br>" + fmtNum(preview) + " " + _cs
-    + "<br>" + (activeGoal.monthsLeft || "—") + " " + t("misc.monthShort");
+    + "<br>" + t("plan.accumulated") + ": " + fmtNum(preview) + " " + _cs
+    + "<br>" + t("plan.remaining") + ": " + (activeGoal.monthsLeft || "—") + " " + t("misc.monthShort");
 
   explainEl.innerHTML = lines;
 
@@ -3739,13 +3739,14 @@ monthlyEl.innerText =
 var s = getState();
 var isCashflow = (s.financialModel === "cashflow");
 
+var pctVal = Math.round(goalPace * 100);
 var explainText = lastCalc.ok
-  ? (isCashflow ? fmtNum(lastCalc.forecastIncome || 0) + " " + _cs2 + " " + t("pace.perMonth") + "\n"
-      + fmtNum(lastCalc.forecastExpense || 0) + " " + _cs2 + " " + t("pace.perMonth") + "\n" : "")
-    + fmtNum(lastCalc.free || 0) + " " + _cs2 + "\n"
-    + fmtNum(goalMonthlySave) + " " + _cs2 + "\n"
-    + "~" + Math.round(goalPace * 100) + "%\n"
-    + "~" + goalMonthsLeft + " " + t("misc.monthShort")
+  ? (isCashflow ? t("plan.forecastIncome") + ": " + fmtNum(lastCalc.forecastIncome || 0) + " " + _cs2 + " " + t("pace.perMonth") + "\n"
+      + t("plan.forecastExpense") + ": " + fmtNum(lastCalc.forecastExpense || 0) + " " + _cs2 + " " + t("pace.perMonth") + "\n" : "")
+    + t("plan.freePerMonth") + ": " + fmtNum(lastCalc.free || 0) + " " + _cs2 + "\n"
+    + t("plan.youSave") + ": " + fmtNum(goalMonthlySave) + " " + _cs2 + "\n"
+    + t("plan.paceOfFree", { pct: pctVal }) + "\n"
+    + t("plan.goalReachedIn") + " " + goalMonthsLeft + " " + t("misc.monthShort")
   : t("engine.noBalance");
 explainEl.innerHTML = explainText.replace(/\n/g, "<br>");
 

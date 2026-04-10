@@ -52,6 +52,14 @@
       "plan.mode": "Режим",
       "plan.changePace": "Изменить темп накоплений",
       "plan.addDebts": "Добавить кредиты и долги",
+      "plan.freePerMonth": "Свободно в месяц",
+      "plan.youSave": "Откладываете",
+      "plan.paceOfFree": "Это ~{pct}% от свободных средств",
+      "plan.goalReachedIn": "Цель будет достигнута примерно за",
+      "plan.forecastIncome": "Прогноз дохода",
+      "plan.forecastExpense": "Прогноз расходов",
+      "plan.accumulated": "Накоплено",
+      "plan.remaining": "Осталось",
 
       // ── Flexible model ──
       "flex.toggle": "Гибкая финансовая модель",
@@ -497,6 +505,14 @@
       "plan.mode": "Mode",
       "plan.changePace": "Change saving pace",
       "plan.addDebts": "Add loans and debts",
+      "plan.freePerMonth": "Free per month",
+      "plan.youSave": "You save",
+      "plan.paceOfFree": "That's ~{pct}% of free funds",
+      "plan.goalReachedIn": "Goal will be reached in approx.",
+      "plan.forecastIncome": "Forecast income",
+      "plan.forecastExpense": "Forecast expenses",
+      "plan.accumulated": "Accumulated",
+      "plan.remaining": "Remaining",
 
       // ── Flexible model ──
       "flex.toggle": "Flexible financial model",
