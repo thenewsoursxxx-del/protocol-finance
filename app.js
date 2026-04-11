@@ -40,7 +40,12 @@ var navExpensesLottie = null;
   });
 })();
 
+function isAnimationsEnabled() {
+  return !document.body.classList.contains("reduce-motion");
+}
+
 function replayNavIconForScreen(screenName) {
+  if (!isAnimationsEnabled()) return;
   var anim = null;
   if (screenName === "calc") anim = navCalcLottie;
   else if (screenName === "advice") anim = navProtocolLottie;
@@ -155,18 +160,305 @@ function formatNumber(v) {
 function parseNumber(v) {
   return Number(v.replace(/[\.\s\u00A0]/g, ""));
 }
-function getCurrencySymbol() {
-  var c = window._protocolCurrency || "RUB";
-  if (c === "USD") return "$";
-  if (c === "EUR") return "€";
+/* ═════════════════════════════════════════════════
+   Multi-Currency System
+   ─────────────────────────────────────────────────
+   baseCurrency   — all data stored & calculated here
+   displayCurrency — UI-only dynamic conversion
+   ═════════════════════════════════════════════════ */
+
+function _currencySymbol(code) {
+  if (code === "USD") return "$";
+  if (code === "EUR") return "€";
   return "₽";
 }
+
+function getBaseCurrency() {
+  var s = (typeof getState === "function") ? getState().settings : null;
+  return (s && s.baseCurrency) || "RUB";
+}
+
+function getCurrencySymbol() {
+  return _currencySymbol(_getEffectiveCurrency());
+}
+
+function _getEffectiveCurrency() {
+  var s = (typeof getState === "function") ? getState().settings : null;
+  if (s && s.displayCurrencyEnabled && s.displayCurrency) return s.displayCurrency;
+  return (s && s.baseCurrency) || "RUB";
+}
+
+/* ── Exchange rate cache ── */
+var _exchangeRates = { USD: null, EUR: null, _ts: 0 };
+var _RATE_CACHE_KEY = "protocol_exchange_rates";
+var _RATE_TTL_MS = 43200000; // 12 hours
+
+(function _loadCachedRates() {
+  try {
+    var raw = localStorage.getItem(_RATE_CACHE_KEY);
+    if (raw) {
+      var cached = JSON.parse(raw);
+      if (cached && cached.USD && cached.EUR && cached._ts) {
+        _exchangeRates = cached;
+        console.log("[Protocol] Using cached exchange rates");
+      }
+    }
+  } catch (e) { /* ignore */ }
+})();
+
+function _saveRatesToCache() {
+  try {
+    localStorage.setItem(_RATE_CACHE_KEY, JSON.stringify(_exchangeRates));
+  } catch (e) { /* ignore */ }
+}
+
+function _persistRatesToState() {
+  if (typeof updateState === "function") {
+    updateState({ settings: {
+      exchangeRates: {
+        USD: _exchangeRates.USD,
+        EUR: _exchangeRates.EUR,
+        lastUpdated: _exchangeRates._ts
+      }
+    }});
+  }
+}
+
+function fetchExchangeRates(forceRefresh, callback) {
+  if (!forceRefresh && _exchangeRates._ts && Date.now() - _exchangeRates._ts < _RATE_TTL_MS) {
+    if (callback) callback(true);
+    return;
+  }
+
+  fetch("https://open.er-api.com/v6/latest/RUB")
+    .then(function (res) { return res.json(); })
+    .then(function (data) {
+      if (data && data.result === "success" && data.rates) {
+        _exchangeRates.USD = data.rates.USD || _exchangeRates.USD;
+        _exchangeRates.EUR = data.rates.EUR || _exchangeRates.EUR;
+        _exchangeRates._ts = Date.now();
+        _saveRatesToCache();
+        _persistRatesToState();
+        console.log("[Protocol] Exchange rates fetched:", {
+          USD: _exchangeRates.USD, EUR: _exchangeRates.EUR
+        });
+        _refreshAfterRateChange();
+        if (callback) callback(true);
+      } else {
+        console.warn("[Protocol] Rate API returned unexpected format");
+        if (callback) callback(false);
+      }
+    })
+    .catch(function (err) {
+      console.warn("[Protocol] Exchange rate fetch failed, using cached/fallback:", err.message);
+      if (callback) callback(false);
+    });
+}
+
+function _refreshAfterRateChange() {
+  var eff = _getEffectiveCurrency();
+  var base = getBaseCurrency();
+  if (eff !== base) {
+    if (typeof applyLanguageToDOM === "function") applyLanguageToDOM();
+    if (typeof renderAccountsUI === "function") try { renderAccountsUI(); } catch(e){}
+    if (typeof renderGoals === "function") try { renderGoals(); } catch(e){}
+    if (typeof renderExpensesScreen === "function") try { renderExpensesScreen(); } catch(e){}
+  }
+}
+
+fetchExchangeRates();
+
+/* ── Conversion helpers ── */
+
+// _rateFromRub("USD") → how many USD per 1 RUB (e.g. 0.011)
+function _rateFromRub(currencyCode) {
+  if (!currencyCode || currencyCode === "RUB") return 1;
+  var rate = _exchangeRates[currencyCode];
+  if (rate && rate > 0) return rate;
+  return null;
+}
+
+function convert(amount, fromCurrency, toCurrency) {
+  if (fromCurrency === toCurrency) return amount;
+  var num = Number(amount) || 0;
+
+  var fromRate = _rateFromRub(fromCurrency);
+  var toRate = _rateFromRub(toCurrency);
+  if (!fromRate || !toRate) return num;
+
+  // Convert via RUB as intermediary: amount → RUB → target
+  var amountInRub = (fromCurrency === "RUB") ? num : num / fromRate;
+  return (toCurrency === "RUB") ? amountInRub : amountInRub * toRate;
+}
+
+function getDisplayAmount(amount) {
+  var base = getBaseCurrency();
+  var eff = _getEffectiveCurrency();
+  if (eff === base) return Number(amount) || 0;
+  return convert(amount, base, eff);
+}
+
+function formatMoney(amount, currencyOverride) {
+  var cur = currencyOverride || _getEffectiveCurrency();
+  var num = Number(amount) || 0;
+  var sep = (window._protocolNumberFormat === "dots") ? "." : "\u00A0";
+  var str = Math.round(Math.abs(num)).toString();
+  var formatted = str.replace(/\B(?=(\d{3})+(?!\d))/g, sep);
+  return (num < 0 ? "−" : "") + formatted + " " + _currencySymbol(cur);
+}
+
+function fmtConverted(n) {
+  var num = Number(n) || 0;
+  return fmtNum(getDisplayAmount(num));
+}
+
 function protocolFormatAmount(n) {
   var num = Number(n) || 0;
-  var sep = (window._protocolNumberFormat === "dots") ? "." : "\u00A0";
-  var str = Math.abs(num).toString();
-  var formatted = str.replace(/\B(?=(\d{3})+(?!\d))/g, sep);
-  return (num < 0 ? "−" : "") + formatted + " " + getCurrencySymbol();
+  return formatMoney(getDisplayAmount(num));
+}
+
+/* ── Base currency change (one-time conversion of ALL stored values) ── */
+
+function changeBaseCurrency(newBase, callback) {
+  var oldBase = getBaseCurrency();
+  if (newBase === oldBase) { if (callback) callback(true); return; }
+
+  fetchExchangeRates(true, function (ok) {
+    var fromRate = _rateFromRub(oldBase);
+    var toRate = _rateFromRub(newBase);
+
+    if (!fromRate || !toRate) {
+      console.warn("[Protocol] Cannot convert — rates unavailable. Fallback used.");
+      if (callback) callback(false);
+      return;
+    }
+
+    function cvt(val) {
+      var n = Number(val) || 0;
+      if (n === 0) return 0;
+      return Math.round(convert(n, oldBase, newBase));
+    }
+
+    var s = getState();
+
+    // ── Convert accounts ──
+    var newAccounts = {
+      main: cvt(s.accounts.main),
+      reserve: cvt(s.accounts.reserve)
+    };
+
+    // ── Convert goals ──
+    var newGoals = (s.goals || []).map(function (g) {
+      return Object.assign({}, g, {
+        amount: cvt(g.amount),
+        saved: cvt(g.saved),
+        monthlyShare: cvt(g.monthlyShare)
+      });
+    });
+
+    // ── Convert completed goals ──
+    var newCompletedGoals = (s.completedGoals || []).map(function (g) {
+      return Object.assign({}, g, {
+        amount: cvt(g.amount),
+        saved: cvt(g.saved)
+      });
+    });
+
+    // ── Convert debts ──
+    var newDebts = (s.debts || []).map(function (d) {
+      return Object.assign({}, d, {
+        totalAmount: cvt(d.totalAmount),
+        remainingAmount: cvt(d.remainingAmount),
+        monthlyPayment: cvt(d.monthlyPayment),
+        paidInCurrentPeriod: cvt(d.paidInCurrentPeriod),
+        creditLimit: d.creditLimit ? cvt(d.creditLimit) : undefined,
+        freeLimit: d.freeLimit ? cvt(d.freeLimit) : undefined
+      });
+    });
+
+    // ── Convert debt payment history ──
+    var newDebtHistory = (s.debtPaymentHistory || []).map(function (h) {
+      return Object.assign({}, h, {
+        amount: cvt(h.amount),
+        totalInput: h.totalInput ? cvt(h.totalInput) : undefined
+      });
+    });
+
+    // ── Convert expenses log ──
+    var newExpenses = (s.expensesLog || []).map(function (e) {
+      return Object.assign({}, e, { amount: cvt(e.amount) });
+    });
+
+    // ── Convert fact history ──
+    var newFactHistory = (s.factHistory || []).map(function (f) {
+      return Object.assign({}, f, { value: cvt(f.value) });
+    });
+
+    // ── Convert plan/calc values ──
+    var newPlannedMonthly = cvt(s.plannedMonthly);
+    var newPlanStartValue = cvt(s.planStartValue);
+    var newInitialBalance = cvt(s.initialBalance);
+
+    var newLastCalc = {};
+    if (s.lastCalc && typeof s.lastCalc === "object") {
+      newLastCalc = Object.assign({}, s.lastCalc);
+      if (newLastCalc.monthlySave) newLastCalc.monthlySave = cvt(newLastCalc.monthlySave);
+      if (newLastCalc.free) newLastCalc.free = cvt(newLastCalc.free);
+    }
+
+    // ── Convert input fields ──
+    var newIncome = s.income ? String(cvt(parseNumber(String(s.income)))) : s.income;
+    var newExpensesVal = s.expenses ? String(cvt(parseNumber(String(s.expenses)))) : s.expenses;
+    var newGoal = s.goal ? String(cvt(parseNumber(String(s.goal)))) : s.goal;
+    var newSaved = s.saved ? String(cvt(parseNumber(String(s.saved)))) : s.saved;
+    var newFixedIncome = s.fixedIncomeAmount ? String(cvt(parseNumber(String(s.fixedIncomeAmount)))) : s.fixedIncomeAmount;
+    var newFixedExpense = s.fixedExpenseAmount ? String(cvt(parseNumber(String(s.fixedExpenseAmount)))) : s.fixedExpenseAmount;
+
+    // ── Apply all converted values ──
+    updateState({
+      accounts: newAccounts,
+      goals: newGoals,
+      completedGoals: newCompletedGoals,
+      debts: newDebts,
+      debtPaymentHistory: newDebtHistory,
+      expensesLog: newExpenses,
+      factHistory: newFactHistory,
+      plannedMonthly: newPlannedMonthly,
+      planStartValue: newPlanStartValue,
+      initialBalance: newInitialBalance,
+      lastCalc: newLastCalc,
+      income: newIncome,
+      expenses: newExpensesVal,
+      goal: newGoal,
+      saved: newSaved,
+      fixedIncomeAmount: newFixedIncome,
+      fixedExpenseAmount: newFixedExpense,
+      settings: { baseCurrency: newBase }
+    });
+
+    // Sync in-memory vars
+    accounts.main = newAccounts.main;
+    accounts.reserve = newAccounts.reserve;
+    factHistory = newFactHistory;
+    lastCalc = newLastCalc;
+    plannedMonthly = newPlannedMonthly;
+    planStartValue = newPlanStartValue;
+    initialBalance = newInitialBalance;
+
+    if (incomeInput && newIncome) incomeInput.value = newIncome;
+    if (expensesInput && newExpensesVal) expensesInput.value = newExpensesVal;
+    if (goalInput && newGoal) goalInput.value = newGoal;
+
+    saveFullState();
+    applyLanguageToDOM();
+
+    if (typeof renderAccountsUI === "function") try { renderAccountsUI(); } catch(e){}
+    if (typeof renderGoals === "function") try { renderGoals(); } catch(e){}
+    if (typeof renderExpensesScreen === "function") try { renderExpensesScreen(); } catch(e){}
+
+    console.log("[Protocol] Base currency changed:", oldBase, "→", newBase);
+    if (callback) callback(true);
+  });
 }
 
 /* ===== ELEMENTS ===== */
@@ -794,8 +1086,8 @@ function showDebtBreakdown(total, debtPart, savingsPart) {
   if (!el) return;
   el.innerHTML =
     '<div class="debt-breakdown-title">' + t("debts.breakdown.from", {amount: fmtAmount(total)}) + '</div>' +
-    '<div class="debt-breakdown-line"><span class="debt-breakdown-dot debt-breakdown-dot--debt"></span>' + fmtNum(debtPart) + ' ' + getCurrencySymbol() + ' ' + t("debts.breakdown.toDebt") + '</div>' +
-    '<div class="debt-breakdown-line"><span class="debt-breakdown-dot debt-breakdown-dot--save"></span>' + fmtNum(savingsPart) + ' ' + getCurrencySymbol() + ' ' + t("debts.breakdown.toSavings") + '</div>';
+    '<div class="debt-breakdown-line"><span class="debt-breakdown-dot debt-breakdown-dot--debt"></span>' + fmtConverted(debtPart) + ' ' + getCurrencySymbol() + ' ' + t("debts.breakdown.toDebt") + '</div>' +
+    '<div class="debt-breakdown-line"><span class="debt-breakdown-dot debt-breakdown-dot--save"></span>' + fmtConverted(savingsPart) + ' ' + getCurrencySymbol() + ' ' + t("debts.breakdown.toSavings") + '</div>';
   el.classList.remove("debt-breakdown--hidden");
   el.classList.add("debt-breakdown--visible");
 
@@ -1141,9 +1433,13 @@ function loadFullState() {
     if (typeof s.activeGoalIndex === "number") activeGoalIndex = s.activeGoalIndex;
 
     if (s.settings) {
-      window._protocolCurrency = s.settings.currency || "RUB";
       window._protocolNumberFormat = s.settings.numberFormat || "spaces";
       document.body.classList.toggle("reduce-motion", !s.settings.animationsEnabled);
+      if (s.settings.exchangeRates && s.settings.exchangeRates.USD) {
+        _exchangeRates.USD = s.settings.exchangeRates.USD;
+        _exchangeRates.EUR = s.settings.exchangeRates.EUR;
+        _exchangeRates._ts = s.settings.exchangeRates.lastUpdated || 0;
+      }
     }
     if (typeof applyLanguageToDOM === "function") applyLanguageToDOM();
 
@@ -1153,7 +1449,7 @@ function loadFullState() {
     if (isInitialized) {
       lockTabs(false);
       planSummary.style.display = "block";
-      if (summaryMonthly && lastCalc.monthlySave) summaryMonthly.innerText = fmtNum(lastCalc.monthlySave);
+      if (summaryMonthly && lastCalc.monthlySave) summaryMonthly.innerText = fmtConverted(lastCalc.monthlySave);
       if (summaryMonths && lastCalc.months) summaryMonths.innerText = lastCalc.months;
       if (summaryMode) summaryMode.innerText = t("mode." + saveMode);
       document.querySelectorAll("#screen-calc label, #screen-calc .input-wrap, .mode-buttons, #calculate").forEach(el => el.style.display = "none");
@@ -1237,8 +1533,8 @@ function loadFullState() {
 ${s.title}
 </div>
 
-${t("scenario.toGoal")}: ${fmtNum(s.toGoal)} ${getCurrencySymbol()} ${t("scenario.perMonth")}<br>
-${s.toBuffer ? `${t("scenario.toReserve")}: ${fmtNum(s.toBuffer)} ${getCurrencySymbol()}<br>` : ""}
+${t("scenario.toGoal")}: ${fmtConverted(s.toGoal)} ${getCurrencySymbol()} ${t("scenario.perMonth")}<br>
+${s.toBuffer ? `${t("scenario.toReserve")}: ${fmtConverted(s.toBuffer)} ${getCurrencySymbol()}<br>` : ""}
 ${t("scenario.term")}: ~${s.months} ${t("scenario.months")}<br>
 
 <span style="opacity:.6">${t("scenario.risk")}: ${s.risk}</span>
@@ -1724,7 +2020,7 @@ if (e.isInitial) {
 list.innerHTML += `
 <div class="card" style="opacity:.85">
 <div style="font-size:15px;font-weight:600">
-${t("history.initialBalance")}: ${fmtNum(e.value)} ${getCurrencySymbol()}
+${t("history.initialBalance")}: ${fmtConverted(e.value)} ${getCurrencySymbol()}
 </div>
 <div style="font-size:13px;opacity:.6;margin-top:4px">
 ${t("history.createdWithPlan")}
@@ -1735,7 +2031,7 @@ ${t("history.createdWithPlan")}
 list.innerHTML += `
 <div class="card">
 <div style="font-size:15px;font-weight:600;color:#f59e0b">
-−${fmtNum(Math.abs(e.value))} ${getCurrencySymbol()}
+−${fmtConverted(Math.abs(e.value))} ${getCurrencySymbol()}
 </div>
 <div style="font-size:13px;opacity:.6;margin-top:4px">
 ${formatted}
@@ -1749,7 +2045,7 @@ ${t("history.unplannedExpense")}
 list.innerHTML += `
 <div class="card">
 <div style="font-size:15px;font-weight:600">
-+${fmtNum(e.value)} ${getCurrencySymbol()}
++${fmtConverted(e.value)} ${getCurrencySymbol()}
 </div>
 <div style="font-size:13px;opacity:.6;margin-top:4px">
 ${formatted}
@@ -1894,8 +2190,8 @@ const scenariosHTML = scenarios.map(s => `
 ${s.title}
 </div>
 
-${t("scenario.toGoal")}: ${fmtNum(s.toGoal)} ${getCurrencySymbol()} ${t("scenario.perMonth")}<br>
-${s.toBuffer ? `${t("scenario.toReserve")}: ${fmtNum(s.toBuffer)} ${getCurrencySymbol()}<br>` : ""}
+${t("scenario.toGoal")}: ${fmtConverted(s.toGoal)} ${getCurrencySymbol()} ${t("scenario.perMonth")}<br>
+${s.toBuffer ? `${t("scenario.toReserve")}: ${fmtConverted(s.toBuffer)} ${getCurrencySymbol()}<br>` : ""}
 ${t("scenario.term")}: ~${s.months} ${t("scenario.months")}<br>
 
 <span style="opacity:.6">${t("scenario.risk")}: ${s.risk}</span>
@@ -1928,7 +2224,7 @@ if (protocolBack) protocolBack.style.display = "block";
 planSummary.style.display = "block";
 
 // заполнить данные
-summaryMonthly.innerText = fmtNum(lastCalc.monthlySave);
+summaryMonthly.innerText = fmtConverted(lastCalc.monthlySave);
 summaryMonths.innerText = lastCalc.months;
 summaryMode.innerText =
 t("mode." + saveMode);
@@ -2410,8 +2706,17 @@ if (goalHistoryBack) {
     if (key === "animationsEnabled") {
       document.body.classList.toggle("reduce-motion", !value);
       if (typeof lottie !== "undefined") {
-        if (!value) lottie.pause();
-        else lottie.play();
+        if (!value) {
+          lottie.pause();
+          document.querySelectorAll(".nav-lottie svg").forEach(function (el) {
+            el.style.display = "none";
+          });
+        } else {
+          document.querySelectorAll(".nav-lottie svg").forEach(function (el) {
+            el.style.display = "";
+          });
+          lottie.play();
+        }
       }
     }
 
@@ -2425,10 +2730,11 @@ if (goalHistoryBack) {
       updateDynamicHints();
     }
 
-    if (key === "currency") {
-      window._protocolCurrency = value;
+    if (key === "displayCurrencyEnabled" || key === "displayCurrency") {
+      fetchExchangeRates();
       applyLanguageToDOM();
       _refreshDisplayedAmounts();
+      _syncDisplayCurrencyVisibility();
     }
 
     if (key === "numberFormat") {
@@ -2460,9 +2766,56 @@ if (goalHistoryBack) {
     if (overpayHint) overpayHint.textContent = s.allowOverpay ? t("settings.allowOverpay.on") : t("settings.allowOverpay.off");
   }
 
+  // ── Base Currency with confirmation ──
+  function initBaseCurrencySegment() {
+    var container = document.getElementById("settingsBaseCurrency");
+    if (!container) return;
+    var btns = container.querySelectorAll(".settings-seg-btn");
+
+    function sync() {
+      var val = getBaseCurrency();
+      btns.forEach(function (b) {
+        b.classList.toggle("active", b.dataset.value === val);
+      });
+    }
+
+    btns.forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var newBase = btn.dataset.value;
+        if (newBase === getBaseCurrency()) return;
+        if (typeof haptic === "function") haptic("light");
+
+        var msg = t("settings.baseCurrency.confirmMsg");
+        if (!confirm(msg)) { sync(); return; }
+
+        changeBaseCurrency(newBase, function (ok) {
+          if (ok) {
+            sync();
+            _refreshDisplayedAmounts();
+            applyLanguageToDOM();
+          } else {
+            sync();
+            alert(t("settings.baseCurrency.failMsg"));
+          }
+        });
+      });
+    });
+
+    sync();
+    return { sync: sync };
+  }
+
+  // ── Display currency visibility ──
+  function _syncDisplayCurrencyVisibility() {
+    var s = getState().settings || {};
+    var nest = document.getElementById("settingsDisplayCurrencyNested");
+    if (nest) nest.style.display = s.displayCurrencyEnabled ? "" : "none";
+  }
+
   // ── Init all controls ──
   var segments = {};
-  segments.currency = initSegment("settingsCurrency", "currency");
+  segments.baseCurrency = initBaseCurrencySegment();
+  segments.displayCurrency = initSegment("settingsDisplayCurrency", "displayCurrency");
   segments.allocation = initSegment("settingsAllocation", "allocationMode");
   segments.numberFormat = initSegment("settingsNumberFormat", "numberFormat");
   segments.reminderTime = initSegment("settingsReminderTime", "reminderTime");
@@ -2475,6 +2828,7 @@ if (goalHistoryBack) {
   toggles.notifications = initToggle("settingsNotifications", "notificationsEnabled");
   toggles.depositReminder = initToggle("settingsDepositReminder", "depositReminderEnabled");
   toggles.debtReminder = initToggle("settingsDebtReminder", "debtReminderEnabled");
+  toggles.displayCurrencyEnabled = initToggle("settingsDisplayCurrencyEnabled", "displayCurrencyEnabled");
 
   function syncAllControls() {
     Object.keys(segments).forEach(function (k) { if (segments[k]) segments[k].sync(); });
@@ -2485,9 +2839,9 @@ if (goalHistoryBack) {
     if (nested) nested.style.display = s.notificationsEnabled ? "" : "none";
 
     document.body.classList.toggle("reduce-motion", !s.animationsEnabled);
-    window._protocolCurrency = s.currency || "RUB";
     window._protocolNumberFormat = s.numberFormat || "spaces";
 
+    _syncDisplayCurrencyVisibility();
     applyI18nToSettings();
     updateDynamicHints();
   }
@@ -2506,17 +2860,20 @@ if (goalHistoryBack) {
   if (settingsBack) {
     settingsBack.addEventListener("click", function () {
       if (typeof haptic === "function") haptic("light");
-      document.querySelectorAll(".screen").forEach(function (s) { s.classList.remove("active"); });
-      document.getElementById("screen-profile").classList.add("active");
-      if (typeof moveProfileToActiveHeader === "function") moveProfileToActiveHeader();
+      openScreen(lastScreenBeforeProfile, lastNavBtnBeforeProfile);
+      if (isInitialized) {
+        showBottomNav();
+      } else {
+        hideBottomNav();
+      }
     });
   }
 
   // Apply persisted settings on load
   var s = getState().settings || {};
   document.body.classList.toggle("reduce-motion", !s.animationsEnabled);
-  window._protocolCurrency = s.currency || "RUB";
   window._protocolNumberFormat = s.numberFormat || "spaces";
+  _syncDisplayCurrencyVisibility();
 
   /*
    * Real notification delivery requires backend / bot / scheduler
@@ -2567,7 +2924,7 @@ function renderGoalHistory() {
 
     card.innerHTML =
       '<div class="goal-history-card-title">' + escapeHtmlSafe(g.title || t("goals.default")) + '</div>' +
-      '<div class="goal-history-card-amount">' + fmtNum(g.amount || 0) + ' ' + getCurrencySymbol() + '</div>' +
+      '<div class="goal-history-card-amount">' + fmtConverted(g.amount || 0) + ' ' + getCurrencySymbol() + '</div>' +
       '<div class="goal-history-card-meta">' +
         '<span>' + durationStr + '</span>' +
         '<span>' + dateStr + '</span>' +
@@ -3098,7 +3455,7 @@ function showFactTooltip({ value, onHide }) {
   block.innerHTML = `
 <div class="fact-date">${date}</div>
 <div class="fact-value">
-${t("history.deposited")}: ${fmtNum(factOnly)} ${getCurrencySymbol()}
+${t("history.deposited")}: ${fmtConverted(factOnly)} ${getCurrencySymbol()}
 </div>
 `;
 
@@ -3213,8 +3570,8 @@ function renderMonthlyStatus() {
   } else {
     block.classList.remove("monthly-status--complete");
     labelEl.textContent = t("monthly.deposited");
-    valueEl.textContent = fmtNum(Math.round(st.actual))
-      + " / " + fmtNum(Math.round(st.required)) + " " + getCurrencySymbol();
+    valueEl.textContent = fmtConverted(Math.round(st.actual))
+      + " / " + fmtConverted(Math.round(st.required)) + " " + getCurrencySymbol();
   }
 }
 
@@ -3234,9 +3591,9 @@ var activeGoal = goals[activeGoalIndex] || goals[0] || null;
 
 if (mainEl) {
   if (activeGoal) {
-    mainEl.innerText = fmtNum(activeGoal.saved || 0);
+    mainEl.innerText = fmtConverted(activeGoal.saved || 0);
   } else {
-    mainEl.innerText = fmtNum(accounts.main);
+    mainEl.innerText = fmtConverted(accounts.main);
   }
 }
 
@@ -3249,7 +3606,7 @@ if (mainTitleEl) {
 }
 
 if (reserveEl) {
-reserveEl.innerText = fmtNum(accounts.reserve);
+reserveEl.innerText = fmtConverted(accounts.reserve);
 }
 
 const reserveBlock = document.querySelector(
@@ -3332,8 +3689,8 @@ if (titleEl) titleEl.innerText = title;
 
 var percent = total ? Math.min(100, Math.round((saved / total) * 100)) : 0;
 
-if (totalEl) totalEl.innerText = fmtNum(total);
-if (savedEl) savedEl.innerText = fmtNum(saved);
+if (totalEl) totalEl.innerText = fmtConverted(total);
+if (savedEl) savedEl.innerText = fmtConverted(saved);
 if (percentEl) percentEl.innerText = percent;
 if (progressBar) progressBar.style.width = percent + "%";
 
@@ -3373,7 +3730,7 @@ if (reserveCard) {
   if (chosenPlan === "buffer" && idx === 0) {
     reserveCard.style.display = "block";
     var reserveEl = document.getElementById("goalReserveAmount");
-    if (reserveEl) reserveEl.innerText = fmtNum(accounts.reserve);
+    if (reserveEl) reserveEl.innerText = fmtConverted(accounts.reserve);
   } else {
     reserveCard.style.display = "none";
   }
@@ -3442,6 +3799,8 @@ function renderGoalSwipeIndicator() {
 function fireCelebration() {
 // haptic — аккуратно
 Telegram.WebApp.HapticFeedback.notificationOccurred("success");
+
+if (!isAnimationsEnabled()) return;
 
 const duration = 2600;
 const end = Date.now() + duration;
@@ -3714,9 +4073,9 @@ if (activeGoalIndex > 0 && activeGoal) {
   var preview = getFactPreviewForGoal(activeGoalIndex, rawInput);
 
   var _cs = getCurrencySymbol();
-  var lines = t("misc.saving") + ": " + fmtNum(activeGoal.monthlyShare || 0) + " " + _cs + " " + t("pace.perMonth")
+  var lines = t("misc.saving") + ": " + fmtConverted(activeGoal.monthlyShare || 0) + " " + _cs + " " + t("pace.perMonth")
     + "<br>" + t("advGoals.priority") + ": " + (activeGoal.priority || 1)
-    + "<br>" + t("plan.accumulated") + ": " + fmtNum(preview) + " " + _cs
+    + "<br>" + t("plan.accumulated") + ": " + fmtConverted(preview) + " " + _cs
     + "<br>" + t("plan.remaining") + ": " + (activeGoal.monthsLeft || "—") + " " + t("misc.monthShort");
 
   explainEl.innerHTML = lines;
@@ -3734,7 +4093,7 @@ var goalPace = (lastCalc.free && lastCalc.free > 0) ? (goalMonthlySave / lastCal
 
 var _cs2 = getCurrencySymbol();
 monthlyEl.innerText =
-  t("plan.current") + ": " + fmtNum(goalMonthly) + " " + _cs2 + " " + t("plan.perMonth");
+  t("plan.current") + ": " + fmtConverted(goalMonthly) + " " + _cs2 + " " + t("plan.perMonth");
 
 var s = getState();
 var isCashflow = (s.financialModel === "cashflow");
@@ -4232,7 +4591,7 @@ function syncFlexibleUI() {
     if (summaryMonthsEl) summaryMonthsEl.innerText = "—";
     if (summaryModeEl) summaryModeEl.innerText = t("flex.noData");
   } else if (isCashflow && lastCalc.ok) {
-    if (summaryMonthlyEl) summaryMonthlyEl.innerText = fmtNum(lastCalc.monthlySave);
+    if (summaryMonthlyEl) summaryMonthlyEl.innerText = fmtConverted(lastCalc.monthlySave);
     if (summaryMonthsEl) summaryMonthsEl.innerText = lastCalc.months;
   }
 
@@ -4242,10 +4601,10 @@ function syncFlexibleUI() {
     var incFreq = s.incomeFrequency || "monthly";
     if (isCashflow && lastCalc.ok && lastCalc.monthlySave && !noData) {
       if (incFreq === "weekly") {
-        freqHintEl.innerText = "≈ " + fmtNum(Math.round(lastCalc.monthlySave / 4.33)) + " " + getCurrencySymbol() + " " + t("misc.perWeek");
+        freqHintEl.innerText = "≈ " + fmtConverted(Math.round(lastCalc.monthlySave / 4.33)) + " " + getCurrencySymbol() + " " + t("misc.perWeek");
         freqHintEl.style.display = "";
       } else if (incFreq === "biweekly") {
-        freqHintEl.innerText = "≈ " + fmtNum(Math.round(lastCalc.monthlySave / 2.16)) + " " + getCurrencySymbol() + " " + t("misc.perBiweek");
+        freqHintEl.innerText = "≈ " + fmtConverted(Math.round(lastCalc.monthlySave / 2.16)) + " " + getCurrencySymbol() + " " + t("misc.perBiweek");
         freqHintEl.style.display = "";
       } else {
         freqHintEl.style.display = "none";
@@ -4940,10 +5299,10 @@ function renderAccountBackCards() {
       if (result) {
         html +=
           '<div class="stats-purchasing-label">' + t("stats.purchasingLabel") + '</div>' +
-          '<div class="stats-purchasing-value">' + fmtNum(result.adjustedValue) + ' ' + getCurrencySymbol() + '</div>' +
+          '<div class="stats-purchasing-value">' + fmtConverted(result.adjustedValue) + ' ' + getCurrencySymbol() + '</div>' +
           '<div class="loss-inflation">' +
             t("stats.inflationLoss") +
-            '<br>−' + fmtNum(result.loss) + ' ' + getCurrencySymbol() + ' ' +
+            '<br>−' + fmtConverted(result.loss) + ' ' + getCurrencySymbol() + ' ' +
             '<span class="arrow-down">↓</span>' +
           '</div>';
       }
@@ -4952,7 +5311,7 @@ function renderAccountBackCards() {
         html +=
           '<div class="compensation-block">' +
             '<div class="compensation-label">' + t("stats.compensationLabel") + '</div>' +
-            '<div class="extra-monthly">+' + fmtNum(comp.extraMonthly) + ' ' + getCurrencySymbol() + ' ' + t("stats.extraMonthly") + '</div>' +
+            '<div class="extra-monthly">+' + fmtConverted(comp.extraMonthly) + ' ' + getCurrencySymbol() + ' ' + t("stats.extraMonthly") + '</div>' +
           '</div>';
       }
 
@@ -5704,11 +6063,11 @@ renderAccountBackCards();
           '<div class="' + pClass + '">P' + g.priority + '</div>' +
         '</div>' +
         '<div class="adv-goal-card-info">' +
-          '<span>' + t("advGoals.savedLabel") + ': <b>' + fmtNum(g.saved || 0) + ' ' + getCurrencySymbol() + '</b></span>' +
-          '<span>' + t("advGoals.goalLabel") + ': <b>' + fmtNum(g.amount || 0) + ' ' + getCurrencySymbol() + '</b></span>' +
+          '<span>' + t("advGoals.savedLabel") + ': <b>' + fmtConverted(g.saved || 0) + ' ' + getCurrencySymbol() + '</b></span>' +
+          '<span>' + t("advGoals.goalLabel") + ': <b>' + fmtConverted(g.amount || 0) + ' ' + getCurrencySymbol() + '</b></span>' +
         '</div>' +
         '<div class="adv-goal-card-info">' +
-          '<span>' + t("advGoals.perMonthLabel") + ': <b>' + fmtNum(g.monthlyShare || 0) + ' ' + getCurrencySymbol() + '</b></span>' +
+          '<span>' + t("advGoals.perMonthLabel") + ': <b>' + fmtConverted(g.monthlyShare || 0) + ' ' + getCurrencySymbol() + '</b></span>' +
           '<span>' + t("advGoals.termLabel") + ': <b>' + (g.monthsLeft || "—") + ' ' + t("advGoals.termMonths") + '</b></span>' +
         '</div>' +
         '<div class="adv-goal-card-progress">' +
@@ -5764,9 +6123,9 @@ renderAccountBackCards();
     if (monthly > 0 && draft.length > 0) {
       var totalEl = document.createElement("div");
       totalEl.className = "goal-mgmt-total";
-      totalEl.innerHTML = t("timeline.toSavings") + ": <b>" + fmtNum(monthly) + " " + getCurrencySymbol() + "</b>" +
+      totalEl.innerHTML = t("timeline.toSavings") + ": <b>" + fmtConverted(monthly) + " " + getCurrencySymbol() + "</b>" +
         (usedTotal > monthly
-          ? ' <span class="timeline-over-limit">' + t("timeline.overLimit") + ' ' + fmtNum(usedTotal - monthly) + ' ' + getCurrencySymbol() + '</span>'
+          ? ' <span class="timeline-over-limit">' + t("timeline.overLimit") + ' ' + fmtConverted(usedTotal - monthly) + ' ' + getCurrencySymbol() + '</span>'
           : "");
       goalTimelineAllocation.appendChild(totalEl);
     }
@@ -5796,7 +6155,7 @@ renderAccountBackCards();
         '</div>' +
         '<div class="goal-timeline-progress">' +
           '<span>' + t("timeline.pctDone", { pct: pctDone }) + '</span>' +
-          '<span>' + fmtNum(draftGoal.saved || 0) + ' / ' + fmtNum(draftGoal.amount || 0) + ' ' + getCurrencySymbol() + '</span>' +
+          '<span>' + fmtConverted(draftGoal.saved || 0) + ' / ' + fmtConverted(draftGoal.amount || 0) + ' ' + getCurrencySymbol() + '</span>' +
         '</div>';
 
       if (!isComplete) {
@@ -5811,7 +6170,7 @@ renderAccountBackCards();
             '</div>' +
           '</div>' +
           '<div class="goal-timeline-preview">' +
-            t("timeline.requiredSaving") + ': <b>' + fmtNum(requiredMonthly) + ' ' + getCurrencySymbol() + ' ' + t("timeline.perMonth") + '</b>' +
+            t("timeline.requiredSaving") + ': <b>' + fmtConverted(requiredMonthly) + ' ' + getCurrencySymbol() + ' ' + t("timeline.perMonth") + '</b>' +
           '</div>' +
           '<div class="goal-timeline-minmax">' +
             t("timeline.minimum") + ': ' + minMonths + ' ' + t("timeline.monthsUnit") +
@@ -5976,10 +6335,10 @@ renderAccountBackCards();
         '</div>' +
         '<div class="goal-mgmt-prio-info">' +
           '<span>' + t("timeline.pctDone", { pct: pctDone }) + '</span>' +
-          '<span>' + fmtNum(g.saved || 0) + ' / ' + fmtNum(g.amount || 0) + ' ' + getCurrencySymbol() + '</span>' +
+          '<span>' + fmtConverted(g.saved || 0) + ' / ' + fmtConverted(g.amount || 0) + ' ' + getCurrencySymbol() + '</span>' +
         '</div>' +
         '<div class="goal-mgmt-prio-detail">' +
-          t("priority.saving") + ': ' + fmtNum(g.monthlyShare || 0) + ' ' + getCurrencySymbol() + ' ' + t("timeline.perMonth") +
+          t("priority.saving") + ': ' + fmtConverted(g.monthlyShare || 0) + ' ' + getCurrencySymbol() + ' ' + t("timeline.perMonth") +
           '<br>' + t("priority.goalReachedIn") + ': ' + (g.monthsLeft || "—") + ' ' + t("timeline.monthsUnit") +
         '</div>' +
         '<div class="goal-mgmt-prio-controls">' +
@@ -6228,7 +6587,7 @@ function goalSwipeToIndex(idx, goLeft) {
     var curMonthlyEl = document.getElementById("paceCurrentMonthly");
     var curMonthsEl = document.getElementById("paceCurrentMonths");
     if (curModeEl) curModeEl.textContent = curLabel;
-    if (curMonthlyEl) curMonthlyEl.textContent = fmtNum(lastCalc.monthlySave || plannedMonthly || 0);
+    if (curMonthlyEl) curMonthlyEl.textContent = fmtConverted(lastCalc.monthlySave || plannedMonthly || 0);
     if (curMonthsEl) curMonthsEl.textContent = lastCalc.months || "—";
 
     paceModeButtons.forEach(function (b) {
@@ -6249,7 +6608,7 @@ function goalSwipeToIndex(idx, goLeft) {
       if (txtEl) txtEl.innerHTML = t("pace.current");
       var pmEl = document.getElementById("pacePreviewMonthly");
       var pmoEl = document.getElementById("pacePreviewMonths");
-      if (pmEl) pmEl.textContent = fmtNum(lastCalc.monthlySave || 0);
+      if (pmEl) pmEl.textContent = fmtConverted(lastCalc.monthlySave || 0);
       if (pmoEl) pmoEl.textContent = lastCalc.months || "—";
       return;
     }
@@ -6268,16 +6627,16 @@ function goalSwipeToIndex(idx, goLeft) {
     var txtEl = document.getElementById("pacePreviewText");
 
     if (diff > 0) {
-      txtEl.innerHTML = t("pace.increased", {amount: fmtNum(Math.abs(diff)) + " " + getCurrencySymbol(), months: Math.abs(monthsDiff)}).replace(/\n/g, "<br>");
+      txtEl.innerHTML = t("pace.increased", {amount: fmtConverted(Math.abs(diff)) + " " + getCurrencySymbol(), months: Math.abs(monthsDiff)}).replace(/\n/g, "<br>");
     } else if (diff < 0) {
-      txtEl.innerHTML = t("pace.decreased", {amount: fmtNum(Math.abs(diff)) + " " + getCurrencySymbol(), months: Math.abs(monthsDiff)}).replace(/\n/g, "<br>");
+      txtEl.innerHTML = t("pace.decreased", {amount: fmtConverted(Math.abs(diff)) + " " + getCurrencySymbol(), months: Math.abs(monthsDiff)}).replace(/\n/g, "<br>");
     } else {
       txtEl.innerHTML = t("pace.current");
     }
 
     var pmEl = document.getElementById("pacePreviewMonthly");
     var pmoEl = document.getElementById("pacePreviewMonths");
-    if (pmEl) pmEl.textContent = fmtNum(sim.monthlySave);
+    if (pmEl) pmEl.textContent = fmtConverted(sim.monthlySave);
     if (pmoEl) pmoEl.textContent = sim.months;
   }
 
@@ -6335,7 +6694,7 @@ function goalSwipeToIndex(idx, goLeft) {
       var smEl = document.getElementById("summaryMonthly");
       var smoEl = document.getElementById("summaryMonths");
       var smoodeEl = document.getElementById("summaryMode");
-      if (smEl && lastCalc.monthlySave) smEl.innerText = fmtNum(lastCalc.monthlySave);
+      if (smEl && lastCalc.monthlySave) smEl.innerText = fmtConverted(lastCalc.monthlySave);
       if (smoEl && lastCalc.months) smoEl.innerText = lastCalc.months;
       if (smoodeEl) smoodeEl.innerText = getPaceLabel(saveMode);
 
@@ -6419,8 +6778,8 @@ function goalSwipeToIndex(idx, goLeft) {
     var nextEl = document.getElementById("debtSummaryNext");
     var statusEl = document.getElementById("debtSummaryStatus");
 
-    if (totalEl) totalEl.textContent = fmtNum(totalAmount) + " " + getCurrencySymbol();
-    if (remainEl) remainEl.textContent = fmtNum(totalRemaining) + " " + getCurrencySymbol();
+    if (totalEl) totalEl.textContent = fmtConverted(totalAmount) + " " + getCurrencySymbol();
+    if (remainEl) remainEl.textContent = fmtConverted(totalRemaining) + " " + getCurrencySymbol();
     if (nextEl) {
       if (nextPayment) {
         nextEl.textContent = nextPayment.getDate() + " " + getMonthNameShort(nextPayment.getMonth());
@@ -6470,15 +6829,15 @@ function goalSwipeToIndex(idx, goLeft) {
       + '<span class="debt-item-type-badge">' + typeLabel + '</span>'
       + '</div>'
       + '<div class="debt-item-rows">'
-      + '<div class="debt-item-row"><span>' + t("debts.totalAmount") + '</span><span>' + fmtNum(Number(d.totalAmount) || 0) + ' ' + getCurrencySymbol() + '</span></div>'
-      + '<div class="debt-item-row"><span>' + t("debts.remaining") + '</span><span>' + fmtNum(Number(d.remainingAmount) || 0) + ' ' + getCurrencySymbol() + '</span></div>'
-      + '<div class="debt-item-row"><span>' + t("debts.monthlyPayment") + '</span><span>' + fmtNum(Number(d.monthlyPayment) || 0) + ' ' + getCurrencySymbol() + '</span></div>'
+      + '<div class="debt-item-row"><span>' + t("debts.totalAmount") + '</span><span>' + fmtConverted(Number(d.totalAmount) || 0) + ' ' + getCurrencySymbol() + '</span></div>'
+      + '<div class="debt-item-row"><span>' + t("debts.remaining") + '</span><span>' + fmtConverted(Number(d.remainingAmount) || 0) + ' ' + getCurrencySymbol() + '</span></div>'
+      + '<div class="debt-item-row"><span>' + t("debts.monthlyPayment") + '</span><span>' + fmtConverted(Number(d.monthlyPayment) || 0) + ' ' + getCurrencySymbol() + '</span></div>'
       + '<div class="debt-item-row"><span>' + t("debts.nextPayment") + '</span><span>' + nextStr + '</span></div>'
       + '<div class="debt-item-row"><span>' + t("debts.endDate") + '</span><span>' + endStr + '</span></div>';
 
     if (d.type === "card" && d.creditLimit) {
-      html += '<div class="debt-item-row"><span>' + t("debts.creditLimit") + '</span><span>' + fmtNum(Number(d.creditLimit) || 0) + ' ' + getCurrencySymbol() + '</span></div>';
-      html += '<div class="debt-item-row"><span>' + t("debts.freeLimit") + '</span><span>' + fmtNum(Number(d.freeLimit) || 0) + ' ' + getCurrencySymbol() + '</span></div>';
+      html += '<div class="debt-item-row"><span>' + t("debts.creditLimit") + '</span><span>' + fmtConverted(Number(d.creditLimit) || 0) + ' ' + getCurrencySymbol() + '</span></div>';
+      html += '<div class="debt-item-row"><span>' + t("debts.freeLimit") + '</span><span>' + fmtConverted(Number(d.freeLimit) || 0) + ' ' + getCurrencySymbol() + '</span></div>';
     }
 
     if (d.note) {
@@ -7016,7 +7375,7 @@ function goalSwipeToIndex(idx, goLeft) {
     var emptyEl = document.getElementById("debtHistoryEmpty");
 
     if (nameEl) nameEl.textContent = debt.title || t("misc.noTitle");
-    if (remainEl) remainEl.textContent = t("debts.remaining") + ": " + fmtNum(Number(debt.remainingAmount) || 0) + " " + getCurrencySymbol();
+    if (remainEl) remainEl.textContent = t("debts.remaining") + ": " + fmtConverted(Number(debt.remainingAmount) || 0) + " " + getCurrencySymbol();
 
     var history = (getState().debtPaymentHistory || [])
       .filter(function (h) { return h.debtId === debtId; })
@@ -7034,7 +7393,7 @@ function goalSwipeToIndex(idx, goLeft) {
           var dateStr = _hd.getDate() + " " + getMonthNameShort(_hd.getMonth()) + " " + _hd.getFullYear();
           var descHtml = "";
           if (h.source === "auto" && h.totalInput) {
-            descHtml = '<div class="dph-entry-desc">' + t("debts.historyAutoDesc", { total: fmtNum(h.totalInput || 0) + ' ' + getCurrencySymbol(), amount: fmtNum(h.amount || 0) + ' ' + getCurrencySymbol() }) + '</div>';
+            descHtml = '<div class="dph-entry-desc">' + t("debts.historyAutoDesc", { total: fmtConverted(h.totalInput || 0) + ' ' + getCurrencySymbol(), amount: fmtConverted(h.amount || 0) + ' ' + getCurrencySymbol() }) + '</div>';
           } else {
             descHtml = '<div class="dph-entry-desc">' + t("debts.historyManualDesc") + '</div>';
           }
@@ -7042,7 +7401,7 @@ function goalSwipeToIndex(idx, goLeft) {
           html += '<div class="dph-entry" style="animation-delay:' + (i * 0.04) + 's">'
             + '<div class="dph-entry-dot"></div>'
             + '<div class="dph-entry-body">'
-            + '<div class="dph-entry-amount">' + fmtNum(h.amount || 0) + ' ' + getCurrencySymbol() + '</div>'
+            + '<div class="dph-entry-amount">' + fmtConverted(h.amount || 0) + ' ' + getCurrencySymbol() + '</div>'
             + descHtml
             + '<div class="dph-entry-date">' + dateStr + '</div>'
             + '</div>'
@@ -7325,7 +7684,7 @@ function goalSwipeToIndex(idx, goLeft) {
         '<div class="exp-cat-dot" style="background:' + cat.color + '"></div>' +
         '<div class="exp-cat-info">' +
           '<div class="exp-cat-name">' + cat.name + '</div>' +
-          '<div class="exp-cat-amount">' + fmtNum(seg.amount) + ' ' + getCurrencySymbol() + '</div>' +
+          '<div class="exp-cat-amount">' + fmtConverted(seg.amount) + ' ' + getCurrencySymbol() + '</div>' +
         '</div>' +
         '<div class="exp-cat-pct">' + seg.pct + '%</div>' +
       '</div>';
@@ -7377,13 +7736,13 @@ function goalSwipeToIndex(idx, goLeft) {
     if (elCats) elCats.style.display = "";
     if (elAddBtn) elAddBtn.style.display = "";
 
-    if (elSpent) elSpent.textContent = fmtNum(spent);
-    if (elLimit) elLimit.textContent = limit > 0 ? fmtNum(limit) : "—";
+    if (elSpent) elSpent.textContent = fmtConverted(spent);
+    if (elLimit) elLimit.textContent = limit > 0 ? fmtConverted(limit) : "—";
 
     if (remaining >= 0) {
-      if (elRemaining) elRemaining.textContent = fmtNum(remaining);
+      if (elRemaining) elRemaining.textContent = fmtConverted(remaining);
     } else {
-      if (elRemaining) elRemaining.textContent = "−" + fmtNum(Math.abs(remaining));
+      if (elRemaining) elRemaining.textContent = "−" + fmtConverted(Math.abs(remaining));
     }
 
     var pct = limit > 0 ? Math.min((spent / limit) * 100, 100) : 0;
@@ -7400,7 +7759,7 @@ function goalSwipeToIndex(idx, goLeft) {
         elStatus.textContent = t("expenses.noLimit");
         elStatus.classList.add("status-warn");
       } else if (spent > limit) {
-        elStatus.textContent = t("expenses.limitExceeded", {amount: fmtNum(Math.abs(remaining)) + " " + getCurrencySymbol()});
+        elStatus.textContent = t("expenses.limitExceeded", {amount: fmtConverted(Math.abs(remaining)) + " " + getCurrencySymbol()});
         elStatus.classList.add("status-over");
       } else if (pct >= 80) {
         elStatus.textContent = t("expenses.limitAlmost");
@@ -7411,7 +7770,7 @@ function goalSwipeToIndex(idx, goLeft) {
       }
     }
 
-    if (elDonutTotal) elDonutTotal.textContent = fmtNum(spent) + " " + getCurrencySymbol();
+    if (elDonutTotal) elDonutTotal.textContent = fmtConverted(spent) + " " + getCurrencySymbol();
 
     drawDonut(data.categories, data.totalSpent);
     renderCategoryList(data.categories, data.totalSpent);
@@ -7637,7 +7996,7 @@ function goalSwipeToIndex(idx, goLeft) {
       countEl.textContent = entries.length + " " + _pluralizeExpense(entries.length);
     }
 
-    if (totalEl) totalEl.textContent = fmtNum(catTotal) + " " + getCurrencySymbol();
+    if (totalEl) totalEl.textContent = fmtConverted(catTotal) + " " + getCurrencySymbol();
 
     var totalAllSpent = 0;
     for (var k = 0; k < allMonth.length; k++) totalAllSpent += allMonth[k].amount;
@@ -7647,7 +8006,7 @@ function goalSwipeToIndex(idx, goLeft) {
     if (metaEl) {
       var metaParts = [];
       metaParts.push(t("expenses.pctOfAll", { pct: pctOfTotal }));
-      if (limit > 0) metaParts.push(t("expenses.ofTotal", { amount: fmtNum(catTotal), limit: fmtNum(limit), sym: getCurrencySymbol() }));
+      if (limit > 0) metaParts.push(t("expenses.ofTotal", { amount: fmtConverted(catTotal), limit: fmtConverted(limit), sym: getCurrencySymbol() }));
       metaEl.textContent = metaParts.join("  ·  ");
     }
 
@@ -7681,7 +8040,7 @@ function goalSwipeToIndex(idx, goLeft) {
         html += '<div class="exp-detail-entry" style="animation-delay:' + delay + 'ms">' +
           '<div class="exp-detail-entry-dot" style="background:' + cat.color + '"></div>' +
           '<div class="exp-detail-entry-body">' +
-            '<div class="exp-detail-entry-amount">' + fmtNum(e.amount) + ' ' + getCurrencySymbol() + '</div>' +
+            '<div class="exp-detail-entry-amount">' + fmtConverted(e.amount) + ' ' + getCurrencySymbol() + '</div>' +
             noteHtml +
           '</div>' +
           '<div class="exp-detail-entry-date">' + formatExpDate(e.date) + '</div>' +

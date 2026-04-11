@@ -371,8 +371,13 @@
       // ── Settings (already existed in settings IIFE, now centralized) ──
       "settings.title": "Настройки",
       "settings.section.finance": "Финансы",
-      "settings.currency": "Валюта",
-      "settings.currency.hint": "Используется для отображения сумм в приложении",
+      "settings.baseCurrency": "Основная валюта",
+      "settings.baseCurrency.hint": "Все суммы хранятся и рассчитываются в этой валюте",
+      "settings.baseCurrency.confirmMsg": "Все суммы будут пересчитаны по текущему курсу. Продолжить?",
+      "settings.baseCurrency.failMsg": "Не удалось получить курсы валют. Попробуйте позже.",
+      "settings.displayCurrencyEnabled": "Отображать в другой валюте",
+      "settings.displayCurrencyEnabled.hint": "Не влияет на расчёты, только на отображение",
+      "settings.displayCurrency": "Валюта отображения",
       "settings.section.plan": "План",
       "settings.carryOver": "Автоматически переносить остаток",
       "settings.carryOver.on": "Остаток за месяц будет автоматически переноситься на следующий период",
@@ -961,8 +966,13 @@
       // ── Settings ──
       "settings.title": "Settings",
       "settings.section.finance": "Finance",
-      "settings.currency": "Currency",
-      "settings.currency.hint": "Used to display amounts in the app",
+      "settings.baseCurrency": "Base currency",
+      "settings.baseCurrency.hint": "All amounts are stored and calculated in this currency",
+      "settings.baseCurrency.confirmMsg": "All amounts will be converted at the current exchange rate. Continue?",
+      "settings.baseCurrency.failMsg": "Could not fetch exchange rates. Please try again later.",
+      "settings.displayCurrencyEnabled": "Show in a different currency",
+      "settings.displayCurrencyEnabled.hint": "Does not affect calculations, only display",
+      "settings.displayCurrency": "Display currency",
       "settings.section.plan": "Plan",
       "settings.carryOver": "Carry over balance automatically",
       "settings.carryOver.on": "Monthly balance will carry over to the next period",
@@ -1279,10 +1289,13 @@
     var sym = "₽";
     if (typeof getCurrencySymbol === "function") {
       sym = getCurrencySymbol();
-    } else if (typeof window !== "undefined") {
-      var c = window._protocolCurrency || "RUB";
+    } else if (typeof getBaseCurrency === "function") {
+      var c = getBaseCurrency();
       if (c === "USD") sym = "$";
       else if (c === "EUR") sym = "€";
+    }
+    if (typeof getDisplayAmount === "function") {
+      num = getDisplayAmount(num);
     }
     return (num < 0 ? "−" : "") + fmtNum(num) + " " + sym;
   }

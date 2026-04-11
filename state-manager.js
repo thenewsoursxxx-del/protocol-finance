@@ -9,7 +9,7 @@
  * Загружается ДО app.js.
  */
 
-const STATE_VERSION = 9;
+const STATE_VERSION = 10;
 const STORAGE_KEY = "protocol_app_state";
 
 // ─── Default State ────────────────────────────────────────────
@@ -89,7 +89,10 @@ function getDefaultState() {
 
     // ── Settings (v9) ──
     settings: {
-      currency: "RUB",
+      baseCurrency: "RUB",
+      displayCurrencyEnabled: false,
+      displayCurrency: "USD",
+      exchangeRates: { USD: null, EUR: null, lastUpdated: 0 },
       carryOverEnabled: true,
       allocationMode: "goal",
       allowOverpay: true,
@@ -295,6 +298,26 @@ function migrateState(saved) {
     saved.stateVersion = 9;
     if (!saved.settings || typeof saved.settings !== "object") {
       saved.settings = getDefaultState().settings;
+    }
+  }
+
+  // v9 → v10: multi-currency (baseCurrency + displayCurrency)
+  if (version < 10) {
+    saved.stateVersion = 10;
+    if (saved.settings) {
+      if (!saved.settings.baseCurrency) {
+        saved.settings.baseCurrency = saved.settings.currency || "RUB";
+      }
+      if (typeof saved.settings.displayCurrencyEnabled !== "boolean") {
+        saved.settings.displayCurrencyEnabled = false;
+      }
+      if (!saved.settings.displayCurrency) {
+        saved.settings.displayCurrency = "USD";
+      }
+      if (!saved.settings.exchangeRates || typeof saved.settings.exchangeRates !== "object") {
+        saved.settings.exchangeRates = { USD: null, EUR: null, lastUpdated: 0 };
+      }
+      delete saved.settings.currency;
     }
   }
 

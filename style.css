@@ -6049,9 +6049,13 @@ body.flip-fix-pending .flip-wrapper {
    ═════════════════════════════════════════════════ */
 
 body.reduce-motion,
-body.reduce-motion * {
-  transition-duration: 0.01ms !important;
-  animation-duration: 0.01ms !important;
+body.reduce-motion *,
+body.reduce-motion *::before,
+body.reduce-motion *::after {
+  transition-duration: 0s !important;
+  transition-delay: 0s !important;
+  animation-duration: 0s !important;
+  animation-delay: 0s !important;
   animation-iteration-count: 1 !important;
 }
 
@@ -6078,6 +6082,7 @@ body.reduce-motion .verdict-fade-in {
 
 body.reduce-motion .nav-lottie svg {
   animation: none !important;
+  display: none !important;
 }
 
 body.reduce-motion .proto-sheet {
@@ -6090,6 +6095,7 @@ body.reduce-motion .proto-sheet-overlay {
 
 body.reduce-motion .advanced-fog {
   animation: none !important;
+  opacity: 1 !important;
 }
 
 body.reduce-motion .goal-pulse {
@@ -6098,6 +6104,30 @@ body.reduce-motion .goal-pulse {
 
 body.reduce-motion .confetti-canvas {
   display: none !important;
+}
+
+body.reduce-motion .bottom-nav {
+  transition: none !important;
+}
+
+body.reduce-motion .nav-indicator {
+  transition: none !important;
+}
+
+body.reduce-motion .screen {
+  animation: none !important;
+}
+
+body.reduce-motion .settings-toggle-slider {
+  transition: none !important;
+}
+
+body.reduce-motion .settings-toggle-slider::before {
+  transition: none !important;
+}
+
+body.reduce-motion .settings-seg-btn {
+  transition: none !important;
 }
 
 /* ═════════════════════════════════════════════════

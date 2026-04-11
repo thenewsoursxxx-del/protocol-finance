@@ -611,24 +611,79 @@ Protocol анализирует цель…
 
   <div class="settings-body">
 
+    <!-- SECTION: Язык -->
+    <div class="settings-section">
+      <div class="settings-section-title" data-i18n="settings.section.language">Язык</div>
+      <div class="settings-card">
+        <div class="settings-row">
+          <div class="settings-row-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          </div>
+          <div class="settings-row-info">
+            <div class="settings-row-label" data-i18n="settings.language">Язык интерфейса</div>
+            <div class="settings-row-hint" data-i18n="settings.language.hint">Язык интерфейса приложения</div>
+          </div>
+          <div class="settings-segment" id="settingsLanguage">
+            <button class="settings-seg-btn" data-value="ru">Рус</button>
+            <button class="settings-seg-btn" data-value="en">Eng</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- SECTION: Финансы -->
     <div class="settings-section">
       <div class="settings-section-title" data-i18n="settings.section.finance">Финансы</div>
       <div class="settings-card">
+
         <div class="settings-row">
           <div class="settings-row-icon">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v12M8 9.5c0-1.1 1.8-2 4-2s4 .9 4 2-1.8 2-4 2-4 .9-4 2 1.8 2 4 2 4-.9 4-2"/></svg>
           </div>
           <div class="settings-row-info">
-            <div class="settings-row-label" data-i18n="settings.currency">Валюта</div>
-            <div class="settings-row-hint" data-i18n="settings.currency.hint">Используется для отображения сумм в приложении</div>
+            <div class="settings-row-label" data-i18n="settings.baseCurrency">Основная валюта</div>
+            <div class="settings-row-hint" data-i18n="settings.baseCurrency.hint">Все суммы хранятся и рассчитываются в этой валюте</div>
           </div>
-          <div class="settings-segment" id="settingsCurrency">
+          <div class="settings-segment" id="settingsBaseCurrency">
             <button class="settings-seg-btn" data-value="RUB">₽</button>
             <button class="settings-seg-btn" data-value="USD">$</button>
             <button class="settings-seg-btn" data-value="EUR">€</button>
           </div>
         </div>
+
+        <div class="settings-divider"></div>
+
+        <div class="settings-row">
+          <div class="settings-row-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l6 6"/></svg>
+          </div>
+          <div class="settings-row-info">
+            <div class="settings-row-label" data-i18n="settings.displayCurrencyEnabled">Отображать в другой валюте</div>
+            <div class="settings-row-hint" data-i18n="settings.displayCurrencyEnabled.hint">Не влияет на расчёты, только на отображение</div>
+          </div>
+          <label class="settings-toggle">
+            <input type="checkbox" id="settingsDisplayCurrencyEnabled" class="settings-toggle-input">
+            <span class="settings-toggle-slider"></span>
+          </label>
+        </div>
+
+        <div id="settingsDisplayCurrencyNested" class="settings-nested" style="display:none">
+          <div class="settings-divider"></div>
+          <div class="settings-row settings-row--nested">
+            <div class="settings-row-icon settings-row-icon--nested">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+            </div>
+            <div class="settings-row-info">
+              <div class="settings-row-label" data-i18n="settings.displayCurrency">Валюта отображения</div>
+            </div>
+            <div class="settings-segment" id="settingsDisplayCurrency">
+              <button class="settings-seg-btn" data-value="RUB">₽</button>
+              <button class="settings-seg-btn" data-value="USD">$</button>
+              <button class="settings-seg-btn" data-value="EUR">€</button>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
 
@@ -789,26 +844,6 @@ Protocol анализирует цель…
           </div>
         </div>
 
-      </div>
-    </div>
-
-    <!-- SECTION: Язык -->
-    <div class="settings-section">
-      <div class="settings-section-title" data-i18n="settings.section.language">Язык</div>
-      <div class="settings-card">
-        <div class="settings-row">
-          <div class="settings-row-icon">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-          </div>
-          <div class="settings-row-info">
-            <div class="settings-row-label" data-i18n="settings.language">Язык интерфейса</div>
-            <div class="settings-row-hint" data-i18n="settings.language.hint">Язык интерфейса приложения</div>
-          </div>
-          <div class="settings-segment" id="settingsLanguage">
-            <button class="settings-seg-btn" data-value="ru">Рус</button>
-            <button class="settings-seg-btn" data-value="en">Eng</button>
-          </div>
-        </div>
       </div>
     </div>
 
