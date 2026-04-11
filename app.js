@@ -1192,7 +1192,7 @@ function loadFullState() {
             if (factHistory.length) runBrain();
           } catch (err) {
             console.warn("Restore graph error:", err);
-            if (adviceCard) adviceCard.innerHTML = "<p style='padding:20px'>Не удалось загрузить график.</p>";
+            if (adviceCard) adviceCard.innerHTML = "<p style='padding:20px'>" + t("protocol.loadFailed") + "</p>";
             if (loader) loader.classList.add("hidden");
           }
         }
@@ -1345,7 +1345,7 @@ function repairAdviceScreenIfStuck() {
   if (!adviceScreen || !adviceScreen.classList.contains("active")) return;
   if (!isInitialized || !chosenPlan || !lastCalc?.ok) return;
   const card = document.getElementById("adviceCard");
-  if (!card || !card.innerHTML.includes("Protocol анализирует")) return;
+  if (!card || !card.querySelector("#fakeScreen")) return;
   if (loader) loader.classList.add("hidden");
   try {
     renderProtocolAdviceGraph();
@@ -1353,7 +1353,7 @@ function repairAdviceScreenIfStuck() {
     showBottomNav();
   } catch (e) {
     console.warn("repairAdviceScreenIfStuck:", e);
-    card.innerHTML = "<p style='padding:20px'>Ошибка загрузки графика.</p><button type='button' id='repairGoToCalc'>К расчёту</button>";
+    card.innerHTML = "<p style='padding:20px'>" + t("protocol.loadError") + "</p><button type='button' id='repairGoToCalc'>" + t("protocol.goToCalc") + "</button>";
     document.getElementById("repairGoToCalc")?.addEventListener("click", function () {
       openScreen("calc", buttons[0]);
       hideBottomNav();
@@ -1576,7 +1576,7 @@ if (advancedBtn) {
 }
 
 // Если перешли на вкладку графика, а там ещё «загрузка» (например после восстановления на Счета/Цели) — сразу рендерим график
-if (name === "advice" && isInitialized && chosenPlan && lastCalc?.ok && adviceCard && adviceCard.innerHTML.includes("Protocol анализирует")) {
+if (name === "advice" && isInitialized && chosenPlan && lastCalc?.ok && adviceCard && adviceCard.querySelector("#fakeScreen")) {
   try {
     if (loader) loader.classList.add("hidden");
     renderProtocolAdviceGraph();
@@ -1703,7 +1703,7 @@ isInitial: true
 if (entries.length === 0) {
 list.innerHTML = `
 <div class="card" style="opacity:.6;font-size:14px">
-Операций пока нет
+${t("history.noOps")}
 </div>
 `;
 openScreen("progress", null);
@@ -1727,7 +1727,7 @@ list.innerHTML += `
 ${t("history.initialBalance")}: ${fmtNum(e.value)} ${getCurrencySymbol()}
 </div>
 <div style="font-size:13px;opacity:.6;margin-top:4px">
-Указано при создании плана
+${t("history.createdWithPlan")}
 </div>
 </div>
 `;
@@ -1741,7 +1741,7 @@ list.innerHTML += `
 ${formatted}
 </div>
 <div style="font-size:12px;opacity:.7;margin-top:2px">
-Незапланированный расход
+${t("history.unplannedExpense")}
 </div>
 </div>
 `;
@@ -1781,7 +1781,7 @@ if (_indicatorEl) { _indicatorEl.classList.remove("visible"); _indicatorEl.inner
 adviceCard.innerHTML = `
 <div style="margin-bottom:12px">
 <div style="font-size:14px;opacity:.7;margin-bottom:6px">
-Выберите возможные варианты:
+${t("protocol.chooseScenario")}
 </div>
 ${scenariosHTML}
 </div>
@@ -2005,7 +2005,7 @@ style="width:52px;height:52px;border-radius:50%">
 
   var actionsContainer = document.getElementById("protocolActionsContainer");
   if (actionsContainer) {
-    actionsContainer.innerHTML = '<button id="unexpectedExpenseBtn" class="unexpected-expense-trigger" type="button">Непредвиденный расход</button>';
+    actionsContainer.innerHTML = '<button id="unexpectedExpenseBtn" class="unexpected-expense-trigger" type="button">' + t("protocol.unexpectedBtn") + '</button>';
     actionsContainer.style.display = "";
   }
 
@@ -2784,8 +2784,8 @@ function generateCalendarTimeline(startDate, monthsCount) {
   var base = new Date(startDate);
   base.setDate(1);
   base.setHours(0, 0, 0, 0);
-  var monthNames = ["Янв", "Фев", "Мар", "Апр", "Май", "Июн",
-                    "Июл", "Авг", "Сен", "Окт", "Ноя", "Дек"];
+  var monthNames = [];
+  for (var mi = 0; mi < 12; mi++) monthNames.push(getMonthNameShort(mi));
   for (var i = 0; i <= monthsCount; i++) {
     var d = new Date(base);
     d.setMonth(d.getMonth() + i);
@@ -2801,7 +2801,7 @@ function generateCalendarTimeline(startDate, monthsCount) {
 
 function buildTimeSegments(monthsCount) {
   if (monthsCount <= 3) {
-    return [{ startMonth: 0, endMonth: monthsCount, label: "Все", monthCount: monthsCount }];
+    return [{ startMonth: 0, endMonth: monthsCount, label: t("graph.segmentAll"), monthCount: monthsCount }];
   }
 
   var segCount;
@@ -4703,7 +4703,7 @@ if (eventSubmitBtn) {
     haptic("success");
     closeEventEditor();
     recalcPlan();
-    showToast(isIncome ? "Доход добавлен" : "Расход добавлен", "success");
+    showToast(isIncome ? t("event.incomeAdded") : t("event.expenseAdded"), "success");
   });
 }
 
@@ -4718,18 +4718,15 @@ initCashflowSettings();
 /* ===== ACCOUNT STATS SYSTEM ===== */
 
 var STATS_COUNTRY_MAP = {
-  RU: { currency: "RUB", inflation: 7, label: "Россия" },
-  US: { currency: "USD", inflation: 3, label: "США" },
-  IN: { currency: "INR", inflation: 6, label: "Индия" },
-  CN: { currency: "CNY", inflation: 2, label: "Китай" }
+  RU: { currency: "RUB", inflation: 7, labelKey: "stats.country.RU" },
+  US: { currency: "USD", inflation: 3, labelKey: "stats.country.US" },
+  IN: { currency: "INR", inflation: 6, labelKey: "stats.country.IN" },
+  CN: { currency: "CNY", inflation: 2, labelKey: "stats.country.CN" }
 };
 
-var STATS_TYPE_LABELS = {
-  cash: "Наличные",
-  stock: "Фондовый рынок",
-  deposit: "Вклад / копилка",
-  metals: "Драг. металлы"
-};
+function getStatsTypeLabel(type) {
+  return t("stats.type." + type) || type || "—";
+}
 
 var _statsSelectedType = null;
 var _statsTargetAccount = "main";
@@ -4794,7 +4791,7 @@ var _statsTargetAccount = "main";
       showBottomNav();
       moveProfileToActiveHeader();
       renderAccountBackCards();
-      showToast("Статистика добавлена", "success");
+      showToast(t("stats.added"), "success");
     });
   }
 
@@ -4898,21 +4895,21 @@ function renderAccountBackCards() {
 
     if (!stats || !stats.type) {
       backCard.innerHTML = '<div class="account-back-content stats-empty">' +
-        '<button type="button" class="stats-add-btn" data-action="add-stats" data-account="' + accountKey + '">+ Добавить статистику</button>' +
+        '<button type="button" class="stats-add-btn" data-action="add-stats" data-account="' + accountKey + '">' + t("stats.addBtn") + '</button>' +
         '</div>';
       return;
     }
 
     var amount = (accountKey === "main") ? accounts.main : accounts.reserve;
-    var typeLabel = STATS_TYPE_LABELS[stats.type] || stats.type || "—";
-    var countryLabel = stats.country ? (STATS_COUNTRY_MAP[stats.country] ? STATS_COUNTRY_MAP[stats.country].label : stats.country) : "—";
+    var typeLabel = getStatsTypeLabel(stats.type);
+    var countryLabel = stats.country ? (STATS_COUNTRY_MAP[stats.country] ? t(STATS_COUNTRY_MAP[stats.country].labelKey) : stats.country) : "—";
     var currencyLabel = stats.currency || "—";
     var inflation = stats.inflation;
 
     var html = '<div class="account-back-content">' +
-      '<div class="stats-info-row"><span>Тип хранения</span><span>' + typeLabel + '</span></div>' +
-      '<div class="stats-info-row"><span>Страна</span><span>' + countryLabel + '</span></div>' +
-      '<div class="stats-info-row"><span>Валюта</span><span>' + currencyLabel + '</span></div>';
+      '<div class="stats-info-row"><span>' + t("stats.storageType") + '</span><span>' + typeLabel + '</span></div>' +
+      '<div class="stats-info-row"><span>' + t("stats.country") + '</span><span>' + countryLabel + '</span></div>' +
+      '<div class="stats-info-row"><span>' + t("stats.currency") + '</span><span>' + currencyLabel + '</span></div>';
 
     var inflRate = (inflation || 0) / 100;
     var result = calculateInflationAdjustedValue(amount, inflRate, monthsLeft);
@@ -4924,9 +4921,10 @@ function renderAccountBackCards() {
       if (result) {
         if (result.years < 1) {
           var months = Math.round(result.years * 12);
-          timeStr = "Через " + months + " " + (months === 1 ? "месяц" : (months >= 2 && months <= 4 ? "месяца" : "месяцев"));
+          var mUnit = months === 1 ? t("stats.monthUnit1") : (months >= 2 && months <= 4 ? t("stats.monthUnit2_4") : t("stats.monthUnit5"));
+          timeStr = t("stats.inMonths", { n: months, unit: mUnit });
         } else {
-          timeStr = "Через " + result.years.toFixed(1) + " года";
+          timeStr = t("stats.inYears", { n: result.years.toFixed(1) });
         }
       }
 
@@ -4935,16 +4933,16 @@ function renderAccountBackCards() {
       if (timeStr) {
         html += '<div class="inflation-time">' + timeStr + '</div>';
         if (inflation) {
-          html += '<div class="inflation-disclaimer">Если инфляция останется ' + inflation + '%</div>';
+          html += '<div class="inflation-disclaimer">' + t("stats.inflationDisclaimer", { pct: inflation }) + '</div>';
         }
       }
 
       if (result) {
         html +=
-          '<div class="stats-purchasing-label">Покупательная способность</div>' +
+          '<div class="stats-purchasing-label">' + t("stats.purchasingLabel") + '</div>' +
           '<div class="stats-purchasing-value">' + fmtNum(result.adjustedValue) + ' ' + getCurrencySymbol() + '</div>' +
           '<div class="loss-inflation">' +
-            'Потеря из-за инфляции' +
+            t("stats.inflationLoss") +
             '<br>−' + fmtNum(result.loss) + ' ' + getCurrencySymbol() + ' ' +
             '<span class="arrow-down">↓</span>' +
           '</div>';
@@ -4953,7 +4951,7 @@ function renderAccountBackCards() {
       if (comp && comp.extraMonthly > 0) {
         html +=
           '<div class="compensation-block">' +
-            '<div class="compensation-label">Чтобы сохранить покупательную способность:</div>' +
+            '<div class="compensation-label">' + t("stats.compensationLabel") + '</div>' +
             '<div class="extra-monthly">+' + fmtNum(comp.extraMonthly) + ' ' + getCurrencySymbol() + ' ' + t("stats.extraMonthly") + '</div>' +
           '</div>';
       }
@@ -4961,7 +4959,7 @@ function renderAccountBackCards() {
       html += '</div>';
     }
 
-    html += '<button type="button" class="stats-change-btn" data-action="add-stats" data-account="' + accountKey + '">Изменить</button>';
+    html += '<button type="button" class="stats-change-btn" data-action="add-stats" data-account="' + accountKey + '">' + t("stats.changeBtn") + '</button>';
     html += '</div>';
     backCard.innerHTML = html;
 
@@ -5427,8 +5425,8 @@ renderAccountBackCards();
 
   function updateAdvCards() {
     if (!advCardGoalsTitle || !advCardGoalsDesc || !advCardGoalsBtn) return;
-    advCardGoalsTitle.innerText = "Новая цель";
-    advCardGoalsDesc.innerText = "Создайте новую цель и управляйте несколькими накоплениями одновременно";
+    advCardGoalsTitle.innerText = t("advGoals.newGoal");
+    advCardGoalsDesc.innerText = t("advGoals.newGoalDesc");
     advCardGoalsBtn.classList.remove("disabled-card");
   }
 
@@ -5448,11 +5446,9 @@ renderAccountBackCards();
   var editingGoalId = null;
   var selectedPriority = 1;
 
-  var priorityHintTexts = {
-    1: "Цель получит наибольшую долю накоплений.\nЕсли выбрана позиция 1, остальные цели автоматически сдвинутся ниже.",
-    2: "Средний приоритет.\nЧасть накоплений будет направляться в эту цель.",
-    3: "Низкий приоритет.\nЦель будет получать минимальную долю накоплений."
-  };
+  function getPriorityHintText(p) {
+    return t("advGoals.priorityHint" + p);
+  }
 
   function willShiftOtherGoals(priority) {
     if (editingGoalId) return false;
@@ -5462,11 +5458,11 @@ renderAccountBackCards();
 
   function showPriorityHint(priority) {
     if (!priorityHintEl) return;
-    var text = priorityHintTexts[priority] || "";
+    var text = getPriorityHintText(priority);
     var shift = willShiftOtherGoals(priority);
     var html = '<span>' + text.replace(/\n/g, '<br>') + '</span>';
     if (shift) {
-      html += '<span class="priority-hint-shift">Приоритет выбранной цели изменит порядок других целей.</span>';
+      html += '<span class="priority-hint-shift">' + t("advGoals.priorityShift") + '</span>';
     }
     priorityHintEl.innerHTML = html;
     requestAnimationFrame(function () { priorityHintEl.classList.add("visible"); });
@@ -5514,7 +5510,7 @@ renderAccountBackCards();
   function openAdvGoalSheet(goalId) {
     editingGoalId = goalId || null;
     var g = goalId ? getGoalById(goalId) : null;
-    if (advGoalSheetTitle) advGoalSheetTitle.innerText = g ? "Редактирование цели" : "Новая цель";
+    if (advGoalSheetTitle) advGoalSheetTitle.innerText = g ? t("advGoals.editTitle") : t("advGoals.newGoal");
     if (advGoalTitleInput) advGoalTitleInput.value = g ? g.title : "";
     if (advGoalAmountInput) advGoalAmountInput.value = g ? formatNumber(String(g.amount || 0)) : "";
     updatePriorityButtons();
@@ -5568,7 +5564,7 @@ renderAccountBackCards();
 
     if (!title || !amount) {
       if (typeof haptic === "function") haptic("error");
-      if (typeof showToast === "function") showToast("Заполните название и сумму", "error");
+      if (typeof showToast === "function") showToast(t("advGoals.fillRequired"), "error");
       return;
     }
 
@@ -5592,7 +5588,7 @@ renderAccountBackCards();
       goals.sort(function (a, b) { return a.priority - b.priority; });
     } else {
       if (goals.length >= MAX_GOALS) {
-        if (typeof showToast === "function") showToast("Можно создать максимум 3 цели", "error");
+        if (typeof showToast === "function") showToast(t("advGoals.maxGoals"), "error");
         return;
       }
       var newGoal = {
@@ -5708,12 +5704,12 @@ renderAccountBackCards();
           '<div class="' + pClass + '">P' + g.priority + '</div>' +
         '</div>' +
         '<div class="adv-goal-card-info">' +
-          '<span>Накоплено: <b>' + fmtNum(g.saved || 0) + ' ' + getCurrencySymbol() + '</b></span>' +
-          '<span>Цель: <b>' + fmtNum(g.amount || 0) + ' ' + getCurrencySymbol() + '</b></span>' +
+          '<span>' + t("advGoals.savedLabel") + ': <b>' + fmtNum(g.saved || 0) + ' ' + getCurrencySymbol() + '</b></span>' +
+          '<span>' + t("advGoals.goalLabel") + ': <b>' + fmtNum(g.amount || 0) + ' ' + getCurrencySymbol() + '</b></span>' +
         '</div>' +
         '<div class="adv-goal-card-info">' +
-          '<span>В месяц: <b>' + fmtNum(g.monthlyShare || 0) + ' ' + getCurrencySymbol() + '</b></span>' +
-          '<span>Срок: <b>' + (g.monthsLeft || "—") + ' мес.</b></span>' +
+          '<span>' + t("advGoals.perMonthLabel") + ': <b>' + fmtNum(g.monthlyShare || 0) + ' ' + getCurrencySymbol() + '</b></span>' +
+          '<span>' + t("advGoals.termLabel") + ': <b>' + (g.monthsLeft || "—") + ' ' + t("advGoals.termMonths") + '</b></span>' +
         '</div>' +
         '<div class="adv-goal-card-progress">' +
           '<div style="height:4px;border-radius:4px;background:#222;overflow:hidden">' +
@@ -5722,8 +5718,8 @@ renderAccountBackCards();
           '<div style="font-size:12px;opacity:.5;margin-top:3px">' + pctDone + '%</div>' +
         '</div>' +
         '<div class="adv-goal-card-actions">' +
-          (g.priority === 1 ? '' : '<button class="adv-goal-edit-btn" data-goal-id="' + g.id + '">Изменить</button>') +
-          (goals.length > 1 ? '<button class="adv-goal-delete-btn" data-goal-id="' + g.id + '">Удалить</button>' : '') +
+          (g.priority === 1 ? '' : '<button class="adv-goal-edit-btn" data-goal-id="' + g.id + '">' + t("advGoals.editBtn") + '</button>') +
+          (goals.length > 1 ? '<button class="adv-goal-delete-btn" data-goal-id="' + g.id + '">' + t("advGoals.deleteBtn") + '</button>' : '') +
         '</div>';
       advGoalsList.appendChild(card);
     });
@@ -5768,9 +5764,9 @@ renderAccountBackCards();
     if (monthly > 0 && draft.length > 0) {
       var totalEl = document.createElement("div");
       totalEl.className = "goal-mgmt-total";
-      totalEl.innerHTML = "В накопления: <b>" + fmtNum(monthly) + " " + getCurrencySymbol() + "</b>" +
+      totalEl.innerHTML = t("timeline.toSavings") + ": <b>" + fmtNum(monthly) + " " + getCurrencySymbol() + "</b>" +
         (usedTotal > monthly
-          ? ' <span class="timeline-over-limit">Превышен на ' + fmtNum(usedTotal - monthly) + ' ' + getCurrencySymbol() + '</span>'
+          ? ' <span class="timeline-over-limit">' + t("timeline.overLimit") + ' ' + fmtNum(usedTotal - monthly) + ' ' + getCurrencySymbol() + '</span>'
           : "");
       goalTimelineAllocation.appendChild(totalEl);
     }
@@ -5791,47 +5787,47 @@ renderAccountBackCards();
       var card = document.createElement("div");
       card.className = "goal-timeline-card" + (isPaused ? " paused" : "") + (isComplete ? " completed" : "");
 
-      var pausedTag = isPaused ? '<span class="goal-prio-paused-tag">На паузе</span>' : '';
-      var completedTag = isComplete ? '<span class="goal-timeline-done-tag">Выполнена</span>' : '';
+      var pausedTag = isPaused ? '<span class="goal-prio-paused-tag">' + t("timeline.paused") + '</span>' : '';
+      var completedTag = isComplete ? '<span class="goal-timeline-done-tag">' + t("timeline.completed") + '</span>' : '';
 
       var html =
         '<div class="goal-timeline-header">' +
           '<div class="goal-timeline-name">' + escapeHtml(draftGoal.title) + ' ' + pausedTag + completedTag + '</div>' +
         '</div>' +
         '<div class="goal-timeline-progress">' +
-          '<span>' + pctDone + '% выполнено</span>' +
+          '<span>' + t("timeline.pctDone", { pct: pctDone }) + '</span>' +
           '<span>' + fmtNum(draftGoal.saved || 0) + ' / ' + fmtNum(draftGoal.amount || 0) + ' ' + getCurrencySymbol() + '</span>' +
         '</div>';
 
       if (!isComplete) {
         html +=
           '<div class="goal-timeline-duration-row">' +
-            '<div class="goal-timeline-duration-label">Срок достижения</div>' +
+            '<div class="goal-timeline-duration-label">' + t("timeline.duration") + '</div>' +
             '<div class="goal-timeline-stepper" data-idx="' + idx + '">' +
               '<button class="goal-timeline-step-btn minus" data-idx="' + idx + '"' +
                 (effectiveDur <= minMonths ? ' disabled' : '') + '>−</button>' +
-              '<span class="goal-timeline-step-value">' + effectiveDur + ' мес</span>' +
+              '<span class="goal-timeline-step-value">' + effectiveDur + ' ' + t("timeline.monthsUnit") + '</span>' +
               '<button class="goal-timeline-step-btn plus" data-idx="' + idx + '">+</button>' +
             '</div>' +
           '</div>' +
           '<div class="goal-timeline-preview">' +
-            'Потребуется откладывать: <b>' + fmtNum(requiredMonthly) + ' ' + getCurrencySymbol() + ' / мес</b>' +
+            t("timeline.requiredSaving") + ': <b>' + fmtNum(requiredMonthly) + ' ' + getCurrencySymbol() + ' ' + t("timeline.perMonth") + '</b>' +
           '</div>' +
           '<div class="goal-timeline-minmax">' +
-            'Минимум: ' + minMonths + ' мес' +
+            t("timeline.minimum") + ': ' + minMonths + ' ' + t("timeline.monthsUnit") +
             (hasOverride && !overrideInvalid
-              ? ' · <span class="goal-timeline-custom-tag">Пользовательский срок</span>'
-              : ' · Авто') +
+              ? ' · <span class="goal-timeline-custom-tag">' + t("timeline.customTerm") + '</span>'
+              : ' · ' + t("timeline.auto")) +
           '</div>';
 
         if (isPaused) {
-          html += '<div class="goal-timeline-paused-hint">Цель на паузе — срок начнёт влиять на расчёт после возобновления</div>';
+          html += '<div class="goal-timeline-paused-hint">' + t("timeline.pausedHint") + '</div>';
         }
 
         if (overrideInvalid) {
-          html += '<div class="goal-timeline-limit-hint">Установленный срок стал нереалистичным — используется автоматический расчёт</div>';
+          html += '<div class="goal-timeline-limit-hint">' + t("timeline.unrealisticHint") + '</div>';
         } else if (effectiveDur <= minMonths && minMonths > 1) {
-          html += '<div class="goal-timeline-limit-hint">Ниже нельзя — срок станет нереалистичным при текущем темпе накоплений</div>';
+          html += '<div class="goal-timeline-limit-hint">' + t("timeline.minLimitHint") + '</div>';
         }
       }
 
@@ -5870,7 +5866,7 @@ renderAccountBackCards();
       saveBtn.id = "saveGoalTimelineBtn";
       saveBtn.className = "advanced-settings-btn save-priority-btn";
       saveBtn.type = "button";
-      saveBtn.textContent = "Сохранить сроки";
+      saveBtn.textContent = t("timeline.saveBtn");
       goalTimelineBody.appendChild(saveBtn);
     }
 
@@ -5880,7 +5876,7 @@ renderAccountBackCards();
         if (typeof haptic === "function") haptic("medium");
 
         if (!goalTimelineDraft || !goalTimelineOriginal) {
-          showToast("Сроки целей не были изменены", "info");
+          showToast(t("timeline.noChanges"), "info");
           return;
         }
 
@@ -5895,7 +5891,7 @@ renderAccountBackCards();
         }
 
         if (!changed) {
-          showToast("Сроки целей не были изменены", "info");
+          showToast(t("timeline.noChanges"), "info");
           return;
         }
 
@@ -5927,7 +5923,7 @@ renderAccountBackCards();
         renderAccountsUI();
         if (typeof updateGraphGoalIndicator === "function") updateGraphGoalIndicator();
         if (typeof updateAccountsLocalNav === "function") updateAccountsLocalNav();
-        showToast("Сроки целей сохранены", "success");
+        showToast(t("timeline.saved"), "success");
       };
     }
   }
@@ -5972,22 +5968,22 @@ renderAccountBackCards();
       var card = document.createElement("div");
       card.className = "goal-mgmt-prio-card" + (g.priority === 1 ? " primary" : "");
       var pctDone = g.amount > 0 ? Math.min(100, Math.round(((g.saved || 0) / g.amount) * 100)) : 0;
-      var pausedTag = g.paused ? ' <span class="goal-prio-paused-tag">На паузе</span>' : '';
+      var pausedTag = g.paused ? ' <span class="goal-prio-paused-tag">' + t("timeline.paused") + '</span>' : '';
       card.innerHTML =
         '<div class="goal-mgmt-prio-header">' +
           '<div class="goal-mgmt-prio-name">' + escapeHtml(g.title) + pausedTag + '</div>' +
           '<div class="goal-mgmt-prio-badge">P' + g.priority + '</div>' +
         '</div>' +
         '<div class="goal-mgmt-prio-info">' +
-          '<span>' + pctDone + '% выполнено</span>' +
+          '<span>' + t("timeline.pctDone", { pct: pctDone }) + '</span>' +
           '<span>' + fmtNum(g.saved || 0) + ' / ' + fmtNum(g.amount || 0) + ' ' + getCurrencySymbol() + '</span>' +
         '</div>' +
         '<div class="goal-mgmt-prio-detail">' +
-          'Откладывается: ' + fmtNum(g.monthlyShare || 0) + ' ' + getCurrencySymbol() + ' / мес' +
-          '<br>Цель будет достигнута за: ' + (g.monthsLeft || "—") + ' мес' +
+          t("priority.saving") + ': ' + fmtNum(g.monthlyShare || 0) + ' ' + getCurrencySymbol() + ' ' + t("timeline.perMonth") +
+          '<br>' + t("priority.goalReachedIn") + ': ' + (g.monthsLeft || "—") + ' ' + t("timeline.monthsUnit") +
         '</div>' +
         '<div class="goal-mgmt-prio-controls">' +
-          '<label class="goal-mgmt-prio-label">Приоритет</label>' +
+          '<label class="goal-mgmt-prio-label">' + t("priority.label") + '</label>' +
           '<div class="toggle-group goal-mgmt-prio-toggle" data-goal-id="' + g.id + '">' +
             '<button class="mode-btn' + (g.priority === 1 ? " active" : "") + '" data-value="1">1</button>' +
             '<button class="mode-btn' + (g.priority === 2 ? " active" : "") + '" data-value="2">2</button>' +
@@ -6038,7 +6034,7 @@ renderAccountBackCards();
       saveBtn.id = "saveGoalPriorityBtn";
       saveBtn.className = "advanced-settings-btn save-priority-btn";
       saveBtn.type = "button";
-      saveBtn.textContent = "Сохранить приоритет";
+      saveBtn.textContent = t("priority.saveBtn");
       goalPriorityBody.appendChild(saveBtn);
     }
 
@@ -6048,7 +6044,7 @@ renderAccountBackCards();
         if (typeof haptic === "function") haptic("medium");
 
         if (!goalPriorityDraft || !goalPriorityOriginal) {
-          showToast("Приоритеты целей не были изменены", "info");
+          showToast(t("priority.noChanges"), "info");
           return;
         }
 
@@ -6068,7 +6064,7 @@ renderAccountBackCards();
         }
 
         if (!changed) {
-          showToast("Приоритеты целей не были изменены", "info");
+          showToast(t("priority.noChanges"), "info");
           return;
         }
 
@@ -6091,7 +6087,7 @@ renderAccountBackCards();
         renderAccountsUI();
         if (typeof updateGraphGoalIndicator === "function") updateGraphGoalIndicator();
         if (typeof updateAccountsLocalNav === "function") updateAccountsLocalNav();
-        showToast("Приоритет сохранён", "success");
+        showToast(t("priority.saved"), "success");
 
         goalPriorityOriginal = JSON.parse(JSON.stringify(realGoals));
         goalPriorityDraft = JSON.parse(JSON.stringify(realGoals));
@@ -6192,15 +6188,10 @@ function goalSwipeToIndex(idx, goLeft) {
   var originalPace = null;
 
   function getPaceLabel(mode) { return t("calc.mode." + mode); }
-  var PACE_HINTS = {
-    calm: "~40% от свободных средств. Комфортный режим без лишнего давления на бюджет.",
-    normal: "~60% от свободных средств. Баланс между скоростью и комфортом.",
-    aggressive: "~80% от свободных средств. Максимальная скорость, но выше нагрузка на бюджет."
-  };
   var paceHintEl = document.getElementById("paceHint");
 
   function updatePaceHint(mode) {
-    if (paceHintEl) paceHintEl.textContent = PACE_HINTS[mode] || "";
+    if (paceHintEl) paceHintEl.textContent = t("pace.hint." + mode) || "";
   }
 
   function simulatePace(mode) {
@@ -6323,7 +6314,7 @@ function goalSwipeToIndex(idx, goLeft) {
     paceConfirmBtn.addEventListener("click", function () {
       if (typeof haptic === "function") haptic("medium");
       if (!draftPace || draftPace === originalPace) {
-        showToast("Темп накоплений не был изменён", "info");
+        showToast(t("pace.noChange"), "info");
         return;
       }
 
@@ -6351,7 +6342,7 @@ function goalSwipeToIndex(idx, goLeft) {
       saveFullState();
 
       originalPace = draftPace;
-      showToast("Темп накоплений обновлён", "success");
+      showToast(t("pace.updated"), "success");
 
       showBottomNav();
       openScreen("calc", buttons[0]);
@@ -6469,8 +6460,9 @@ function goalSwipeToIndex(idx, goLeft) {
 
   function renderDebtCard(d) {
     var typeLabel = getTypeLabel(d.type);
-    var endStr = d.endDate ? new Date(d.endDate).toLocaleDateString("ru-RU", { month: "short", year: "numeric" }) : "—";
-    var nextStr = d.nextPaymentDate ? new Date(d.nextPaymentDate).toLocaleDateString("ru-RU", { day: "numeric", month: "short" }) : "—";
+    var _locale = getCurrentLanguage() === "en" ? "en-US" : "ru-RU";
+    var endStr = d.endDate ? new Date(d.endDate).toLocaleDateString(_locale, { month: "short", year: "numeric" }) : "—";
+    var nextStr = d.nextPaymentDate ? new Date(d.nextPaymentDate).toLocaleDateString(_locale, { day: "numeric", month: "short" }) : "—";
 
     var html = '<div class="debt-item-card" data-debt-id="' + d.id + '">'
       + '<div class="debt-item-header">'
@@ -6495,8 +6487,8 @@ function goalSwipeToIndex(idx, goLeft) {
 
     html += '</div>'
       + '<div class="debt-item-actions">'
-      + '<button class="debt-item-history-btn" data-history-id="' + d.id + '">История</button>'
-      + '<button class="debt-item-delete-btn" data-delete-id="' + d.id + '">Удалить</button>'
+      + '<button class="debt-item-history-btn" data-history-id="' + d.id + '">' + t("debts.historyBtn") + '</button>'
+      + '<button class="debt-item-delete-btn" data-delete-id="' + d.id + '">' + t("debts.deleteBtn") + '</button>'
       + '</div>'
       + '</div>';
     return html;
@@ -6537,7 +6529,7 @@ function goalSwipeToIndex(idx, goLeft) {
     if (debts.length === 0) {
       if (toggleWrap) toggleWrap.style.display = "none";
       if (manualBlock) manualBlock.style.display = "none";
-      cardEl.innerHTML = '<div class="debt-empty-hint">Добавьте свой первый кредит или долг</div>';
+      cardEl.innerHTML = '<div class="debt-empty-hint">' + t("debts.emptyHint") + '</div>';
       if (wrapperEl) wrapperEl.style.display = "";
       renderDebtSwipeIndicator();
       return;
@@ -6572,7 +6564,7 @@ function goalSwipeToIndex(idx, goLeft) {
         renderDebtSummary();
         updateDebtModeUI();
         recalcWithDebts();
-        showToast("Удалено", "success");
+        showToast(t("debts.deleted"), "success");
       });
     });
   }
@@ -6789,7 +6781,7 @@ function goalSwipeToIndex(idx, goLeft) {
       updateState({ debtOverlaySeen: true });
       saveFullState();
       if (debtEntryOverlay) debtEntryOverlay.classList.remove("visible");
-      showToast("Вы можете рассчитать кредиты и долги, чтобы protocol учёл их в своей системе.", "info", { duration: 6000, screenScope: "debts" });
+      showToast(t("debts.entryNoToast"), "info", { duration: 6000, screenScope: "debts" });
     });
   }
 
@@ -6799,7 +6791,7 @@ function goalSwipeToIndex(idx, goLeft) {
       updateState({ debtOverlaySeen: true });
       saveFullState();
       if (debtEntryOverlay) debtEntryOverlay.classList.remove("visible");
-      showToast("Вы можете рассчитать кредиты и долги точнее, если сумма расходов была указана приблизительно.", "info", { duration: 6000, screenScope: "debts" });
+      showToast(t("debts.entryYesToast"), "info", { duration: 6000, screenScope: "debts" });
     });
   }
 
@@ -6844,8 +6836,8 @@ function goalSwipeToIndex(idx, goLeft) {
 
       var titleEl = document.getElementById("debtTitle");
       var monthlyPayEl = document.getElementById("debtMonthlyPayment");
-      if (!titleEl || !titleEl.value.trim()) { showToast("Укажите название", "error"); return; }
-      if (!monthlyPayEl || !parseNumber(monthlyPayEl.value)) { showToast("Укажите ежемесячный платёж", "error"); return; }
+      if (!titleEl || !titleEl.value.trim()) { showToast(t("debts.noTitle"), "error"); return; }
+      if (!monthlyPayEl || !parseNumber(monthlyPayEl.value)) { showToast(t("debts.noPayment"), "error"); return; }
 
       var type = getSelectedDebtType();
       var entry = {
@@ -6901,7 +6893,7 @@ function goalSwipeToIndex(idx, goLeft) {
       renderDebtSummary();
       updateDebtModeUI();
       recalcWithDebts();
-      showToast(editingDebtId ? "Изменения сохранены" : "Кредит / долг добавлен", "success");
+      showToast(editingDebtId ? t("debts.changesSaved") : t("debts.debtAdded"), "success");
     });
   }
 
@@ -6915,9 +6907,9 @@ function goalSwipeToIndex(idx, goLeft) {
       updateDebtModeUI();
       recalcWithDebts();
       if (enabled) {
-        showToast("Долги учтены в расчёте", "success");
+        showToast(t("debts.accountedToast"), "success");
       } else {
-        showToast("Долги не учтены в расчёте", "success");
+        showToast(t("debts.notAccountedToast"), "success");
       }
     });
   }
@@ -6947,8 +6939,8 @@ function goalSwipeToIndex(idx, goLeft) {
     }
     if (hintEl) {
       hintEl.textContent = s.debtPlanningMode
-        ? "Часть суммы из «Сколько вы отложили» будет автоматически направляться на погашение долгов."
-        : "Погашение долгов фиксируется отдельно и не влияет на сумму накоплений автоматически.";
+        ? t("debts.modeHintOn")
+        : t("debts.modeHintOff");
     }
   }
 
@@ -7005,7 +6997,7 @@ function goalSwipeToIndex(idx, goLeft) {
         renderDebtSummary();
         recalcWithDebts();
         manualRepayInput.value = "";
-        showToast("Погашение долга зафиксировано", "success");
+        showToast(t("debts.repaid"), "success");
       }
     });
   }
@@ -7042,10 +7034,9 @@ function goalSwipeToIndex(idx, goLeft) {
           var dateStr = _hd.getDate() + " " + getMonthNameShort(_hd.getMonth()) + " " + _hd.getFullYear();
           var descHtml = "";
           if (h.source === "auto" && h.totalInput) {
-            descHtml = '<div class="dph-entry-desc">Из ' + fmtNum(h.totalInput || 0) + ' ' + getCurrencySymbol() + ' → '
-              + fmtNum(h.amount || 0) + ' ' + getCurrencySymbol() + ' в этот долг</div>';
+            descHtml = '<div class="dph-entry-desc">' + t("debts.historyAutoDesc", { total: fmtNum(h.totalInput || 0) + ' ' + getCurrencySymbol(), amount: fmtNum(h.amount || 0) + ' ' + getCurrencySymbol() }) + '</div>';
           } else {
-            descHtml = '<div class="dph-entry-desc">Ручное погашение</div>';
+            descHtml = '<div class="dph-entry-desc">' + t("debts.historyManualDesc") + '</div>';
           }
 
           html += '<div class="dph-entry" style="animation-delay:' + (i * 0.04) + 's">'
@@ -7190,15 +7181,15 @@ function goalSwipeToIndex(idx, goLeft) {
   ProtoSheet.resetAll();
 
   var EXP_CATEGORIES = [
-    { key: "food",      name: "Продукты",         color: "#10b981" },
-    { key: "transport",  name: "Транспорт",        color: "#3b82f6" },
-    { key: "cafe",       name: "Кафе и рестораны", color: "#f59e0b" },
-    { key: "home",       name: "Дом",              color: "#8b5cf6" },
-    { key: "subs",       name: "Подписки",         color: "#ec4899" },
-    { key: "fun",        name: "Развлечения",      color: "#06b6d4" },
-    { key: "health",     name: "Здоровье",         color: "#14b8a6" },
-    { key: "clothes",    name: "Одежда",           color: "#f43f5e" },
-    { key: "other",      name: "Прочее",           color: "#6b7280" }
+    { key: "food",       color: "#10b981" },
+    { key: "transport",  color: "#3b82f6" },
+    { key: "cafe",       color: "#f59e0b" },
+    { key: "home",       color: "#8b5cf6" },
+    { key: "subs",       color: "#ec4899" },
+    { key: "fun",        color: "#06b6d4" },
+    { key: "health",     color: "#14b8a6" },
+    { key: "clothes",    color: "#f43f5e" },
+    { key: "other",      color: "#6b7280" }
   ];
 
   var _expSelectedCat = null;
@@ -7406,16 +7397,16 @@ function goalSwipeToIndex(idx, goLeft) {
     if (elStatus) {
       elStatus.classList.remove("status-ok", "status-warn", "status-over");
       if (limit <= 0) {
-        elStatus.textContent = "Лимит не задан";
+        elStatus.textContent = t("expenses.noLimit");
         elStatus.classList.add("status-warn");
       } else if (spent > limit) {
         elStatus.textContent = t("expenses.limitExceeded", {amount: fmtNum(Math.abs(remaining)) + " " + getCurrencySymbol()});
         elStatus.classList.add("status-over");
       } else if (pct >= 80) {
-        elStatus.textContent = "Лимит почти исчерпан";
+        elStatus.textContent = t("expenses.limitAlmost");
         elStatus.classList.add("status-warn");
       } else {
-        elStatus.textContent = "Вы укладываетесь в лимит";
+        elStatus.textContent = t("expenses.withinLimit");
         elStatus.classList.add("status-ok");
       }
     }
@@ -7436,7 +7427,7 @@ function goalSwipeToIndex(idx, goLeft) {
       var c = EXP_CATEGORIES[i];
       html += '<div class="exp-cat-chip" data-cat="' + c.key + '">' +
         '<span class="exp-chip-dot" style="background:' + c.color + '"></span>' +
-        c.name +
+        t("cat." + c.key) +
       '</div>';
     }
     grid.innerHTML = html;
@@ -7506,7 +7497,7 @@ function goalSwipeToIndex(idx, goLeft) {
       haptic("light");
 
       if (!_expSelectedCat) {
-        showExpValidation("Выберите категорию");
+        showExpValidation(t("expenses.selectCategory"));
         return;
       }
 
@@ -7514,7 +7505,7 @@ function goalSwipeToIndex(idx, goLeft) {
       var rawAmt = amtInput ? amtInput.value : "";
       var amount = Number(rawAmt.replace(/\./g, "").replace(/\D/g, "")) || 0;
       if (amount <= 0) {
-        showExpValidation("Введите сумму расхода");
+        showExpValidation(t("expenses.enterAmount"));
         return;
       }
 
@@ -7545,7 +7536,7 @@ function goalSwipeToIndex(idx, goLeft) {
       closeExpenseSheet();
       renderExpensesScreen();
 
-      showToast("Расход добавлен", "success");
+      showToast(t("expenses.added"), "success");
     });
   }
 
@@ -7607,9 +7598,6 @@ function goalSwipeToIndex(idx, goLeft) {
   var catDetailOverlay = document.getElementById("expCatDetailOverlay");
   var catDetailSheet = document.getElementById("expCatDetailSheet");
 
-  var MONTH_NAMES_RU = ["января", "февраля", "марта", "апреля", "мая", "июня",
-    "июля", "августа", "сентября", "октября", "ноября", "декабря"];
-
   function formatExpDate(dateStr) {
     var d = new Date(dateStr);
     if (isNaN(d.getTime())) return dateStr;
@@ -7658,8 +7646,8 @@ function goalSwipeToIndex(idx, goLeft) {
     var limit = getMonthlyExpenseLimit();
     if (metaEl) {
       var metaParts = [];
-      metaParts.push(pctOfTotal + "% от всех расходов");
-      if (limit > 0) metaParts.push(fmtNum(catTotal) + " из " + fmtNum(limit) + " " + getCurrencySymbol());
+      metaParts.push(t("expenses.pctOfAll", { pct: pctOfTotal }));
+      if (limit > 0) metaParts.push(t("expenses.ofTotal", { amount: fmtNum(catTotal), limit: fmtNum(limit), sym: getCurrencySymbol() }));
       metaEl.textContent = metaParts.join("  ·  ");
     }
 
@@ -7688,7 +7676,7 @@ function goalSwipeToIndex(idx, goLeft) {
         var delay = Math.min(j * 40, 300);
         var noteHtml = e.note
           ? '<div class="exp-detail-entry-note">' + e.note.replace(/</g, "&lt;") + '</div>'
-          : '<div class="exp-detail-entry-note muted">Без заметки</div>';
+          : '<div class="exp-detail-entry-note muted">' + t("expenses.noNote") + '</div>';
 
         html += '<div class="exp-detail-entry" style="animation-delay:' + delay + 'ms">' +
           '<div class="exp-detail-entry-dot" style="background:' + cat.color + '"></div>' +
@@ -7707,12 +7695,15 @@ function goalSwipeToIndex(idx, goLeft) {
   }
 
   function _pluralizeExpense(n) {
+    if (getCurrentLanguage() === "en") {
+      return n === 1 ? t("expenses.opPlural1") : t("expenses.opPlural0");
+    }
     var mod10 = n % 10;
     var mod100 = n % 100;
-    if (mod100 >= 11 && mod100 <= 14) return "операций";
-    if (mod10 === 1) return "операция";
-    if (mod10 >= 2 && mod10 <= 4) return "операции";
-    return "операций";
+    if (mod100 >= 11 && mod100 <= 14) return t("expenses.opPlural0");
+    if (mod10 === 1) return t("expenses.opPlural1");
+    if (mod10 >= 2 && mod10 <= 4) return t("expenses.opPlural2_4");
+    return t("expenses.opPlural0");
   }
 
   function closeCatDetailSheet() {

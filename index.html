@@ -278,7 +278,7 @@ viewport-fit=cover" />
 <div id="fakeScreen" class="fake-screen">
 <div style="text-align:center">
 <div class="loader"></div>
-<div style="margin-top:16px">
+<div style="margin-top:16px" data-i18n="flow.analyzing">
 Protocol анализирует данные…
 </div>
 </div>
@@ -400,7 +400,7 @@ Protocol анализирует данные…
 <div style="font-size:14px;opacity:.6" data-i18n="goals.active">Активная цель</div>
 
 <div class="goal-title-row">
-<h3 id="goalTitle">Основная цель</h3>
+<h3 id="goalTitle" data-i18n="misc.defaultGoalTitle">Основная цель</h3>
 
 <button id="editGoalBtn" class="goal-edit-btn">
 <div id="editGoalLottie" class="goal-edit-lottie"></div>
@@ -420,7 +420,7 @@ Protocol анализирует данные…
 </div>
 
 <div class="card goal-reserve-card" id="goalReserveCard" style="display:none">
-<div style="font-size:14px;opacity:.6">Резерв</div>
+<div style="font-size:14px;opacity:.6" data-i18n="accounts.reserve">Резерв</div>
 <div style="font-size:22px;font-weight:600;margin-top:4px">
 <span id="goalReserveAmount">0</span> <span class="currency-symbol">₽</span>
 </div>
@@ -604,7 +604,7 @@ Protocol анализирует цель…
       <button id="settingsBack" class="header-back">←</button>
     </div>
     <div class="header-center">
-      <div class="header-title" id="settingsTitle">Настройки</div>
+      <div class="header-title" id="settingsTitle" data-i18n="settings.title">Настройки</div>
     </div>
     <div class="header-right"></div>
   </div>
@@ -643,7 +643,7 @@ Protocol анализирует цель…
           </div>
           <div class="settings-row-info">
             <div class="settings-row-label" data-i18n="settings.carryOver">Автоматически переносить остаток</div>
-            <div class="settings-row-hint" id="settingsCarryOverHint">Остаток за месяц будет автоматически переноситься на следующий период</div>
+            <div class="settings-row-hint" id="settingsCarryOverHint" data-i18n="settings.carryOver.on">Остаток за месяц будет автоматически переноситься на следующий период</div>
           </div>
           <label class="settings-toggle">
             <input type="checkbox" id="settingsCarryOver" class="settings-toggle-input">
@@ -675,7 +675,7 @@ Protocol анализирует цель…
           </div>
           <div class="settings-row-info">
             <div class="settings-row-label" data-i18n="settings.allowOverpay">Разрешить перевыполнение плана</div>
-            <div class="settings-row-hint" id="settingsOverpayHint">Можно откладывать больше плана — лишняя сумма будет учтена в следующих периодах</div>
+            <div class="settings-row-hint" id="settingsOverpayHint" data-i18n="settings.allowOverpay.on">Можно откладывать больше плана — лишняя сумма будет учтена в следующих периодах</div>
           </div>
           <label class="settings-toggle">
             <input type="checkbox" id="settingsOverpay" class="settings-toggle-input">
@@ -909,20 +909,20 @@ Protocol анализирует цель…
 
     <div id="statsCashFields" class="stats-cash-fields" style="display:none">
       <div class="input-wrap stats-input-wrap">
-        <label>Страна</label>
+        <label data-i18n="stats.country">Страна</label>
         <select id="statsCountry" class="stats-select">
-          <option value="">Выберите страну</option>
-          <option value="RU">Россия</option>
-          <option value="US">США</option>
-          <option value="IN">Индия</option>
-          <option value="CN">Китай</option>
+          <option value="" data-i18n="settings.selectCountry">Выберите страну</option>
+          <option value="RU" data-i18n="stats.country.RU">Россия</option>
+          <option value="US" data-i18n="stats.country.US">США</option>
+          <option value="IN" data-i18n="stats.country.IN">Индия</option>
+          <option value="CN" data-i18n="stats.country.CN">Китай</option>
         </select>
       </div>
 
       <div class="input-wrap stats-input-wrap">
-        <label>Валюта</label>
+        <label data-i18n="stats.currency">Валюта</label>
         <select id="statsCurrency" class="stats-select">
-          <option value="">Выберите валюту</option>
+          <option value="" data-i18n="settings.selectCurrency">Выберите валюту</option>
           <option value="RUB">RUB</option>
           <option value="USD">USD</option>
           <option value="INR">INR</option>
@@ -1388,19 +1388,19 @@ z-index: 999999;
 <!-- ===== GOAL CREATE/EDIT SHEET (ADVANCED) ===== -->
 <div id="advGoalOverlay" class="proto-sheet-overlay"></div>
 <div id="advGoalSheet" class="proto-sheet proto-sheet--form goal-editor">
-  <h2 id="advGoalSheetTitle" style="margin-bottom:18px">Новая цель</h2>
+  <h2 id="advGoalSheetTitle" style="margin-bottom:18px" data-i18n="advGoals.newGoal">Новая цель</h2>
 
   <div class="input-wrap">
-    <label>Название цели</label>
-    <input id="advGoalTitle" placeholder="Например: Машина" />
+    <label data-i18n="goalEdit.name">Название цели</label>
+    <input id="advGoalTitle" data-i18n-placeholder="advGoals.goalNamePlaceholder" placeholder="Например: Машина" />
   </div>
 
   <div class="input-wrap">
-    <label>Сумма цели</label>
+    <label data-i18n="goalEdit.amount">Сумма цели</label>
     <input id="advGoalAmount" inputmode="numeric" placeholder="500.000" />
   </div>
 
-  <div class="cf-label" style="margin-bottom:8px;margin-top:4px">Приоритет</div>
+  <div class="cf-label" style="margin-bottom:8px;margin-top:4px" data-i18n="advGoals.priority">Приоритет</div>
   <div class="toggle-group adv-priority-toggle" id="advPriorityToggle">
     <button class="mode-btn active" data-value="1">1</button>
     <button class="mode-btn" data-value="2">2</button>
@@ -1408,7 +1408,7 @@ z-index: 999999;
   </div>
   <div class="priority-hint" id="priorityHint"></div>
 
-  <button id="advGoalSave" style="margin-top:20px">Сохранить</button>
+  <button id="advGoalSave" style="margin-top:20px" data-i18n="advGoals.save">Сохранить</button>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>

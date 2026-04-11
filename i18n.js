@@ -468,7 +468,144 @@
       "flow.analyzing": "Protocol анализирует данные…",
       "flow.bufferChosen": "Часть средств будет направляться в резерв.",
       "flow.directChosen": "Все средства идут напрямую в цель.",
-      "flow.done": "Готово."
+      "flow.done": "Готово.",
+
+      // ── Protocol screen ──
+      "protocol.loadFailed": "Не удалось загрузить график.",
+      "protocol.loadError": "Ошибка загрузки графика.",
+      "protocol.goToCalc": "К расчёту",
+      "protocol.chooseScenario": "Выберите возможные варианты:",
+      "protocol.unexpectedBtn": "Непредвиденный расход",
+
+      // ── History operations ──
+      "history.noOps": "Операций пока нет",
+      "history.createdWithPlan": "Указано при создании плана",
+      "history.unplannedExpense": "Незапланированный расход",
+
+      // ── Graph timeline ──
+      "graph.segmentAll": "Все",
+
+      // ── Account stats ──
+      "stats.country.RU": "Россия",
+      "stats.country.US": "США",
+      "stats.country.IN": "Индия",
+      "stats.country.CN": "Китай",
+      "stats.type.cash": "Наличные",
+      "stats.type.stock": "Фондовый рынок",
+      "stats.type.deposit": "Вклад / копилка",
+      "stats.type.metals": "Драг. металлы",
+      "stats.added": "Статистика добавлена",
+      "stats.addBtn": "+ Добавить статистику",
+      "stats.storageType": "Тип хранения",
+      "stats.country": "Страна",
+      "stats.currency": "Валюта",
+      "stats.inMonths": "Через {n} {unit}",
+      "stats.monthUnit1": "месяц",
+      "stats.monthUnit2_4": "месяца",
+      "stats.monthUnit5": "месяцев",
+      "stats.inYears": "Через {n} года",
+      "stats.inflationDisclaimer": "Если инфляция останется {pct}%",
+      "stats.purchasingLabel": "Покупательная способность",
+      "stats.inflationLoss": "Потеря из-за инфляции",
+      "stats.compensationLabel": "Чтобы сохранить покупательную способность:",
+      "stats.changeBtn": "Изменить",
+
+      // ── Event toasts ──
+      "event.incomeAdded": "Доход добавлен",
+      "event.expenseAdded": "Расход добавлен",
+
+      // ── Advanced goals ──
+      "advGoals.editTitle": "Редактирование цели",
+      "advGoals.newGoal": "Новая цель",
+      "advGoals.fillRequired": "Заполните название и сумму",
+      "advGoals.maxGoals": "Можно создать максимум 3 цели",
+      "advGoals.savedLabel": "Накоплено",
+      "advGoals.goalLabel": "Цель",
+      "advGoals.perMonthLabel": "В месяц",
+      "advGoals.termLabel": "Срок",
+      "advGoals.termMonths": "мес.",
+      "advGoals.editBtn": "Изменить",
+      "advGoals.deleteBtn": "Удалить",
+      "advGoals.newGoalDesc": "Создайте новую цель и управляйте несколькими накоплениями одновременно",
+      "advGoals.priorityHint1": "Цель получит наибольшую долю накоплений.\nЕсли выбрана позиция 1, остальные цели автоматически сдвинутся ниже.",
+      "advGoals.priorityHint2": "Средний приоритет.\nЧасть накоплений будет направляться в эту цель.",
+      "advGoals.priorityHint3": "Низкий приоритет.\nЦель будет получать минимальную долю накоплений.",
+      "advGoals.priorityShift": "Приоритет выбранной цели изменит порядок других целей.",
+
+      // ── Goal timeline ──
+      "timeline.toSavings": "В накопления",
+      "timeline.overLimit": "Превышен на",
+      "timeline.paused": "На паузе",
+      "timeline.completed": "Выполнена",
+      "timeline.pctDone": "{pct}% выполнено",
+      "timeline.duration": "Срок достижения",
+      "timeline.monthsUnit": "мес",
+      "timeline.requiredSaving": "Потребуется откладывать",
+      "timeline.perMonth": "/ мес",
+      "timeline.minimum": "Минимум",
+      "timeline.customTerm": "Пользовательский срок",
+      "timeline.auto": "Авто",
+      "timeline.pausedHint": "Цель на паузе — срок начнёт влиять на расчёт после возобновления",
+      "timeline.unrealisticHint": "Установленный срок стал нереалистичным — используется автоматический расчёт",
+      "timeline.minLimitHint": "Ниже нельзя — срок станет нереалистичным при текущем темпе накоплений",
+      "timeline.saveBtn": "Сохранить сроки",
+      "timeline.noChanges": "Сроки целей не были изменены",
+      "timeline.saved": "Сроки целей сохранены",
+
+      // ── Goal priority ──
+      "priority.label": "Приоритет",
+      "priority.saving": "Откладывается",
+      "priority.goalReachedIn": "Цель будет достигнута за",
+      "priority.saveBtn": "Сохранить приоритет",
+      "priority.noChanges": "Приоритеты целей не были изменены",
+      "priority.saved": "Приоритет сохранён",
+
+      // ── Pace hints ──
+      "pace.hint.calm": "~40% от свободных средств. Комфортный режим без лишнего давления на бюджет.",
+      "pace.hint.normal": "~60% от свободных средств. Баланс между скоростью и комфортом.",
+      "pace.hint.aggressive": "~80% от свободных средств. Максимальная скорость, но выше нагрузка на бюджет.",
+      "pace.noChange": "Темп накоплений не был изменён",
+      "pace.updated": "Темп накоплений обновлён",
+
+      // ── Debts extra ──
+      "debts.historyBtn": "История",
+      "debts.deleteBtn": "Удалить",
+      "debts.emptyHint": "Добавьте свой первый кредит или долг",
+      "debts.deleted": "Удалено",
+      "debts.entryNoToast": "Вы можете рассчитать кредиты и долги, чтобы protocol учёл их в своей системе.",
+      "debts.entryYesToast": "Вы можете рассчитать кредиты и долги точнее, если сумма расходов была указана приблизительно.",
+      "debts.noTitle": "Укажите название",
+      "debts.noPayment": "Укажите ежемесячный платёж",
+      "debts.changesSaved": "Изменения сохранены",
+      "debts.debtAdded": "Кредит / долг добавлен",
+      "debts.accountedToast": "Долги учтены в расчёте",
+      "debts.notAccountedToast": "Долги не учтены в расчёте",
+      "debts.modeHintOn": "Часть суммы из «Сколько вы отложили» будет автоматически направляться на погашение долгов.",
+      "debts.modeHintOff": "Погашение долгов фиксируется отдельно и не влияет на сумму накоплений автоматически.",
+      "debts.repaid": "Погашение долга зафиксировано",
+      "debts.historyAutoDesc": "Из {total} → {amount} в этот долг",
+      "debts.historyManualDesc": "Ручное погашение",
+
+      // ── Expenses extra ──
+      "expenses.noLimit": "Лимит не задан",
+      "expenses.limitAlmost": "Лимит почти исчерпан",
+      "expenses.withinLimit": "Вы укладываетесь в лимит",
+      "expenses.selectCategory": "Выберите категорию",
+      "expenses.enterAmount": "Введите сумму расхода",
+      "expenses.added": "Расход добавлен",
+      "expenses.pctOfAll": "{pct}% от всех расходов",
+      "expenses.ofTotal": "{amount} из {limit} {sym}",
+      "expenses.noNote": "Без заметки",
+      "expenses.opPlural0": "операций",
+      "expenses.opPlural1": "операция",
+      "expenses.opPlural2_4": "операции",
+
+      // ── Settings dynamic hints ──
+      "settings.selectCountry": "Выберите страну",
+      "settings.selectCurrency": "Выберите валюту",
+
+      // ── Misc extra ──
+      "misc.defaultGoalTitle": "Основная цель"
     },
 
     en: {
@@ -921,7 +1058,144 @@
       "flow.analyzing": "Protocol is analyzing your data…",
       "flow.bufferChosen": "A portion of funds will be allocated to a reserve.",
       "flow.directChosen": "All funds go directly to your goal.",
-      "flow.done": "Done."
+      "flow.done": "Done.",
+
+      // ── Protocol screen ──
+      "protocol.loadFailed": "Failed to load the chart.",
+      "protocol.loadError": "Chart loading error.",
+      "protocol.goToCalc": "Go to Plan",
+      "protocol.chooseScenario": "Choose an option:",
+      "protocol.unexpectedBtn": "Unexpected Expense",
+
+      // ── History operations ──
+      "history.noOps": "No operations yet",
+      "history.createdWithPlan": "Set when creating the plan",
+      "history.unplannedExpense": "Unplanned expense",
+
+      // ── Graph timeline ──
+      "graph.segmentAll": "All",
+
+      // ── Account stats ──
+      "stats.country.RU": "Russia",
+      "stats.country.US": "USA",
+      "stats.country.IN": "India",
+      "stats.country.CN": "China",
+      "stats.type.cash": "Cash",
+      "stats.type.stock": "Stock market",
+      "stats.type.deposit": "Bank deposit",
+      "stats.type.metals": "Precious metals",
+      "stats.added": "Statistics added",
+      "stats.addBtn": "+ Add statistics",
+      "stats.storageType": "Storage type",
+      "stats.country": "Country",
+      "stats.currency": "Currency",
+      "stats.inMonths": "In {n} {unit}",
+      "stats.monthUnit1": "month",
+      "stats.monthUnit2_4": "months",
+      "stats.monthUnit5": "months",
+      "stats.inYears": "In {n} years",
+      "stats.inflationDisclaimer": "If inflation stays at {pct}%",
+      "stats.purchasingLabel": "Purchasing power",
+      "stats.inflationLoss": "Loss due to inflation",
+      "stats.compensationLabel": "To preserve purchasing power:",
+      "stats.changeBtn": "Change",
+
+      // ── Event toasts ──
+      "event.incomeAdded": "Income added",
+      "event.expenseAdded": "Expense added",
+
+      // ── Advanced goals ──
+      "advGoals.editTitle": "Edit Goal",
+      "advGoals.newGoal": "New Goal",
+      "advGoals.fillRequired": "Please fill in the name and amount",
+      "advGoals.maxGoals": "You can create up to 3 goals",
+      "advGoals.savedLabel": "Saved",
+      "advGoals.goalLabel": "Goal",
+      "advGoals.perMonthLabel": "Per month",
+      "advGoals.termLabel": "Term",
+      "advGoals.termMonths": "mo.",
+      "advGoals.editBtn": "Edit",
+      "advGoals.deleteBtn": "Delete",
+      "advGoals.newGoalDesc": "Create a new goal and manage multiple savings targets at once",
+      "advGoals.priorityHint1": "This goal will receive the largest share.\nIf position 1 is selected, other goals will shift down automatically.",
+      "advGoals.priorityHint2": "Medium priority.\nA portion of savings will go toward this goal.",
+      "advGoals.priorityHint3": "Low priority.\nThis goal will receive the smallest share of savings.",
+      "advGoals.priorityShift": "Changing the priority will reorder other goals.",
+
+      // ── Goal timeline ──
+      "timeline.toSavings": "To savings",
+      "timeline.overLimit": "Exceeded by",
+      "timeline.paused": "Paused",
+      "timeline.completed": "Completed",
+      "timeline.pctDone": "{pct}% complete",
+      "timeline.duration": "Time to goal",
+      "timeline.monthsUnit": "mo",
+      "timeline.requiredSaving": "Required monthly saving",
+      "timeline.perMonth": "/ mo",
+      "timeline.minimum": "Minimum",
+      "timeline.customTerm": "Custom term",
+      "timeline.auto": "Auto",
+      "timeline.pausedHint": "Goal is paused — the timeline will apply once resumed",
+      "timeline.unrealisticHint": "The set term has become unrealistic — automatic calculation is used",
+      "timeline.minLimitHint": "Cannot go lower — term would be unrealistic at current pace",
+      "timeline.saveBtn": "Save timelines",
+      "timeline.noChanges": "Goal timelines were not changed",
+      "timeline.saved": "Goal timelines saved",
+
+      // ── Goal priority ──
+      "priority.label": "Priority",
+      "priority.saving": "Saving",
+      "priority.goalReachedIn": "Goal will be reached in",
+      "priority.saveBtn": "Save priority",
+      "priority.noChanges": "Goal priorities were not changed",
+      "priority.saved": "Priority saved",
+
+      // ── Pace hints ──
+      "pace.hint.calm": "~40% of free funds. A comfortable pace without budget pressure.",
+      "pace.hint.normal": "~60% of free funds. A balance between speed and comfort.",
+      "pace.hint.aggressive": "~80% of free funds. Maximum speed, but higher budget load.",
+      "pace.noChange": "Saving pace was not changed",
+      "pace.updated": "Saving pace updated",
+
+      // ── Debts extra ──
+      "debts.historyBtn": "History",
+      "debts.deleteBtn": "Delete",
+      "debts.emptyHint": "Add your first loan or debt",
+      "debts.deleted": "Deleted",
+      "debts.entryNoToast": "You can add loans and debts so Protocol accounts for them.",
+      "debts.entryYesToast": "You can calculate debts more precisely if expenses were approximate.",
+      "debts.noTitle": "Please enter a name",
+      "debts.noPayment": "Please enter the monthly payment",
+      "debts.changesSaved": "Changes saved",
+      "debts.debtAdded": "Loan / debt added",
+      "debts.accountedToast": "Debts included in calculations",
+      "debts.notAccountedToast": "Debts excluded from calculations",
+      "debts.modeHintOn": "A portion of your deposit will automatically go toward debt repayment.",
+      "debts.modeHintOff": "Debt repayment is tracked separately and does not affect savings automatically.",
+      "debts.repaid": "Debt repayment recorded",
+      "debts.historyAutoDesc": "From {total} → {amount} to this debt",
+      "debts.historyManualDesc": "Manual repayment",
+
+      // ── Expenses extra ──
+      "expenses.noLimit": "No limit set",
+      "expenses.limitAlmost": "Limit almost reached",
+      "expenses.withinLimit": "You're within the limit",
+      "expenses.selectCategory": "Select a category",
+      "expenses.enterAmount": "Enter the expense amount",
+      "expenses.added": "Expense added",
+      "expenses.pctOfAll": "{pct}% of all expenses",
+      "expenses.ofTotal": "{amount} of {limit} {sym}",
+      "expenses.noNote": "No note",
+      "expenses.opPlural0": "operations",
+      "expenses.opPlural1": "operation",
+      "expenses.opPlural2_4": "operations",
+
+      // ── Settings dynamic hints ──
+      "settings.selectCountry": "Select country",
+      "settings.selectCurrency": "Select currency",
+
+      // ── Misc extra ──
+      "misc.defaultGoalTitle": "Main Goal"
     }
   };
 
