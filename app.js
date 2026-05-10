@@ -8091,19 +8091,21 @@ function goalSwipeToIndex(idx, goLeft) {
    ------------------------------------------------------------
    Pure rendering layer. Reads existing state via getState(),
    uses i18n via t(), and updates already-existing DOM nodes:
-     • #cfFlowSummaryText        (rich rows for each side)
+     • #cfFlowSummaryText        (premium income/expense blocks)
      • #incomeInlineSummary      (one-line summary on income card)
      • #expenseInlineSummary     (one-line summary on expense card)
      • #incomeCardStatus         (header chip on income card)
      • #expenseCardStatus        (header chip on expense card)
      • #cfCurrentModelHelper     (localized helper text)
+   Reads independently for both sides:
+     income  → incomeType, incomeFrequency, fixedIncomeAmount, incomeMonthDays
+     expense → expenseType, expenseFrequency, fixedExpenseAmount, expenseMonthDays
    No business logic, no state mutation.
    ============================================================ */
 function renderFlexModelSummary() {
   if (typeof getState !== "function" || typeof t !== "function") return;
 
   var s = getState() || {};
-  var sym = (typeof getCurrencySymbol === "function") ? getCurrencySymbol() : "\u20BD";
 
   function escapeHtml(str) {
     return String(str == null ? "" : str)
@@ -8114,16 +8116,40 @@ function renderFlexModelSummary() {
       .replace(/'/g, "&#39;");
   }
 
+  // Robust amount parser — handles every format the user can produce:
+  //   "10 000"  (default spaces format from formatNumber)
+  //   "10.000"  (dots format when settings.numberFormat === "dots")
+  //   "10000"   (raw, unformatted)
+  //   "10,5"    (decimal with comma) / "10.5" (decimal with dot)
   function parseAmount(v) {
     if (v == null) return 0;
-    var raw = String(v).replace(/[^\d.,-]/g, "").replace(/\s+/g, "");
+    var raw = String(v).replace(/[\u00A0\s]/g, "");
     if (!raw) return 0;
-    raw = raw.replace(/,/g, ".");
+
+    // Detect active thousands-separator preference.
+    var nf = (typeof window !== "undefined" && window._protocolNumberFormat)
+      || (s.settings && s.settings.numberFormat)
+      || "spaces";
+
+    if (nf === "dots") {
+      // Dots are thousands separators → strip them all.
+      // Comma (if any) is the decimal separator → keep it as a decimal point.
+      raw = raw.replace(/\./g, "").replace(/,/g, ".");
+    } else {
+      // Spaces are thousands separators (already removed above).
+      // If multiple dots remain → they are also thousands separators (defensive).
+      var dots = (raw.match(/\./g) || []).length;
+      if (dots >= 2) raw = raw.replace(/\./g, "");
+      raw = raw.replace(/,/g, ".");
+    }
+
     var n = parseFloat(raw);
     return isFinite(n) && n > 0 ? n : 0;
   }
 
   function fmtMoney(n) {
+    if (typeof protocolFormatAmount === "function") return protocolFormatAmount(n);
+    var sym = (typeof getCurrencySymbol === "function") ? getCurrencySymbol() : "\u20BD";
     var formatted = (typeof fmtNum === "function") ? fmtNum(n) : Math.round(n).toString();
     return formatted + "\u00A0" + sym;
   }
@@ -8167,62 +8193,144 @@ function renderFlexModelSummary() {
     return isExpense ? t("freq.variablePlural") : t("freq.variable");
   }
 
-  function buildLineParts(side) {
-    var c = sideConfig(side);
-    var isExpense = (side === "expense");
-    var parts = [capitalize(sideTypeText(c, isExpense)), capitalize(freqLabel(c.freq))];
-
-    if (c.freq === "custom") {
-      parts.push(datesCountText(c.days.length));
-    } else {
-      var amt = parseAmount(c.amount);
-      parts.push(amt > 0 ? fmtMoney(amt) : t("flex.amount.notSet"));
+  // ── SVG icons ──
+  function arrowSvg(isIncome) {
+    // Up-right for income, down-right for expense.
+    if (isIncome) {
+      return (
+        '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" aria-hidden="true">' +
+          '<path d="M7 17L17 7M17 7H9M17 7V15" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>' +
+        '</svg>'
+      );
     }
-    return parts;
-  }
-
-  function isSideMissing(side) {
-    var c = sideConfig(side);
-    if (c.freq === "custom") return c.days.length === 0;
-    return parseAmount(c.amount) <= 0;
-  }
-
-  function renderRow(labelKey, side) {
-    var parts = buildLineParts(side);
-    var line = parts.join(" \u00B7 ");
-    var muted = isSideMissing(side);
-    var valClass = "cf-current-row-value" + (muted ? " cf-current-row-value--muted" : "");
     return (
-      '<div class="cf-current-row">' +
-        '<span class="cf-current-row-label">' + escapeHtml(t(labelKey)) + '</span>' +
-        '<span class="' + valClass + '">' + escapeHtml(line) + '</span>' +
+      '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" aria-hidden="true">' +
+        '<path d="M7 7L17 17M17 17H9M17 17V9" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>' +
+      '</svg>'
+    );
+  }
+
+  function calendarSvg() {
+    return (
+      '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" aria-hidden="true">' +
+        '<rect x="3.5" y="5" width="17" height="15" rx="2.5" stroke="currentColor" stroke-width="1.6"/>' +
+        '<path d="M3.5 9.5H20.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>' +
+        '<path d="M8 3v3M16 3v3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>' +
+      '</svg>'
+    );
+  }
+
+  // ── Main side block (premium income / expense card) ──
+  function buildSideBlock(side) {
+    var c          = sideConfig(side);
+    var isIncome   = (side === "income");
+    var isExpense  = !isIncome;
+    var headerKey  = isIncome ? "flex.current.incomeUpper" : "flex.current.expensesUpper";
+    var typeLabel  = sideTypeText(c, isExpense);
+    var typeMod    = (c.type === "fixed") ? "fixed" : "variable";
+
+    // Determine amount + frequency line independently for each side.
+    var amountHtml, freqText, amountMissing = false;
+
+    if (c.type === "fixed") {
+      var amt = parseAmount(c.amount);
+      if (amt > 0) {
+        amountHtml = '<span class="cf-side-amount">' + escapeHtml(fmtMoney(amt)) + '</span>';
+      } else {
+        amountMissing = true;
+        amountHtml =
+          '<span class="cf-side-amount cf-side-amount--placeholder">' +
+            escapeHtml(t("flex.amount.notSet")) +
+          '</span>';
+      }
+      // Fixed type implies monthly recurrence (frequency selector is hidden in UI).
+      freqText = t("flex.current.monthlyImplicit");
+    } else {
+      // Variable: amount comes from individual financial events, not a fixed input.
+      amountHtml =
+        '<span class="cf-side-amount cf-side-amount--ghost">' +
+          escapeHtml(t("flex.current.byEvents")) +
+        '</span>';
+      freqText = capitalize(freqLabel(c.freq));
+      if (c.freq === "custom") {
+        freqText += " \u00B7 " + datesCountText(c.days.length);
+      }
+    }
+
+    var blockClasses = "cf-side cf-side--" + side;
+    if (amountMissing) blockClasses += " cf-side--missing";
+
+    return (
+      '<div class="' + blockClasses + '">' +
+        '<div class="cf-side-head">' +
+          '<div class="cf-side-head-left">' +
+            '<span class="cf-side-icon">' + arrowSvg(isIncome) + '</span>' +
+            '<span class="cf-side-label">' + escapeHtml(t(headerKey)) + '</span>' +
+          '</div>' +
+          '<span class="cf-side-badge cf-side-badge--' + typeMod + '">' +
+            escapeHtml(capitalize(typeLabel)) +
+          '</span>' +
+        '</div>' +
+        '<div class="cf-side-amount-row">' + amountHtml + '</div>' +
+        '<div class="cf-side-freq">' +
+          '<span class="cf-side-freq-icon">' + calendarSvg() + '</span>' +
+          '<span class="cf-side-freq-text">' + escapeHtml(freqText) + '</span>' +
+        '</div>' +
       '</div>'
     );
   }
 
-  // ── 1) "Текущая модель" main card ──
+  // ── Compact one-line summary used on the inline card slots ──
+  function buildInlineLine(side) {
+    var c         = sideConfig(side);
+    var isIncome  = (side === "income");
+    var isExpense = !isIncome;
+    var parts     = [capitalize(sideTypeText(c, isExpense))];
+
+    if (c.type === "fixed") {
+      var amt = parseAmount(c.amount);
+      parts.push(amt > 0 ? fmtMoney(amt) : t("flex.amount.notSet"));
+      parts.push(t("flex.current.monthlyImplicit"));
+    } else {
+      var freq = capitalize(freqLabel(c.freq));
+      if (c.freq === "custom") {
+        freq += " \u00B7 " + datesCountText(c.days.length);
+      }
+      parts.push(freq);
+      parts.push(t("flex.current.byEvents"));
+    }
+    var label = isIncome ? t("flex.current.income") : t("flex.current.expenses");
+    return label + ": " + parts.join(" \u00B7 ");
+  }
+
+  // ── 1) "Текущая модель" main card — premium two-block layout ──
   var summaryText = document.getElementById("cfFlowSummaryText");
   if (summaryText) {
     summaryText.innerHTML =
-      renderRow("flex.current.income", "income") +
-      renderRow("flex.current.expenses", "expense");
+      buildSideBlock("income") +
+      buildSideBlock("expense");
   }
 
   // ── 2) Inline summaries on income/expense cards ──
   var incInline = document.getElementById("incomeInlineSummary");
   if (incInline) {
-    incInline.textContent = t("flex.current.income") + ": " + buildLineParts("income").join(" \u00B7 ");
+    incInline.textContent = buildInlineLine("income");
     incInline.classList.add("visible");
   }
   var expInline = document.getElementById("expenseInlineSummary");
   if (expInline) {
-    expInline.textContent = t("flex.current.expenses") + ": " + buildLineParts("expense").join(" \u00B7 ");
+    expInline.textContent = buildInlineLine("expense");
     expInline.classList.add("visible");
   }
 
-  // ── 3) Header chips ──
+  // ── 3) Header chips (independent per side) ──
   function chipFor(side) {
     var c = sideConfig(side);
+    if (c.type === "fixed") {
+      var amt = parseAmount(c.amount);
+      if (amt <= 0) return { text: t("flex.current.chip.notSet"), muted: true };
+      return { text: capitalize(t("freq.fixed")), muted: false };
+    }
     if (c.freq === "custom") {
       if (!c.days.length) return { text: t("flex.current.chip.notSet"), muted: true };
       return { text: capitalize(t("freq.custom")) + " \u00B7 " + datesCountText(c.days.length), muted: false };

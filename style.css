@@ -6180,10 +6180,193 @@ body.reduce-motion .settings-seg-btn {
 .cf-current-model .cf-summary-text {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
   font-size: 14px;
   color: rgba(255, 255, 255, 0.85);
 }
+
+/* ── Premium per-side block (income / expense) ───────────────── */
+
+.cf-side {
+  --cf-side-tint: rgba(255, 255, 255, 0.06);
+  --cf-side-accent: rgba(255, 255, 255, 0.85);
+  --cf-side-accent-soft: rgba(255, 255, 255, 0.18);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 14px 12px;
+  border-radius: 14px;
+  background:
+    linear-gradient(180deg, var(--cf-side-tint), rgba(255, 255, 255, 0.015) 70%),
+    rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--cf-side-accent-soft);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  overflow: hidden;
+}
+
+.cf-side::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 3px;
+  background: var(--cf-side-accent);
+  opacity: 0.85;
+  pointer-events: none;
+}
+
+.cf-side--income {
+  --cf-side-tint: rgba(16, 185, 129, 0.10);
+  --cf-side-accent: #10b981;
+  --cf-side-accent-soft: rgba(16, 185, 129, 0.28);
+}
+
+.cf-side--expense {
+  --cf-side-tint: rgba(244, 114, 89, 0.09);
+  --cf-side-accent: #f47259;
+  --cf-side-accent-soft: rgba(244, 114, 89, 0.26);
+}
+
+.cf-side--missing {
+  --cf-side-tint: rgba(255, 255, 255, 0.025);
+  --cf-side-accent-soft: rgba(255, 255, 255, 0.10);
+}
+
+.cf-side--missing::before {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.cf-side-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  row-gap: 6px;
+}
+
+.cf-side-head-left {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.cf-side-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--cf-side-accent) 18%, transparent);
+  color: var(--cf-side-accent);
+  flex-shrink: 0;
+}
+
+@supports not (background: color-mix(in srgb, red, blue)) {
+  .cf-side--income .cf-side-icon { background: rgba(16, 185, 129, 0.18); }
+  .cf-side--expense .cf-side-icon { background: rgba(244, 114, 89, 0.18); }
+}
+
+.cf-side-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.65);
+  white-space: nowrap;
+}
+
+.cf-side-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.cf-side-badge--fixed {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.14);
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.cf-side-badge--variable {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.10);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.cf-side-amount-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.cf-side-amount {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+  line-height: 1.1;
+  color: #ffffff;
+  word-break: break-word;
+  font-variant-numeric: tabular-nums;
+}
+
+.cf-side--income .cf-side-amount {
+  color: #d1fae5;
+}
+
+.cf-side--expense .cf-side-amount {
+  color: #fde2da;
+}
+
+.cf-side-amount--placeholder {
+  font-size: 14px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.4);
+  letter-spacing: 0;
+}
+
+.cf-side-amount--ghost {
+  font-size: 16px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.78);
+  letter-spacing: 0;
+}
+
+.cf-side-freq {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.55);
+  font-weight: 500;
+}
+
+.cf-side-freq-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.cf-side-freq-text {
+  letter-spacing: 0.1px;
+}
+
+/* ── Legacy fallback (kept for any external usage) ───────────── */
 
 .cf-current-row {
   display: flex;
