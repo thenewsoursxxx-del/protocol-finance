@@ -6150,3 +6150,118 @@ body.reduce-motion .settings-seg-btn {
     font-size: 13px;
   }
 }
+
+/* ═════════════════════════════════════════════════
+   Flexible Model — "Текущая модель" summary card
+   (premium look: dark surface + emerald accent)
+   ═════════════════════════════════════════════════ */
+
+.cf-card.cf-current-model {
+  position: relative;
+  background:
+    radial-gradient(120% 120% at 0% 0%, rgba(16,185,129,0.10), transparent 55%),
+    rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(16, 185, 129, 0.22);
+  box-shadow:
+    0 0 0 1px rgba(16, 185, 129, 0.10),
+    0 8px 28px rgba(0, 0, 0, 0.28);
+}
+
+.cf-current-model .cf-card-header {
+  margin-bottom: 14px;
+  align-items: center;
+}
+
+.cf-current-model .cf-card-title {
+  font-size: 15px;
+  letter-spacing: 0.1px;
+}
+
+.cf-current-model .cf-summary-text {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.cf-current-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.cf-current-row-label {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.cf-current-row-value {
+  flex: 1;
+  text-align: right;
+  font-size: 14px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.92);
+  line-height: 1.45;
+  word-break: break-word;
+}
+
+.cf-current-row-value--muted {
+  color: rgba(255, 255, 255, 0.42);
+  font-style: italic;
+  font-weight: 400;
+}
+
+.cf-current-row-value .cf-current-accent {
+  color: #6ee7b7;
+  font-weight: 600;
+}
+
+.cf-model-helper {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.07);
+  font-size: 12px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+/* ── Header chips: enriched live status ── */
+
+.cf-card-status {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(16, 185, 129, 0.10);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  opacity: 1;
+  white-space: nowrap;
+  max-width: 60%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cf-card-status .cf-card-status-label {
+  display: inline;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+
+.cf-card-status--muted {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.10);
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.cf-card-status--muted .cf-status-dot {
+  background: rgba(255, 255, 255, 0.35);
+}

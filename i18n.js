@@ -88,6 +88,16 @@
       "flex.incomeAmount.placeholder": "Сумма дохода",
       "flex.expenseAmount.placeholder": "Сумма расхода",
 
+      // ── Flexible model — current configuration summary ──
+      "flex.current.title": "Текущая модель",
+      "flex.current.helper": "Эта модель используется для расчёта свободных средств и срока достижения цели.",
+      "flex.current.income": "Доход",
+      "flex.current.expenses": "Расходы",
+      "flex.current.chip.notSet": "не настроено",
+      "flex.amount.notSet": "сумма не указана",
+      "flex.dates.notSelected": "даты не выбраны",
+      "flex.dates.count": "{n} даты",
+
       // ── Lock overlay ──
       "lock.reset": "Начать сначала",
 
@@ -682,6 +692,16 @@
       "flex.events.add": "+ Add event",
       "flex.incomeAmount.placeholder": "Income amount",
       "flex.expenseAmount.placeholder": "Expense amount",
+
+      // ── Flexible model — current configuration summary ──
+      "flex.current.title": "Current model",
+      "flex.current.helper": "This model is used to calculate free cash flow and goal timing.",
+      "flex.current.income": "Income",
+      "flex.current.expenses": "Expenses",
+      "flex.current.chip.notSet": "not set",
+      "flex.amount.notSet": "amount not set",
+      "flex.dates.notSelected": "no dates selected",
+      "flex.dates.count": "{n} dates",
 
       // ── Lock overlay ──
       "lock.reset": "Start over",

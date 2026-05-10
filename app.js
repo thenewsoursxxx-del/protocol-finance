@@ -2728,6 +2728,7 @@ if (goalHistoryBack) {
     if (key === "language") {
       applyLanguageToDOM();
       updateDynamicHints();
+      if (typeof renderFlexModelSummary === "function") renderFlexModelSummary();
     }
 
     if (key === "displayCurrencyEnabled" || key === "displayCurrency") {
@@ -4671,6 +4672,8 @@ function syncFlexibleUI() {
   if (incCard) incCard.classList.add("cf-card--configured");
   var expCard = document.getElementById("cfCardExpense");
   if (expCard) expCard.classList.add("cf-card--configured");
+
+  if (typeof renderFlexModelSummary === "function") renderFlexModelSummary();
 }
 
 function applyPremiumUI(isPremium) {
@@ -8082,3 +8085,168 @@ function goalSwipeToIndex(idx, goLeft) {
   ProtoSheet.initSwipe(catDetailSheet, closeCatDetailSheet);
 
 })();
+
+/* ============================================================
+   Flexible Model — "Текущая модель" live summary renderer
+   ------------------------------------------------------------
+   Pure rendering layer. Reads existing state via getState(),
+   uses i18n via t(), and updates already-existing DOM nodes:
+     • #cfFlowSummaryText        (rich rows for each side)
+     • #incomeInlineSummary      (one-line summary on income card)
+     • #expenseInlineSummary     (one-line summary on expense card)
+     • #incomeCardStatus         (header chip on income card)
+     • #expenseCardStatus        (header chip on expense card)
+     • #cfCurrentModelHelper     (localized helper text)
+   No business logic, no state mutation.
+   ============================================================ */
+function renderFlexModelSummary() {
+  if (typeof getState !== "function" || typeof t !== "function") return;
+
+  var s = getState() || {};
+  var sym = (typeof getCurrencySymbol === "function") ? getCurrencySymbol() : "\u20BD";
+
+  function escapeHtml(str) {
+    return String(str == null ? "" : str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  function parseAmount(v) {
+    if (v == null) return 0;
+    var raw = String(v).replace(/[^\d.,-]/g, "").replace(/\s+/g, "");
+    if (!raw) return 0;
+    raw = raw.replace(/,/g, ".");
+    var n = parseFloat(raw);
+    return isFinite(n) && n > 0 ? n : 0;
+  }
+
+  function fmtMoney(n) {
+    var formatted = (typeof fmtNum === "function") ? fmtNum(n) : Math.round(n).toString();
+    return formatted + "\u00A0" + sym;
+  }
+
+  function freqLabel(freq) {
+    if (freq === "weekly") return t("freq.weekly");
+    if (freq === "biweekly") return t("freq.biweekly");
+    if (freq === "custom") return t("freq.custom");
+    return t("freq.monthly");
+  }
+
+  function datesCountText(n) {
+    if (!n) return t("flex.dates.notSelected");
+    return t("flex.dates.count", { n: n });
+  }
+
+  function capitalize(str) {
+    if (!str) return "";
+    return str.charAt(0).toUpperCase() + str.slice(1);
+  }
+
+  function sideConfig(side) {
+    if (side === "income") {
+      return {
+        type:   s.incomeType || "fixed",
+        freq:   s.incomeFrequency || "monthly",
+        amount: s.fixedIncomeAmount,
+        days:   Array.isArray(s.incomeMonthDays) ? s.incomeMonthDays : []
+      };
+    }
+    return {
+      type:   s.expenseType || "fixed",
+      freq:   s.expenseFrequency || "monthly",
+      amount: s.fixedExpenseAmount,
+      days:   Array.isArray(s.expenseMonthDays) ? s.expenseMonthDays : []
+    };
+  }
+
+  function sideTypeText(c, isExpense) {
+    if (c.type === "fixed") return isExpense ? t("freq.fixedPlural") : t("freq.fixed");
+    return isExpense ? t("freq.variablePlural") : t("freq.variable");
+  }
+
+  function buildLineParts(side) {
+    var c = sideConfig(side);
+    var isExpense = (side === "expense");
+    var parts = [capitalize(sideTypeText(c, isExpense)), capitalize(freqLabel(c.freq))];
+
+    if (c.freq === "custom") {
+      parts.push(datesCountText(c.days.length));
+    } else {
+      var amt = parseAmount(c.amount);
+      parts.push(amt > 0 ? fmtMoney(amt) : t("flex.amount.notSet"));
+    }
+    return parts;
+  }
+
+  function isSideMissing(side) {
+    var c = sideConfig(side);
+    if (c.freq === "custom") return c.days.length === 0;
+    return parseAmount(c.amount) <= 0;
+  }
+
+  function renderRow(labelKey, side) {
+    var parts = buildLineParts(side);
+    var line = parts.join(" \u00B7 ");
+    var muted = isSideMissing(side);
+    var valClass = "cf-current-row-value" + (muted ? " cf-current-row-value--muted" : "");
+    return (
+      '<div class="cf-current-row">' +
+        '<span class="cf-current-row-label">' + escapeHtml(t(labelKey)) + '</span>' +
+        '<span class="' + valClass + '">' + escapeHtml(line) + '</span>' +
+      '</div>'
+    );
+  }
+
+  // ── 1) "Текущая модель" main card ──
+  var summaryText = document.getElementById("cfFlowSummaryText");
+  if (summaryText) {
+    summaryText.innerHTML =
+      renderRow("flex.current.income", "income") +
+      renderRow("flex.current.expenses", "expense");
+  }
+
+  // ── 2) Inline summaries on income/expense cards ──
+  var incInline = document.getElementById("incomeInlineSummary");
+  if (incInline) {
+    incInline.textContent = t("flex.current.income") + ": " + buildLineParts("income").join(" \u00B7 ");
+    incInline.classList.add("visible");
+  }
+  var expInline = document.getElementById("expenseInlineSummary");
+  if (expInline) {
+    expInline.textContent = t("flex.current.expenses") + ": " + buildLineParts("expense").join(" \u00B7 ");
+    expInline.classList.add("visible");
+  }
+
+  // ── 3) Header chips ──
+  function chipFor(side) {
+    var c = sideConfig(side);
+    if (c.freq === "custom") {
+      if (!c.days.length) return { text: t("flex.current.chip.notSet"), muted: true };
+      return { text: capitalize(t("freq.custom")) + " \u00B7 " + datesCountText(c.days.length), muted: false };
+    }
+    return { text: capitalize(freqLabel(c.freq)), muted: false };
+  }
+
+  function applyChip(elId, chip) {
+    var el = document.getElementById(elId);
+    if (!el) return;
+    var labelEl = el.querySelector(".cf-card-status-label");
+    if (labelEl) {
+      labelEl.textContent = chip.text;
+    } else {
+      el.textContent = chip.text;
+    }
+    el.classList.toggle("cf-card-status--muted", !!chip.muted);
+    el.classList.add("visible");
+  }
+
+  applyChip("incomeCardStatus", chipFor("income"));
+  applyChip("expenseCardStatus", chipFor("expense"));
+
+  // ── 4) Helper text (refresh on language change) ──
+  var helper = document.getElementById("cfCurrentModelHelper");
+  if (helper) helper.textContent = t("flex.current.helper");
+}

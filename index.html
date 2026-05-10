@@ -143,7 +143,7 @@ viewport-fit=cover" />
           <div class="cf-card-subtitle" data-i18n="flex.income.subtitle">Как вы получаете деньги?</div>
         </div>
         <div class="cf-card-status" id="incomeCardStatus">
-          <span class="cf-status-dot"></span><span data-i18n="flex.configured">Настроено</span>
+          <span class="cf-status-dot"></span><span class="cf-card-status-label" data-i18n="flex.configured">Настроено</span>
         </div>
       </div>
       <div class="cf-micro-hint" data-i18n="flex.income.hint">Это нужно, чтобы точно понимать, когда у вас появляются деньги</div>
@@ -182,7 +182,7 @@ viewport-fit=cover" />
           <div class="cf-card-subtitle" data-i18n="flex.expense.subtitle">Как происходят ваши расходы?</div>
         </div>
         <div class="cf-card-status" id="expenseCardStatus">
-          <span class="cf-status-dot"></span><span data-i18n="flex.configured">Настроено</span>
+          <span class="cf-status-dot"></span><span class="cf-card-status-label" data-i18n="flex.configured">Настроено</span>
         </div>
       </div>
       <div class="cf-micro-hint" data-i18n="flex.expense.hint">Это влияет на расчёт свободных средств и срок достижения цели</div>
@@ -212,13 +212,14 @@ viewport-fit=cover" />
       <div class="cf-card-inline-summary" id="expenseInlineSummary"></div>
     </div>
 
-    <!-- Step 3: Summary -->
-    <div class="cf-card cf-card--summary" id="cfFlowSummary">
+    <!-- Step 3: Current Model Summary -->
+    <div class="cf-card cf-card--summary cf-current-model" id="cfFlowSummary">
       <div class="cf-card-header">
         <div class="cf-step-num cf-step-num--check">✓</div>
-        <div class="cf-card-title" data-i18n="flex.model.title">Ваша модель</div>
+        <div class="cf-card-title" data-i18n="flex.current.title">Текущая модель</div>
       </div>
       <div id="cfFlowSummaryText" class="cf-summary-text"></div>
+      <div id="cfCurrentModelHelper" class="cf-model-helper" data-i18n="flex.current.helper">Эта модель используется для расчёта свободных средств и срока достижения цели.</div>
     </div>
 
     <!-- Step 4: Events -->
