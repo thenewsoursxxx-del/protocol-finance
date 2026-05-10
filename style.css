@@ -6448,3 +6448,166 @@ body.reduce-motion .settings-seg-btn {
 .cf-card-status--muted .cf-status-dot {
   background: rgba(255, 255, 255, 0.35);
 }
+
+/* ═════════════════════════════════════════════════
+   NEW: Periodic ("fixed") mode — start-date input
+   ═════════════════════════════════════════════════ */
+
+.cf-startdate-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.06);
+  animation: cfStartdateFade 220ms ease both;
+}
+
+@keyframes cfStartdateFade {
+  from { opacity: 0; transform: translateY(-2px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.cf-startdate-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.55);
+  letter-spacing: 0.1px;
+}
+
+.cf-startdate-input {
+  width: 100%;
+  padding: 11px 13px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+  appearance: none;
+  -webkit-appearance: none;
+  transition: border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+}
+
+.cf-startdate-input:focus {
+  outline: none;
+  border-color: rgba(16, 185, 129, 0.45);
+  background: rgba(16, 185, 129, 0.05);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.10);
+}
+
+.cf-startdate-input::-webkit-calendar-picker-indicator {
+  filter: invert(0.9) opacity(0.6);
+  cursor: pointer;
+}
+
+/* ═════════════════════════════════════════════════
+   NEW: Side-block periodic meta (Start + Next)
+   ═════════════════════════════════════════════════ */
+
+.cf-side-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 6px;
+  padding-top: 10px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.07);
+}
+
+.cf-side-meta-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.cf-side-meta-label {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.42);
+  white-space: nowrap;
+}
+
+.cf-side-meta-value {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.cf-side-meta-value--accent {
+  color: #6ee7b7;
+}
+
+.cf-side--expense .cf-side-meta-value--accent {
+  color: #fcb39b;
+}
+
+.cf-side-meta-placeholder {
+  color: rgba(255, 255, 255, 0.4);
+  font-weight: 500;
+  font-style: italic;
+}
+
+/* ═════════════════════════════════════════════════
+   NEW: +Add Event button — blocked state
+   ═════════════════════════════════════════════════ */
+
+.add-event-btn--blocked {
+  pointer-events: auto; /* keep clickable so we can show the toast */
+  cursor: not-allowed;
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.35);
+  box-shadow: none;
+  position: relative;
+}
+
+.add-event-btn--blocked::after {
+  content: "🔒";
+  margin-left: 8px;
+  font-size: 11px;
+  opacity: 0.7;
+}
+
+.add-event-btn--blocked:active {
+  transform: none;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+/* ═════════════════════════════════════════════════
+   NEW: Event editor — locked type-toggle buttons + hint
+   ═════════════════════════════════════════════════ */
+
+.toggle-group .mode-btn--locked,
+.toggle-group .mode-btn[disabled] {
+  opacity: 0.42;
+  cursor: not-allowed;
+  background: rgba(255, 255, 255, 0.02);
+  color: rgba(255, 255, 255, 0.4);
+  position: relative;
+}
+
+.toggle-group .mode-btn--locked::after {
+  content: "🔒";
+  margin-left: 6px;
+  font-size: 10px;
+}
+
+.event-editor-locked-hint {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 12px;
+  line-height: 1.4;
+}

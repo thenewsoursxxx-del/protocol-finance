@@ -9,7 +9,7 @@
  * Загружается ДО app.js.
  */
 
-const STATE_VERSION = 10;
+const STATE_VERSION = 11;
 const STORAGE_KEY = "protocol_app_state";
 
 // ─── Default State ────────────────────────────────────────────
@@ -62,6 +62,10 @@ function getDefaultState() {
     expenseFrequency: "monthly",
     fixedIncomeAmount: "",
     fixedExpenseAmount: "",
+    // NEW (v11): start date for periodic ("fixed") mode — YYYY-MM-DD or "".
+    // Anchors the recurring schedule (weekly/biweekly/monthly).
+    incomeStartDate: "",
+    expenseStartDate: "",
 
     // ── Premium (v4) ──
     isPremium: false,
@@ -321,6 +325,14 @@ function migrateState(saved) {
     }
   }
 
+  // v10 → v11: periodic mode start dates (incomeStartDate / expenseStartDate)
+  // NEW: anchors recurring schedule for "fixed" type. Defaults to "".
+  if (version < 11) {
+    saved.stateVersion = 11;
+    if (typeof saved.incomeStartDate !== "string") saved.incomeStartDate = "";
+    if (typeof saved.expenseStartDate !== "string") saved.expenseStartDate = "";
+  }
+
   // Ensure settings has all expected keys
   if (saved.settings && typeof saved.settings === "object") {
     var ds = getDefaultState().settings;
@@ -534,6 +546,12 @@ function applyState(saved) {
   appState.expenseFrequency = saved.expenseFrequency || defaults.expenseFrequency;
   appState.fixedIncomeAmount = saved.fixedIncomeAmount ?? defaults.fixedIncomeAmount;
   appState.fixedExpenseAmount = saved.fixedExpenseAmount ?? defaults.fixedExpenseAmount;
+
+  // NEW (v11): periodic mode start dates
+  appState.incomeStartDate = typeof saved.incomeStartDate === "string"
+    ? saved.incomeStartDate : defaults.incomeStartDate;
+  appState.expenseStartDate = typeof saved.expenseStartDate === "string"
+    ? saved.expenseStartDate : defaults.expenseStartDate;
 
   // ── Premium (v4) ──
   appState.isPremium = typeof saved.isPremium === "boolean" ? saved.isPremium : defaults.isPremium;

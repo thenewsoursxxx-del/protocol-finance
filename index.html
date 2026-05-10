@@ -155,6 +155,11 @@ viewport-fit=cover" />
         <div class="input-wrap">
           <input id="fixedIncomeInput" type="text" inputmode="numeric" class="cf-amount-input" data-i18n-placeholder="flex.incomeAmount.placeholder" placeholder="Сумма дохода" />
         </div>
+        <!-- NEW: start date for periodic mode -->
+        <div class="cf-startdate-row">
+          <label for="incomeStartDate" class="cf-startdate-label" data-i18n="flex.start.label.income">Дата первой выплаты</label>
+          <input id="incomeStartDate" type="date" class="cf-startdate-input" data-i18n-placeholder="flex.start.placeholder" />
+        </div>
       </div>
       <div id="incomeFrequencySelector" class="frequency-selector" data-for="income">
         <div class="cf-freq-label" data-i18n="flex.freq.label.income">Как часто вы получаете доход?</div>
@@ -193,6 +198,11 @@ viewport-fit=cover" />
       <div id="fixedExpenseWrap" class="cf-fixed-amount-wrap" style="display:none">
         <div class="input-wrap">
           <input id="fixedExpenseInput" type="text" inputmode="numeric" class="cf-amount-input" data-i18n-placeholder="flex.expenseAmount.placeholder" placeholder="Сумма расхода" />
+        </div>
+        <!-- NEW: start date for periodic mode -->
+        <div class="cf-startdate-row">
+          <label for="expenseStartDate" class="cf-startdate-label" data-i18n="flex.start.label.expense">Дата первого расхода</label>
+          <input id="expenseStartDate" type="date" class="cf-startdate-input" data-i18n-placeholder="flex.start.placeholder" />
         </div>
       </div>
       <div id="expenseFrequencySelector" class="frequency-selector" data-for="expense">
@@ -1394,6 +1404,9 @@ z-index: 999999;
     <button class="mode-btn active" data-value="income" data-i18n="event.income">Доход</button>
     <button class="mode-btn" data-value="expense" data-i18n="event.expense">Расход</button>
   </div>
+
+  <!-- NEW: hint shown when at least one side is in periodic ("fixed") mode -->
+  <div id="eventEditorLockedHint" class="event-editor-locked-hint" style="display:none"></div>
 
   <div class="event-editor-fields">
     <div class="input-wrap" style="margin-top:16px">

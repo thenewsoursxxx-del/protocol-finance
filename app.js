@@ -851,16 +851,170 @@ const state = {
 };
 
 /**
+ * NEW: Robust amount parser shared between recalcPlan + assembleCashflowEvents.
+ * Mirrors the parser used inside renderFlexModelSummary() — handles "10 000",
+ * "10.000", "10000", "10,5", "10.5". Returns 0 if invalid.
+ */
+function parseFlexAmount(v) {
+  if (v == null) return 0;
+  var raw = String(v).replace(/[\u00A0\s]/g, "");
+  if (!raw) return 0;
+  var nf = "spaces";
+  if (typeof window !== "undefined" && window._protocolNumberFormat) {
+    nf = window._protocolNumberFormat;
+  } else {
+    var st = (typeof getState === "function") ? getState() : null;
+    if (st && st.settings && st.settings.numberFormat) nf = st.settings.numberFormat;
+  }
+  if (nf === "dots") {
+    raw = raw.replace(/\./g, "").replace(/,/g, ".");
+  } else {
+    var dots = (raw.match(/\./g) || []).length;
+    if (dots >= 2) raw = raw.replace(/\./g, "");
+    raw = raw.replace(/,/g, ".");
+  }
+  var n = parseFloat(raw);
+  return isFinite(n) && n > 0 ? n : 0;
+}
+
+/**
+ * NEW: Computes the next occurrence date (>= today) for a periodic schedule
+ * anchored at `startDate` with the given `frequency`.
+ *
+ * Supports: monthly (same DOM, clamped), weekly (+7d), biweekly (+14d),
+ * custom (next selected day-of-month, wrapping into next month if needed).
+ *
+ * Returns a Date object, or null if startDate is empty/invalid.
+ */
+function calculateNextOccurrence(startDate, frequency, monthDays) {
+  if (!startDate) return null;
+
+  var start = (startDate instanceof Date) ? new Date(startDate) : new Date(String(startDate));
+  if (isNaN(start.getTime())) return null;
+  start = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+
+  var today = new Date();
+  today = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+  if (start.getTime() >= today.getTime()) return start;
+
+  var DAY = 24 * 60 * 60 * 1000;
+
+  if (frequency === "weekly") {
+    var diff = Math.floor((today.getTime() - start.getTime()) / DAY);
+    var step = Math.floor(diff / 7) + 1;
+    var d = new Date(start);
+    d.setDate(d.getDate() + step * 7);
+    return d;
+  }
+
+  if (frequency === "biweekly") {
+    var diff2 = Math.floor((today.getTime() - start.getTime()) / DAY);
+    var step2 = Math.floor(diff2 / 14) + 1;
+    var d2 = new Date(start);
+    d2.setDate(d2.getDate() + step2 * 14);
+    return d2;
+  }
+
+  if (frequency === "custom" && Array.isArray(monthDays) && monthDays.length) {
+    var sorted = monthDays.slice().sort(function (a, b) { return a - b; });
+    var todayDOM = today.getDate();
+    for (var i = 0; i < sorted.length; i++) {
+      if (sorted[i] >= todayDOM) {
+        return new Date(today.getFullYear(), today.getMonth(), sorted[i]);
+      }
+    }
+    return new Date(today.getFullYear(), today.getMonth() + 1, sorted[0]);
+  }
+
+  // Default: monthly — same day-of-month as start, clamped to month length.
+  var origDay = start.getDate();
+  var cursor = new Date(start);
+  // Walk forward month by month until we pass today.
+  var safety = 0;
+  while (cursor.getTime() <= today.getTime() && safety < 600) {
+    var y = cursor.getFullYear();
+    var m = cursor.getMonth() + 1;
+    var lastDay = new Date(y, m + 1, 0).getDate();
+    cursor = new Date(y, m, Math.min(origDay, lastDay));
+    safety++;
+  }
+  return cursor;
+}
+
+/**
  * Собирает FinancialEvent[] из legacy-источников (factHistory + skip из FinancialEvents).
  * Используется движком для расчёта балансов и проекций.
+ *
+ * NEW: also enforces the periodic/event-mode boundary —
+ *   • if a side is "fixed", manual user-created events of that type are dropped;
+ *   • if a side is "fixed" with amount > 0, a synthetic recurring event is
+ *     injected so the cashflow forecast reflects the configured periodic flow.
  */
 function assembleCashflowEvents() {
   var H = CashflowEngineHelpers;
+  var s = getState() || {};
+
+  // NEW: which sides are currently periodic ("fixed").
+  var incomeIsFixed  = (s.incomeType  || "fixed") === "fixed";
+  var expenseIsFixed = (s.expenseType || "fixed") === "fixed";
+
   var events = H.factHistoryToEvents(factHistory);
 
-  var fromState = getState().cashflowEvents || [];
+  // NEW: drop user-created INCOME/EXPENSE events that belong to a side
+  // currently configured as periodic — those sides are driven by the
+  // synthetic recurring events injected below, not by manual entries.
+  var fromState = s.cashflowEvents || [];
   for (var i = 0; i < fromState.length; i++) {
-    events.push(H.normalizeEvent(fromState[i]));
+    var raw = fromState[i] || {};
+    var isUserCreated = raw.meta && raw.meta.userCreated === true;
+    var isPeriodicSynthetic = raw.meta && raw.meta.kind === "periodic";
+    if (isUserCreated && !isPeriodicSynthetic) {
+      if (raw.type === H.EVENT_TYPE.INCOME && incomeIsFixed) continue;
+      if (raw.type === H.EVENT_TYPE.EXPENSE && expenseIsFixed) continue;
+    }
+    events.push(H.normalizeEvent(raw));
+  }
+
+  // NEW: inject synthetic periodic events for "fixed" sides with valid setup.
+  var nowIso = (new Date()).toISOString().slice(0, 10);
+
+  if (incomeIsFixed) {
+    var incAmt = parseFlexAmount(s.fixedIncomeAmount);
+    if (incAmt > 0) {
+      var incFreq = s.incomeFrequency || "monthly";
+      var incStart = s.incomeStartDate || nowIso;
+      var incMeta = { kind: "periodic", source: "flexModel", side: "income" };
+      if (incFreq === "custom" && Array.isArray(s.incomeMonthDays) && s.incomeMonthDays.length) {
+        incMeta.monthDays = s.incomeMonthDays;
+      }
+      events.push(H.normalizeEvent({
+        type: H.EVENT_TYPE.INCOME,
+        amount: incAmt,
+        frequency: incFreq,
+        startDate: incStart,
+        meta: incMeta
+      }));
+    }
+  }
+
+  if (expenseIsFixed) {
+    var expAmt = parseFlexAmount(s.fixedExpenseAmount);
+    if (expAmt > 0) {
+      var expFreq = s.expenseFrequency || "monthly";
+      var expStart = s.expenseStartDate || nowIso;
+      var expMeta = { kind: "periodic", source: "flexModel", side: "expense" };
+      if (expFreq === "custom" && Array.isArray(s.expenseMonthDays) && s.expenseMonthDays.length) {
+        expMeta.monthDays = s.expenseMonthDays;
+      }
+      events.push(H.normalizeEvent({
+        type: H.EVENT_TYPE.EXPENSE,
+        amount: expAmt,
+        frequency: expFreq,
+        startDate: expStart,
+        meta: expMeta
+      }));
+    }
   }
 
   if (typeof FinancialEvents !== "undefined") {
@@ -1253,6 +1407,18 @@ function recalcPlan() {
     var modelType = s.financialModel || "simple";
     var incomeVal = parseNumber(incomeInput?.value || "0");
     var expensesVal = parseNumber(expensesInput?.value || "0") + getDebtMonthlyTotal();
+
+    // NEW: in periodic mode the flexible-model amounts drive baseConfig.
+    // We override only when "fixed" + amount > 0, otherwise keep legacy values.
+    if ((s.incomeType || "fixed") === "fixed") {
+      var fxIncome = parseFlexAmount(s.fixedIncomeAmount);
+      if (fxIncome > 0) incomeVal = fxIncome;
+    }
+    if ((s.expenseType || "fixed") === "fixed") {
+      var fxExpense = parseFlexAmount(s.fixedExpenseAmount);
+      if (fxExpense > 0) expensesVal = fxExpense + getDebtMonthlyTotal();
+    }
+
     var canRecalc = goalVal > 0 && (incomeVal > expensesVal || modelType === "cashflow");
     if (canRecalc) {
       var events = assembleCashflowEvents();
@@ -4776,6 +4942,9 @@ function initCashflowSettings() {
   var fixedExpenseWrap = document.getElementById("fixedExpenseWrap");
   var fixedIncomeInput = document.getElementById("fixedIncomeInput");
   var fixedExpenseInput = document.getElementById("fixedExpenseInput");
+  // NEW: start date inputs for periodic mode
+  var incomeStartDateInput = document.getElementById("incomeStartDate");
+  var expenseStartDateInput = document.getElementById("expenseStartDate");
 
   if (!flexToggle || !flexContent) return;
 
@@ -4797,6 +4966,9 @@ function initCashflowSettings() {
   updateFixedAmountVisibility(incomeType, expenseType);
   if (fixedIncomeInput && (currentState.fixedIncomeAmount != null)) fixedIncomeInput.value = currentState.fixedIncomeAmount;
   if (fixedExpenseInput && (currentState.fixedExpenseAmount != null)) fixedExpenseInput.value = currentState.fixedExpenseAmount;
+  // NEW: hydrate start-date inputs from state
+  if (incomeStartDateInput && currentState.incomeStartDate) incomeStartDateInput.value = currentState.incomeStartDate;
+  if (expenseStartDateInput && currentState.expenseStartDate) expenseStartDateInput.value = currentState.expenseStartDate;
   syncFreqUIBlock(incomeFreqBlock, incomeFrequency);
   syncFreqUIBlock(expenseFreqBlock, expenseFrequency);
   updateFrequencyVisibility(incomeType, expenseType);
@@ -4820,6 +4992,21 @@ function initCashflowSettings() {
     }
   });
 
+  // NEW: helper — auto-fill today's date if switching to "fixed" with no start set.
+  function ensureStartDateForFixed(side) {
+    var st = getState();
+    if (side === "income" && (st.incomeType || "fixed") === "fixed" && !st.incomeStartDate) {
+      var today = (new Date()).toISOString().slice(0, 10);
+      updateState({ incomeStartDate: today });
+      if (incomeStartDateInput) incomeStartDateInput.value = today;
+    }
+    if (side === "expense" && (st.expenseType || "fixed") === "fixed" && !st.expenseStartDate) {
+      var today2 = (new Date()).toISOString().slice(0, 10);
+      updateState({ expenseStartDate: today2 });
+      if (expenseStartDateInput) expenseStartDateInput.value = today2;
+    }
+  }
+
   if (incomeToggle) {
     incomeToggle.addEventListener("click", function (e) {
       var btn = e.target.closest(".mode-btn");
@@ -4829,6 +5016,11 @@ function initCashflowSettings() {
       incomeType = btn.dataset.value;
       syncToggleUI(incomeToggle, incomeType);
       updateFixedAmountVisibility(incomeType, expenseType);
+      // NEW: write the new type into state BEFORE filling the default start date,
+      // so ensureStartDateForFixed sees the up-to-date type. Then applySettingsChange()
+      // will recalc + save and the synthetic event will already have the start date.
+      updateState({ incomeType: incomeType });
+      if (incomeType === "fixed") ensureStartDateForFixed("income");
       applySettingsChange();
     });
   }
@@ -4842,6 +5034,8 @@ function initCashflowSettings() {
       expenseType = btn.dataset.value;
       syncToggleUI(expenseToggle, expenseType);
       updateFixedAmountVisibility(incomeType, expenseType);
+      updateState({ expenseType: expenseType });
+      if (expenseType === "fixed") ensureStartDateForFixed("expense");
       applySettingsChange();
     });
   }
@@ -4854,6 +5048,8 @@ function initCashflowSettings() {
       var a = this.value.length;
       this.selectionEnd = p + (a - b);
       updateState({ fixedIncomeAmount: this.value.trim() });
+      // NEW: ensure a start date exists once the user starts entering an amount.
+      ensureStartDateForFixed("income");
       recalcPlan();
     });
     fixedIncomeInput.addEventListener("blur", function () { saveFullState(); });
@@ -4866,9 +5062,28 @@ function initCashflowSettings() {
       var a = this.value.length;
       this.selectionEnd = p + (a - b);
       updateState({ fixedExpenseAmount: this.value.trim() });
+      ensureStartDateForFixed("expense");
       recalcPlan();
     });
     fixedExpenseInput.addEventListener("blur", function () { saveFullState(); });
+  }
+
+  // NEW: start-date change handlers — patch state, recalculate, refresh summary.
+  if (incomeStartDateInput) {
+    incomeStartDateInput.addEventListener("change", function () {
+      var v = this.value || "";
+      updateState({ incomeStartDate: v });
+      recalcPlan();
+      saveFullState();
+    });
+  }
+  if (expenseStartDateInput) {
+    expenseStartDateInput.addEventListener("change", function () {
+      var v = this.value || "";
+      updateState({ expenseStartDate: v });
+      recalcPlan();
+      saveFullState();
+    });
   }
 
   function onFreqClick(block, e) {
@@ -4917,8 +5132,11 @@ function initCashflowSettings() {
   }
 
   function updateFrequencyVisibility(inc, exp) {
-    if (incomeFreqBlock) incomeFreqBlock.classList.toggle("visible", inc === "variable");
-    if (expenseFreqBlock) expenseFreqBlock.classList.toggle("visible", exp === "variable");
+    // NEW: frequency selector is shown in BOTH modes — periodic schedules
+    // (weekly/biweekly/monthly/custom) apply to both fixed and variable sides.
+    if (incomeFreqBlock) incomeFreqBlock.classList.toggle("visible", true);
+    if (expenseFreqBlock) expenseFreqBlock.classList.toggle("visible", true);
+    void inc; void exp;
   }
 
   function updateMonthDaysVisibility(freq, type) {
@@ -4957,14 +5175,58 @@ var eventSubmitBtn = document.getElementById("eventSubmit");
 
 var selectedEventType = "income";
 
+// NEW: shared helper — which sides are currently in periodic ("fixed") mode.
+function getFixedSides() {
+  var st = (typeof getState === "function") ? getState() : {};
+  return {
+    income:  (st.incomeType  || "fixed") === "fixed",
+    expense: (st.expenseType || "fixed") === "fixed"
+  };
+}
+
+// NEW: sync the editor's type-toggle disabled state to the side configuration.
+function syncEventEditorTypeAvailability() {
+  if (!eventTypeToggle) return;
+  var fixed = getFixedSides();
+  var btns = eventTypeToggle.querySelectorAll(".mode-btn");
+  for (var i = 0; i < btns.length; i++) {
+    var v = btns[i].dataset.value;
+    var isLocked = (v === "income" && fixed.income) || (v === "expense" && fixed.expense);
+    btns[i].classList.toggle("mode-btn--locked", !!isLocked);
+    btns[i].disabled = !!isLocked;
+    btns[i].setAttribute("aria-disabled", isLocked ? "true" : "false");
+    if (isLocked) {
+      btns[i].setAttribute("title", t("flex.events.disabledTypeShort"));
+    } else {
+      btns[i].removeAttribute("title");
+    }
+  }
+  // Hint row inside the editor
+  var hintEl = document.getElementById("eventEditorLockedHint");
+  var bothLocked = fixed.income && fixed.expense;
+  var anyLocked = fixed.income || fixed.expense;
+  if (hintEl) {
+    hintEl.textContent = t("flex.events.disabledHint");
+    hintEl.style.display = anyLocked ? "" : "none";
+  }
+  // Submit + amount disabled when both sides are locked.
+  if (eventSubmitBtn) eventSubmitBtn.disabled = !!bothLocked;
+  if (eventAmountInput) eventAmountInput.disabled = !!bothLocked;
+}
+
 function openEventEditor() {
-  selectedEventType = "income";
-  if (eventTypeToggle) syncEventTypeUI("income");
+  // NEW: pick the first side that is currently NOT fixed as default.
+  var fixed = getFixedSides();
+  var defaultType = !fixed.income ? "income"
+                   : (!fixed.expense ? "expense" : "income"); // both locked → still "income" (submit disabled)
+  selectedEventType = defaultType;
+  if (eventTypeToggle) syncEventTypeUI(defaultType);
   if (eventAmountInput) eventAmountInput.value = "";
   if (eventDateInput) {
     var today = new Date();
     eventDateInput.value = today.toISOString().slice(0, 10);
   }
+  syncEventEditorTypeAvailability();
   ProtoSheet.open(eventEditorSheet, eventEditorOverlay);
 }
 
@@ -4985,6 +5247,14 @@ if (eventTypeToggle) {
   eventTypeToggle.addEventListener("click", function (e) {
     var btn = e.target.closest(".mode-btn");
     if (!btn) return;
+    // NEW: locked side button → toast hint, no selection change.
+    if (btn.disabled || btn.classList.contains("mode-btn--locked")) {
+      haptic("error");
+      if (typeof showToast === "function") {
+        showToast(t("flex.events.disabledHint"), "info");
+      }
+      return;
+    }
     haptic("light");
     selectedEventType = btn.dataset.value;
     syncEventTypeUI(selectedEventType);
@@ -5004,6 +5274,17 @@ if (typeof window !== "undefined" && window.visualViewport) {
 
 if (eventSubmitBtn) {
   eventSubmitBtn.addEventListener("click", function () {
+    // NEW: defensive check — block submit if the chosen side is in periodic mode.
+    var fixedSides = getFixedSides();
+    if ((selectedEventType === "income"  && fixedSides.income) ||
+        (selectedEventType === "expense" && fixedSides.expense)) {
+      haptic("error");
+      if (typeof showToast === "function") {
+        showToast(t("flex.events.disabledHint"), "info");
+      }
+      return;
+    }
+
     var rawAmount = parseNumber(eventAmountInput?.value || "0");
     if (!rawAmount) {
       haptic("error");
@@ -8174,18 +8455,33 @@ function renderFlexModelSummary() {
   function sideConfig(side) {
     if (side === "income") {
       return {
-        type:   s.incomeType || "fixed",
-        freq:   s.incomeFrequency || "monthly",
-        amount: s.fixedIncomeAmount,
-        days:   Array.isArray(s.incomeMonthDays) ? s.incomeMonthDays : []
+        type:      s.incomeType || "fixed",
+        freq:      s.incomeFrequency || "monthly",
+        amount:    s.fixedIncomeAmount,
+        days:      Array.isArray(s.incomeMonthDays) ? s.incomeMonthDays : [],
+        // NEW: anchor for periodic schedule
+        startDate: s.incomeStartDate || ""
       };
     }
     return {
-      type:   s.expenseType || "fixed",
-      freq:   s.expenseFrequency || "monthly",
-      amount: s.fixedExpenseAmount,
-      days:   Array.isArray(s.expenseMonthDays) ? s.expenseMonthDays : []
+      type:      s.expenseType || "fixed",
+      freq:      s.expenseFrequency || "monthly",
+      amount:    s.fixedExpenseAmount,
+      days:      Array.isArray(s.expenseMonthDays) ? s.expenseMonthDays : [],
+      // NEW: anchor for periodic schedule
+      startDate: s.expenseStartDate || ""
     };
+  }
+
+  // NEW: format a Date as "10 мая 2026" (RU genitive) or localized.
+  function formatHumanDate(d) {
+    if (!(d instanceof Date) || isNaN(d.getTime())) return "";
+    var day = d.getDate();
+    var year = d.getFullYear();
+    var monthName = (typeof getMonthNameGenitive === "function")
+      ? getMonthNameGenitive(d.getMonth())
+      : (typeof getMonthName === "function" ? getMonthName(d.getMonth()) : String(d.getMonth() + 1));
+    return day + " " + monthName + " " + year;
   }
 
   function sideTypeText(c, isExpense) {
@@ -8230,7 +8526,7 @@ function renderFlexModelSummary() {
     var typeMod    = (c.type === "fixed") ? "fixed" : "variable";
 
     // Determine amount + frequency line independently for each side.
-    var amountHtml, freqText, amountMissing = false;
+    var amountHtml, freqText, amountMissing = false, periodicMetaHtml = "";
 
     if (c.type === "fixed") {
       var amt = parseAmount(c.amount);
@@ -8243,8 +8539,43 @@ function renderFlexModelSummary() {
             escapeHtml(t("flex.amount.notSet")) +
           '</span>';
       }
-      // Fixed type implies monthly recurrence (frequency selector is hidden in UI).
-      freqText = t("flex.current.monthlyImplicit");
+      // NEW: real selected frequency (was forced to "monthly").
+      freqText = capitalize(freqLabel(c.freq));
+      if (c.freq === "custom") {
+        freqText += " \u00B7 " + datesCountText(c.days.length);
+      }
+
+      // NEW: periodic meta — Start + Next occurrence (only meaningful when set).
+      if (amt > 0) {
+        var startStr, nextStr;
+        if (c.startDate) {
+          var startD = new Date(c.startDate);
+          if (!isNaN(startD.getTime())) startStr = formatHumanDate(startD);
+          var nextD = (typeof calculateNextOccurrence === "function")
+            ? calculateNextOccurrence(c.startDate, c.freq, c.days)
+            : null;
+          if (nextD) nextStr = formatHumanDate(nextD);
+        }
+
+        var startInner = startStr
+          ? escapeHtml(startStr)
+          : '<span class="cf-side-meta-placeholder">' + escapeHtml(t("flex.current.startNotSet")) + '</span>';
+        var nextInner = nextStr
+          ? escapeHtml(nextStr)
+          : '<span class="cf-side-meta-placeholder">—</span>';
+
+        periodicMetaHtml =
+          '<div class="cf-side-meta">' +
+            '<div class="cf-side-meta-row">' +
+              '<span class="cf-side-meta-label">' + escapeHtml(t("flex.current.start")) + '</span>' +
+              '<span class="cf-side-meta-value">' + startInner + '</span>' +
+            '</div>' +
+            '<div class="cf-side-meta-row">' +
+              '<span class="cf-side-meta-label">' + escapeHtml(t("flex.current.next")) + '</span>' +
+              '<span class="cf-side-meta-value cf-side-meta-value--accent">' + nextInner + '</span>' +
+            '</div>' +
+          '</div>';
+      }
     } else {
       // Variable: amount comes from individual financial events, not a fixed input.
       amountHtml =
@@ -8276,6 +8607,7 @@ function renderFlexModelSummary() {
           '<span class="cf-side-freq-icon">' + calendarSvg() + '</span>' +
           '<span class="cf-side-freq-text">' + escapeHtml(freqText) + '</span>' +
         '</div>' +
+        periodicMetaHtml +
       '</div>'
     );
   }
@@ -8287,16 +8619,17 @@ function renderFlexModelSummary() {
     var isExpense = !isIncome;
     var parts     = [capitalize(sideTypeText(c, isExpense))];
 
+    var freqText = capitalize(freqLabel(c.freq));
+    if (c.freq === "custom") {
+      freqText += " \u00B7 " + datesCountText(c.days.length);
+    }
+
     if (c.type === "fixed") {
       var amt = parseAmount(c.amount);
       parts.push(amt > 0 ? fmtMoney(amt) : t("flex.amount.notSet"));
-      parts.push(t("flex.current.monthlyImplicit"));
+      parts.push(freqText);
     } else {
-      var freq = capitalize(freqLabel(c.freq));
-      if (c.freq === "custom") {
-        freq += " \u00B7 " + datesCountText(c.days.length);
-      }
-      parts.push(freq);
+      parts.push(freqText);
       parts.push(t("flex.current.byEvents"));
     }
     var label = isIncome ? t("flex.current.income") : t("flex.current.expenses");
@@ -8356,5 +8689,43 @@ function renderFlexModelSummary() {
 
   // ── 4) Helper text (refresh on language change) ──
   var helper = document.getElementById("cfCurrentModelHelper");
-  if (helper) helper.textContent = t("flex.current.helper");
+  if (helper) {
+    // NEW: switch helper text to the editing hint when periodic mode is active.
+    var anyFixed = (s.incomeType || "fixed") === "fixed"
+                || (s.expenseType || "fixed") === "fixed";
+    helper.textContent = anyFixed ? t("flex.current.editHint") : t("flex.current.helper");
+  }
+
+  // NEW ── 5) +Add Event button state — fully blocked when both sides are periodic.
+  var addEventBtn = document.getElementById("addFinancialEvent");
+  if (addEventBtn) {
+    var bothPeriodic = (s.incomeType || "fixed") === "fixed"
+                    && (s.expenseType || "fixed") === "fixed";
+    addEventBtn.classList.toggle("add-event-btn--blocked", !!bothPeriodic);
+    addEventBtn.setAttribute("aria-disabled", bothPeriodic ? "true" : "false");
+    if (bothPeriodic) {
+      addEventBtn.setAttribute("title", t("flex.events.disabledShort"));
+      // Bind a one-shot click handler that surfaces a toast hint.
+      if (!addEventBtn.dataset.lockHandlerBound) {
+        addEventBtn.addEventListener("click", function (ev) {
+          if (this.classList.contains("add-event-btn--blocked")) {
+            ev.stopPropagation();
+            ev.preventDefault();
+            haptic("error");
+            if (typeof showToast === "function") {
+              showToast(t("flex.events.disabledHint"), "info");
+            }
+          }
+        }, true);
+        addEventBtn.dataset.lockHandlerBound = "1";
+      }
+    } else {
+      addEventBtn.removeAttribute("title");
+    }
+  }
+
+  // NEW ── 6) Keep the open event editor in sync (e.g. user toggled type while sheet open).
+  if (typeof syncEventEditorTypeAvailability === "function") {
+    syncEventEditorTypeAvailability();
+  }
 }

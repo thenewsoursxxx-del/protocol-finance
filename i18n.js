@@ -103,6 +103,18 @@
       "flex.dates.notSelected": "даты не выбраны",
       "flex.dates.count": "{n} даты",
 
+      // NEW: periodic mode (start date + next occurrence) i18n
+      "flex.start.label.income": "Дата первой выплаты",
+      "flex.start.label.expense": "Дата первого расхода",
+      "flex.start.placeholder": "Выберите дату",
+      "flex.current.start": "Начало",
+      "flex.current.next": "Следующее",
+      "flex.current.startNotSet": "укажите дату старта",
+      "flex.current.editHint": "Измените сумму, частоту или дату старта — прогноз обновится мгновенно",
+      "flex.events.disabledHint": "В периодическом режиме события добавляются автоматически. Редактируйте сумму или дату старта.",
+      "flex.events.disabledShort": "Доступно только в нефиксированном режиме",
+      "flex.events.disabledTypeShort": "Эта категория настроена как периодическая",
+
       // ── Lock overlay ──
       "lock.reset": "Начать сначала",
 
@@ -712,6 +724,18 @@
       "flex.amount.notSet": "amount not set",
       "flex.dates.notSelected": "no dates selected",
       "flex.dates.count": "{n} dates",
+
+      // NEW: periodic mode (start date + next occurrence) i18n
+      "flex.start.label.income": "Date of first payment",
+      "flex.start.label.expense": "Date of first expense",
+      "flex.start.placeholder": "Select a date",
+      "flex.current.start": "Start",
+      "flex.current.next": "Next",
+      "flex.current.startNotSet": "set a start date",
+      "flex.current.editHint": "Change amount, frequency or start date — the forecast updates instantly",
+      "flex.events.disabledHint": "In periodic mode events are added automatically. Edit the amount or start date.",
+      "flex.events.disabledShort": "Available only in variable mode",
+      "flex.events.disabledTypeShort": "This category is set to periodic",
 
       // ── Lock overlay ──
       "lock.reset": "Start over",
