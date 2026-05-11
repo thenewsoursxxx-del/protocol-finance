@@ -156,8 +156,8 @@ viewport-fit=cover" />
         <div class="cf-fixed-hint-line" id="incomeFixedHintLine"></div>
         <div class="cf-fixed-hint-helper" data-i18n="flex.fixedSummary.helper">Используются данные, введённые при открытии гибкой модели</div>
       </div>
-      <!-- NEW: логика fixed vs variable 11.05.2026 — amount + start date appear ONLY in variable mode -->
-      <div id="fixedIncomeWrap" class="cf-fixed-amount-wrap cf-variable-inputs-wrap" style="display:none">
+      <!-- NEW: логика fixed vs variable 11.05.2026 — amount + start date appear ONLY in non-fixed (variable) mode -->
+      <div id="fixedIncomeWrap" class="cf-fixed-amount-wrap cf-nonfixed-wrap" style="display:none">
         <div class="input-wrap">
           <input id="fixedIncomeInput" type="text" inputmode="numeric" class="cf-amount-input" data-i18n-placeholder="flex.variable.amountPlaceholder.income" placeholder="Сумма дохода" />
         </div>
@@ -205,8 +205,8 @@ viewport-fit=cover" />
         <div class="cf-fixed-hint-line" id="expenseFixedHintLine"></div>
         <div class="cf-fixed-hint-helper" data-i18n="flex.fixedSummary.helper">Используются данные, введённые при открытии гибкой модели</div>
       </div>
-      <!-- NEW: логика fixed vs variable 11.05.2026 — amount + start date appear ONLY in variable mode -->
-      <div id="fixedExpenseWrap" class="cf-fixed-amount-wrap cf-variable-inputs-wrap" style="display:none">
+      <!-- NEW: логика fixed vs variable 11.05.2026 — amount + start date appear ONLY in non-fixed (variable) mode -->
+      <div id="fixedExpenseWrap" class="cf-fixed-amount-wrap cf-nonfixed-wrap" style="display:none">
         <div class="input-wrap">
           <input id="fixedExpenseInput" type="text" inputmode="numeric" class="cf-amount-input" data-i18n-placeholder="flex.variable.amountPlaceholder.expense" placeholder="Сумма расхода" />
         </div>

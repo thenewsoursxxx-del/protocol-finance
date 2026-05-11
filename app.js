@@ -4812,6 +4812,11 @@ function syncFlexibleUI() {
   // ── Build labels ──
   var incType = s.incomeType || "fixed";
   var expType = s.expenseType || "fixed";
+
+  // NEW: логика fixed vs variable 11.05.2026 — enforce visibility from EVERY entry
+  // path that funnels through syncFlexibleUI (state hydrate, language change, etc.).
+  applyFlexibleSideVisibility(incType, expType);
+
   var incTypeName = incType === "fixed" ? t("freq.fixed") : t("freq.variable");
   var expTypeName = expType === "fixed" ? t("freq.fixedPlural") : t("freq.variablePlural");
   var incFreqName = incType === "fixed"
@@ -4855,6 +4860,55 @@ function syncFlexibleUI() {
   if (expCard) expCard.classList.add("cf-card--configured");
 
   if (typeof renderFlexModelSummary === "function") renderFlexModelSummary();
+}
+
+/**
+ * NEW: логика fixed vs variable 11.05.2026 — module-level visibility enforcer.
+ *
+ * Single source of truth for showing/hiding the per-side UI sections.
+ * Called from BOTH initCashflowSettings() (init + toggle handlers + applySettingsChange)
+ * AND syncFlexibleUI() (which can be triggered from any state mutation path).
+ *
+ *  FIXED   → show #incomeFixedHint, hide #fixedIncomeWrap + #incomeFrequencySelector
+ *  VARIABLE → hide #incomeFixedHint, show #fixedIncomeWrap + #incomeFrequencySelector
+ *
+ * Uses style.display directly so the elements truly leave the layout flow in FIXED
+ * mode (the .visible class on .frequency-selector only collapses max-height/opacity).
+ */
+function applyFlexibleSideVisibility(incType, expType) {
+  var incHint     = document.getElementById("incomeFixedHint");
+  var expHint     = document.getElementById("expenseFixedHint");
+  var incWrap     = document.getElementById("fixedIncomeWrap");
+  var expWrap     = document.getElementById("fixedExpenseWrap");
+  var incFreqBlk  = document.getElementById("incomeFrequencySelector");
+  var expFreqBlk  = document.getElementById("expenseFrequencySelector");
+
+  var incIsFixed = (incType || "fixed") === "fixed";
+  var expIsFixed = (expType || "fixed") === "fixed";
+
+  if (incHint)    incHint.style.display    = incIsFixed ? "block" : "none";
+  if (incWrap)    incWrap.style.display    = incIsFixed ? "none"  : "block";
+  if (incFreqBlk) {
+    if (incIsFixed) {
+      incFreqBlk.classList.remove("visible");
+      incFreqBlk.style.display = "none";
+    } else {
+      incFreqBlk.style.display = "";
+      incFreqBlk.classList.add("visible");
+    }
+  }
+
+  if (expHint)    expHint.style.display    = expIsFixed ? "block" : "none";
+  if (expWrap)    expWrap.style.display    = expIsFixed ? "none"  : "block";
+  if (expFreqBlk) {
+    if (expIsFixed) {
+      expFreqBlk.classList.remove("visible");
+      expFreqBlk.style.display = "none";
+    } else {
+      expFreqBlk.style.display = "";
+      expFreqBlk.classList.add("visible");
+    }
+  }
 }
 
 function applyPremiumUI(isPremium) {
@@ -5158,14 +5212,6 @@ function initCashflowSettings() {
     recalcPlan();
   }
 
-  function updateFrequencyVisibility(inc, exp) {
-    // NEW: логика fixed vs variable 11.05.2026 — frequency buttons appear ONLY in VARIABLE mode.
-    // In FIXED mode there are no schedule controls at all (the simple-model income/expense
-    // value is treated as monthly and is the only source of truth).
-    if (incomeFreqBlock) incomeFreqBlock.classList.toggle("visible", inc === "variable");
-    if (expenseFreqBlock) expenseFreqBlock.classList.toggle("visible", exp === "variable");
-  }
-
   function updateMonthDaysVisibility(freq, type) {
     var wrap = type === "income" ? incomeMonthDaysWrap : expenseMonthDaysWrap;
     var sideType = type === "income"
@@ -5175,24 +5221,11 @@ function initCashflowSettings() {
     if (wrap) wrap.style.display = (freq === "custom" && sideType === "variable") ? "block" : "none";
   }
 
-  // NEW: логика fixed vs variable 11.05.2026 — the wrap that holds the amount input
-  // AND the start-date picker now belongs to VARIABLE mode (the user-configured schedule).
-  function updateVariableInputsVisibility(inc, exp) {
-    if (fixedIncomeWrap) fixedIncomeWrap.style.display = (inc === "variable") ? "block" : "none";
-    if (fixedExpenseWrap) fixedExpenseWrap.style.display = (exp === "variable") ? "block" : "none";
-  }
-
-  // NEW: логика fixed vs variable 11.05.2026 — small read-only info block visible only in FIXED mode.
-  function updateFixedHintVisibility(inc, exp) {
-    if (incomeFixedHint) incomeFixedHint.style.display = (inc === "fixed") ? "block" : "none";
-    if (expenseFixedHint) expenseFixedHint.style.display = (exp === "fixed") ? "block" : "none";
-  }
-
-  // NEW: convenience — apply all three side-related visibility toggles in one place.
+  // NEW: логика fixed vs variable 11.05.2026 — thin wrapper around the module-level
+  // applyFlexibleSideVisibility so the toggle handlers and applySettingsChange share
+  // a single source of truth for show/hide rules (no duplicated logic).
   function syncSideUIVisibility(inc, exp) {
-    updateVariableInputsVisibility(inc, exp);
-    updateFixedHintVisibility(inc, exp);
-    updateFrequencyVisibility(inc, exp);
+    applyFlexibleSideVisibility(inc, exp);
   }
 
   function syncToggleUI(container, value) {
@@ -8655,32 +8688,39 @@ function renderFlexModelSummary() {
   }
 
   // ── Compact one-line summary used on the inline card slots ──
-  // NEW: логика fixed vs variable 11.05.2026 — both modes have a concrete amount.
-  // The difference is the source (s.income vs s.fixedIncomeAmount, handled in sideConfig)
-  // and whether a start date is appended (variable only).
+  // NEW: логика fixed vs variable 11.05.2026 —
+  //   • FIXED:   "Доход: Фиксированный · данные из начального состояния"
+  //              (no amount placeholder, no frequency — it's read-only initial data).
+  //   • VARIABLE: "Доход: Нефиксированный · 125 000 ₽ · Раз в неделю · Начало: 17 мая 2026"
   function buildInlineLine(side) {
     var c         = sideConfig(side);
     var isIncome  = (side === "income");
     var isExpense = !isIncome;
-    var parts     = [capitalize(sideTypeText(c, isExpense))];
+    var label     = isIncome ? t("flex.current.income") : t("flex.current.expenses");
+    var typeStr   = capitalize(sideTypeText(c, isExpense));
+
+    if (c.type === "fixed") {
+      return label + ": " + typeStr + " \u00B7 " + t("flex.fixedSummary.initial");
+    }
+
+    var parts = [typeStr];
 
     var amt = parseAmount(c.amount);
     parts.push(amt > 0 ? fmtMoney(amt) : t("flex.amount.notSet"));
 
     var freqText = capitalize(freqLabel(c.freq));
-    if (c.type === "variable" && c.freq === "custom") {
+    if (c.freq === "custom") {
       freqText += " \u00B7 " + datesCountText(c.days.length);
     }
     parts.push(freqText);
 
-    if (c.type === "variable" && c.startDate) {
+    if (c.startDate) {
       var sd = new Date(c.startDate);
       if (!isNaN(sd.getTime())) {
-        parts.push((typeof t === "function" ? t("flex.current.start") : "Start") + ": " + formatHumanDate(sd));
+        parts.push(t("flex.current.start") + ": " + formatHumanDate(sd));
       }
     }
 
-    var label = isIncome ? t("flex.current.income") : t("flex.current.expenses");
     return label + ": " + parts.join(" \u00B7 ");
   }
 
