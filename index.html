@@ -151,13 +151,18 @@ viewport-fit=cover" />
         <button class="mode-btn active" data-value="fixed" data-i18n="flex.fixed">Фиксированный</button>
         <button class="mode-btn" data-value="variable" data-i18n="flex.variable">Нефиксированный</button>
       </div>
-      <div id="fixedIncomeWrap" class="cf-fixed-amount-wrap" style="display:none">
+      <!-- NEW: логика fixed vs variable 11.05.2026 — read-only summary shown only in fixed mode -->
+      <div id="incomeFixedHint" class="cf-fixed-hint" style="display:none">
+        <div class="cf-fixed-hint-line" id="incomeFixedHintLine"></div>
+        <div class="cf-fixed-hint-helper" data-i18n="flex.fixedSummary.helper">Используются данные, введённые при открытии гибкой модели</div>
+      </div>
+      <!-- NEW: логика fixed vs variable 11.05.2026 — amount + start date appear ONLY in variable mode -->
+      <div id="fixedIncomeWrap" class="cf-fixed-amount-wrap cf-variable-inputs-wrap" style="display:none">
         <div class="input-wrap">
-          <input id="fixedIncomeInput" type="text" inputmode="numeric" class="cf-amount-input" data-i18n-placeholder="flex.incomeAmount.placeholder" placeholder="Сумма дохода" />
+          <input id="fixedIncomeInput" type="text" inputmode="numeric" class="cf-amount-input" data-i18n-placeholder="flex.variable.amountPlaceholder.income" placeholder="Сумма дохода" />
         </div>
-        <!-- NEW: start date for periodic mode -->
         <div class="cf-startdate-row">
-          <label for="incomeStartDate" class="cf-startdate-label" data-i18n="flex.start.label.income">Дата первой выплаты</label>
+          <label for="incomeStartDate" class="cf-startdate-label" data-i18n="flex.variable.startDate.income">Дата первого поступления</label>
           <input id="incomeStartDate" type="date" class="cf-startdate-input" data-i18n-placeholder="flex.start.placeholder" />
         </div>
       </div>
@@ -195,13 +200,18 @@ viewport-fit=cover" />
         <button class="mode-btn active" data-value="fixed" data-i18n="flex.fixed">Фиксированный</button>
         <button class="mode-btn" data-value="variable" data-i18n="flex.variable">Нефиксированный</button>
       </div>
-      <div id="fixedExpenseWrap" class="cf-fixed-amount-wrap" style="display:none">
+      <!-- NEW: логика fixed vs variable 11.05.2026 — read-only summary shown only in fixed mode -->
+      <div id="expenseFixedHint" class="cf-fixed-hint" style="display:none">
+        <div class="cf-fixed-hint-line" id="expenseFixedHintLine"></div>
+        <div class="cf-fixed-hint-helper" data-i18n="flex.fixedSummary.helper">Используются данные, введённые при открытии гибкой модели</div>
+      </div>
+      <!-- NEW: логика fixed vs variable 11.05.2026 — amount + start date appear ONLY in variable mode -->
+      <div id="fixedExpenseWrap" class="cf-fixed-amount-wrap cf-variable-inputs-wrap" style="display:none">
         <div class="input-wrap">
-          <input id="fixedExpenseInput" type="text" inputmode="numeric" class="cf-amount-input" data-i18n-placeholder="flex.expenseAmount.placeholder" placeholder="Сумма расхода" />
+          <input id="fixedExpenseInput" type="text" inputmode="numeric" class="cf-amount-input" data-i18n-placeholder="flex.variable.amountPlaceholder.expense" placeholder="Сумма расхода" />
         </div>
-        <!-- NEW: start date for periodic mode -->
         <div class="cf-startdate-row">
-          <label for="expenseStartDate" class="cf-startdate-label" data-i18n="flex.start.label.expense">Дата первого расхода</label>
+          <label for="expenseStartDate" class="cf-startdate-label" data-i18n="flex.variable.startDate.expense">Дата первого расхода</label>
           <input id="expenseStartDate" type="date" class="cf-startdate-input" data-i18n-placeholder="flex.start.placeholder" />
         </div>
       </div>

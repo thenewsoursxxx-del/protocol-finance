@@ -2966,6 +2966,51 @@ body.flip-fix-pending .flip-wrapper {
   margin-bottom: 6px;
 }
 
+/* NEW: логика fixed vs variable 11.05.2026 — read-only summary card shown ONLY
+   in FIXED mode (no input fields visible at all). */
+.cf-fixed-hint {
+  margin-top: 12px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: linear-gradient(
+    135deg,
+    rgba(16, 185, 129, 0.07) 0%,
+    rgba(16, 185, 129, 0.03) 100%
+  );
+  border: 1px solid rgba(16, 185, 129, 0.18);
+  position: relative;
+  overflow: hidden;
+}
+
+.cf-fixed-hint::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 3px;
+  background: linear-gradient(180deg, #10b981 0%, rgba(16, 185, 129, 0.4) 100%);
+  pointer-events: none;
+}
+
+.cf-fixed-hint-line {
+  font-size: 15px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.92);
+  letter-spacing: 0.01em;
+  line-height: 1.35;
+  padding-left: 8px;
+}
+
+.cf-fixed-hint-helper {
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.46);
+  line-height: 1.4;
+  padding-left: 8px;
+}
+
 .cf-amount-input {
   width: 100%;
   padding: 14px;
