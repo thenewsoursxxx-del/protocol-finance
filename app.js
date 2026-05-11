@@ -4876,37 +4876,50 @@ function syncFlexibleUI() {
  * mode (the .visible class on .frequency-selector only collapses max-height/opacity).
  */
 function applyFlexibleSideVisibility(incType, expType) {
-  var incHint     = document.getElementById("incomeFixedHint");
-  var expHint     = document.getElementById("expenseFixedHint");
-  var incWrap     = document.getElementById("fixedIncomeWrap");
-  var expWrap     = document.getElementById("fixedExpenseWrap");
-  var incFreqBlk  = document.getElementById("incomeFrequencySelector");
-  var expFreqBlk  = document.getElementById("expenseFrequencySelector");
-
   var incIsFixed = (incType || "fixed") === "fixed";
   var expIsFixed = (expType || "fixed") === "fixed";
 
-  if (incHint)    incHint.style.display    = incIsFixed ? "block" : "none";
-  if (incWrap)    incWrap.style.display    = incIsFixed ? "none"  : "block";
-  if (incFreqBlk) {
-    if (incIsFixed) {
-      incFreqBlk.classList.remove("visible");
-      incFreqBlk.style.display = "none";
-    } else {
-      incFreqBlk.style.display = "";
-      incFreqBlk.classList.add("visible");
-    }
-  }
+  applySideVisibility(
+    incIsFixed,
+    document.getElementById("incomeFixedHint"),
+    document.getElementById("fixedIncomeWrap"),
+    document.getElementById("incomeFrequencySelector")
+  );
+  applySideVisibility(
+    expIsFixed,
+    document.getElementById("expenseFixedHint"),
+    document.getElementById("fixedExpenseWrap"),
+    document.getElementById("expenseFrequencySelector")
+  );
+}
 
-  if (expHint)    expHint.style.display    = expIsFixed ? "block" : "none";
-  if (expWrap)    expWrap.style.display    = expIsFixed ? "none"  : "block";
-  if (expFreqBlk) {
-    if (expIsFixed) {
-      expFreqBlk.classList.remove("visible");
-      expFreqBlk.style.display = "none";
-    } else {
-      expFreqBlk.style.display = "";
-      expFreqBlk.classList.add("visible");
+// Single rule set for ONE side (income OR expense):
+//   FIXED    → show hint only; hide amount+date wrap and frequency selector.
+//   VARIABLE → hide hint; show amount+date wrap (sum + date inputs) AND frequency selector.
+// Using style.display = "" intentionally clears the inline display:none from the
+// HTML so the element's default CSS block layout kicks back in. Inner children
+// (.input-wrap with the amount field, .cf-startdate-row with the date) are also
+// reset so nothing can leave the "Сумма" input hidden in variable mode.
+function applySideVisibility(isFixed, hintEl, wrapEl, freqBlk) {
+  if (isFixed) {
+    if (hintEl) hintEl.style.display = "";
+    if (wrapEl) wrapEl.style.display = "none";
+    if (freqBlk) {
+      freqBlk.classList.remove("visible");
+      freqBlk.style.display = "none";
+    }
+  } else {
+    if (hintEl) hintEl.style.display = "none";
+    if (wrapEl) {
+      wrapEl.style.display = "";
+      var inputWrap = wrapEl.querySelector(".input-wrap");
+      var startRow  = wrapEl.querySelector(".cf-startdate-row");
+      if (inputWrap) inputWrap.style.display = "";
+      if (startRow)  startRow.style.display  = "";
+    }
+    if (freqBlk) {
+      freqBlk.style.display = "";
+      freqBlk.classList.add("visible");
     }
   }
 }
