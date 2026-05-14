@@ -285,6 +285,18 @@
       "profile.settings": "⚙️ Настройки",
       "profile.goalHistory": "📋 История целей",
       "profile.resetPlan": "🔄 Сбросить план",
+      // NEW: Report problem feature
+      "profile.reportProblem": "🐞 Сообщить о проблеме",
+      "report.modal.title": "Сообщить о проблеме",
+      "report.modal.subtitle": "Ваше сообщение поможет нам улучшить Protocol",
+      "report.modal.placeholder": "Опишите проблему как можно подробнее…",
+      "report.modal.send": "Отправить",
+      "report.modal.cancel": "Отмена",
+      "report.modal.empty": "Пожалуйста, опишите проблему",
+      "report.modal.sending": "Отправляем…",
+      "report.toast.success": "Спасибо! Мы посмотрим и ответим как можно скорее",
+      "report.toast.failed": "Не удалось отправить отчёт. Попробуйте позже",
+      "report.toast.noUser": "Нужно открыть приложение через Telegram, чтобы отправить отчёт",
 
       // ── Confirm reset ──
       "reset.text": "Если вы нажмёте «Начать сначала», весь прогресс и накопления будут сброшены.",
@@ -921,6 +933,18 @@
       "profile.settings": "⚙️ Settings",
       "profile.goalHistory": "📋 Goal History",
       "profile.resetPlan": "🔄 Reset Plan",
+      // NEW: Report problem feature
+      "profile.reportProblem": "🐞 Report a problem",
+      "report.modal.title": "Report a problem",
+      "report.modal.subtitle": "Your message helps us improve Protocol",
+      "report.modal.placeholder": "Describe the problem in as much detail as possible…",
+      "report.modal.send": "Send",
+      "report.modal.cancel": "Cancel",
+      "report.modal.empty": "Please describe the problem",
+      "report.modal.sending": "Sending…",
+      "report.toast.success": "Thanks! We'll look into it and reply as soon as possible",
+      "report.toast.failed": "Could not send the report. Please try again later",
+      "report.toast.noUser": "Open the app via Telegram to send a report",
 
       // ── Confirm reset ──
       "reset.text": "If you press \"Start over\", all progress and savings will be reset.",

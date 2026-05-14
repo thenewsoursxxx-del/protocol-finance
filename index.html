@@ -615,6 +615,8 @@ Protocol анализирует цель…
 
 <button id="settingsBtn" class="profile-btn" data-i18n="profile.settings">⚙️ Настройки</button>
 <button id="goalHistoryBtn" class="profile-btn" data-i18n="profile.goalHistory">📋 История целей</button>
+<!-- NEW: Report problem feature — кнопка "Сообщить о проблеме" в стиле emerald accent -->
+<button id="reportProblemBtn" class="profile-btn profile-btn--report" data-i18n="profile.reportProblem">🐞 Сообщить о проблеме</button>
 <button id="profileResetPlan" class="profile-btn danger" data-i18n="profile.resetPlan">🔄 Сбросить план</button>
 </div>
 
@@ -1337,6 +1339,27 @@ Protocol анализирует цель…
   </div>
 
   <button id="debtSaveBtn" class="unexpected-confirm-btn" style="margin-top:20px" data-i18n="debts.save">Сохранить</button>
+</div>
+
+<!-- ===== REPORT PROBLEM SHEET ===== -->
+<!-- NEW: Report problem feature — bottom-sheet модалка в стиле ProtoSheet -->
+<div id="reportProblemOverlay" class="proto-sheet-overlay"></div>
+<div id="reportProblemSheet" class="proto-sheet proto-sheet--form report-sheet">
+  <button id="reportProblemClose" class="report-close-x" type="button" aria-label="Close">&times;</button>
+  <h2 style="margin-bottom:6px" data-i18n="report.modal.title">Сообщить о проблеме</h2>
+  <div class="report-subtitle" data-i18n="report.modal.subtitle">Ваше сообщение поможет нам улучшить Protocol</div>
+  <textarea
+    id="reportProblemText"
+    class="report-textarea"
+    rows="6"
+    maxlength="2000"
+    data-i18n-placeholder="report.modal.placeholder"
+    placeholder="Опишите проблему как можно подробнее…"></textarea>
+  <div class="report-counter" id="reportProblemCounter">0 / 2000</div>
+  <div class="report-actions">
+    <button id="reportProblemCancel" class="confirmBtn confirmBtn--cancel" type="button" data-i18n="report.modal.cancel">Отмена</button>
+    <button id="reportProblemSend" class="report-send-btn" type="button" data-i18n="report.modal.send">Отправить</button>
+  </div>
 </div>
 
 <!-- ===== BOTTOM SHEET ===== -->

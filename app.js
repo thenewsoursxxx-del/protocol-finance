@@ -8922,6 +8922,219 @@ function renderFlexModelSummary() {
 }
 
 /* ============================================================================
+ * NEW: Report problem feature
+ * ----------------------------------------------------------------------------
+ * Кнопка "Сообщить о проблеме" во вкладке Профиль + bottom-sheet модалка
+ * с textarea. Отправка идёт через supabase.saveReport(message) (см. supabase.js).
+ *
+ * Зависимости:
+ *   • ProtoSheet.open/close — единая система модалок (см. начало app.js)
+ *   • showToast(message, type) — единая система уведомлений
+ *   • haptic() — Telegram WebApp вибро-отклик
+ *   • t() — i18n
+ *   • getEl() — DOM cache
+ *   • window.saveReport — async helper из supabase.js
+ *   • window.getTelegramIdentity — для проверки наличия Telegram-пользователя
+ *
+ * Поведение:
+ *   1) Нажатие на #reportProblemBtn → openReportSheet()
+ *   2) В модалке — textarea + счётчик + Отмена / Отправить + крестик ✕
+ *   3) Отправка:
+ *        a) Валидация — текст не пустой;
+ *        b) Блокировка кнопки + текст "Отправляем…";
+ *        c) await window.saveReport(text);
+ *        d) Успех → toast "Спасибо…", закрыть и очистить;
+ *        e) Ошибка → toast "Не удалось…", разблокировать кнопку (поле НЕ чистим);
+ *   4) Pending: sendResolutionPush(telegram_id) — заглушка (см. ниже).
+ * ============================================================================ */
+(function initReportProblem() {
+  // NEW: Report problem feature — точка входа из вкладки Профиль.
+
+  // ── DOM refs через DOM cache ──
+  var btnOpen     = getEl("reportProblemBtn");
+  var sheet       = getEl("reportProblemSheet");
+  var overlay     = getEl("reportProblemOverlay");
+  var btnClose    = getEl("reportProblemClose");
+  var btnCancel   = getEl("reportProblemCancel");
+  var btnSend     = getEl("reportProblemSend");
+  var textArea    = getEl("reportProblemText");
+  var counterEl   = getEl("reportProblemCounter");
+
+  if (!btnOpen || !sheet || !overlay) return;
+
+  // NEW: Report problem feature — флаг защиты от двойной отправки.
+  var _isSending = false;
+
+  function openReportSheet() {
+    if (typeof haptic === "function") haptic("light");
+    if (textArea) {
+      textArea.value = "";
+      updateCounter();
+    }
+    setSendingState(false);
+    ProtoSheet.open(sheet, overlay);
+    // Фокус ставим после анимации, чтобы клавиатура не дёргала sheet вверх раньше времени.
+    setTimeout(function () {
+      if (textArea && sheet.classList.contains("open")) textArea.focus();
+    }, 320);
+  }
+
+  function closeReportSheet() {
+    if (_isSending) return; // не закрываем во время отправки
+    ProtoSheet.close(sheet, overlay, {
+      onClosed: function () {
+        if (textArea) {
+          textArea.value = "";
+          updateCounter();
+        }
+      }
+    });
+  }
+
+  function setSendingState(isSending) {
+    _isSending = !!isSending;
+    if (btnSend) {
+      btnSend.disabled = _isSending;
+      btnSend.textContent = _isSending
+        ? t("report.modal.sending")
+        : t("report.modal.send");
+    }
+    if (btnCancel) btnCancel.disabled = _isSending;
+    if (btnClose)  btnClose.disabled  = _isSending;
+    if (textArea)  textArea.disabled  = _isSending;
+  }
+
+  function updateCounter() {
+    if (!counterEl || !textArea) return;
+    var len = (textArea.value || "").length;
+    var max = textArea.maxLength > 0 ? textArea.maxLength : 2000;
+    counterEl.textContent = len + " / " + max;
+  }
+
+  // NEW: Report problem feature — debounce на счётчик, чтобы не дёргать DOM
+  // на каждое нажатие при длинных сообщениях. Сам textarea обновляется браузером
+  // мгновенно, дебаунс лишь снижает частоту обновления визуального счётчика.
+  var debouncedCounter = (typeof debounce === "function")
+    ? debounce(updateCounter, 50)
+    : updateCounter;
+
+  if (textArea) {
+    textArea.addEventListener("input", debouncedCounter);
+  }
+
+  /**
+   * NEW: Report problem feature — основная функция отправки.
+   * Никогда не throw — всегда возвращает { ok, error? } чтобы UI мог
+   * мягко обработать обе ветки и не упасть.
+   */
+  async function submitReport() {
+    if (_isSending) return;
+
+    var text = (textArea && textArea.value ? textArea.value.trim() : "");
+
+    if (!text) {
+      if (textArea) {
+        textArea.classList.remove("error");
+        // force reflow для перезапуска shake-анимации (паттерн уже используется в проекте)
+        void textArea.offsetWidth;
+        textArea.classList.add("error");
+        textArea.focus();
+      }
+      showToast(t("report.modal.empty"), "error");
+      if (typeof haptic === "function") haptic("medium");
+      return;
+    }
+
+    // Проверка наличия Telegram-пользователя ДО показа "Отправляем…",
+    // чтобы юзер сразу понял, что без Telegram-контекста отправка невозможна.
+    if (typeof window.getTelegramIdentity === "function") {
+      var who = window.getTelegramIdentity();
+      if (!who) {
+        showToast(t("report.toast.noUser"), "error");
+        if (typeof haptic === "function") haptic("error");
+        return;
+      }
+    }
+
+    setSendingState(true);
+    if (typeof haptic === "function") haptic("light");
+
+    var result = { ok: false };
+    try {
+      if (typeof window.saveReport === "function") {
+        result = await window.saveReport(text);
+      } else {
+        result = { ok: false, error: "saveReport_missing" };
+      }
+    } catch (e) {
+      console.error("[Report] submitReport exception:", e);
+      result = { ok: false, error: e && e.message ? e.message : "exception" };
+    }
+
+    if (result && result.ok) {
+      showToast(t("report.toast.success"), "success", { duration: 3500 });
+      if (typeof haptic === "function") haptic("medium");
+
+      // NEW: Report problem feature — заглушка для будущего push-уведомления
+      // о факте решения проблемы. Когда backend помечает report.resolved=true
+      // и отправляет push, эта функция станет реальной отправкой.
+      var who2 = (typeof window.getTelegramIdentity === "function")
+        ? window.getTelegramIdentity()
+        : null;
+      sendResolutionPush(who2 && who2.telegram_id);
+
+      setSendingState(false);
+      if (textArea) textArea.value = "";
+      updateCounter();
+      ProtoSheet.close(sheet, overlay);
+    } else {
+      setSendingState(false);
+      showToast(t("report.toast.failed"), "error", { duration: 3000 });
+      if (typeof haptic === "function") haptic("error");
+      // Поле НЕ чистим — пользователь может исправить и нажать снова.
+    }
+  }
+
+  /**
+   * NEW: Report problem feature — placeholder.
+   * Реальная отправка push будет привязана к событию `reports.resolved=true`
+   * на backend (Edge Function / cron) — это правильная точка отправки,
+   * потому что клиент не знает, когда отчёт фактически решён.
+   *
+   * TODO: отправить push когда проблема решена
+   *   • Backend: подписаться на UPDATE `reports` SET resolved=true
+   *   • Использовать Telegram Bot API sendMessage(chat_id=telegram_id, …)
+   *   • Помечать report.notification_sent=true после успешной доставки
+   *   • Локализация push-текста по последнему известному settings.language
+   */
+  function sendResolutionPush(telegramId) {
+    console.log(
+      "[Report] sendResolutionPush placeholder — telegram_id=" + telegramId,
+      "(будет отправлен с backend, когда отчёт получит resolved=true)"
+    );
+  }
+
+  // ── Event wiring ──
+  btnOpen.addEventListener("click", openReportSheet);
+  if (btnClose)   btnClose.addEventListener("click", closeReportSheet);
+  if (btnCancel)  btnCancel.addEventListener("click", closeReportSheet);
+  if (overlay)    overlay.addEventListener("click", closeReportSheet);
+  if (btnSend)    btnSend.addEventListener("click", submitReport);
+
+  // Свайп вниз для закрытия (как у остальных bottom-sheet модалок).
+  if (typeof ProtoSheet !== "undefined" && ProtoSheet.initSwipe) {
+    ProtoSheet.initSwipe(sheet, closeReportSheet);
+  }
+
+  // Снимаем подсветку ошибки при первом вводе.
+  if (textArea) {
+    textArea.addEventListener("focus", function () {
+      textArea.classList.remove("error");
+    });
+  }
+})();
+
+/* ============================================================================
  * OPTIMIZATION SUMMARY — Protocol Finance Mini App (app.js)
  * ============================================================================
  *
