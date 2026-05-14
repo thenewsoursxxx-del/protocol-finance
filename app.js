@@ -9005,11 +9005,143 @@ function renderFlexModelSummary() {
   var btnSend     = getEl("reportProblemSend");
   var textArea    = getEl("reportProblemText");
   var counterEl   = getEl("reportProblemCounter");
+  // NEW: Media attachment in reports
+  var fileInput   = getEl("reportMediaInput");
+  var attachBtn   = getEl("reportAttachBtn");
+  var previewEl   = getEl("reportMediaPreview");
 
   if (!btnOpen || !sheet || !overlay) return;
 
   // NEW: Report problem feature — флаг защиты от двойной отправки.
   var _isSending = false;
+
+  // NEW: Media attachment in reports — лимиты и state выбранных файлов.
+  var MAX_FILES = 5;
+  var MAX_FILE_BYTES = 25 * 1024 * 1024; // 25 MB
+  var selectedFiles = [];
+  // URL.createObjectURL → нужно отзывать через revokeObjectURL, чтобы не текла память.
+  var _previewUrls = [];
+
+  function revokePreviewUrls() {
+    for (var i = 0; i < _previewUrls.length; i++) {
+      try { URL.revokeObjectURL(_previewUrls[i]); } catch (e) { /* noop */ }
+    }
+    _previewUrls = [];
+  }
+
+  function clearSelectedFiles() {
+    selectedFiles = [];
+    revokePreviewUrls();
+    renderMediaPreview();
+    if (fileInput) fileInput.value = ""; // позволит выбрать тот же файл повторно
+  }
+
+  function formatBytes(b) {
+    if (b < 1024) return b + " B";
+    if (b < 1024 * 1024) return Math.round(b / 1024) + " KB";
+    return (b / (1024 * 1024)).toFixed(1) + " MB";
+  }
+
+  function renderMediaPreview() {
+    if (!previewEl) return;
+    revokePreviewUrls();
+    previewEl.innerHTML = "";
+
+    for (var i = 0; i < selectedFiles.length; i++) {
+      var file = selectedFiles[i];
+      var item = document.createElement("div");
+      item.className = "report-media-item";
+      item.setAttribute("data-idx", String(i));
+
+      var url = URL.createObjectURL(file);
+      _previewUrls.push(url);
+
+      var thumb;
+      if (file.type && file.type.indexOf("video/") === 0) {
+        thumb = document.createElement("video");
+        thumb.src = url;
+        thumb.muted = true;
+        thumb.playsInline = true;
+        thumb.preload = "metadata";
+        // Чтобы появился первый кадр в превью на iOS — добавляем #t=0.1
+        thumb.src = url + "#t=0.1";
+      } else {
+        thumb = document.createElement("img");
+        thumb.src = url;
+        thumb.alt = "";
+      }
+      item.appendChild(thumb);
+
+      var badge = document.createElement("div");
+      badge.className = "report-media-item__badge";
+      badge.textContent = (file.type && file.type.indexOf("video/") === 0 ? "VID" : "IMG")
+        + " · " + formatBytes(file.size);
+      item.appendChild(badge);
+
+      var rm = document.createElement("button");
+      rm.type = "button";
+      rm.className = "report-media-item__remove";
+      rm.setAttribute("aria-label", "Remove");
+      rm.textContent = "×";
+      rm.disabled = _isSending;
+      // bind index через closure
+      (function (idx) {
+        rm.addEventListener("click", function (e) {
+          e.stopPropagation();
+          if (_isSending) return;
+          selectedFiles.splice(idx, 1);
+          renderMediaPreview();
+          syncAttachBtnState();
+          if (typeof haptic === "function") haptic("light");
+        });
+      })(i);
+      item.appendChild(rm);
+
+      previewEl.appendChild(item);
+    }
+  }
+
+  function syncAttachBtnState() {
+    if (!attachBtn) return;
+    var full = selectedFiles.length >= MAX_FILES;
+    attachBtn.classList.toggle("report-attach-btn--full", full);
+    attachBtn.disabled = full || _isSending;
+  }
+
+  function onFilesPicked(fileList) {
+    if (!fileList || !fileList.length) return;
+    var added = 0;
+    var arr = Array.prototype.slice.call(fileList);
+
+    for (var i = 0; i < arr.length; i++) {
+      var f = arr[i];
+      if (selectedFiles.length >= MAX_FILES) {
+        showToast(t("report.toast.mediaTooMany"), "error");
+        if (typeof haptic === "function") haptic("error");
+        break;
+      }
+      var isImage = f.type && f.type.indexOf("image/") === 0;
+      var isVideo = f.type && f.type.indexOf("video/") === 0;
+      if (!isImage && !isVideo) {
+        showToast(t("report.toast.mediaBadType"), "error");
+        continue;
+      }
+      if (f.size > MAX_FILE_BYTES) {
+        showToast(t("report.toast.mediaTooBig", { name: f.name }), "error");
+        continue;
+      }
+      selectedFiles.push(f);
+      added++;
+    }
+
+    if (added > 0) {
+      renderMediaPreview();
+      syncAttachBtnState();
+      if (typeof haptic === "function") haptic("light");
+    }
+    // Сброс value, чтобы повторный выбор того же файла триггерил change.
+    if (fileInput) fileInput.value = "";
+  }
 
   function openReportSheet() {
     if (typeof haptic === "function") haptic("light");
@@ -9017,7 +9149,10 @@ function renderFlexModelSummary() {
       textArea.value = "";
       updateCounter();
     }
+    // NEW: Media attachment in reports — каждое открытие модалки начинает с пустого state.
+    clearSelectedFiles();
     setSendingState(false);
+    syncAttachBtnState();
     ProtoSheet.open(sheet, overlay);
     // Фокус ставим после анимации, чтобы клавиатура не дёргала sheet вверх раньше времени.
     setTimeout(function () {
@@ -9033,6 +9168,7 @@ function renderFlexModelSummary() {
           textArea.value = "";
           updateCounter();
         }
+        clearSelectedFiles();
       }
     });
   }
@@ -9042,12 +9178,18 @@ function renderFlexModelSummary() {
     if (btnSend) {
       btnSend.disabled = _isSending;
       btnSend.textContent = _isSending
-        ? t("report.modal.sending")
+        ? (selectedFiles.length > 0 ? t("report.modal.uploading") : t("report.modal.sending"))
         : t("report.modal.send");
     }
     if (btnCancel) btnCancel.disabled = _isSending;
     if (btnClose)  btnClose.disabled  = _isSending;
     if (textArea)  textArea.disabled  = _isSending;
+    // NEW: Media attachment in reports — блокируем attach и remove-кнопки во время отправки
+    if (attachBtn) attachBtn.disabled = _isSending || selectedFiles.length >= MAX_FILES;
+    if (previewEl) {
+      var rms = previewEl.querySelectorAll(".report-media-item__remove");
+      for (var i = 0; i < rms.length; i++) rms[i].disabled = _isSending;
+    }
   }
 
   function updateCounter() {
@@ -9111,7 +9253,8 @@ function renderFlexModelSummary() {
     var result = { ok: false };
     try {
       if (typeof window.saveReport === "function") {
-        result = await window.saveReport(telegramId, text);
+        // NEW: Media attachment in reports — передаём массив выбранных файлов
+        result = await window.saveReport(telegramId, text, selectedFiles);
       } else {
         result = { ok: false, error: "saveReport_missing" };
       }
@@ -9132,18 +9275,26 @@ function renderFlexModelSummary() {
       setSendingState(false);
       if (textArea) textArea.value = "";
       updateCounter();
+      clearSelectedFiles();
       ProtoSheet.close(sheet, overlay);
     } else {
       setSendingState(false);
       // NEW: Report problem feature — показываем РЕАЛЬНУЮ ошибку Supabase в toast,
       // а не дженерик "Не удалось отправить". В консоль — полная ошибка для диагностики.
       console.error("[Report] Ошибка:", result && result.error);
-      var errMsg = (result && result.error)
-        ? String(result.error)
-        : t("report.toast.failed");
+      // NEW: Media attachment in reports — если сбой произошёл на конкретном файле,
+      // используем переведённый ключ с именем файла.
+      var errMsg;
+      if (result && result.failedFile) {
+        errMsg = t("report.toast.mediaUploadError", { name: result.failedFile });
+      } else if (result && result.error) {
+        errMsg = String(result.error);
+      } else {
+        errMsg = t("report.toast.failed");
+      }
       showToast(errMsg, "error", { duration: 4500 });
       if (typeof haptic === "function") haptic("error");
-      // Поле НЕ чистим — пользователь может исправить и нажать снова.
+      // Поле и файлы НЕ чистим — пользователь может исправить и нажать снова.
     }
   }
 
@@ -9172,6 +9323,17 @@ function renderFlexModelSummary() {
   if (btnCancel)  btnCancel.addEventListener("click", closeReportSheet);
   if (overlay)    overlay.addEventListener("click", closeReportSheet);
   if (btnSend)    btnSend.addEventListener("click", submitReport);
+
+  // NEW: Media attachment in reports — wiring attach-кнопки и file-input.
+  if (attachBtn && fileInput) {
+    attachBtn.addEventListener("click", function () {
+      if (_isSending || selectedFiles.length >= MAX_FILES) return;
+      fileInput.click();
+    });
+    fileInput.addEventListener("change", function (e) {
+      onFilesPicked(e.target.files);
+    });
+  }
 
   // Свайп вниз для закрытия (как у остальных bottom-sheet модалок).
   if (typeof ProtoSheet !== "undefined" && ProtoSheet.initSwipe) {

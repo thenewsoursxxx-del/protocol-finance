@@ -449,14 +449,27 @@ window.addEventListener("load", function () {
   }, 500);
 });
 
-// UPDATED: saveReport now pulls chat_id from users
+// NEW: Media attachment in reports
+// Bucket `report-media` должен существовать в Supabase Storage с публичным доступом
+// (см. инструкцию в финальном ответе ассистента — INSERT policy + read-anon policy).
+//
+// Имена файлов санитизируются: только [A-Za-z0-9._-], всё остальное → `_`.
+// Путь: reports/{telegramId}/{Date.now()}/{idx}_{safeName}
+// .upload() с upsert:false — конфликтов имён не будет благодаря timestamp в пути.
+function _sanitizeFileName(name) {
+  var s = String(name || "file").replace(/[^\w.\-]+/g, "_");
+  // ограничим длину, чтобы не упереться в лимиты Storage path
+  if (s.length > 80) s = s.slice(0, 80);
+  return s || "file";
+}
+
+// UPDATED: saveReport now pulls chat_id from users AND uploads attached media.
 // Те же правки, что и раньше, по сравнению с исходным snippet'ом:
 //   • supabase.from(...) → supabaseClient.from(...)   (реальный клиент в этом файле)
 //   • пропущенные `||` восстановлены
 //   • initSupabaseClient() — идемпотентная защита от вызова до инициализации
-//   • расширенное логирование code/details/hint сохранено (нужно для диагностики
-//     возможных RLS-проблем на таблицах users/reports)
-window.saveReport = async (telegramId, message) => {
+//   • расширенное логирование code/details/hint сохранено (нужно для диагностики)
+window.saveReport = async (telegramId, message, files) => {
   if (!telegramId || !message || message.trim().length < 5) {
     return { ok: false, error: "Недостаточно данных" };
   }
@@ -464,6 +477,9 @@ window.saveReport = async (telegramId, message) => {
   if (!initSupabaseClient()) {
     return { ok: false, error: "Supabase-клиент не инициализирован" };
   }
+
+  // NEW: Media attachment in reports — нормализация массива файлов
+  var mediaFiles = Array.isArray(files) ? files.filter(Boolean) : [];
 
   try {
     // Подтягиваем chat_id из таблицы users.
@@ -477,6 +493,48 @@ window.saveReport = async (telegramId, message) => {
 
     const chatId = userData?.chat_id || telegramId; // fallback: для private-чата chat_id == user.id
 
+    // NEW: Media attachment in reports — загрузка файлов в Storage до INSERT'а в reports,
+    // чтобы сохранить готовый массив URL-ов в media_urls. Если хоть один upload падает,
+    // throw → catch внизу вернёт { ok:false } и пользователь увидит ошибку.
+    var mediaUrls = [];
+    if (mediaFiles.length > 0) {
+      var ts = Date.now();
+      for (var i = 0; i < mediaFiles.length; i++) {
+        var f = mediaFiles[i];
+        var safeName = _sanitizeFileName(f.name);
+        var path = "reports/" + telegramId + "/" + ts + "/" + i + "_" + safeName;
+        var contentType = f.type || "application/octet-stream";
+
+        var upRes = await supabaseClient
+          .storage
+          .from('report-media')
+          .upload(path, f, {
+            contentType: contentType,
+            cacheControl: '3600',
+            upsert: false
+          });
+
+        if (upRes.error) {
+          console.error('[saveReport] upload ошибка для', safeName, upRes.error);
+          // Прокидываем как Error, чтобы внешний catch отформатировал единообразно.
+          var ue = new Error(upRes.error.message || 'upload failed');
+          ue.code = upRes.error.statusCode || upRes.error.code;
+          ue.details = '[upload:' + safeName + ']';
+          ue.hint = upRes.error.hint || '';
+          ue._fileName = safeName;
+          throw ue;
+        }
+
+        var pub = supabaseClient.storage.from('report-media').getPublicUrl(path);
+        var publicUrl = pub && pub.data && pub.data.publicUrl;
+        if (!publicUrl) {
+          throw new Error('Не удалось получить публичный URL для ' + safeName);
+        }
+        mediaUrls.push(publicUrl);
+        console.log('%c[Report] Загружен файл:', 'color: #10b981', safeName, '→', publicUrl);
+      }
+    }
+
     const { data, error } = await supabaseClient
       .from('reports')
       .insert({
@@ -485,15 +543,22 @@ window.saveReport = async (telegramId, message) => {
         message: message.trim(),
         status: 'new',
         resolved: false,
-        notification_sent: false
+        notification_sent: false,
+        media_urls: mediaUrls // text[] — пустой массив если файлов нет
       })
       .select('id')
       .single();
 
     if (error) throw error;
 
-    console.log('%c[Report] Отчёт сохранён с chat_id:', 'color: #10b981', chatId, '| id:', data.id);
-    return { ok: true, id: data.id };
+    console.log(
+      '%c[Report] Отчёт сохранён с chat_id:',
+      'color: #10b981',
+      chatId,
+      '| id:', data.id,
+      '| media:', mediaUrls.length
+    );
+    return { ok: true, id: data.id, mediaCount: mediaUrls.length };
   } catch (err) {
     console.error('[saveReport] Полная ошибка Supabase:', err);
     if (err && (err.code || err.details || err.hint)) {
@@ -503,7 +568,11 @@ window.saveReport = async (telegramId, message) => {
         'hint=' + (err.hint || '')
       );
     }
-    return { ok: false, error: err.message || 'Не удалось отправить' };
+    return {
+      ok: false,
+      error: err.message || 'Не удалось отправить',
+      failedFile: err && err._fileName
+    };
   }
 };
 

@@ -1356,6 +1356,22 @@ Protocol анализирует цель…
     data-i18n-placeholder="report.modal.placeholder"
     placeholder="Опишите проблему как можно подробнее…"></textarea>
   <div class="report-counter" id="reportProblemCounter">0 / 2000</div>
+
+  <!-- NEW: Media attachment in reports -->
+  <input
+    type="file"
+    id="reportMediaInput"
+    accept="image/*,video/*"
+    multiple
+    hidden />
+  <button
+    id="reportAttachBtn"
+    type="button"
+    class="report-attach-btn"
+    data-i18n="report.modal.attachMedia">📎 Прикрепить фото/видео</button>
+  <div class="report-media-hint" id="reportMediaHint" data-i18n="report.modal.mediaLimit">Можно прикрепить до 5 файлов (макс. 25 МБ каждый)</div>
+  <div class="report-media-preview" id="reportMediaPreview" aria-live="polite"></div>
+
   <div class="report-actions">
     <button id="reportProblemCancel" class="confirmBtn confirmBtn--cancel" type="button" data-i18n="report.modal.cancel">Отмена</button>
     <button id="reportProblemSend" class="report-send-btn" type="button" data-i18n="report.modal.send">Отправить</button>

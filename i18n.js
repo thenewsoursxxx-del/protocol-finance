@@ -297,6 +297,14 @@
       "report.toast.success": "Спасибо! Мы посмотрим и ответим как можно скорее",
       "report.toast.failed": "Не удалось отправить отчёт. Попробуйте позже",
       "report.toast.noUser": "Нужно открыть приложение через Telegram, чтобы отправить отчёт",
+      // NEW: Media attachment in reports
+      "report.modal.attachMedia": "📎 Прикрепить фото/видео",
+      "report.modal.mediaLimit": "Можно прикрепить до 5 файлов (макс. 25 МБ каждый)",
+      "report.modal.uploading": "Загружаем файлы…",
+      "report.toast.mediaTooMany": "Максимум 5 файлов",
+      "report.toast.mediaTooBig": "Файл слишком большой (макс. 25 МБ): {name}",
+      "report.toast.mediaBadType": "Поддерживаются только фото и видео",
+      "report.toast.mediaUploadError": "Не удалось загрузить файл: {name}",
 
       // ── Confirm reset ──
       "reset.text": "Если вы нажмёте «Начать сначала», весь прогресс и накопления будут сброшены.",
@@ -945,6 +953,14 @@
       "report.toast.success": "Thanks! We'll look into it and reply as soon as possible",
       "report.toast.failed": "Could not send the report. Please try again later",
       "report.toast.noUser": "Open the app via Telegram to send a report",
+      // NEW: Media attachment in reports
+      "report.modal.attachMedia": "📎 Attach photo/video",
+      "report.modal.mediaLimit": "You can attach up to 5 files (max 25 MB each)",
+      "report.modal.uploading": "Uploading files…",
+      "report.toast.mediaTooMany": "Maximum 5 files",
+      "report.toast.mediaTooBig": "File too large (max 25 MB): {name}",
+      "report.toast.mediaBadType": "Only photos and videos are supported",
+      "report.toast.mediaUploadError": "Could not upload file: {name}",
 
       // ── Confirm reset ──
       "reset.text": "If you press \"Start over\", all progress and savings will be reset.",
