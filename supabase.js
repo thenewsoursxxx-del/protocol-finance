@@ -449,10 +449,13 @@ window.addEventListener("load", function () {
   }, 500);
 });
 
-// NEW: Report problem feature
-// Используем supabaseClient — реальный клиент Supabase из этого файла
-// (window.supabase — это CDN-namespace с .createClient(), у него нет .from()).
-// initSupabaseClient() идемпотентен — безопасно вызывать на каждом сохранении.
+// UPDATED: saveReport now pulls chat_id from users
+// Те же правки, что и раньше, по сравнению с исходным snippet'ом:
+//   • supabase.from(...) → supabaseClient.from(...)   (реальный клиент в этом файле)
+//   • пропущенные `||` восстановлены
+//   • initSupabaseClient() — идемпотентная защита от вызова до инициализации
+//   • расширенное логирование code/details/hint сохранено (нужно для диагностики
+//     возможных RLS-проблем на таблицах users/reports)
 window.saveReport = async (telegramId, message) => {
   if (!telegramId || !message || message.trim().length < 5) {
     return { ok: false, error: "Недостаточно данных" };
@@ -463,10 +466,22 @@ window.saveReport = async (telegramId, message) => {
   }
 
   try {
+    // Подтягиваем chat_id из таблицы users.
+    // .single() при отсутствии строки вернёт { data: null, error: PGRST116 } —
+    // не бросит, поэтому деструктурируем только data и используем fallback ниже.
+    const { data: userData } = await supabaseClient
+      .from('users')
+      .select('chat_id')
+      .eq('telegram_id', telegramId)
+      .single();
+
+    const chatId = userData?.chat_id || telegramId; // fallback: для private-чата chat_id == user.id
+
     const { data, error } = await supabaseClient
       .from('reports')
       .insert({
         telegram_id: telegramId,
+        chat_id: chatId,
         message: message.trim(),
         status: 'new',
         resolved: false,
@@ -477,11 +492,9 @@ window.saveReport = async (telegramId, message) => {
 
     if (error) throw error;
 
-    console.log('%c[Report] Отчёт сохранён, id:', 'color: #10b981', data.id);
+    console.log('%c[Report] Отчёт сохранён с chat_id:', 'color: #10b981', chatId, '| id:', data.id);
     return { ok: true, id: data.id };
   } catch (err) {
-    // NEW: Report problem feature — подробный лог для диагностики
-    // (status, code, details, hint у Supabase лежат на самом err, не в err.message)
     console.error('[saveReport] Полная ошибка Supabase:', err);
     if (err && (err.code || err.details || err.hint)) {
       console.error(
@@ -490,7 +503,7 @@ window.saveReport = async (telegramId, message) => {
         'hint=' + (err.hint || '')
       );
     }
-    return { ok: false, error: err.message || 'Неизвестная ошибка' };
+    return { ok: false, error: err.message || 'Не удалось отправить' };
   }
 };
 
