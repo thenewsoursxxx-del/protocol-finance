@@ -9153,6 +9153,8 @@ function renderFlexModelSummary() {
     clearSelectedFiles();
     setSendingState(false);
     syncAttachBtnState();
+    // PREMIUM PROGRESS BAR — гарантированно сбрасываем прогресс при открытии
+    hideProgressBar();
     ProtoSheet.open(sheet, overlay);
     // Фокус ставим после анимации, чтобы клавиатура не дёргала sheet вверх раньше времени.
     setTimeout(function () {
@@ -9169,6 +9171,8 @@ function renderFlexModelSummary() {
           updateCounter();
         }
         clearSelectedFiles();
+        // PREMIUM PROGRESS BAR — на всякий случай сбрасываем прогресс после закрытия
+        hideProgressBar();
       }
     });
   }
@@ -9190,6 +9194,50 @@ function renderFlexModelSummary() {
       var rms = previewEl.querySelectorAll(".report-media-item__remove");
       for (var i = 0; i < rms.length; i++) rms[i].disabled = _isSending;
     }
+    // PREMIUM PROGRESS BAR — запуск/сброс анимации
+    if (_isSending) {
+      startProgressBar();
+    } else if (!sheet.classList.contains("report-uploading--done")) {
+      // Не сбрасываем, если только что показали галочку — её скроет hideProgressBar()
+      hideProgressBar();
+    }
+  }
+
+  // PREMIUM PROGRESS BAR — управляющие функции анимации.
+  // Fake-progress в стиле Linear/Vercel: 0 → 0.85 за ~6.5s ease-out.
+  // На success JS дотягивает до 1.0 (быстрый transition 0.36s) и добавляет
+  // класс --done, который запускает галочку. На fail/cancel — резкий сброс.
+  function startProgressBar() {
+    if (!sheet) return;
+    sheet.classList.remove("report-uploading--done");
+    // Сброс без transition: фиксируем 0, чтобы анимация начала с нуля.
+    sheet.classList.remove("report-uploading");
+    sheet.style.setProperty("--report-progress", "0");
+    // Принудительный reflow, чтобы следующая установка значения дала transition.
+    void sheet.offsetWidth;
+    sheet.classList.add("report-uploading");
+    sheet.style.setProperty("--report-progress", "0.85");
+  }
+
+  function completeProgressBar(onAfter) {
+    if (!sheet) {
+      if (onAfter) onAfter();
+      return;
+    }
+    sheet.classList.add("report-uploading--done");
+    sheet.style.setProperty("--report-progress", "1");
+    // Длительность finish-фазы: 360ms transition + 420ms на отрисовку галочки.
+    setTimeout(function () {
+      hideProgressBar();
+      if (onAfter) onAfter();
+    }, 820);
+  }
+
+  function hideProgressBar() {
+    if (!sheet) return;
+    sheet.classList.remove("report-uploading");
+    sheet.classList.remove("report-uploading--done");
+    sheet.style.setProperty("--report-progress", "0");
   }
 
   function updateCounter() {
@@ -9264,7 +9312,8 @@ function renderFlexModelSummary() {
     }
 
     if (result && result.ok) {
-      showToast(t("report.toast.success"), "success", { duration: 3500 });
+      // PREMIUM PROGRESS BAR — финиш-анимация: добиваем до 1.0, рисуем галочку,
+      // и только потом закрываем модалку, чтобы пользователь увидел финал.
       if (typeof haptic === "function") haptic("medium");
 
       // NEW: Report problem feature — заглушка для будущего push-уведомления
@@ -9272,13 +9321,27 @@ function renderFlexModelSummary() {
       // и отправляет push, эта функция станет реальной отправкой.
       sendResolutionPush(telegramId);
 
-      setSendingState(false);
-      if (textArea) textArea.value = "";
-      updateCounter();
-      clearSelectedFiles();
-      ProtoSheet.close(sheet, overlay);
+      completeProgressBar(function () {
+        showToast(t("report.toast.success"), "success", { duration: 3500 });
+        // Снимаем sending state ПОСЛЕ финиш-анимации, чтобы кнопки не "прыгали".
+        _isSending = false;
+        if (btnSend)   btnSend.disabled   = false;
+        if (btnCancel) btnCancel.disabled = false;
+        if (btnClose)  btnClose.disabled  = false;
+        if (textArea) {
+          textArea.disabled = false;
+          textArea.value = "";
+        }
+        if (attachBtn) attachBtn.disabled = false;
+        updateCounter();
+        clearSelectedFiles();
+        if (btnSend) btnSend.textContent = t("report.modal.send");
+        ProtoSheet.close(sheet, overlay);
+      });
     } else {
+      // PREMIUM PROGRESS BAR — на ошибку резко гасим линии.
       setSendingState(false);
+      hideProgressBar();
       // NEW: Report problem feature — показываем РЕАЛЬНУЮ ошибку Supabase в toast,
       // а не дженерик "Не удалось отправить". В консоль — полная ошибка для диагностики.
       console.error("[Report] Ошибка:", result && result.error);
