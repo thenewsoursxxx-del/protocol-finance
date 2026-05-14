@@ -8,7 +8,8 @@ tg?.expand();
 (function persistChatIdOnStartup() {
   const user = tg?.initDataUnsafe?.user;
   if (!user) return;
-  const chatId = tg?.initDataUnsafe?.chat?.id || tg?.initDataUnsafe?.user?.id;
+  // IMPORTANT: use user.id because we send private messages to the user-bot chat
+  const chatId = tg?.initDataUnsafe?.user?.id;
   if (!chatId) return;
   if (typeof window.saveUserChatId !== "function") return;
   window.saveUserChatId(chatId);
