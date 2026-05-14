@@ -463,13 +463,64 @@ function _sanitizeFileName(name) {
   return s || "file";
 }
 
-// UPDATED: saveReport now pulls chat_id from users AND uploads attached media.
-// Те же правки, что и раньше, по сравнению с исходным snippet'ом:
-//   • supabase.from(...) → supabaseClient.from(...)   (реальный клиент в этом файле)
-//   • пропущенные `||` восстановлены
-//   • initSupabaseClient() — идемпотентная защита от вызова до инициализации
-//   • расширенное логирование code/details/hint сохранено (нужно для диагностики)
-window.saveReport = async (telegramId, message, files) => {
+// PREMIUM PROGRESS ANIMATION (real progress) — XHR-обёртка для аплоада в Storage.
+// Supabase JS клиент использует fetch, у которого нет upload progress на стандарте.
+// Чтобы получить байтовый прогресс, идём напрямую через XHR в REST endpoint:
+//   POST {SUPABASE_URL}/storage/v1/object/{bucket}/{path}
+// с anon-ключом в Authorization + apikey + Content-Type + x-upsert: false.
+//
+// Возвращает Promise<{ data, statusCode? }>. На !2xx — reject с err{statusCode, body, message}.
+// onProgress(loaded, total) — частые вызовы (~50–150ms на медленной сети).
+function _uploadFileViaXHR(url, file, headers, onProgress) {
+  return new Promise(function (resolve, reject) {
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", url, true);
+    Object.keys(headers || {}).forEach(function (k) {
+      xhr.setRequestHeader(k, headers[k]);
+    });
+
+    if (xhr.upload && typeof onProgress === "function") {
+      xhr.upload.onprogress = function (evt) {
+        if (evt && evt.lengthComputable) {
+          try { onProgress(evt.loaded, evt.total); } catch (e) { /* swallow */ }
+        }
+      };
+    }
+
+    xhr.onload = function () {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        var parsed;
+        try { parsed = JSON.parse(xhr.responseText || "{}"); } catch (e) { parsed = {}; }
+        resolve({ data: parsed, statusCode: xhr.status });
+      } else {
+        var bodyText = xhr.responseText || "";
+        var bodyParsed;
+        try { bodyParsed = JSON.parse(bodyText); } catch (e) { bodyParsed = bodyText; }
+        var msg = (bodyParsed && bodyParsed.message)
+          ? bodyParsed.message
+          : "upload failed: HTTP " + xhr.status;
+        var err = new Error(msg);
+        err.statusCode = xhr.status;
+        err.body = bodyParsed;
+        reject(err);
+      }
+    };
+    xhr.onerror   = function () { reject(new Error("upload network error")); };
+    xhr.ontimeout = function () { reject(new Error("upload timeout")); };
+    xhr.timeout = 60000; // 60s per file (25MB на 3G ≈ 60s)
+
+    xhr.send(file);
+  });
+}
+
+// UPDATED: saveReport — поддерживает media-аплоад с REAL XHR-прогрессом.
+// Сигнатура: saveReport(telegramId, message, files, onProgress)
+//   • files       — Array<File|Blob>, может быть пустым/undefined
+//   • onProgress  — function(p: 0..1), вызывается во время аплоада с агрегированным
+//                   значением (cumulative_loaded / total_bytes) по всем файлам.
+//                   После окончания всех аплоадов гарантирует p=1.
+//                   Если файлов нет — onProgress НЕ вызывается (UI использует fake-progress).
+window.saveReport = async (telegramId, message, files, onProgress) => {
   if (!telegramId || !message || message.trim().length < 5) {
     return { ok: false, error: "Недостаточно данных" };
   }
@@ -483,55 +534,81 @@ window.saveReport = async (telegramId, message, files) => {
 
   try {
     // Подтягиваем chat_id из таблицы users.
-    // .single() при отсутствии строки вернёт { data: null, error: PGRST116 } —
-    // не бросит, поэтому деструктурируем только data и используем fallback ниже.
     const { data: userData } = await supabaseClient
       .from('users')
       .select('chat_id')
       .eq('telegram_id', telegramId)
       .single();
 
-    const chatId = userData?.chat_id || telegramId; // fallback: для private-чата chat_id == user.id
+    const chatId = userData?.chat_id || telegramId; // fallback
 
-    // NEW: Media attachment in reports — загрузка файлов в Storage до INSERT'а в reports,
-    // чтобы сохранить готовый массив URL-ов в media_urls. Если хоть один upload падает,
-    // throw → catch внизу вернёт { ok:false } и пользователь увидит ошибку.
+    // PREMIUM PROGRESS ANIMATION (real) — аплоад с агрегированным прогрессом.
+    // Сначала считаем totalBytes по всем файлам, потом per-file XHR с onprogress.
+    // Каллбэк наружу получает чистый p ∈ [0..1].
     var mediaUrls = [];
     if (mediaFiles.length > 0) {
+      var totalBytes = 0;
+      for (var ti = 0; ti < mediaFiles.length; ti++) {
+        totalBytes += (mediaFiles[ti].size || 0);
+      }
+      var completedBytes = 0;
       var ts = Date.now();
+
+      var headers = {
+        "Authorization": "Bearer " + SUPABASE_ANON_KEY,
+        "apikey":        SUPABASE_ANON_KEY,
+        "x-upsert":      "false",
+        "Cache-Control": "3600"
+      };
+
       for (var i = 0; i < mediaFiles.length; i++) {
         var f = mediaFiles[i];
         var safeName = _sanitizeFileName(f.name);
         var path = "reports/" + telegramId + "/" + ts + "/" + i + "_" + safeName;
         var contentType = f.type || "application/octet-stream";
 
-        var upRes = await supabaseClient
-          .storage
-          .from('report-media')
-          .upload(path, f, {
-            contentType: contentType,
-            cacheControl: '3600',
-            upsert: false
-          });
+        var uploadUrl = SUPABASE_URL.replace(/\/$/, "") +
+                        "/storage/v1/object/report-media/" + path;
 
-        if (upRes.error) {
-          console.error('[saveReport] upload ошибка для', safeName, upRes.error);
-          // Прокидываем как Error, чтобы внешний catch отформатировал единообразно.
-          var ue = new Error(upRes.error.message || 'upload failed');
-          ue.code = upRes.error.statusCode || upRes.error.code;
+        var perFileHeaders = Object.assign({ "Content-Type": contentType }, headers);
+
+        try {
+          await _uploadFileViaXHR(uploadUrl, f, perFileHeaders, function (loaded /*, total */) {
+            if (typeof onProgress === "function" && totalBytes > 0) {
+              var cumulative = completedBytes + loaded;
+              onProgress(Math.min(1, cumulative / totalBytes));
+            }
+          });
+        } catch (upErr) {
+          console.error('[saveReport] upload ошибка для', safeName, upErr);
+          var ue = new Error(upErr.message || 'upload failed');
+          ue.code = upErr.statusCode || upErr.code;
           ue.details = '[upload:' + safeName + ']';
-          ue.hint = upRes.error.hint || '';
+          ue.hint = (upErr.body && upErr.body.error) || '';
           ue._fileName = safeName;
           throw ue;
         }
 
-        var pub = supabaseClient.storage.from('report-media').getPublicUrl(path);
-        var publicUrl = pub && pub.data && pub.data.publicUrl;
-        if (!publicUrl) {
-          throw new Error('Не удалось получить публичный URL для ' + safeName);
+        completedBytes += (f.size || 0);
+
+        // Гарантируем, что после каждого файла прогресс отражает суммарную долю
+        // (некоторые браузеры могут не дать финальный onprogress перед onload).
+        if (typeof onProgress === "function" && totalBytes > 0) {
+          onProgress(Math.min(1, completedBytes / totalBytes));
         }
+
+        // Public URL — строим вручную (то же, что вернул бы getPublicUrl
+        // на public bucket'е). Дёшево, без сетевого вызова.
+        var publicUrl = SUPABASE_URL.replace(/\/$/, "") +
+                        "/storage/v1/object/public/report-media/" + path;
+
         mediaUrls.push(publicUrl);
         console.log('%c[Report] Загружен файл:', 'color: #10b981', safeName, '→', publicUrl);
+      }
+
+      // Финальный пуш прогресса до 1.0 после всех файлов.
+      if (typeof onProgress === "function") {
+        onProgress(1);
       }
     }
 
@@ -544,7 +621,7 @@ window.saveReport = async (telegramId, message, files) => {
         status: 'new',
         resolved: false,
         notification_sent: false,
-        media_urls: mediaUrls // text[] — пустой массив если файлов нет
+        media_urls: mediaUrls
       })
       .select('id')
       .single();

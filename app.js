@@ -9194,50 +9194,149 @@ function renderFlexModelSummary() {
       var rms = previewEl.querySelectorAll(".report-media-item__remove");
       for (var i = 0; i < rms.length; i++) rms[i].disabled = _isSending;
     }
-    // PREMIUM PROGRESS BAR — запуск/сброс анимации
+    // PREMIUM PROGRESS ANIMATION — запуск/сброс анимации.
+    // Mode выбирается на основе наличия файлов: с файлами получаем REAL прогресс
+    // от XHR, без файлов запускается RAF fake-progress (text-only request).
     if (_isSending) {
-      startProgressBar();
-    } else if (!sheet.classList.contains("report-uploading--done")) {
-      // Не сбрасываем, если только что показали галочку — её скроет hideProgressBar()
+      var hasMedia = selectedFiles.length > 0;
+      startProgressBar({ real: hasMedia });
+    } else if (
+      !sheet.classList.contains("report-uploading--done") &&
+      !sheet.classList.contains("report-uploading--error")
+    ) {
+      // Не сбрасываем, если только что показали галочку/error — их скроет
+      // completeProgressBar()/errorProgressBar() сами в нужный момент.
       hideProgressBar();
     }
   }
 
-  // PREMIUM PROGRESS BAR — управляющие функции анимации.
-  // Fake-progress в стиле Linear/Vercel: 0 → 0.85 за ~6.5s ease-out.
-  // На success JS дотягивает до 1.0 (быстрый transition 0.36s) и добавляет
-  // класс --done, который запускает галочку. На fail/cancel — резкий сброс.
-  function startProgressBar() {
+  // ──────────────────────────────────────────────────────────────────────────
+  // PREMIUM PROGRESS ANIMATION (v2) — JS-driven через CSS-переменные.
+  //
+  // Модель: единый progress (0..1) хранится в _progressValue.
+  // setProgress(p) — клампит, считает --p-vert / --p-horz, пушит на sheet.
+  // startProgressBar({real}) — initialize:
+  //   real=true   → ждём reportProgress() от внешнего источника (XHR)
+  //   real=false  → RAF-loop: ease-out до 0.85 за ~1.4s (для text-only reports)
+  // reportProgress(p) — внешний пуш (вызывается из onProgress в saveReport).
+  // completeProgressBar(cb) — стопает RAF, p=1, --done класс, burst, callback ~1.1s.
+  // errorProgressBar(cb) — стопает RAF, --error класс (красная вспышка + fade), ~0.65s.
+  // hideProgressBar() — мгновенный сброс всех классов и transforms.
+  // ──────────────────────────────────────────────────────────────────────────
+  var _progressValue = 0;
+  var _progressRafId = null;
+  var _progressStartTs = 0;
+
+  function _applyProgressVars(p) {
     if (!sheet) return;
-    sheet.classList.remove("report-uploading--done");
-    // Сброс без transition: фиксируем 0, чтобы анимация начала с нуля.
-    sheet.classList.remove("report-uploading");
-    sheet.style.setProperty("--report-progress", "0");
-    // Принудительный reflow, чтобы следующая установка значения дала transition.
-    void sheet.offsetWidth;
+    var pClamped = Math.max(0, Math.min(1, p));
+    var pVert = Math.min(1, pClamped * 2);
+    var pHorz = Math.max(0, pClamped * 2 - 1);
+    sheet.style.setProperty("--p-vert", pVert.toFixed(4));
+    sheet.style.setProperty("--p-horz", pHorz.toFixed(4));
+  }
+
+  function setProgress(p) {
+    _progressValue = Math.max(_progressValue, Math.max(0, Math.min(1, p)));
+    _applyProgressVars(_progressValue);
+  }
+
+  function _cancelFakeProgress() {
+    if (_progressRafId != null) {
+      try { cancelAnimationFrame(_progressRafId); } catch (e) { /* noop */ }
+      _progressRafId = null;
+    }
+  }
+
+  // RAF-loop с ease-out cubic-bezier (0.16, 1, 0.3, 1) аппроксимирован через
+  // 1 - (1-t)^3 — достаточно близко на глаз. 1.4s до 0.85.
+  function _startFakeProgress() {
+    _cancelFakeProgress();
+    _progressStartTs = (window.performance && performance.now) ? performance.now() : Date.now();
+    var startVal = _progressValue;
+    var targetVal = 0.85;
+    var duration = 1400;
+
+    function tick(nowArg) {
+      var now = (typeof nowArg === "number")
+        ? nowArg
+        : ((window.performance && performance.now) ? performance.now() : Date.now());
+      var t = Math.max(0, Math.min(1, (now - _progressStartTs) / duration));
+      var eased = 1 - Math.pow(1 - t, 3);
+      var v = startVal + (targetVal - startVal) * eased;
+      // setProgress() гарантирует монотонность — никогда не откатывает прогресс назад.
+      setProgress(v);
+      if (t < 1 && _progressRafId != null) {
+        _progressRafId = requestAnimationFrame(tick);
+      }
+    }
+    _progressRafId = requestAnimationFrame(tick);
+  }
+
+  function startProgressBar(opts) {
+    if (!sheet) return;
+    opts = opts || {};
+    // Полный сброс предыдущего цикла без анимации, затем normalize.
+    _cancelFakeProgress();
+    _progressValue = 0;
+    sheet.classList.add("report-progress--reset");
+    sheet.classList.remove("report-uploading", "report-uploading--done", "report-uploading--error");
+    _applyProgressVars(0);
+    void sheet.offsetWidth; // reflow с reset (без transition)
+    sheet.classList.remove("report-progress--reset");
+    void sheet.offsetWidth; // reflow без reset (теперь transitions активны)
     sheet.classList.add("report-uploading");
-    sheet.style.setProperty("--report-progress", "0.85");
+
+    if (!opts.real) {
+      _startFakeProgress();
+    }
+    // В real-mode инициатор сам будет звать reportProgress(p).
+  }
+
+  // Внешний пуш реального прогресса (из onProgress в saveReport).
+  // Маппим p ∈ [0..1] → [0..0.95], оставляя финальные 5% на финиш-анимацию.
+  function reportProgress(p) {
+    _cancelFakeProgress(); // если был fake — переключаемся на real
+    setProgress(Math.max(0, Math.min(1, p)) * 0.95);
   }
 
   function completeProgressBar(onAfter) {
-    if (!sheet) {
-      if (onAfter) onAfter();
-      return;
-    }
+    if (!sheet) { if (onAfter) onAfter(); return; }
+    _cancelFakeProgress();
+    setProgress(1);
+    sheet.classList.remove("report-uploading--error");
     sheet.classList.add("report-uploading--done");
-    sheet.style.setProperty("--report-progress", "1");
-    // Длительность finish-фазы: 360ms transition + 420ms на отрисовку галочки.
+    // Total finish time: 0.32s burst delay + 0.95s burst animation = 1.27s.
+    // Закрываем чуть раньше пика fade-out частиц, на 1100ms — galочка успевает
+    // нарисоваться (~0.18 delay + 0.45 draw = 0.63s), burst успевает на peak (0.32+0.18=0.5s).
+    setTimeout(function () {
+      if (onAfter) onAfter();
+    }, 1100);
+  }
+
+  function errorProgressBar(onAfter) {
+    if (!sheet) { if (onAfter) onAfter(); return; }
+    _cancelFakeProgress();
+    sheet.classList.remove("report-uploading--done");
+    sheet.classList.add("report-uploading--error");
+    // reportErrorFade длится 0.65s. Даём ещё +50ms на догорание.
     setTimeout(function () {
       hideProgressBar();
       if (onAfter) onAfter();
-    }, 820);
+    }, 700);
   }
 
   function hideProgressBar() {
     if (!sheet) return;
-    sheet.classList.remove("report-uploading");
-    sheet.classList.remove("report-uploading--done");
-    sheet.style.setProperty("--report-progress", "0");
+    _cancelFakeProgress();
+    _progressValue = 0;
+    sheet.classList.add("report-progress--reset");
+    sheet.classList.remove("report-uploading", "report-uploading--done", "report-uploading--error");
+    _applyProgressVars(0);
+    void sheet.offsetWidth;
+    setTimeout(function () {
+      if (sheet) sheet.classList.remove("report-progress--reset");
+    }, 50);
   }
 
   function updateCounter() {
@@ -9302,7 +9401,14 @@ function renderFlexModelSummary() {
     try {
       if (typeof window.saveReport === "function") {
         // NEW: Media attachment in reports — передаём массив выбранных файлов
-        result = await window.saveReport(telegramId, text, selectedFiles);
+        // PREMIUM PROGRESS ANIMATION (real) — onProgress(p) пушит реальный прогресс
+        // от XHR.upload.onprogress в общий progress bar (через reportProgress).
+        result = await window.saveReport(
+          telegramId,
+          text,
+          selectedFiles,
+          function (p) { reportProgress(p); }
+        );
       } else {
         result = { ok: false, error: "saveReport_missing" };
       }
@@ -9339,11 +9445,9 @@ function renderFlexModelSummary() {
         ProtoSheet.close(sheet, overlay);
       });
     } else {
-      // PREMIUM PROGRESS BAR — на ошибку резко гасим линии.
-      setSendingState(false);
-      hideProgressBar();
-      // NEW: Report problem feature — показываем РЕАЛЬНУЮ ошибку Supabase в toast,
-      // а не дженерик "Не удалось отправить". В консоль — полная ошибка для диагностики.
+      // PREMIUM PROGRESS ANIMATION (error) — красная вспышка линий + fade-out
+      // вместо мгновенного скрытия. Toast и haptic срабатывают сразу,
+      // разблокировку кнопок делаем после анимации, чтобы не "прыгало".
       console.error("[Report] Ошибка:", result && result.error);
       // NEW: Media attachment in reports — если сбой произошёл на конкретном файле,
       // используем переведённый ключ с именем файла.
@@ -9357,6 +9461,10 @@ function renderFlexModelSummary() {
       }
       showToast(errMsg, "error", { duration: 4500 });
       if (typeof haptic === "function") haptic("error");
+
+      errorProgressBar(function () {
+        setSendingState(false);
+      });
       // Поле и файлы НЕ чистим — пользователь может исправить и нажать снова.
     }
   }
