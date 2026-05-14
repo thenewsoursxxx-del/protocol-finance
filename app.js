@@ -9073,15 +9073,13 @@ function renderFlexModelSummary() {
     setSendingState(true);
     if (typeof haptic === "function") haptic("light");
 
+    // NEW: Report problem feature — simple telegramId extraction (`tg` is defined at top of app.js)
+    const telegramId = window.tgUserId || tg?.initDataUnsafe?.user?.id;
+
     var result = { ok: false };
     try {
       if (typeof window.saveReport === "function") {
-        // NEW: Report problem feature — new signature (telegramId, message)
-        var who3 = (typeof window.getTelegramIdentity === "function")
-          ? window.getTelegramIdentity()
-          : null;
-        var tid = who3 ? who3.telegram_id : null;
-        result = await window.saveReport(tid, text);
+        result = await window.saveReport(telegramId, text);
       } else {
         result = { ok: false, error: "saveReport_missing" };
       }
@@ -9097,10 +9095,7 @@ function renderFlexModelSummary() {
       // NEW: Report problem feature — заглушка для будущего push-уведомления
       // о факте решения проблемы. Когда backend помечает report.resolved=true
       // и отправляет push, эта функция станет реальной отправкой.
-      var who2 = (typeof window.getTelegramIdentity === "function")
-        ? window.getTelegramIdentity()
-        : null;
-      sendResolutionPush(who2 && who2.telegram_id);
+      sendResolutionPush(telegramId);
 
       setSendingState(false);
       if (textArea) textArea.value = "";
@@ -9108,7 +9103,13 @@ function renderFlexModelSummary() {
       ProtoSheet.close(sheet, overlay);
     } else {
       setSendingState(false);
-      showToast(t("report.toast.failed"), "error", { duration: 3000 });
+      // NEW: Report problem feature — показываем РЕАЛЬНУЮ ошибку Supabase в toast,
+      // а не дженерик "Не удалось отправить". В консоль — полная ошибка для диагностики.
+      console.error("[Report] Ошибка:", result && result.error);
+      var errMsg = (result && result.error)
+        ? String(result.error)
+        : t("report.toast.failed");
+      showToast(errMsg, "error", { duration: 4500 });
       if (typeof haptic === "function") haptic("error");
       // Поле НЕ чистим — пользователь может исправить и нажать снова.
     }

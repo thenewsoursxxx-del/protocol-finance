@@ -480,8 +480,17 @@ window.saveReport = async (telegramId, message) => {
     console.log('%c[Report] Отчёт сохранён, id:', 'color: #10b981', data.id);
     return { ok: true, id: data.id };
   } catch (err) {
-    console.error('[Report] Ошибка сохранения:', err);
-    return { ok: false, error: err.message || 'Не удалось отправить' };
+    // NEW: Report problem feature — подробный лог для диагностики
+    // (status, code, details, hint у Supabase лежат на самом err, не в err.message)
+    console.error('[saveReport] Полная ошибка Supabase:', err);
+    if (err && (err.code || err.details || err.hint)) {
+      console.error(
+        '[saveReport] code=' + err.code,
+        'details=' + (err.details || ''),
+        'hint=' + (err.hint || '')
+      );
+    }
+    return { ok: false, error: err.message || 'Неизвестная ошибка' };
   }
 };
 
