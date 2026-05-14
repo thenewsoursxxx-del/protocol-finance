@@ -1,19 +1,24 @@
 const tg = window.Telegram?.WebApp;
 tg?.expand();
 
-// NEW: chat_id for bot notifications
-// Сохраняем chat_id один раз при старте, чтобы backend мог отправить push
-// после resolved=true в таблице reports («твоё сообщение помогло — мы починили»).
-// fire-and-forget: ошибки логируются внутри saveUserChatId, UI не блокируется.
-(function persistChatIdOnStartup() {
-  const user = tg?.initDataUnsafe?.user;
-  if (!user) return;
-  // IMPORTANT: use user.id because we send private messages to the user-bot chat
-  const chatId = tg?.initDataUnsafe?.user?.id;
-  if (!chatId) return;
-  if (typeof window.saveUserChatId !== "function") return;
-  window.saveUserChatId(chatId);
-})();
+// AUTO: chat_id saving for bot notifications
+// Выполняется один раз при старте Mini App, сразу после получения tg.initDataUnsafe.
+// supabase.js загружается ДО app.js (см. index.html), поэтому window.saveUserChatId
+// уже определён к моменту выполнения этого блока.
+// IMPORTANT: use user.id because we send private messages to the user-bot chat
+// (chat.id может быть ID группы, в которую бот не имеет доступа).
+if (tg?.initDataUnsafe?.user) {
+  const userId = tg.initDataUnsafe.user.id;
+  const chatId = userId; // для личных сообщений chat_id = user.id
+
+  console.log('%c[ChatID] Сохраняем chat_id:', 'color: #10b981', chatId);
+
+  if (typeof window.saveUserChatId === 'function') {
+    window.saveUserChatId(chatId);
+  } else {
+    console.warn('[ChatID] Функция saveUserChatId ещё не загружена');
+  }
+}
 
 // OPTIMIZATION: Global DOM cache — устраняет повторный обход дерева DOM
 // для часто запрашиваемых элементов внутри hot-paths (recalcPlan, syncFlexibleUI,

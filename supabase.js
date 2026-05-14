@@ -498,7 +498,7 @@ window.saveReport = async (telegramId, message) => {
 // Report system ready (reports table + saveReport)
 // =============================================
 
-// NEW: chat_id for bot notifications
+// AUTO: chat_id saving for bot notifications
 // Сохраняем chat_id в таблицу users, чтобы backend мог отправлять push
 // «твоё сообщение помогло — мы починили» после resolved=true в reports.
 //
@@ -512,21 +512,49 @@ window.saveUserChatId = async (chatId) => {
   const telegramId =
     window.tgUserId ||
     window.Telegram?.WebApp?.initDataUnsafe?.user?.id;
-  if (!telegramId || !chatId) return;
 
-  if (!initSupabaseClient()) return;
+  // AUTO: chat_id saving for bot notifications — entry log для диагностики
+  console.log(
+    '%c[saveUserChatId] Вызвана с chatId:',
+    'color: #10b981',
+    chatId,
+    'для telegram_id:',
+    telegramId
+  );
+
+  if (!telegramId || !chatId) {
+    console.warn('[saveUserChatId] Прерывание: telegramId или chatId пустой',
+      { telegramId: telegramId, chatId: chatId });
+    return;
+  }
+
+  if (!initSupabaseClient()) {
+    console.warn('[saveUserChatId] Supabase-клиент не инициализирован');
+    return;
+  }
 
   try {
-    const { error } = await supabaseClient
+    const { data, error } = await supabaseClient
       .from('users')
       .upsert({
         telegram_id: telegramId,
         chat_id: chatId,
         updated_at: new Date().toISOString()
-      }, { onConflict: 'telegram_id' });
+      }, { onConflict: 'telegram_id' })
+      .select('telegram_id, chat_id');
 
-    if (error) console.error('[ChatID] Ошибка сохранения:', error);
-    else console.log('%c[ChatID] chat_id сохранён:', 'color: #10b981', chatId);
+    if (error) {
+      console.error('[ChatID] Ошибка сохранения:', error);
+      if (error.code || error.details || error.hint) {
+        console.error(
+          '[ChatID] code=' + error.code,
+          'details=' + (error.details || ''),
+          'hint=' + (error.hint || '')
+        );
+      }
+    } else {
+      console.log('%c[ChatID] chat_id сохранён:', 'color: #10b981', chatId, '→ DB:', data);
+    }
   } catch (e) {
     console.error('[ChatID] Ошибка:', e);
   }
