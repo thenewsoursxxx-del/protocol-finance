@@ -1,6 +1,19 @@
 const tg = window.Telegram?.WebApp;
 tg?.expand();
 
+// NEW: chat_id for bot notifications
+// Сохраняем chat_id один раз при старте, чтобы backend мог отправить push
+// после resolved=true в таблице reports («твоё сообщение помогло — мы починили»).
+// fire-and-forget: ошибки логируются внутри saveUserChatId, UI не блокируется.
+(function persistChatIdOnStartup() {
+  const user = tg?.initDataUnsafe?.user;
+  if (!user) return;
+  const chatId = tg?.initDataUnsafe?.chat?.id || tg?.initDataUnsafe?.user?.id;
+  if (!chatId) return;
+  if (typeof window.saveUserChatId !== "function") return;
+  window.saveUserChatId(chatId);
+})();
+
 // OPTIMIZATION: Global DOM cache — устраняет повторный обход дерева DOM
 // для часто запрашиваемых элементов внутри hot-paths (recalcPlan, syncFlexibleUI,
 // renderGoals, renderAccountsUI, applyFlexibleSideVisibility, renderFlexModelSummary).

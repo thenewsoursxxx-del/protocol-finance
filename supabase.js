@@ -488,3 +488,37 @@ window.saveReport = async (telegramId, message) => {
 // =============================================
 // Report system ready (reports table + saveReport)
 // =============================================
+
+// NEW: chat_id for bot notifications
+// Сохраняем chat_id в таблицу users, чтобы backend мог отправлять push
+// «твоё сообщение помогло — мы починили» после resolved=true в reports.
+//
+// Замечания по сравнению с исходным snippet'ом:
+//   • supabase.from(...) → supabaseClient.from(...)
+//     (window.supabase — это CDN-namespace c .createClient(), у него нет .from()).
+//   • tg?.initDataUnsafe... → window.Telegram?.WebApp?.initDataUnsafe...
+//     (в этом файле переменная tg не объявлена, был бы ReferenceError).
+//   • initSupabaseClient() — идемпотентная защита от вызова до инициализации клиента.
+window.saveUserChatId = async (chatId) => {
+  const telegramId =
+    window.tgUserId ||
+    window.Telegram?.WebApp?.initDataUnsafe?.user?.id;
+  if (!telegramId || !chatId) return;
+
+  if (!initSupabaseClient()) return;
+
+  try {
+    const { error } = await supabaseClient
+      .from('users')
+      .upsert({
+        telegram_id: telegramId,
+        chat_id: chatId,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'telegram_id' });
+
+    if (error) console.error('[ChatID] Ошибка сохранения:', error);
+    else console.log('%c[ChatID] chat_id сохранён:', 'color: #10b981', chatId);
+  } catch (e) {
+    console.error('[ChatID] Ошибка:', e);
+  }
+};
