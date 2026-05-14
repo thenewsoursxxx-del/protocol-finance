@@ -9062,7 +9062,12 @@ function renderFlexModelSummary() {
     var result = { ok: false };
     try {
       if (typeof window.saveReport === "function") {
-        result = await window.saveReport(text);
+        // NEW: Report problem feature — new signature (telegramId, message)
+        var who3 = (typeof window.getTelegramIdentity === "function")
+          ? window.getTelegramIdentity()
+          : null;
+        var tid = who3 ? who3.telegram_id : null;
+        result = await window.saveReport(tid, text);
       } else {
         result = { ok: false, error: "saveReport_missing" };
       }

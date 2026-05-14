@@ -432,75 +432,12 @@ async function loadAppState() {
   }
 }
 
-/* ── saveReport: insert a user feedback report into the `reports` table.
- *
- * NEW: Report problem feature
- *
- * Expected schema for `reports` table (создаётся позже на стороне Supabase):
- *   id              uuid primary key default uuid_generate_v4()
- *   telegram_id     bigint not null
- *   message         text   not null
- *   status          text   not null default 'new'   -- 'new' | 'in_progress' | 'resolved' | 'rejected'
- *   resolved        boolean not null default false  -- helper flag for resolution-push pipeline
- *   notification_sent boolean not null default false
- *   created_at      timestamptz not null default now()
- *   resolved_at     timestamptz null
- *
- * Возвращает { ok: boolean, error?: string }. Никогда не throw — UI делает
- * простую проверку `.ok` и показывает toast по результату.
- *
- * Безопасность пока — клиентская (CLIENT-TRUST), как и saveAppState.
- * Когда появится серверная проверка initData, эта функция тоже автоматически
- * получит верифицированный telegram_id через getVerifiedUserIdentity().
- */
-async function saveReport(message) {
-  try {
-    if (!initSupabaseClient()) {
-      return { ok: false, error: "client_init_failed" };
-    }
-
-    var identity = await getVerifiedUserIdentity();
-    if (!identity) {
-      return { ok: false, error: "no_telegram_user" };
-    }
-
-    var text = String(message == null ? "" : message).trim();
-    if (!text) {
-      return { ok: false, error: "empty_message" };
-    }
-
-    var row = {
-      telegram_id: identity.telegram_id,
-      message: text,
-      status: "new",
-      created_at: new Date().toISOString()
-    };
-
-    var result = await supabaseClient.from("reports").insert(row);
-
-    if (result.error) {
-      console.error("[Supabase] saveReport ошибка:",
-        result.error.message, result.error.code, result.error.hint || "");
-      return { ok: false, error: result.error.message };
-    }
-
-    console.log("[Supabase] saveReport: отчёт сохранён для telegram_id=" + identity.telegram_id);
-    return { ok: true };
-
-  } catch (e) {
-    console.error("[Supabase] saveReport exception:", e.name, e.message);
-    return { ok: false, error: e.message };
-  }
-}
-
 window.getTelegramIdentity = getTelegramIdentity;
 window.getVerifiedUserIdentity = getVerifiedUserIdentity;
 window.saveAppState = saveAppState;
 window.loadAppState = loadAppState;
 window.saveCurrentUser = saveCurrentUser;
 window.getMyData = getMyData;
-// NEW: Report problem feature
-window.saveReport = saveReport;
 
 window.addEventListener("load", function () {
   console.log("[Supabase] window.load — запускаем saveCurrentUser через 500 мс");
@@ -511,3 +448,43 @@ window.addEventListener("load", function () {
     });
   }, 500);
 });
+
+// NEW: Report problem feature
+// Используем supabaseClient — реальный клиент Supabase из этого файла
+// (window.supabase — это CDN-namespace с .createClient(), у него нет .from()).
+// initSupabaseClient() идемпотентен — безопасно вызывать на каждом сохранении.
+window.saveReport = async (telegramId, message) => {
+  if (!telegramId || !message || message.trim().length < 5) {
+    return { ok: false, error: "Недостаточно данных" };
+  }
+
+  if (!initSupabaseClient()) {
+    return { ok: false, error: "Supabase-клиент не инициализирован" };
+  }
+
+  try {
+    const { data, error } = await supabaseClient
+      .from('reports')
+      .insert({
+        telegram_id: telegramId,
+        message: message.trim(),
+        status: 'new',
+        resolved: false,
+        notification_sent: false
+      })
+      .select('id')
+      .single();
+
+    if (error) throw error;
+
+    console.log('%c[Report] Отчёт сохранён, id:', 'color: #10b981', data.id);
+    return { ok: true, id: data.id };
+  } catch (err) {
+    console.error('[Report] Ошибка сохранения:', err);
+    return { ok: false, error: err.message || 'Не удалось отправить' };
+  }
+};
+
+// =============================================
+// Report system ready (reports table + saveReport)
+// =============================================
