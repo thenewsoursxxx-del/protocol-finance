@@ -516,9 +516,9 @@ window.saveUserChatId = async (chatId) => {
   // AUTO: chat_id saving for bot notifications — entry log для диагностики
   console.log(
     '%c[saveUserChatId] Вызвана с chatId:',
-    'color: #10b981',
+    'color: #10b981; font-weight: bold',
     chatId,
-    'для telegram_id:',
+    'telegram_id:',
     telegramId
   );
 

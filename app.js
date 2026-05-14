@@ -1,23 +1,50 @@
 const tg = window.Telegram?.WebApp;
 tg?.expand();
 
-// AUTO: chat_id saving for bot notifications
-// Выполняется один раз при старте Mini App, сразу после получения tg.initDataUnsafe.
-// supabase.js загружается ДО app.js (см. index.html), поэтому window.saveUserChatId
-// уже определён к моменту выполнения этого блока.
+// AUTO: Надёжное сохранение chat_id для уведомлений в бот-чат
 // IMPORTANT: use user.id because we send private messages to the user-bot chat
 // (chat.id может быть ID группы, в которую бот не имеет доступа).
-if (tg?.initDataUnsafe?.user) {
-  const userId = tg.initDataUnsafe.user.id;
-  const chatId = userId; // для личных сообщений chat_id = user.id
+//
+// Идемпотентность: saveUserChatId делает upsert по telegram_id, поэтому
+// многократные вызовы безопасны — последний всегда выигрывает.
+const ensureChatIdSaved = () => {
+  if (!tg?.initDataUnsafe?.user) return;
 
-  console.log('%c[ChatID] Сохраняем chat_id:', 'color: #10b981', chatId);
+  const telegramId = tg.initDataUnsafe.user.id;
+  const chatId = telegramId; // для личных сообщений chat_id = user.id
+
+  console.log(
+    '%c[ChatID] Автоматически сохраняем chat_id:',
+    'color: #10b981; font-weight: bold',
+    chatId
+  );
 
   if (typeof window.saveUserChatId === 'function') {
     window.saveUserChatId(chatId);
   } else {
-    console.warn('[ChatID] Функция saveUserChatId ещё не загружена');
+    console.warn('[ChatID] saveUserChatId ещё не загружена, пробуем через 500ms...');
+    setTimeout(() => {
+      if (typeof window.saveUserChatId === 'function') {
+        window.saveUserChatId(chatId);
+      } else {
+        console.error('[ChatID] saveUserChatId всё ещё недоступна — supabase.js не загрузился');
+      }
+    }, 500);
   }
+};
+
+// Вызываем сразу и после готовности WebApp
+ensureChatIdSaved();
+if (tg) {
+  try { tg.ready(); } catch (e) { console.warn('[ChatID] tg.ready() кинул:', e); }
+  // tg.onEvent поддерживает не все строки — оборачиваем в try/catch,
+  // чтобы возможный throw не остановил выполнение последующих setTimeout'ов.
+  try { tg.onEvent('ready', ensureChatIdSaved); } catch (e) {
+    console.warn('[ChatID] tg.onEvent("ready") не поддерживается:', e);
+  }
+  // Дополнительно — на всякий случай
+  setTimeout(ensureChatIdSaved, 800);
+  setTimeout(ensureChatIdSaved, 1500);
 }
 
 // OPTIMIZATION: Global DOM cache — устраняет повторный обход дерева DOM
