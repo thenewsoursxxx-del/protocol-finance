@@ -4784,21 +4784,54 @@ body.flip-fix-pending .flip-wrapper {
 }
 
 /* ============================================================================
-   FIX: soft blocking after goal completion
+   FIX: soft invisible blocking after goal completion
    ----------------------------------------------------------------------------
-   Старая агрессивная блокировка (затемнение всего экрана, grayscale, отключение
-   app-header и т.п.) удалена — она портила UX: цвет навбара менялся, профиль
-   становился недоступным, ощущение "сломанного" приложения.
-
-   Новый подход — "мягкая" блокировка:
-     • Графика и activeGoalCard уже скрыты (display:none) через
-       _syncProtocolEmptyState() / renderGoals() при пустой цели.
-     • Empty-state карточки видны и интерактивны.
-     • Навбар, профиль, settings, history — всё работает нормально.
-
-   Класс body.app-locked продолжает добавляться window._updateAppLock() как
-   маркер для будущих точечных правил (если понадобятся), но визуально безвреден.
+   Когда у пользователя нет активной цели и он не на #screen-new-goal —
+   body.app-locked включён (см. window._updateAppLock в app.js). Блокируем
+   ТОЧЕЧНО только элементы, относящиеся к старой цели:
+     • #planSummary (содержит "Изменить темп", "Добавить кредиты", "Гибкая модель")
+     • #editGoalBtn — редактирование старой цели на Goals tab
+     • Графические взаимодействия: .fact-input-row, #unexpectedExpenseBtn,
+       .unexpected-expense-trigger, .timeline-back-btn, .scenario-card,
+       #protocolActionsContainer
+     • #settingsAllocation — переключатель "Все в цель / С резервом" (привязан
+       к текущему плану)
+   Эффект — мягкий: pointer-events: none + opacity 0.6 + cursor: not-allowed.
+   Без затемнения экрана, без изменения цвета навбара, без блокировки профиля.
    ============================================================================ */
+body.app-locked #planSummary,
+body.app-locked #editGoalBtn,
+body.app-locked .fact-input-row,
+body.app-locked #unexpectedExpenseBtn,
+body.app-locked .unexpected-expense-trigger,
+body.app-locked .timeline-back-btn,
+body.app-locked .scenario-card,
+body.app-locked #protocolActionsContainer,
+body.app-locked #settingsAllocation {
+  pointer-events: none !important;
+  opacity: 0.6 !important;
+  cursor: not-allowed !important;
+  transition: opacity 0.25s ease;
+}
+/* Курсор not-allowed должен наследоваться внутрь, чтобы при наведении на
+   вложенную кнопку курсор тоже был запретительным. */
+body.app-locked #planSummary *,
+body.app-locked #settingsAllocation * {
+  cursor: not-allowed !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  body.app-locked #planSummary,
+  body.app-locked #editGoalBtn,
+  body.app-locked .fact-input-row,
+  body.app-locked #unexpectedExpenseBtn,
+  body.app-locked .unexpected-expense-trigger,
+  body.app-locked .timeline-back-btn,
+  body.app-locked .scenario-card,
+  body.app-locked #protocolActionsContainer,
+  body.app-locked #settingsAllocation {
+    transition: none;
+  }
+}
 
 /* ============================================================================
    PREMIUM GOAL COMPLETION — congrats modal (after goal reached)
