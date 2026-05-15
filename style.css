@@ -4807,7 +4807,13 @@ body.app-locked .unexpected-expense-trigger,
 body.app-locked .timeline-back-btn,
 body.app-locked .scenario-card,
 body.app-locked #protocolActionsContainer,
-body.app-locked #settingsAllocation {
+body.app-locked #settingsAllocation,
+/* FIX: soft invisible blocking after goal completion —
+   Счета: карточки-флипы (свайп/тап), Расходы: кнопка "Добавить расход" */
+body.app-locked .account-block,
+body.app-locked #accountsLocalNav,
+body.app-locked #expAddBtn,
+body.app-locked #expAddBtnEmpty {
   pointer-events: none !important;
   opacity: 0.6 !important;
   cursor: not-allowed !important;
@@ -4816,7 +4822,8 @@ body.app-locked #settingsAllocation {
 /* Курсор not-allowed должен наследоваться внутрь, чтобы при наведении на
    вложенную кнопку курсор тоже был запретительным. */
 body.app-locked #planSummary *,
-body.app-locked #settingsAllocation * {
+body.app-locked #settingsAllocation *,
+body.app-locked .account-block * {
   cursor: not-allowed !important;
 }
 @media (prefers-reduced-motion: reduce) {
@@ -4828,7 +4835,11 @@ body.app-locked #settingsAllocation * {
   body.app-locked .timeline-back-btn,
   body.app-locked .scenario-card,
   body.app-locked #protocolActionsContainer,
-  body.app-locked #settingsAllocation {
+  body.app-locked #settingsAllocation,
+  body.app-locked .account-block,
+  body.app-locked #accountsLocalNav,
+  body.app-locked #expAddBtn,
+  body.app-locked #expAddBtnEmpty {
     transition: none;
   }
 }
