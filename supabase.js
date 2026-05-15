@@ -439,6 +439,94 @@ window.loadAppState = loadAppState;
 window.saveCurrentUser = saveCurrentUser;
 window.getMyData = getMyData;
 
+/* ============================================================================
+ * DYNAMIC INFLATION RATES (public.inflation_rates)
+ * ----------------------------------------------------------------------------
+ * Заменяет статический STATS_COUNTRY_MAP[code].inflation на реальные данные
+ * из Supabase. Кэширование на уровне модуля (in-memory, без TTL для одиночных
+ * вызовов; TTL=1ч для батч-загрузки списка).
+ *
+ *   getInflationRate(country) → Promise<number>
+ *     country = строка точно как в БД (например, "Россия"). Возвращает rate
+ *     (десятичный процент, e.g. 7.8) либо 5.0 на любую ошибку.
+ *
+ *   loadInflationRates({ force }) → Promise<Array<{country, currency, inflation_rate, last_updated}>>
+ *     Батч-загрузка всех стран. Используется для построения дропдауна стран
+ *     в "Статистике счёта" и для прогрева кэша. Возвращает [] при ошибке.
+ *
+ * Fallback: INFLATION_FALLBACK = 5.0 (соответствует UX-спеке).
+ * ============================================================================ */
+
+var _inflationCache = new Map();       // country (db name) → number
+var _inflationListCache = null;        // { ts: number, rows: Array }
+var INFLATION_FALLBACK = 5.0;
+var INFLATION_LIST_TTL_MS = 60 * 60 * 1000; // 1 час
+
+async function getInflationRate(country) {
+  try {
+    if (!country) return INFLATION_FALLBACK;
+    if (_inflationCache.has(country)) return _inflationCache.get(country);
+    if (!initSupabaseClient()) return INFLATION_FALLBACK;
+
+    var res = await supabaseClient
+      .from("inflation_rates")
+      .select("inflation_rate")
+      .eq("country", country)
+      .single();
+
+    if (res.error || !res.data) {
+      console.warn("[Inflation] Не удалось получить ставку для:", country,
+        res.error && (res.error.code || res.error.message));
+      return INFLATION_FALLBACK;
+    }
+    var rate = Number(res.data.inflation_rate);
+    if (!isFinite(rate)) return INFLATION_FALLBACK;
+    _inflationCache.set(country, rate);
+    return rate;
+  } catch (e) {
+    console.error("[Inflation] Ошибка getInflationRate:", e);
+    return INFLATION_FALLBACK;
+  }
+}
+
+async function loadInflationRates(opts) {
+  var force = !!(opts && opts.force);
+  try {
+    var now = Date.now();
+    if (!force && _inflationListCache &&
+        (now - _inflationListCache.ts < INFLATION_LIST_TTL_MS)) {
+      return _inflationListCache.rows;
+    }
+    if (!initSupabaseClient()) return [];
+
+    var res = await supabaseClient
+      .from("inflation_rates")
+      .select("country, currency, inflation_rate, last_updated")
+      .order("country", { ascending: true });
+
+    if (res.error || !res.data) {
+      console.warn("[Inflation] Не удалось загрузить список:",
+        res.error && (res.error.code || res.error.message));
+      return [];
+    }
+    var rows = res.data;
+    _inflationListCache = { ts: now, rows: rows };
+    rows.forEach(function (row) {
+      if (row && row.country != null && row.inflation_rate != null) {
+        _inflationCache.set(row.country, Number(row.inflation_rate));
+      }
+    });
+    console.log("[Inflation] Загружено стран:", rows.length);
+    return rows;
+  } catch (e) {
+    console.error("[Inflation] Ошибка loadInflationRates:", e);
+    return [];
+  }
+}
+
+window.getInflationRate = getInflationRate;
+window.loadInflationRates = loadInflationRates;
+
 window.addEventListener("load", function () {
   console.log("[Supabase] window.load — запускаем saveCurrentUser через 500 мс");
 

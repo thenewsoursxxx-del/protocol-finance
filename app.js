@@ -2669,7 +2669,16 @@ style="width:52px;height:52px;border-radius:50%">
       const goalTotal = parseNumber(goalInput.value || "0");
       if (!goalCompleted && goalTotal > 0 && accounts.main >= goalTotal) {
         goalCompleted = true;
+        // GOAL COMPLETION FEATURE — снапшот данных ДО любых мутаций состояния
+        // (checkGoalCompletion ниже пропускает primary, но накоплено меняется в recalcPlan).
+        var goalCompletionSnapshot = {
+          name: goalMeta.title || t("misc.defaultGoalTitle"),
+          amount: goalTotal,
+          saved: accounts.main
+        };
         setTimeout(fireCelebration, 120);
+        // GOAL COMPLETION FEATURE — показываем поздравительную модалку после старта конфетти.
+        setTimeout(function () { showGoalCompletionModal(goalCompletionSnapshot); }, 600);
       }
 
       checkGoalCompletion();
@@ -3181,9 +3190,11 @@ function renderGoalHistory() {
 
   var monthNames = null; // replaced by getMonthName()
 
-  completed.forEach(function (g) {
+  completed.forEach(function (g, _historyIdx) {
     var card = document.createElement("div");
     card.className = "goal-history-card";
+    // GOAL COMPLETION FEATURE — data-attr для делегированного click handler.
+    card.setAttribute("data-history-idx", String(_historyIdx));
 
     var dateStr = "";
     if (g.completedDate) {
@@ -3215,7 +3226,10 @@ function checkGoalCompletion() {
   var completed = getState().completedGoals || [];
   var changed = false;
 
-  for (var i = goals.length - 1; i >= 0; i--) {
+  // GOAL COMPLETION FEATURE — primary goal (i=0) теперь обрабатывается
+  // через showGoalCompletionModal() → confirmGoalCompletion(). Здесь его пропускаем,
+  // чтобы не было race-условия с auto-archive до показа модалки пользователю.
+  for (var i = goals.length - 1; i >= 1; i--) {
     var g = goals[i];
     if (g.amount > 0 && (g.saved || 0) >= g.amount) {
       var startDate = null;
@@ -3924,11 +3938,32 @@ function updateGoalVerdict(text) {
 }
 
 function renderGoals() {
-if (!lastCalc.ok) return;
-
+// GOAL COMPLETION FEATURE — empty-state toggle (выполняется ДО проверки lastCalc.ok).
+// После очистки primary цели lastCalc может остаться в "ok" со старыми данными, либо
+// не пересчитываться (canRecalc=false при goalVal=0). В любом случае empty-state
+// должен корректно показаться/скрыться.
 var goals = getGoals();
 var idx = activeGoalIndex;
 if (idx < 0 || idx >= goals.length) idx = 0;
+
+var _primaryAmount = parseNumber(goalInput?.value || "0");
+var _isPrimaryEmpty = (idx === 0 && _primaryAmount === 0);
+var _activeCardEl = getEl("activeGoalCard");
+var _emptyCardEl  = getEl("emptyGoalCard");
+var _advSettingsEl = document.getElementById("advancedSettingsGoals");
+if (_activeCardEl) _activeCardEl.style.display = _isPrimaryEmpty ? "none" : "";
+if (_emptyCardEl)  _emptyCardEl.style.display  = _isPrimaryEmpty ? "" : "none";
+if (_advSettingsEl) _advSettingsEl.style.display = _isPrimaryEmpty ? "none" : "";
+if (_isPrimaryEmpty) {
+  var _verdictEl = getEl("goalVerdict");
+  if (_verdictEl) _verdictEl.textContent = t("goalEmpty.verdict");
+  var _swipeIndicatorEl = getEl("goalSwipeIndicator");
+  if (_swipeIndicatorEl) _swipeIndicatorEl.innerHTML = "";
+  return; // empty-state не нуждается в дальнейшем рендере
+}
+
+if (!lastCalc.ok) return;
+
 var goal = goals[idx] || null;
 
 // OPTIMIZATION: DOM cache — renderGoals вызывается на каждый recalcPlan/swipe.
@@ -4390,7 +4425,10 @@ var inflationEl = getEl("inflationHint");
 if (inflationEl) {
   var infl = (typeof getActiveInflation === "function") ? getActiveInflation() : null;
   if (infl != null && infl > 0) {
-    inflationEl.textContent = t("misc.inflation") + ": " + infl + "%";
+    // DYNAMIC INFLATION — ставка теперь decimal (e.g. 7.8). Округляем до 1 знака
+    // для аккуратного отображения. Целые числа (5 → "5") тоже корректно.
+    var _inflStr = (Math.round(infl * 10) / 10).toString();
+    inflationEl.textContent = t("misc.inflation") + ": " + _inflStr + "%";
     inflationEl.style.display = "";
   } else {
     inflationEl.textContent = "";
@@ -5559,12 +5597,34 @@ initCashflowSettings();
 
 /* ===== ACCOUNT STATS SYSTEM ===== */
 
+// DYNAMIC INFLATION — карта расширена полем dbName (имя как в public.inflation_rates),
+// добавлены страны ES (Испания) и JP (Япония) из новых данных Supabase.
+// Поле `inflation` теперь только FALLBACK (5.0 если Supabase недоступен — см.
+// supabase.js INFLATION_FALLBACK). Реальные ставки приходят асинхронно из
+// loadInflationRates() / getInflationRate(dbName).
 var STATS_COUNTRY_MAP = {
-  RU: { currency: "RUB", inflation: 7, labelKey: "stats.country.RU" },
-  US: { currency: "USD", inflation: 3, labelKey: "stats.country.US" },
-  IN: { currency: "INR", inflation: 6, labelKey: "stats.country.IN" },
-  CN: { currency: "CNY", inflation: 2, labelKey: "stats.country.CN" }
+  RU: { currency: "RUB", inflation: 5.0, labelKey: "stats.country.RU", dbName: "Россия" },
+  US: { currency: "USD", inflation: 5.0, labelKey: "stats.country.US", dbName: "США" },
+  IN: { currency: "INR", inflation: 5.0, labelKey: "stats.country.IN", dbName: "Индия" },
+  CN: { currency: "CNY", inflation: 5.0, labelKey: "stats.country.CN", dbName: "Китай" },
+  ES: { currency: "EUR", inflation: 5.0, labelKey: "stats.country.ES", dbName: "Испания" },
+  JP: { currency: "JPY", inflation: 5.0, labelKey: "stats.country.JP", dbName: "Япония" }
 };
+
+// DYNAMIC INFLATION — reverse-lookup "Россия" → "RU". Используется при загрузке
+// списка из Supabase, чтобы сопоставить DB-имя с внутренним ISO-кодом.
+function _statsCountryCodeFromDbName(dbName) {
+  if (!dbName) return null;
+  for (var code in STATS_COUNTRY_MAP) {
+    if (STATS_COUNTRY_MAP[code].dbName === dbName) return code;
+  }
+  return null;
+}
+
+// DYNAMIC INFLATION — последний загруженный список из Supabase (для отображения
+// в дропдауне). Если пуст / не получен — используем ключи STATS_COUNTRY_MAP как
+// fallback, чтобы экран не оставался пустым в offline-режиме.
+var _statsInflationRows = [];
 
 function getStatsTypeLabel(type) {
   return t("stats.type." + type) || type || "—";
@@ -5572,6 +5632,70 @@ function getStatsTypeLabel(type) {
 
 var _statsSelectedType = null;
 var _statsTargetAccount = "main";
+
+// DYNAMIC INFLATION — рендерит <option>-список в #statsCountry на основе
+// _statsInflationRows. Сохраняет текущее выбранное значение (если оно ещё
+// присутствует в списке). Локализует через labelKey, fallback на dbName.
+function _renderStatsCountryOptions() {
+  var sel = document.getElementById("statsCountry");
+  if (!sel) return;
+
+  var prev = sel.value;
+  // Очищаем кроме первого option (placeholder с data-i18n).
+  while (sel.options.length > 1) sel.remove(1);
+
+  // Список из Supabase, либо fallback на STATS_COUNTRY_MAP, если БД пустая/недоступна.
+  var sourceCodes = [];
+  if (_statsInflationRows && _statsInflationRows.length) {
+    _statsInflationRows.forEach(function (row) {
+      var code = _statsCountryCodeFromDbName(row.country);
+      if (code) {
+        sourceCodes.push(code);
+      } else {
+        // Новая страна, не в нашей карте — добавим как опцию с raw dbName.
+        var opt = document.createElement("option");
+        opt.value = row.country;
+        opt.textContent = row.country;
+        sel.appendChild(opt);
+      }
+    });
+  } else {
+    sourceCodes = Object.keys(STATS_COUNTRY_MAP);
+  }
+
+  sourceCodes.forEach(function (code) {
+    var info = STATS_COUNTRY_MAP[code];
+    if (!info) return;
+    var opt = document.createElement("option");
+    opt.value = code;
+    opt.setAttribute("data-i18n", info.labelKey);
+    opt.textContent = (typeof t === "function") ? t(info.labelKey) : code;
+    sel.appendChild(opt);
+  });
+
+  if (prev) sel.value = prev;
+}
+
+// DYNAMIC INFLATION — обновляет live-preview ставки в дропдауне страны.
+function _updateInflationPreview(rate, isLoading) {
+  var el = document.getElementById("statsInflationPreview");
+  if (!el) return;
+  if (isLoading) {
+    el.textContent = (typeof t === "function") ? t("stats.inflation.loading") : "…";
+    el.style.display = "";
+    el.classList.add("loading");
+    return;
+  }
+  el.classList.remove("loading");
+  if (rate == null || !isFinite(rate)) {
+    el.style.display = "none";
+    el.textContent = "";
+    return;
+  }
+  var pct = (Math.round(rate * 10) / 10).toString();
+  el.textContent = (typeof t === "function") ? t("stats.inflation.preview", { pct: pct }) : (pct + "%");
+  el.style.display = "";
+}
 
 (function initAccountStats() {
   var statsScreen = document.getElementById("screen-account-stats");
@@ -5604,16 +5728,27 @@ var _statsTargetAccount = "main";
   }
 
   if (countrySelect) {
-    countrySelect.addEventListener("change", function () {
+    countrySelect.addEventListener("change", async function () {
       var code = countrySelect.value;
       var info = STATS_COUNTRY_MAP[code];
       if (info && currencySelect) currencySelect.value = info.currency;
       updateSubmitState();
+
+      // DYNAMIC INFLATION — тянем актуальную ставку из Supabase для preview.
+      if (!info || !info.dbName) {
+        _updateInflationPreview(null, false);
+        return;
+      }
+      _updateInflationPreview(null, true);
+      var rate = (typeof window.getInflationRate === "function")
+        ? await window.getInflationRate(info.dbName)
+        : info.inflation;
+      _updateInflationPreview(rate, false);
     });
   }
 
   if (submitBtn) {
-    submitBtn.addEventListener("click", function () {
+    submitBtn.addEventListener("click", async function () {
       var statsData = { type: _statsSelectedType, country: null, currency: null, inflation: null };
 
       if (_statsSelectedType === "cash") {
@@ -5621,18 +5756,33 @@ var _statsTargetAccount = "main";
         var info = STATS_COUNTRY_MAP[code];
         statsData.country = code;
         statsData.currency = currencySelect ? currencySelect.value : (info ? info.currency : null);
-        statsData.inflation = info ? info.inflation : null;
+
+        // DYNAMIC INFLATION — fetch свежей ставки на submit. Кэш предотвращает
+        // повторный round-trip, если страну уже трогали в change-handler.
+        if (info && info.dbName && typeof window.getInflationRate === "function") {
+          try {
+            statsData.inflation = await window.getInflationRate(info.dbName);
+          } catch (e) {
+            console.warn("[Inflation] submit: fallback на статическую ставку:", e);
+            statsData.inflation = info.inflation;
+          }
+        } else {
+          statsData.inflation = info ? info.inflation : null;
+        }
       }
 
       var patch = {};
       patch[_statsTargetAccount] = statsData;
       updateState({ accountStats: patch });
+      // DYNAMIC INFLATION — сохраняем сразу, чтобы свежая ставка попала в Supabase user_state.
+      if (typeof saveFullState === "function") saveFullState();
 
       document.querySelectorAll(".screen").forEach(function (s) { s.classList.remove("active"); });
       document.getElementById("screen-accounts").classList.add("active");
       showBottomNav();
       moveProfileToActiveHeader();
       renderAccountBackCards();
+      if (typeof updatePlanHeader === "function") updatePlanHeader();
       showToast(t("stats.added"), "success");
     });
   }
@@ -5672,11 +5822,39 @@ function openAccountStatsScreen(accountKey) {
   var cashFields = document.getElementById("statsCashFields");
   if (cashFields) cashFields.style.display = (stats.type === "cash") ? "" : "none";
 
+  // DYNAMIC INFLATION — populate countries из Supabase + selected → live preview.
+  _renderStatsCountryOptions(); // мгновенный рендер из кэша (или fallback) для UI без задержки
   var countrySelect = document.getElementById("statsCountry");
   if (countrySelect) countrySelect.value = stats.country || "";
 
   var currencySelect = document.getElementById("statsCurrency");
   if (currencySelect) currencySelect.value = stats.currency || "";
+
+  // Live preview для уже выбранной страны (если есть).
+  _updateInflationPreview(null, false);
+  if (stats.country) {
+    var info = STATS_COUNTRY_MAP[stats.country];
+    if (info && info.dbName && typeof window.getInflationRate === "function") {
+      _updateInflationPreview(null, true);
+      Promise.resolve(window.getInflationRate(info.dbName)).then(function (rate) {
+        _updateInflationPreview(rate, false);
+      });
+    } else if (stats.inflation != null) {
+      _updateInflationPreview(stats.inflation, false);
+    }
+  }
+
+  // Фоновое обновление списка стран (если кэш ещё не прогрет — наполнит дропдаун).
+  if (typeof window.loadInflationRates === "function") {
+    Promise.resolve(window.loadInflationRates()).then(function (rows) {
+      if (rows && rows.length) {
+        _statsInflationRows = rows;
+        _renderStatsCountryOptions();
+        // Восстанавливаем selected после ре-рендера.
+        if (countrySelect) countrySelect.value = stats.country || "";
+      }
+    });
+  }
 
   var submitBtn = document.getElementById("statsSubmit");
   if (submitBtn) submitBtn.disabled = !stats.type;
@@ -5775,7 +5953,9 @@ function renderAccountBackCards() {
       if (timeStr) {
         html += '<div class="inflation-time">' + timeStr + '</div>';
         if (inflation) {
-          html += '<div class="inflation-disclaimer">' + t("stats.inflationDisclaimer", { pct: inflation }) + '</div>';
+          // DYNAMIC INFLATION — decimal → строка с 1 знаком после запятой.
+          var _pctStr = (Math.round(inflation * 10) / 10).toString();
+          html += '<div class="inflation-disclaimer">' + t("stats.inflationDisclaimer", { pct: _pctStr }) + '</div>';
         }
       }
 
@@ -5817,6 +5997,58 @@ document.addEventListener("click", function (e) {
     openAccountStatsScreen(acc);
   }
 });
+
+/* ============================================================================
+ * DYNAMIC INFLATION — startup warmup + background refresh
+ * ----------------------------------------------------------------------------
+ * 1) Прогреваем кэш (loadInflationRates) на старте — будущие открытия экрана
+ *    "Статистика счёта" получают список мгновенно.
+ * 2) Для сохранённых accountStats.main / .reserve — асинхронно перевычитываем
+ *    inflation_rate из БД. Если изменилась — updateState + ререндер. Не блокирует
+ *    UI, не показывает спиннер; на любые ошибки fallback на старое значение.
+ * ============================================================================ */
+(function bootstrapInflation() {
+  if (typeof window.loadInflationRates !== "function") return;
+  // Чуть отложенный запуск, чтобы не конкурировать с критическим init UI.
+  setTimeout(function () {
+    Promise.resolve(window.loadInflationRates()).then(function (rows) {
+      if (rows && rows.length) {
+        _statsInflationRows = rows;
+      }
+      // Обновляем accountStats только если в state есть сохранённая страна.
+      var s = (typeof getState === "function") ? getState() : null;
+      var allStats = (s && s.accountStats) || {};
+      var keys = ["main", "reserve"];
+      var changed = false;
+      var pending = [];
+      keys.forEach(function (key) {
+        var st = allStats[key];
+        if (!st || !st.country) return;
+        var info = STATS_COUNTRY_MAP[st.country];
+        if (!info || !info.dbName) return;
+        pending.push(
+          Promise.resolve(window.getInflationRate(info.dbName)).then(function (rate) {
+            if (rate != null && isFinite(rate) && rate !== st.inflation) {
+              st.inflation = rate;
+              changed = true;
+            }
+          }).catch(function () { /* keep old */ })
+        );
+      });
+      Promise.all(pending).then(function () {
+        if (changed) {
+          var patch = {};
+          keys.forEach(function (key) { if (allStats[key]) patch[key] = allStats[key]; });
+          if (typeof updateState === "function") updateState({ accountStats: patch });
+          if (typeof renderAccountBackCards === "function") renderAccountBackCards();
+          if (typeof updatePlanHeader === "function") updatePlanHeader();
+          if (typeof saveFullState === "function") saveFullState();
+          console.log("[Inflation] accountStats обновлены свежими ставками из Supabase");
+        }
+      });
+    });
+  }, 1200); // после старта основного UI
+})();
 
 renderAccountBackCards();
 
@@ -9652,3 +9884,264 @@ function renderFlexModelSummary() {
  *    `recalcPlan`, `renderFlexModelSummary` — сохранено 1-в-1.
  *
  * ============================================================================ */
+
+/* ============================================================================
+ * GOAL COMPLETION FEATURE
+ * ----------------------------------------------------------------------------
+ * Полный flow завершения цели:
+ *   1) recalcPlan/applyFact обнаруживает accounts.main >= goalTotal →
+ *      goalCompleted=true, fireCelebration() (конфетти), затем через 600ms —
+ *      showGoalCompletionModal(snapshot).
+ *   2) checkGoalCompletion() пропускает i=0 (primary), чтобы не было гонки.
+ *   3) Пользователь нажимает "Я молодец!" → confirmGoalCompletion():
+ *      - архивирует primary в state.completedGoals (с durationMonths и датой)
+ *      - очищает goalInput.value, goalMeta.title, goalCompleted
+ *      - ресетит goals[0] до placeholder (amount=0, saved=0)
+ *      - recalcPlan() → renderGoals() → empty-state карточка
+ *   4) renderGoals() переключает #activeGoalCard <-> #emptyGoalCard по
+ *      primaryAmount === 0 (см. правки выше).
+ *   5) #createNewGoalBtn открывает существующий goalEditorSheet.
+ *   6) History card click → showGoalHistoryDetail(goalData) — детальная модалка.
+ *
+ * ВАЖНО: accounts.main, factHistory, initialBalance НЕ сбрасываются —
+ * это финансовые данные пользователя. Очищается только goal metadata.
+ * ============================================================================ */
+
+(function initGoalCompletionFeature() {
+
+  // ── DOM refs (резолвим лениво в showGoalCompletionModal, чтобы вписаться
+  //    в порядок инициализации остального кода). ──
+  function _q(id) { return document.getElementById(id); }
+
+  // ── Helpers ──
+  function _completionDurationMonths() {
+    if (typeof factHistory === "undefined" || !factHistory || !factHistory.length) {
+      return 0;
+    }
+    var sorted = factHistory.slice().sort(function (a, b) {
+      return new Date(a.date) - new Date(b.date);
+    });
+    var startDate = new Date(sorted[0].date);
+    var now = new Date();
+    var months = (now.getFullYear() - startDate.getFullYear()) * 12 +
+                 (now.getMonth() - startDate.getMonth());
+    return months < 1 ? 1 : months;
+  }
+
+  function _factHistoryStartDate() {
+    if (typeof factHistory === "undefined" || !factHistory || !factHistory.length) {
+      return null;
+    }
+    var sorted = factHistory.slice().sort(function (a, b) {
+      return new Date(a.date) - new Date(b.date);
+    });
+    return sorted[0].date || null;
+  }
+
+  // ── Public: показ модалки поздравления ──
+  // snapshot: { name, amount, saved } захватывается в apply-fact ДО мутаций.
+  window.showGoalCompletionModal = function (snapshot) {
+    var overlay = _q("goalCompleteOverlay");
+    var sheet   = _q("goalCompleteSheet");
+    var textEl  = _q("goalCompleteText");
+    if (!overlay || !sheet) return;
+
+    // Подставляем динамические значения в текст.
+    var sym = (typeof getCurrencySymbol === "function") ? getCurrencySymbol() : "₽";
+    var amountStr = (typeof fmtConverted === "function")
+      ? fmtConverted(snapshot.amount || snapshot.saved || 0)
+      : String(snapshot.amount || 0);
+    var nameStr = snapshot.name || t("misc.defaultGoalTitle");
+    if (textEl) {
+      var template = t("goalComplete.modal.text");
+      // {amount} получает <b>…</b>, {name} — экранируется.
+      var amountHtml = "<b>" + escapeHtmlSafe(amountStr + " " + sym) + "</b>";
+      var nameHtml   = escapeHtmlSafe(nameStr);
+      textEl.innerHTML = template
+        .replace("{amount}", amountHtml)
+        .replace("{name}", nameHtml);
+    }
+
+    // Сохраняем snapshot для confirmGoalCompletion.
+    sheet.dataset.goalSnapshot = JSON.stringify(snapshot || {});
+
+    ProtoSheet.open(sheet, overlay);
+  };
+
+  // ── Confirm: пользователь нажал "Я молодец!" ──
+  function confirmGoalCompletion() {
+    if (typeof haptic === "function") haptic("medium");
+
+    var sheet   = _q("goalCompleteSheet");
+    var overlay = _q("goalCompleteOverlay");
+    if (!sheet || !overlay) return;
+
+    var snapshot = {};
+    try { snapshot = JSON.parse(sheet.dataset.goalSnapshot || "{}"); } catch (e) {}
+
+    // ── 1) Архивируем в completedGoals ──
+    var completed = (typeof getState === "function" ? (getState().completedGoals || []) : []);
+    var durationMonths = _completionDurationMonths();
+    var startDateIso = _factHistoryStartDate();
+    var goalsArr = (typeof getGoals === "function") ? getGoals() : [];
+    var primaryGoal = goalsArr[0] || null;
+    completed.push({
+      id: (primaryGoal && primaryGoal.id) || ("goal_" + Date.now()),
+      title: snapshot.name || (primaryGoal && primaryGoal.title) || t("misc.defaultGoalTitle"),
+      amount: Number(snapshot.amount) || (primaryGoal && primaryGoal.amount) || 0,
+      saved: Number(snapshot.saved) || (primaryGoal && primaryGoal.saved) || 0,
+      completedDate: new Date().toISOString(),
+      startDate: startDateIso,
+      durationMonths: durationMonths
+    });
+    if (typeof updateState === "function") {
+      updateState({ completedGoals: completed });
+    }
+
+    // ── 2) Очищаем primary goal в UI и state ──
+    if (typeof goalInput !== "undefined" && goalInput) {
+      goalInput.value = "";
+    }
+    if (typeof goalMeta !== "undefined" && goalMeta) {
+      goalMeta.title = "";
+    }
+    // Глобальный goalCompleted — сбросить, чтобы следующая цель могла триггерить модалку.
+    if (typeof goalCompleted !== "undefined") {
+      // eslint-disable-next-line no-global-assign
+      try { goalCompleted = false; } catch (e) { window.goalCompleted = false; }
+    }
+
+    // Ресетим goals[0] до placeholder (как в checkGoalCompletion).
+    if (goalsArr.length > 0) {
+      goalsArr[0] = {
+        id: "goal_1",
+        title: t("advGoals.mainGoal") || t("misc.defaultGoalTitle"),
+        amount: 0,
+        saved: 0,
+        priority: 1,
+        monthlyShare: 0,
+        monthsLeft: 0,
+        paused: false
+      };
+      if (typeof persistGoals === "function") persistGoals(goalsArr);
+    }
+
+    // ── 3) Сбрасываем lastCalc, чтобы графики/верктикаты не использовали стэйл-данные ──
+    if (typeof lastCalc !== "undefined" && lastCalc) {
+      lastCalc.ok = false;
+      lastCalc.effectiveGoal = 0;
+      lastCalc.months = 0;
+      lastCalc.monthlySave = 0;
+    }
+
+    // ── 4) Закрываем модалку с анимацией + полный refresh UI ──
+    ProtoSheet.close(sheet, overlay, {
+      onClosed: function () {
+        if (typeof recalcPlan === "function") recalcPlan();
+        if (typeof renderProtocolAdviceGraph === "function") renderProtocolAdviceGraph();
+        if (typeof updateGraphGoalIndicator === "function") updateGraphGoalIndicator();
+        if (typeof saveFullState === "function") saveFullState();
+      }
+    });
+  }
+
+  // ── History detail modal ──
+  window.showGoalHistoryDetail = function (goalData) {
+    var overlay = _q("goalHistoryDetailOverlay");
+    var sheet   = _q("goalHistoryDetailSheet");
+    if (!overlay || !sheet || !goalData) return;
+
+    if (typeof haptic === "function") haptic("light");
+
+    var titleEl    = _q("goalHistoryDetailTitle");
+    var amountEl   = _q("goalHistoryDetailAmount");
+    var periodEl   = _q("goalHistoryDetailPeriod");
+    var durationEl = _q("goalHistoryDetailDuration");
+    var sym = (typeof getCurrencySymbol === "function") ? getCurrencySymbol() : "₽";
+
+    if (titleEl) {
+      titleEl.textContent = goalData.title || t("misc.defaultGoalTitle");
+    }
+    if (amountEl) {
+      var amt = (typeof fmtConverted === "function")
+        ? fmtConverted(goalData.saved || goalData.amount || 0)
+        : String(goalData.saved || goalData.amount || 0);
+      amountEl.textContent = amt + " " + sym;
+    }
+    if (periodEl) {
+      var unknown = t("goalHistory.detail.dateUnknown");
+      var fromStr = unknown, toStr = unknown;
+      if (goalData.startDate) {
+        var d1 = new Date(goalData.startDate);
+        fromStr = getMonthName(d1.getMonth()) + " " + d1.getFullYear();
+      }
+      if (goalData.completedDate) {
+        var d2 = new Date(goalData.completedDate);
+        toStr = getMonthName(d2.getMonth()) + " " + d2.getFullYear();
+      }
+      periodEl.textContent = fromStr + " — " + toStr;
+    }
+    if (durationEl) {
+      var months = Number(goalData.durationMonths) || 0;
+      durationEl.textContent = months < 1
+        ? t("goalHistory.detail.durationLessMonth")
+        : t("goalHistory.detail.durationMonths", { n: months });
+    }
+
+    ProtoSheet.open(sheet, overlay);
+  };
+
+  function closeGoalHistoryDetail() {
+    var overlay = _q("goalHistoryDetailOverlay");
+    var sheet   = _q("goalHistoryDetailSheet");
+    if (!overlay || !sheet) return;
+    ProtoSheet.close(sheet, overlay);
+  }
+
+  // ── Wiring (DOMContentLoaded не нужен — этот файл подключается в конце <body>). ──
+
+  // 1) Кнопка "Я молодец!" в congrats модалке.
+  var completeBtn = _q("goalCompleteBtn");
+  if (completeBtn) {
+    completeBtn.addEventListener("click", confirmGoalCompletion);
+  }
+
+  // 2) Кнопка "Создать новую цель" в empty-state карточке.
+  //    Открывает существующий goalEditorSheet (тот же flow, что и кнопка редактирования).
+  var createNewGoalBtn = _q("createNewGoalBtn");
+  if (createNewGoalBtn) {
+    createNewGoalBtn.addEventListener("click", function () {
+      if (typeof haptic === "function") haptic("light");
+      // Симулируем клик по editGoalBtn — он триггерит весь flow открытия редактора цели.
+      var editBtn = _q("editGoalBtn");
+      if (editBtn) {
+        editBtn.click();
+      }
+    });
+  }
+
+  // 3) History detail close handlers.
+  var hdClose    = _q("goalHistoryDetailClose");
+  var hdCloseBtn = _q("goalHistoryDetailCloseBtn");
+  var hdOverlay  = _q("goalHistoryDetailOverlay");
+  if (hdClose)    hdClose.addEventListener("click", closeGoalHistoryDetail);
+  if (hdCloseBtn) hdCloseBtn.addEventListener("click", closeGoalHistoryDetail);
+  if (hdOverlay)  hdOverlay.addEventListener("click", closeGoalHistoryDetail);
+
+  // 4) Делегирование клика по карточкам в #goalHistoryList.
+  //    Это работает с DOM-узлами, которые renderGoalHistory() создаёт динамически —
+  //    нам не нужно перерезать обработчики при каждом рендере.
+  var historyList = _q("goalHistoryList");
+  if (historyList) {
+    historyList.addEventListener("click", function (e) {
+      var card = e.target.closest(".goal-history-card");
+      if (!card) return;
+      var idx = parseInt(card.getAttribute("data-history-idx") || "-1", 10);
+      if (isNaN(idx) || idx < 0) return;
+      var completed = (typeof getState === "function" ? (getState().completedGoals || []) : []);
+      var goalData = completed[idx];
+      if (goalData) window.showGoalHistoryDetail(goalData);
+    });
+  }
+})();
+

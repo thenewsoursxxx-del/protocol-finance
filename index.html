@@ -416,6 +416,14 @@ Protocol анализирует данные…
 <div class="goal-swipe-wrapper" id="goalSwipeWrapper">
 <div class="goal-swipe-content" id="goalSwipeContent">
 
+<!-- GOAL COMPLETION FEATURE — empty-state card (показывается после завершения цели) -->
+<div class="card goal-empty-card" id="emptyGoalCard" style="display:none">
+  <div class="goal-empty-icon" aria-hidden="true">🎯</div>
+  <h3 class="goal-empty-title" data-i18n="goalEmpty.title">Начать копить на новую цель</h3>
+  <p class="goal-empty-subtitle" data-i18n="goalEmpty.subtitle">Поставьте новую цель — Protocol поможет её достичь</p>
+  <button type="button" id="createNewGoalBtn" class="goal-empty-btn" data-i18n="goalEmpty.button">Создать новую цель</button>
+</div>
+
 <div class="card" id="activeGoalCard">
 <div id="goalPausedBadge" class="goal-paused-badge" data-i18n="goals.paused">На паузе</div>
 <div style="font-size:14px;opacity:.6" data-i18n="goals.active">Активная цель</div>
@@ -968,13 +976,13 @@ Protocol анализирует цель…
     <div id="statsCashFields" class="stats-cash-fields" style="display:none">
       <div class="input-wrap stats-input-wrap">
         <label data-i18n="stats.country">Страна</label>
+        <!-- DYNAMIC INFLATION — options заполняются из Supabase (loadInflationRates).
+             Placeholder + fallback options остаются на случай оффлайна. -->
         <select id="statsCountry" class="stats-select">
           <option value="" data-i18n="settings.selectCountry">Выберите страну</option>
-          <option value="RU" data-i18n="stats.country.RU">Россия</option>
-          <option value="US" data-i18n="stats.country.US">США</option>
-          <option value="IN" data-i18n="stats.country.IN">Индия</option>
-          <option value="CN" data-i18n="stats.country.CN">Китай</option>
         </select>
+        <!-- DYNAMIC INFLATION — live preview ставки после выбора страны -->
+        <div id="statsInflationPreview" class="stats-inflation-preview" style="display:none"></div>
       </div>
 
       <div class="input-wrap stats-input-wrap">
@@ -986,6 +994,7 @@ Protocol анализирует цель…
           <option value="INR">INR</option>
           <option value="CNY">CNY</option>
           <option value="EUR">EUR</option>
+          <option value="JPY">JPY</option>
         </select>
       </div>
     </div>
@@ -1528,6 +1537,44 @@ z-index: 999999;
   <div class="priority-hint" id="priorityHint"></div>
 
   <button id="advGoalSave" style="margin-top:20px" data-i18n="advGoals.save">Сохранить</button>
+</div>
+
+<!-- ===== GOAL COMPLETION FEATURE — congrats modal ===== -->
+<!-- Overlay без cursor:pointer, без обработчика клика — модалка mandatory, только через кнопку. -->
+<div id="goalCompleteOverlay" class="proto-sheet-overlay"></div>
+<div id="goalCompleteSheet" class="proto-sheet goal-complete-sheet">
+  <div class="goal-complete-emoji" aria-hidden="true">🎉</div>
+  <h2 class="goal-complete-title" id="goalCompleteTitle" data-i18n="goalComplete.modal.title">Поздравляем! Цель выполнена! 🎉</h2>
+  <p class="goal-complete-text" id="goalCompleteText">Вы молодец! Вы успешно накопили <b>0</b> на «—»</p>
+  <button type="button" id="goalCompleteBtn" class="goal-complete-btn" data-i18n="goalComplete.modal.button">Я молодец!</button>
+</div>
+
+<!-- ===== GOAL COMPLETION FEATURE — history detail modal ===== -->
+<div id="goalHistoryDetailOverlay" class="proto-sheet-overlay"></div>
+<div id="goalHistoryDetailSheet" class="proto-sheet goal-history-detail">
+  <button id="goalHistoryDetailClose" class="report-close-x" type="button" aria-label="Close">&times;</button>
+  <div class="goal-history-detail-trophy" aria-hidden="true">🏆</div>
+  <div class="goal-history-detail-subtitle" data-i18n="goalHistory.detail.subtitle">Завершённая цель</div>
+  <h2 class="goal-history-detail-title" id="goalHistoryDetailTitle" style="margin:6px 0 18px">—</h2>
+
+  <div class="goal-history-detail-row">
+    <span class="goal-history-detail-row-label" data-i18n="goalHistory.detail.amountLabel">Накоплено</span>
+    <span class="goal-history-detail-row-value" id="goalHistoryDetailAmount">—</span>
+  </div>
+  <div class="goal-history-detail-row">
+    <span class="goal-history-detail-row-label" data-i18n="goalHistory.detail.periodLabel">Период</span>
+    <span class="goal-history-detail-row-value" id="goalHistoryDetailPeriod">—</span>
+  </div>
+  <div class="goal-history-detail-row">
+    <span class="goal-history-detail-row-label" data-i18n="goalHistory.detail.durationLabel">За сколько</span>
+    <span class="goal-history-detail-row-value" id="goalHistoryDetailDuration">—</span>
+  </div>
+
+  <div class="goal-history-detail-progress" aria-hidden="true">
+    <div class="goal-history-detail-progress-fill"></div>
+  </div>
+
+  <button type="button" id="goalHistoryDetailCloseBtn" class="goal-history-detail-close-btn" data-i18n="goalHistory.detail.close">Закрыть</button>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
