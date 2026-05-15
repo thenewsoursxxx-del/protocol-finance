@@ -636,7 +636,12 @@ Protocol анализирует цель…
 <button id="goalHistoryBtn" class="profile-btn" data-i18n="profile.goalHistory">📋 История целей</button>
 <!-- NEW: Report problem feature — кнопка "Сообщить о проблеме" в стиле emerald accent -->
 <button id="reportProblemBtn" class="profile-btn profile-btn--report" data-i18n="profile.reportProblem">🐞 Сообщить о проблеме</button>
-<button id="profileResetPlan" class="profile-btn danger" data-i18n="profile.resetPlan">🔄 Сбросить план</button>
+<!-- NEW: Full reset button in Profile — переименовано из "Сбросить план" для большей ясности.
+     Кнопка переиспользует существующий #confirmReset → confirmYes → performFullReset(),
+     который через clearState() обнуляет ВСЁ: текущую цель, накопления, factHistory,
+     completedGoals (история целей), accountStats (статистика счетов). После сброса
+     приложение возвращается в начальное состояние (как при первом запуске). -->
+<button id="profileResetPlan" class="profile-btn danger" data-i18n="profile.fullReset">🆕 Начать сначала</button>
 </div>
 
 <!-- ===== SETTINGS SCREEN ===== -->

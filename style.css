@@ -4784,55 +4784,21 @@ body.flip-fix-pending .flip-wrapper {
 }
 
 /* ============================================================================
-   FIX: goal completion UI — блокировка интерфейса до создания новой цели
+   FIX: soft blocking after goal completion
    ----------------------------------------------------------------------------
-   Когда у пользователя нет активной цели (после завершения предыдущей) и он
-   находится на любом экране кроме #screen-new-goal — приложение "залочено":
-   все интерактивные элементы тушатся и не реагируют на клики, КРОМЕ:
-     • .bottom-nav (нижний навбар — всегда активен)
-     • #protocolEmptyGoalCard / #emptyGoalCard и кнопки внутри (создание новой цели)
-   Класс body.app-locked управляется из app.js (см. _updateAppLock).
+   Старая агрессивная блокировка (затемнение всего экрана, grayscale, отключение
+   app-header и т.п.) удалена — она портила UX: цвет навбара менялся, профиль
+   становился недоступным, ощущение "сломанного" приложения.
+
+   Новый подход — "мягкая" блокировка:
+     • Графика и activeGoalCard уже скрыты (display:none) через
+       _syncProtocolEmptyState() / renderGoals() при пустой цели.
+     • Empty-state карточки видны и интерактивны.
+     • Навбар, профиль, settings, history — всё работает нормально.
+
+   Класс body.app-locked продолжает добавляться window._updateAppLock() как
+   маркер для будущих точечных правил (если понадобятся), но визуально безвреден.
    ============================================================================ */
-body.app-locked .screen.active .card:not(.goal-empty-card):not(.protocol-empty-goal-card),
-body.app-locked .screen.active button:not(.nav-btn):not(#protocolCreateNewGoalBtn):not(#createNewGoalBtn):not(.goal-empty-btn),
-body.app-locked .screen.active input,
-body.app-locked .screen.active select,
-body.app-locked .screen.active label,
-body.app-locked .screen.active .toggle-group,
-body.app-locked .screen.active .mode-buttons,
-body.app-locked .screen.active .timeline-controls,
-body.app-locked .screen.active section,
-body.app-locked .screen.active #adviceCard {
-  pointer-events: none !important;
-  opacity: 0.42;
-  filter: grayscale(0.35);
-  transition: opacity 0.32s ease, filter 0.32s ease;
-}
-body.app-locked .app-header > * {
-  pointer-events: none;
-  opacity: 0.45;
-  transition: opacity 0.32s ease;
-}
-/* Empty-state карточки и их содержимое — всегда интерактивны */
-body.app-locked .goal-empty-card,
-body.app-locked .goal-empty-card *,
-body.app-locked .protocol-empty-goal-card,
-body.app-locked .protocol-empty-goal-card * {
-  pointer-events: auto !important;
-  opacity: 1 !important;
-  filter: none !important;
-}
-/* Bottom nav — всегда активен */
-body.app-locked .bottom-nav,
-body.app-locked .bottom-nav * {
-  pointer-events: auto !important;
-  opacity: 1 !important;
-  filter: none !important;
-}
-@media (prefers-reduced-motion: reduce) {
-  body.app-locked .screen.active *,
-  body.app-locked .app-header > * { transition: none; }
-}
 
 /* ============================================================================
    PREMIUM GOAL COMPLETION — congrats modal (after goal reached)

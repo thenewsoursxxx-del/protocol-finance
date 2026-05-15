@@ -328,6 +328,8 @@
       "profile.settings": "⚙️ Настройки",
       "profile.goalHistory": "📋 История целей",
       "profile.resetPlan": "🔄 Сбросить план",
+      // NEW: Full reset button in Profile — финальный текст кнопки "Начать сначала".
+      "profile.fullReset": "🆕 Начать сначала",
       // NEW: Report problem feature
       "profile.reportProblem": "🐞 Сообщить о проблеме",
       "report.modal.title": "Сообщить о проблеме",
@@ -352,7 +354,8 @@
       "report.toast.mediaUploadError": "Не удалось загрузить файл: {name}",
 
       // ── Confirm reset ──
-      "reset.text": "Если вы нажмёте «Начать сначала», весь прогресс и накопления будут сброшены.",
+      // NEW: Full reset button in Profile — усиленный текст, упоминает все категории данных.
+      "reset.text": "Если вы нажмёте «Начать сначала», будет сброшено всё: текущая цель, накопления, история целей и статистика счетов.",
       "reset.cancel": "Отменить",
       "reset.confirm": "Начать сначала",
 
@@ -1032,6 +1035,8 @@
       "profile.settings": "⚙️ Settings",
       "profile.goalHistory": "📋 Goal History",
       "profile.resetPlan": "🔄 Reset Plan",
+      // NEW: Full reset button in Profile
+      "profile.fullReset": "🆕 Start Over",
       // NEW: Report problem feature
       "profile.reportProblem": "🐞 Report a problem",
       "report.modal.title": "Report a problem",
@@ -1056,7 +1061,8 @@
       "report.toast.mediaUploadError": "Could not upload file: {name}",
 
       // ── Confirm reset ──
-      "reset.text": "If you press \"Start over\", all progress and savings will be reset.",
+      // NEW: Full reset button in Profile — beefed-up wording listing all reset categories.
+      "reset.text": "If you press \u201CStart over\u201D, everything will be reset: current goal, savings, goal history and account statistics.",
       "reset.cancel": "Cancel",
       "reset.confirm": "Start over",
 

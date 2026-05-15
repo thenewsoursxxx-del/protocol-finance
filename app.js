@@ -2869,7 +2869,17 @@ function performFullReset() {
 }
 
 confirmYes.onclick = () => {
+  // NEW: Full reset button in Profile — после performFullReset() явно синхронизируем
+  //      пустое состояние с Supabase через saveFullState(). Без этого Supabase сохранял бы
+  //      старые данные до следующего изменения.
   performFullReset();
+  try {
+    // _updateAppLock пересчитает body.app-locked маркер (CSS-эффекта нет — оставлено для будущего).
+    if (typeof window._updateAppLock === "function") window._updateAppLock();
+    if (typeof saveFullState === "function") saveFullState();
+  } catch (e) {
+    console.warn("[Reset] saveFullState after performFullReset:", e);
+  }
 };
 
 /* ===== PROFILE ===== */
