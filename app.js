@@ -9014,6 +9014,10 @@ function renderFlexModelSummary() {
 
   // NEW: Report problem feature — флаг защиты от двойной отправки.
   var _isSending = false;
+  // FIX: cancel button during upload — флаг "пользователь нажал Отмена".
+  // Используется в submitReport, чтобы НЕ показывать toast "не удалось отправить"
+  // при штатной отмене (reject от xhr.abort() в saveReport).
+  var _isCancelling = false;
 
   // NEW: Media attachment in reports — лимиты и state выбранных файлов.
   var MAX_FILES = 5;
@@ -9163,7 +9167,7 @@ function renderFlexModelSummary() {
   }
 
   function closeReportSheet() {
-    if (_isSending) return; // не закрываем во время отправки
+    if (_isSending) return; // не закрываем во время отправки (overlay/X должны блокировать)
     ProtoSheet.close(sheet, overlay, {
       onClosed: function () {
         if (textArea) {
@@ -9177,6 +9181,37 @@ function renderFlexModelSummary() {
     });
   }
 
+  // FIX: cancel button during upload — обработчик кнопки "Отмена".
+  // Вне отправки — обычное закрытие. Во время отправки — abort всех активных
+  // XHR-аплоадов, force-close модалки, без toast "ошибка".
+  function cancelDuringUpload() {
+    if (!_isSending) {
+      closeReportSheet();
+      return;
+    }
+    if (typeof haptic === "function") haptic("light");
+    _isCancelling = true;
+    if (typeof window.cancelReportUpload === "function") {
+      window.cancelReportUpload();
+    }
+    // Сразу гасим прогресс-бар (без error-вспышки — это штатная отмена, не сбой).
+    hideProgressBar();
+    // Снимаем sending state, чтобы ProtoSheet.close сработал без early-return.
+    _isSending = false;
+    ProtoSheet.close(sheet, overlay, {
+      onClosed: function () {
+        if (textArea) {
+          textArea.value = "";
+          updateCounter();
+        }
+        clearSelectedFiles();
+        hideProgressBar();
+        // Reset флага через тик, чтобы submitReport's catch успел его увидеть.
+        setTimeout(function () { _isCancelling = false; }, 100);
+      }
+    });
+  }
+
   function setSendingState(isSending) {
     _isSending = !!isSending;
     if (btnSend) {
@@ -9185,7 +9220,9 @@ function renderFlexModelSummary() {
         ? (selectedFiles.length > 0 ? t("report.modal.uploading") : t("report.modal.sending"))
         : t("report.modal.send");
     }
-    if (btnCancel) btnCancel.disabled = _isSending;
+    // FIX: cancel button during upload — НЕ блокируем btnCancel во время отправки.
+    // Теперь нажатие во время _isSending вызывает cancelDuringUpload() (см. wiring ниже).
+    if (btnCancel) btnCancel.disabled = false;
     if (btnClose)  btnClose.disabled  = _isSending;
     if (textArea)  textArea.disabled  = _isSending;
     // NEW: Media attachment in reports — блокируем attach и remove-кнопки во время отправки
@@ -9449,6 +9486,18 @@ function renderFlexModelSummary() {
       // вместо мгновенного скрытия. Toast и haptic срабатывают сразу,
       // разблокировку кнопок делаем после анимации, чтобы не "прыгало".
       console.error("[Report] Ошибка:", result && result.error);
+
+      // FIX: cancel button during upload — если пользователь нажал "Отмена",
+      // saveReport возвращает ошибку "upload aborted" из-за xhr.abort().
+      // Полагаемся на флаг _isCancelling (выставляется синхронно в момент клика).
+      // Дополнительно ловим текст "aborted" — на случай браузеров, где abort()
+      // мог сработать без участия нашего обработчика.
+      var wasAborted = _isCancelling ||
+        (result && result.error && /\babort(ed)?\b/i.test(String(result.error)));
+      if (wasAborted) {
+        // Модалка уже закрывается через cancelDuringUpload → выходим тихо.
+        return;
+      }
       // NEW: Media attachment in reports — если сбой произошёл на конкретном файле,
       // используем переведённый ключ с именем файла.
       var errMsg;
@@ -9491,7 +9540,8 @@ function renderFlexModelSummary() {
   // ── Event wiring ──
   btnOpen.addEventListener("click", openReportSheet);
   if (btnClose)   btnClose.addEventListener("click", closeReportSheet);
-  if (btnCancel)  btnCancel.addEventListener("click", closeReportSheet);
+  // FIX: cancel button during upload — Cancel теперь умеет прерывать аплоад
+  if (btnCancel)  btnCancel.addEventListener("click", cancelDuringUpload);
   if (overlay)    overlay.addEventListener("click", closeReportSheet);
   if (btnSend)    btnSend.addEventListener("click", submitReport);
 

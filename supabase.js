@@ -471,6 +471,12 @@ function _sanitizeFileName(name) {
 //
 // Возвращает Promise<{ data, statusCode? }>. На !2xx — reject с err{statusCode, body, message}.
 // onProgress(loaded, total) — частые вызовы (~50–150ms на медленной сети).
+
+// FIX: cancel button during upload — список активных XHR для abort().
+// Когда пользователь жмёт "Отмена" во время аплоада, window.cancelReportUpload()
+// проходит по списку и вызывает xhr.abort() на каждом → onabort → reject Promise.
+var _activeReportXhrs = [];
+
 function _uploadFileViaXHR(url, file, headers, onProgress) {
   return new Promise(function (resolve, reject) {
     var xhr = new XMLHttpRequest();
@@ -478,6 +484,13 @@ function _uploadFileViaXHR(url, file, headers, onProgress) {
     Object.keys(headers || {}).forEach(function (k) {
       xhr.setRequestHeader(k, headers[k]);
     });
+
+    // Регистрируем XHR в активном списке для возможного abort'а.
+    _activeReportXhrs.push(xhr);
+    function _unregister() {
+      var idx = _activeReportXhrs.indexOf(xhr);
+      if (idx >= 0) _activeReportXhrs.splice(idx, 1);
+    }
 
     if (xhr.upload && typeof onProgress === "function") {
       xhr.upload.onprogress = function (evt) {
@@ -488,6 +501,7 @@ function _uploadFileViaXHR(url, file, headers, onProgress) {
     }
 
     xhr.onload = function () {
+      _unregister();
       if (xhr.status >= 200 && xhr.status < 300) {
         var parsed;
         try { parsed = JSON.parse(xhr.responseText || "{}"); } catch (e) { parsed = {}; }
@@ -505,13 +519,34 @@ function _uploadFileViaXHR(url, file, headers, onProgress) {
         reject(err);
       }
     };
-    xhr.onerror   = function () { reject(new Error("upload network error")); };
-    xhr.ontimeout = function () { reject(new Error("upload timeout")); };
+    xhr.onerror   = function () { _unregister(); reject(new Error("upload network error")); };
+    xhr.ontimeout = function () { _unregister(); reject(new Error("upload timeout")); };
+    // FIX: cancel button during upload — обработчик abort, без него Promise виснет
+    // после xhr.abort(), и Promise.all/await никогда не резолвится.
+    xhr.onabort   = function () {
+      _unregister();
+      var ae = new Error("upload aborted");
+      ae.aborted = true;
+      reject(ae);
+    };
     xhr.timeout = 60000; // 60s per file (25MB на 3G ≈ 60s)
 
     xhr.send(file);
   });
 }
+
+// FIX: cancel button during upload — публичный API для UI слоя (app.js).
+// Прерывает все активные XHR-аплоады в текущем `saveReport`. Идемпотентно.
+window.cancelReportUpload = function () {
+  if (!_activeReportXhrs.length) return;
+  console.log('%c[Report] Отмена аплоада, активных XHR:', 'color: #f59e0b', _activeReportXhrs.length);
+  // Снапшот, потому что abort() триггерит _unregister() который мутирует массив.
+  var snapshot = _activeReportXhrs.slice();
+  for (var i = 0; i < snapshot.length; i++) {
+    try { snapshot[i].abort(); } catch (e) { /* swallow */ }
+  }
+  _activeReportXhrs.length = 0;
+};
 
 // UPDATED: saveReport — поддерживает media-аплоад с REAL XHR-прогрессом.
 // Сигнатура: saveReport(telegramId, message, files, onProgress)

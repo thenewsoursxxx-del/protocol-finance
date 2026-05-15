@@ -810,6 +810,14 @@ color: #f55;
   transition: transform 0.12s linear;
 }
 
+/* FIX: symmetric progress lines.
+   Inset 2px на каждом ребре (left/right). Это устраняет два эффекта:
+   1) safe-area-inset-right > 0 на устройствах с notch: правый бар попадал
+      в системную зону, виден был только inward glow ("тень").
+   2) overflow:hidden на .report-progress клипал внешний glow:
+      пользователь видел асимметрию из-за разной "толщины" видимого glow.
+   Inset 2px на обоих → линии всегда внутри визуальной области модалки,
+   меняется лишь крошечный отступ (~2px), идеально симметричный с обеих сторон. */
 .report-progress__bar--left,
 .report-progress__bar--right {
   top: 0;
@@ -818,19 +826,19 @@ color: #f55;
   transform-origin: bottom center;
   transform: scaleY(var(--p-vert, 0));
 }
-.report-progress__bar--left  { left: 0; }
-.report-progress__bar--right { right: 0; }
+.report-progress__bar--left  { left: 2px; }
+.report-progress__bar--right { right: 2px; }
 
 .report-progress__bar--top-left,
 .report-progress__bar--top-right {
   top: 0;
   height: 2px;
-  width: 50%;
+  width: calc(50% - 2px);
   background: linear-gradient(90deg, #6ee7b7 0%, #10b981 50%, #047857 100%);
   transform: scaleX(var(--p-horz, 0));
 }
-.report-progress__bar--top-left  { left: 0;  transform-origin: left center; }
-.report-progress__bar--top-right { right: 0; transform-origin: right center; }
+.report-progress__bar--top-left  { left:  2px; transform-origin: left center;  }
+.report-progress__bar--top-right { right: 2px; transform-origin: right center; }
 
 /* Тонкий "breathing" glow — линии живые, дышат пока идёт upload. */
 @keyframes reportBarShimmer {
@@ -865,14 +873,18 @@ color: #f55;
   transition: box-shadow 0.35s ease;
 }
 
-/* PREMIUM PROGRESS ANIMATION — checkmark. */
+/* PREMIUM PROGRESS ANIMATION — checkmark.
+   FIX: checkmark fully visible inside modal.
+   Раньше: top:0 + translateY(-50%) ставило центр на y=0 (модал-rim),
+   верхняя половина клипалась overflow:hidden у .report-progress.
+   Теперь: top:18px → центр на y=18, спан y=[3, 33], полностью внутри. */
 .report-progress__check {
   position: absolute;
-  top: 0;
+  top: 18px;
   left: 50%;
   width: 30px;
   height: 30px;
-  transform: translate(-50%, -55%) scale(0.7);
+  transform: translate(-50%, -50%) scale(0.7);
   opacity: 0;
   transition:
     opacity 0.28s ease 0.08s,
@@ -894,6 +906,7 @@ color: #f55;
 }
 .report-uploading--done .report-progress__check {
   opacity: 1;
+  /* FIX: тот же translateY(-50%), позиция теперь от top:18px → полностью внутри */
   transform: translate(-50%, -50%) scale(1);
 }
 .report-uploading--done .report-progress__check-tick {
@@ -988,7 +1001,8 @@ color: #f55;
 }
 .report-uploading--error .report-progress__check {
   opacity: 0;
-  transform: translate(-50%, -55%) scale(0.7);
+  /* FIX: тот же translateY(-50%), консистентно с idle/done позицией */
+  transform: translate(-50%, -50%) scale(0.7);
 }
 .report-uploading--error.report-sheet {
   box-shadow:
