@@ -2178,6 +2178,12 @@ if (name === "advice" && typeof window._syncProtocolEmptyState === "function") {
   try { window._syncProtocolEmptyState(); } catch (e) { /* noop */ }
 }
 
+// FIX: goal completion UI — обновляем app-lock после смены экрана
+//   (на #screen-new-goal лок снимается; на любом другом экране при пустой цели — включается)
+if (typeof window._updateAppLock === "function") {
+  try { window._updateAppLock(name); } catch (e) { /* noop */ }
+}
+
 replayNavIconForScreen(name);
 }
 // ===== TOP PROFILE FIX =====
@@ -10140,6 +10146,9 @@ function renderFlexModelSummary() {
         if (typeof renderProtocolAdviceGraph === "function") renderProtocolAdviceGraph();
         if (typeof updateGraphGoalIndicator === "function") updateGraphGoalIndicator();
         if (typeof saveFullState === "function") saveFullState();
+        // FIX: goal completion UI — включаем app-lock после закрытия поздравительной модалки.
+        //      Goal только что был обнулён, активный screen остаётся текущим (обычно advice).
+        if (typeof window._updateAppLock === "function") window._updateAppLock();
       }
     });
   }
@@ -10210,13 +10219,15 @@ function renderFlexModelSummary() {
   // NEW: Full goal creation flow in Protocol tab — оба #createNewGoalBtn (на Goals tab)
   //      и #protocolCreateNewGoalBtn (на Protocol tab) теперь ведут на полноценный
   //      экран #screen-new-goal через window.openNewGoalScreen().
-  var createNewGoalBtn = _q("createNewGoalBtn");
-  if (createNewGoalBtn) {
-    createNewGoalBtn.addEventListener("click", function () {
+  // FIX: new goal creation flow — wire #protocolCreateNewGoalBtn (раньше был только Goals tab).
+  ["createNewGoalBtn", "protocolCreateNewGoalBtn"].forEach(function (btnId) {
+    var btn = _q(btnId);
+    if (!btn) return;
+    btn.addEventListener("click", function () {
       if (typeof haptic === "function") haptic("light");
       if (typeof window.openNewGoalScreen === "function") window.openNewGoalScreen();
     });
-  }
+  });
 
   // 3) History detail close handlers.
   var hdClose    = _q("goalHistoryDetailClose");
@@ -10269,6 +10280,24 @@ function renderFlexModelSummary() {
 (function initNewGoalFlow() {
   function _q(id) { return (typeof getEl === "function") ? getEl(id) : document.getElementById(id); }
 
+  // ---- Helper: текущее состояние "цель пустая?" ----
+  function _isGoalEmptyNow() {
+    try {
+      var gi = (typeof goalInput !== "undefined") ? goalInput : _q("goal");
+      var v = (typeof parseNumber === "function")
+        ? parseNumber(gi?.value || "0")
+        : parseFloat((gi?.value || "0").replace(/\s/g, "")) || 0;
+      return v === 0;
+    } catch (e) { return false; }
+  }
+
+  // ---- Helper: текущее активное screen-имя ("calc", "advice", ..., "new-goal") ----
+  function _currentScreenName() {
+    var el = document.querySelector(".screen.active");
+    if (!el || !el.id) return null;
+    return el.id.replace(/^screen-/, "");
+  }
+
   // ---- 1. Toggle protocol empty-state vs graph ----
   window._syncProtocolEmptyState = function () {
     var emptyCard = _q("protocolEmptyGoalCard");
@@ -10276,16 +10305,7 @@ function renderFlexModelSummary() {
     var flipWrap  = _q("flipWrapper");
     if (!emptyCard || !advice) return false;
 
-    // Определяем "пусто" по primary goal amount (input value).
-    var primaryAmount = 0;
-    try {
-      var gi = (typeof goalInput !== "undefined") ? goalInput : _q("goal");
-      primaryAmount = (typeof parseNumber === "function")
-        ? parseNumber(gi?.value || "0")
-        : parseFloat((gi?.value || "0").replace(/\s/g, "")) || 0;
-    } catch (e) { primaryAmount = 0; }
-
-    var isEmpty = (primaryAmount === 0);
+    var isEmpty = _isGoalEmptyNow();
 
     if (isEmpty) {
       emptyCard.style.display = "";
@@ -10305,6 +10325,17 @@ function renderFlexModelSummary() {
     }
     if (flipWrap) flipWrap.style.minHeight = "";
     return isEmpty;
+  };
+
+  // ---- 1b. App-lock toggle (FIX: goal completion UI) ----
+  // body.app-locked включается, когда:
+  //   • primary goal === 0 (пользователь только что завершил цель), И
+  //   • активный screen НЕ #screen-new-goal (на нём пользователь и создаёт новую цель)
+  // Снимается, как только цель создана (goalInput.value > 0).
+  window._updateAppLock = function (currentScreenNameArg) {
+    var screen = currentScreenNameArg || _currentScreenName();
+    var lock = _isGoalEmptyNow() && screen !== "new-goal";
+    document.body.classList.toggle("app-locked", lock);
   };
 
   // ---- 2. Numeric input formatting (live) ----
@@ -10329,36 +10360,10 @@ function renderFlexModelSummary() {
   _bindNumericFormatting(_q("newGoalSaved"));
   _bindNumericFormatting(_q("newGoalIncome"));
   _bindNumericFormatting(_q("newGoalExpenses"));
-  _bindNumericFormatting(_q("newGoalDuration"));
 
-  // ---- 3. Tempo segment toggle ----
-  var tempoSegment = _q("newGoalTempoSegment");
+  // ---- 3. Pace selection (calm/normal/aggressive) ----
+  // FIX: new goal creation flow — убран tempo-segment (rate/duration), оставлен только pace.
   var paceButtons  = _q("newGoalPaceButtons");
-  var durationWrap = _q("newGoalDurationWrap");
-  var _tempoMode   = "rate"; // 'rate' | 'duration'
-
-  if (tempoSegment) {
-    tempoSegment.querySelectorAll(".mode-btn").forEach(function (b) {
-      b.addEventListener("click", function () {
-        var v = b.dataset.tempo;
-        if (!v || v === _tempoMode) return;
-        _tempoMode = v;
-        tempoSegment.querySelectorAll(".mode-btn").forEach(function (x) {
-          x.classList.toggle("active", x === b);
-        });
-        if (v === "rate") {
-          if (paceButtons)  paceButtons.style.display  = "";
-          if (durationWrap) durationWrap.style.display = "none";
-        } else {
-          if (paceButtons)  paceButtons.style.display  = "none";
-          if (durationWrap) durationWrap.style.display = "";
-        }
-        if (typeof haptic === "function") haptic("selection");
-      });
-    });
-  }
-
-  // ---- 4. Pace selection (calm/normal/aggressive) ----
   var _selectedPace = "calm";
   if (paceButtons) {
     paceButtons.querySelectorAll(".mode-btn").forEach(function (b) {
@@ -10374,53 +10379,51 @@ function renderFlexModelSummary() {
     });
   }
 
-  // ---- 5. Open screen helper ----
+  // ---- 4. Open screen helper ----
   window.openNewGoalScreen = function () {
-    var titleEl    = _q("newGoalTitle");
+    // FIX: new goal creation flow — title-field удалён; ничего не очищаем для него.
     var amountEl   = _q("newGoalAmount");
     var savedEl    = _q("newGoalSaved");
     var incomeEl   = _q("newGoalIncome");
     var expensesEl = _q("newGoalExpenses");
-    var durationEl = _q("newGoalDuration");
 
-    if (titleEl)    titleEl.value    = "";
-    if (amountEl)   amountEl.value   = "";
-    if (savedEl)    savedEl.value    = "";
-    // Предзаполняем доход/расход из текущих данных пользователя (если есть)
+    if (amountEl) amountEl.value = "";
+    if (savedEl)  savedEl.value  = "";
+    // Предзаполняем доход/расход из текущих данных пользователя (если есть).
     try {
       var inc = (typeof incomeInput   !== "undefined") ? incomeInput   : null;
       var exp = (typeof expensesInput !== "undefined") ? expensesInput : null;
-      if (incomeEl   && inc?.value) incomeEl.value   = inc.value;
-      if (expensesEl && exp?.value) expensesEl.value = exp.value;
+      if (incomeEl)   incomeEl.value   = inc?.value || "";
+      if (expensesEl) expensesEl.value = exp?.value || "";
     } catch (e) { /* noop */ }
-    if (durationEl) durationEl.value = "";
 
-    // Сброс tempo segment к "По скорости" + pace к calm
-    _tempoMode = "rate";
-    if (tempoSegment) {
-      tempoSegment.querySelectorAll(".mode-btn").forEach(function (x) {
-        x.classList.toggle("active", x.dataset.tempo === "rate");
-      });
-    }
+    // Pace → calm по умолчанию.
+    _selectedPace = "calm";
     if (paceButtons) {
-      paceButtons.style.display = "";
       paceButtons.querySelectorAll(".mode-btn").forEach(function (x) {
         x.classList.toggle("active", x.dataset.mode === "calm");
       });
     }
-    _selectedPace = "calm";
-    if (durationWrap) durationWrap.style.display = "none";
+
+    // FIX: new goal creation flow — calculateBtn.onclick прячет ВСЕ .mode-buttons и .input-wrap
+    //      селектором без префикса (видимая мутация затрагивает наш экран). Восстанавливаем
+    //      видимость явно при каждом открытии #screen-new-goal.
+    document.querySelectorAll(
+      '#screen-new-goal label, #screen-new-goal .input-wrap, #screen-new-goal .mode-buttons, #screen-new-goal .new-goal-submit-btn'
+    ).forEach(function (el) { el.style.display = ""; });
 
     if (typeof openScreen === "function") openScreen("new-goal", null);
-    setTimeout(function () { try { titleEl && titleEl.focus(); } catch (_) {} }, 250);
+    // FIX: goal completion UI — снимаем app-lock при входе в screen-new-goal.
+    //      openScreen уже вызывает _updateAppLock, но дублируем явно — это hot-path.
+    if (typeof window._updateAppLock === "function") window._updateAppLock("new-goal");
+    setTimeout(function () { try { amountEl && amountEl.focus(); } catch (_) {} }, 250);
   };
 
-  // ---- 6. Back button ----
+  // ---- 5. Back button ----
   var backBtn = _q("newGoalBack");
   if (backBtn) {
     backBtn.addEventListener("click", function () {
       if (typeof haptic === "function") haptic("light");
-      // Возвращаемся на Protocol tab (это контекст, откуда пришли в большинстве случаев).
       if (typeof openScreen === "function") {
         var protocolNavBtn = document.querySelector('.bottom-nav .nav-btn[data-screen="advice"]');
         openScreen("advice", protocolNavBtn || null);
@@ -10428,143 +10431,114 @@ function renderFlexModelSummary() {
     });
   }
 
-  // ---- 7. Derive pace from required monthly amount ----
-  function _derivePaceFromRequired(required, freeCashflow) {
-    if (!freeCashflow || freeCashflow <= 0) return "aggressive";
-    var ratio = required / freeCashflow;
-    if (ratio <= 0.50) return "calm";
-    if (ratio <= 0.80) return "normal";
-    return "aggressive";
-  }
-
-  // ---- 8. Submit ----
+  // ---- 6. Submit ----
+  // FIX: new goal creation flow — submit заполняет инпуты #screen-calc и триггерит
+  //      существующий calculateBtn.click(), который запускает фабричный flow:
+  //      validate → CashflowEngine → renderProtocolResult (выбор "Все в цель / С резервом") →
+  //      protocolFlow(scenario) → graph. Это переиспользует ПОЛНОСТЬЮ существующую логику
+  //      первичной настройки приложения, как и просил пользователь.
   var submitBtn = _q("newGoalSubmit");
   if (submitBtn) {
     submitBtn.addEventListener("click", function () {
-      var titleVal    = (_q("newGoalTitle")?.value || "").trim();
       var amountVal   = (typeof parseNumber === "function") ? parseNumber(_q("newGoalAmount")?.value || "0") : parseFloat((_q("newGoalAmount")?.value || "0").replace(/\D/g, ""));
       var savedVal    = (typeof parseNumber === "function") ? parseNumber(_q("newGoalSaved")?.value || "0") : parseFloat((_q("newGoalSaved")?.value || "0").replace(/\D/g, ""));
       var incomeVal   = (typeof parseNumber === "function") ? parseNumber(_q("newGoalIncome")?.value || "0") : parseFloat((_q("newGoalIncome")?.value || "0").replace(/\D/g, ""));
       var expensesVal = (typeof parseNumber === "function") ? parseNumber(_q("newGoalExpenses")?.value || "0") : parseFloat((_q("newGoalExpenses")?.value || "0").replace(/\D/g, ""));
 
-      // Валидация: обязательные поля
-      if (!titleVal || !(amountVal > 0) || !(incomeVal > 0) || !(expensesVal >= 0)) {
+      // Валидация: обязательные поля (title больше не нужен).
+      if (!(amountVal > 0) || !(incomeVal > 0) || !(expensesVal >= 0)) {
         if (typeof showToast === "function") showToast(t("newGoal.toast.invalid"));
         if (typeof haptic === "function") haptic("error");
         return;
       }
-      // savedVal >= 0 уже гарантировано (NaN → 0 ниже)
       if (!isFinite(savedVal) || savedVal < 0) savedVal = 0;
-      if (savedVal >= amountVal) {
-        // Если уже накоплено больше цели — это победа: ставим savedVal = amountVal-1 чтобы не уходить в overflow
-        savedVal = Math.max(0, amountVal - 1);
-      }
+      if (savedVal >= amountVal) savedVal = Math.max(0, amountVal - 1);
       if (expensesVal > incomeVal) {
         if (typeof showToast === "function") showToast(t("newGoal.toast.expGtIncome"));
         if (typeof haptic === "function") haptic("error");
         return;
       }
 
-      var freeCashflow = incomeVal - expensesVal;
-
-      // Pace selection
-      var finalPace = _selectedPace;
-      if (_tempoMode === "duration") {
-        var months = parseInt(_q("newGoalDuration")?.value || "0", 10);
-        if (!(months > 0)) {
-          if (typeof showToast === "function") showToast(t("newGoal.toast.invalid"));
-          if (typeof haptic === "function") haptic("error");
-          return;
-        }
-        var requiredMonthly = (amountVal - savedVal) / months;
-        finalPace = _derivePaceFromRequired(requiredMonthly, freeCashflow);
-      }
-
-      // ---- Применяем все значения к глобальному состоянию ----
+      // ---- Заполняем существующие глобальные инпуты #screen-calc ----
       try {
-        // 1. Inputs (главное хранилище для recalcPlan)
         if (typeof goalInput     !== "undefined" && goalInput)     goalInput.value     = (typeof formatNumber === "function") ? formatNumber(String(amountVal))   : String(amountVal);
         if (typeof savedInput    !== "undefined" && savedInput)    savedInput.value    = (typeof formatNumber === "function") ? formatNumber(String(savedVal))    : String(savedVal);
         if (typeof incomeInput   !== "undefined" && incomeInput)   incomeInput.value   = (typeof formatNumber === "function") ? formatNumber(String(incomeVal))   : String(incomeVal);
         if (typeof expensesInput !== "undefined" && expensesInput) expensesInput.value = (typeof formatNumber === "function") ? formatNumber(String(expensesVal)) : String(expensesVal);
 
-        // 2. goalMeta.title
-        if (typeof goalMeta !== "undefined" && goalMeta) goalMeta.title = titleVal;
-
-        // 3. accounts + balance: новая цель — новый отсчёт
+        // accounts + balance: новая цель — новый отсчёт.
         if (typeof accounts !== "undefined" && accounts) {
           accounts.main    = savedVal;
           accounts.reserve = 0;
         }
-        try { initialBalance = savedVal; } catch (e) { window.initialBalance = savedVal; }
-        try { planStartValue = savedVal; } catch (e) { window.planStartValue = savedVal; }
+        try { initialBalance = savedVal; }       catch (e) { window.initialBalance = savedVal; }
+        try { planStartValue = savedVal; }       catch (e) { window.planStartValue = savedVal; }
+        try { factHistory = []; }                catch (e) { window.factHistory = []; }
+        try { goalCompleted = false; }           catch (e) { window.goalCompleted = false; }
+        try { saveMode = _selectedPace; }        catch (e) { window.saveMode = _selectedPace; }
+        try { selectedMode = _selectedPace; }    catch (e) { window.selectedMode = _selectedPace; }
+        // ВАЖНО: НЕ задаём chosenPlan и НЕ ставим isInitialized=true —
+        // эти значения проставит calculateBtn.onclick после успешного расчёта.
+        try { chosenPlan = null; }               catch (e) { window.chosenPlan = null; }
+        try { isInitialized = false; }           catch (e) { window.isInitialized = false; }
 
-        // 4. factHistory — чистая история для новой цели
-        try { factHistory = []; } catch (e) { window.factHistory = []; }
+        // goalMeta.title — дефолтное название цели (поле "Название" убрано из UI).
+        var defaultTitle = (typeof t === "function" && (t("advGoals.mainGoal") || t("misc.defaultGoalTitle"))) || "Основная цель";
+        if (typeof goalMeta !== "undefined" && goalMeta) goalMeta.title = defaultTitle;
 
-        // 5. goalCompleted = false (важно — иначе модалка не сработает в будущем)
-        try { goalCompleted = false; } catch (e) { window.goalCompleted = false; }
-
-        // 6. saveMode / selectedMode
-        try { saveMode = finalPace; }     catch (e) { window.saveMode = finalPace; }
-        try { selectedMode = finalPace; } catch (e) { window.selectedMode = finalPace; }
-        // Sync UI .mode-btn на calc-экране (для согласованности)
+        // Sync UI .mode-btn на calc-экране (для согласованности — calculateBtn читает saveMode).
         document.querySelectorAll('#screen-calc .mode-buttons .mode-btn').forEach(function (b) {
-          b.classList.toggle("active", b.dataset.mode === finalPace);
+          b.classList.toggle("active", b.dataset.mode === _selectedPace);
         });
 
-        // 7. chosenPlan — если ещё не выбран, ставим 'goal' (без буфера) по умолчанию
-        try {
-          if (!chosenPlan) chosenPlan = "goal";
-        } catch (e) {
-          if (!window.chosenPlan) window.chosenPlan = "goal";
-        }
-
-        // 8. isInitialized = true (на случай если новая цель создаётся до первого расчёта)
-        try { isInitialized = true; } catch (e) { window.isInitialized = true; }
-
-        // 9. goals[0] — обновляем primary через getGoals()/persistGoals() helpers.
-        try {
-          if (typeof getGoals === "function") {
-            var goalsArr = getGoals();
-            if (!goalsArr[0]) {
-              goalsArr[0] = { id: "goal_1", title: titleVal, amount: amountVal, saved: savedVal, isPrimary: true };
-            } else {
-              goalsArr[0].title  = titleVal;
-              goalsArr[0].amount = amountVal;
-              goalsArr[0].saved  = savedVal;
-            }
-            if (typeof persistGoals === "function") persistGoals(goalsArr);
+        // goals[0] — primary через хелперы.
+        if (typeof getGoals === "function") {
+          var goalsArr = getGoals();
+          if (!goalsArr[0]) {
+            goalsArr[0] = { id: "goal_1", title: defaultTitle, amount: amountVal, saved: savedVal, isPrimary: true };
+          } else {
+            goalsArr[0].title  = defaultTitle;
+            goalsArr[0].amount = amountVal;
+            goalsArr[0].saved  = savedVal;
           }
-        } catch (e) { console.warn("[NewGoal] goals[0] update:", e); }
-
-        // 10. Пересчёт + рендер. saveFullState() автоматически подтянет income/expenses/goal/saved
-        //     из DOM-инпутов + остальные глобалы. Отдельный updateState() здесь не нужен.
-        if (typeof recalcPlan === "function") recalcPlan();
-        if (typeof renderProtocolAdviceGraph === "function") renderProtocolAdviceGraph();
-        if (typeof renderAccountsUI === "function") renderAccountsUI();
-        if (typeof renderGoals === "function") renderGoals();
-        if (typeof updateGraphGoalIndicator === "function") updateGraphGoalIndicator();
-        if (typeof saveFullState === "function") saveFullState();
-
-        // 11. UX: haptic success + toast + переход на Protocol tab
-        if (typeof haptic === "function") haptic("success");
-        if (typeof showToast === "function") showToast(t("newGoal.toast.success"));
-
-        var protocolNavBtn = document.querySelector('.bottom-nav .nav-btn[data-screen="advice"]');
-        if (typeof openScreen === "function") openScreen("advice", protocolNavBtn || null);
-
+          if (typeof persistGoals === "function") persistGoals(goalsArr);
+        }
       } catch (e) {
-        console.error("[NewGoal] submit error:", e);
+        console.error("[NewGoal] state setup error:", e);
         if (typeof showToast === "function") showToast("Ошибка создания цели");
+        return;
       }
+
+      // ---- Триггерим существующий flow: scenario picker → protocolFlow ----
+      // calculateBtn.onclick: валидирует → CashflowEngine → renderProtocolResult (две карточки
+      // "Все в цель / С резервом") → openScreen("advice") → planSummary.style.display="block".
+      // Пользователь увидит выбор сценария, как при первой настройке приложения.
+      if (typeof haptic === "function") haptic("success");
+      try {
+        var calcBtn = document.getElementById("calculate");
+        if (calcBtn && typeof calcBtn.click === "function") {
+          calcBtn.click();
+        } else {
+          // Fallback: открываем calc-экран и пусть юзер сам нажмёт.
+          if (typeof openScreen === "function") {
+            var navBtn = document.querySelector('.bottom-nav .nav-btn[data-screen="calc"]');
+            openScreen("calc", navBtn || null);
+          }
+        }
+      } catch (e) {
+        console.error("[NewGoal] calc trigger error:", e);
+      }
+
+      // App-lock снимется автоматически: openScreen("advice", ...) внутри calculateBtn вызовет
+      // _updateAppLock, а goalInput.value уже > 0 → lock removed.
     });
   }
 
-  // ---- 9. Первичная синхронизация empty-state (если приложение запущено без цели) ----
-  // Запускаем после полной инициализации (DOMContentLoaded или сразу, если уже готово).
+  // ---- 9. Первичная синхронизация empty-state + app-lock (если приложение запущено без цели) ----
   function _initialSync() {
     try { window._syncProtocolEmptyState && window._syncProtocolEmptyState(); }
+    catch (e) { /* noop */ }
+    try { window._updateAppLock && window._updateAppLock(); }
     catch (e) { /* noop */ }
   }
   if (document.readyState === "loading") {

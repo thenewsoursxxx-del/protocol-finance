@@ -925,14 +925,10 @@ Protocol анализирует цель…
   </div>
 
   <div class="new-goal-body">
+    <!-- FIX: new goal creation flow — убраны поле "Название цели" + сегмент "По скорости / По сроку".
+         Title не нужен (используется дефолтное "Основная цель"). Tempo segment упрощён до прямого
+         выбора скорости накопления. После submit показывается выбор сценария "Все в цель / С резервом". -->
     <p class="new-goal-intro" data-i18n="newGoal.intro">Заполните все поля — Protocol построит план достижения</p>
-
-    <label data-i18n="newGoal.field.title">Название цели</label>
-    <div class="input-wrap">
-      <input id="newGoalTitle" type="text" maxlength="60"
-        data-i18n-placeholder="newGoal.field.titlePlaceholder"
-        placeholder="Например: Квартира" />
-    </div>
 
     <label data-i18n="newGoal.field.amount">Сумма цели</label>
     <div class="input-wrap">
@@ -962,24 +958,11 @@ Protocol анализирует цель…
         placeholder="50.000" />
     </div>
 
-    <label data-i18n="newGoal.field.tempoLabel">Как копить</label>
-    <div class="toggle-group new-goal-tempo-segment" id="newGoalTempoSegment">
-      <button type="button" class="mode-btn active" data-tempo="rate" data-i18n="newGoal.field.tempoModeRate">По скорости</button>
-      <button type="button" class="mode-btn" data-tempo="duration" data-i18n="newGoal.field.tempoModeDuration">По сроку</button>
-    </div>
-
-    <!-- Rate mode: pace buttons (calm/normal/aggressive) -->
+    <label data-i18n="calc.mode">Режим накопления</label>
     <div class="mode-buttons new-goal-pace-buttons" id="newGoalPaceButtons">
       <button type="button" class="mode-btn active" data-mode="calm" data-i18n="newGoal.field.modeCalm">Спокойно</button>
       <button type="button" class="mode-btn" data-mode="normal" data-i18n="newGoal.field.modeNormal">Умеренно</button>
       <button type="button" class="mode-btn" data-mode="aggressive" data-i18n="newGoal.field.modeAggressive">Агрессивно</button>
-    </div>
-
-    <!-- Duration mode: months input (hidden by default) -->
-    <div class="input-wrap new-goal-duration-wrap" id="newGoalDurationWrap" style="display:none">
-      <input id="newGoalDuration" inputmode="numeric"
-        data-i18n-placeholder="newGoal.field.durationPlaceholder"
-        placeholder="12" />
     </div>
 
     <button type="button" id="newGoalSubmit" class="new-goal-submit-btn" data-i18n="newGoal.submit">Создать цель</button>
@@ -1632,8 +1615,9 @@ z-index: 999999;
 <div id="goalCompleteSheet" class="proto-sheet goal-complete-sheet">
   <div class="goal-complete-emoji" aria-hidden="true">🎉</div>
   <!-- Title: white-space:pre-line + \n в i18n → красивый перенос на 2 строки. -->
+  <!-- FIX: goal completion UI — emoji 🎉 removed (большой сверху достаточно). -->
   <h2 class="goal-complete-title" id="goalCompleteTitle" data-i18n="goalComplete.modal.title">Поздравляем!
-Цель выполнена! 🎉</h2>
+Цель выполнена!</h2>
   <!-- Subtitle: сумма + название цели (emerald accent через <b>) -->
   <div class="goal-complete-subtitle" id="goalCompleteSubtitle"><b>—</b> • «—»</div>
   <!-- Emotional text — короткая мотивационная фраза. -->

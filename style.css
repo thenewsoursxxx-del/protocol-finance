@@ -4739,14 +4739,7 @@ body.flip-fix-pending .flip-wrapper {
   border-color: rgba(16, 185, 129, 0.6);
   background: rgba(16, 185, 129, 0.06);
 }
-.new-goal-tempo-segment {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 8px;
-}
-.new-goal-tempo-segment .mode-btn {
-  flex: 1;
-}
+/* FIX: new goal creation flow — стили tempo-segment и duration удалены (поля убраны). */
 .new-goal-pace-buttons {
   display: flex;
   gap: 8px;
@@ -4754,9 +4747,6 @@ body.flip-fix-pending .flip-wrapper {
 }
 .new-goal-pace-buttons .mode-btn {
   flex: 1;
-}
-.new-goal-duration-wrap {
-  margin-top: 4px;
 }
 
 .new-goal-submit-btn {
@@ -4794,6 +4784,57 @@ body.flip-fix-pending .flip-wrapper {
 }
 
 /* ============================================================================
+   FIX: goal completion UI — блокировка интерфейса до создания новой цели
+   ----------------------------------------------------------------------------
+   Когда у пользователя нет активной цели (после завершения предыдущей) и он
+   находится на любом экране кроме #screen-new-goal — приложение "залочено":
+   все интерактивные элементы тушатся и не реагируют на клики, КРОМЕ:
+     • .bottom-nav (нижний навбар — всегда активен)
+     • #protocolEmptyGoalCard / #emptyGoalCard и кнопки внутри (создание новой цели)
+   Класс body.app-locked управляется из app.js (см. _updateAppLock).
+   ============================================================================ */
+body.app-locked .screen.active .card:not(.goal-empty-card):not(.protocol-empty-goal-card),
+body.app-locked .screen.active button:not(.nav-btn):not(#protocolCreateNewGoalBtn):not(#createNewGoalBtn):not(.goal-empty-btn),
+body.app-locked .screen.active input,
+body.app-locked .screen.active select,
+body.app-locked .screen.active label,
+body.app-locked .screen.active .toggle-group,
+body.app-locked .screen.active .mode-buttons,
+body.app-locked .screen.active .timeline-controls,
+body.app-locked .screen.active section,
+body.app-locked .screen.active #adviceCard {
+  pointer-events: none !important;
+  opacity: 0.42;
+  filter: grayscale(0.35);
+  transition: opacity 0.32s ease, filter 0.32s ease;
+}
+body.app-locked .app-header > * {
+  pointer-events: none;
+  opacity: 0.45;
+  transition: opacity 0.32s ease;
+}
+/* Empty-state карточки и их содержимое — всегда интерактивны */
+body.app-locked .goal-empty-card,
+body.app-locked .goal-empty-card *,
+body.app-locked .protocol-empty-goal-card,
+body.app-locked .protocol-empty-goal-card * {
+  pointer-events: auto !important;
+  opacity: 1 !important;
+  filter: none !important;
+}
+/* Bottom nav — всегда активен */
+body.app-locked .bottom-nav,
+body.app-locked .bottom-nav * {
+  pointer-events: auto !important;
+  opacity: 1 !important;
+  filter: none !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  body.app-locked .screen.active *,
+  body.app-locked .app-header > * { transition: none; }
+}
+
+/* ============================================================================
    PREMIUM GOAL COMPLETION — congrats modal (after goal reached)
    ----------------------------------------------------------------------------
    Mandatory модалка (overlay без onclick). Закрывается только кнопкой "Я молодец!".
@@ -4824,9 +4865,12 @@ body.flip-fix-pending .flip-wrapper {
   font-size: 26px;
   font-weight: 700;
   color: #fff;
-  margin: 0 auto 14px;
+  /* FIX: goal completion UI — выравниваем по левому краю (не по восклицательному знаку).
+     Раньше блок наследовал text-align:center от .goal-complete-sheet и обе строки центровались,
+     что зрительно "ломало" вертикальную линию первых букв. */
+  text-align: left;
+  margin: 0 22px 14px;
   line-height: 1.18;
-  max-width: 340px;
   /* PREMIUM GOAL COMPLETION — позволяет \n в i18n-значении делать перенос строки. */
   white-space: pre-line;
   letter-spacing: -0.3px;

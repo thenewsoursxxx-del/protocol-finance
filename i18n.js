@@ -222,7 +222,9 @@
 
       // ── GOAL COMPLETION FEATURE — congrats modal + empty state + history detail ──
       // PREMIUM GOAL COMPLETION — title с принудительным переносом (CSS white-space:pre-line).
-      "goalComplete.modal.title": "Поздравляем!\nЦель выполнена! 🎉",
+      // FIX: goal completion UI — убран маленький 🎉 после "Цель выполнена!"
+      // (большой эмодзи сверху сохранён). Текст выравнивается по левому краю в CSS.
+      "goalComplete.modal.title": "Поздравляем!\nЦель выполнена!",
       "goalComplete.modal.subtitle": "{amount} • «{name}»",
       "goalComplete.modal.emotional": "Вы молодец! Вы успешно достигли своей цели.",
       "goalComplete.modal.text": "Вы молодец! Вы успешно накопили {amount} на «{name}»",
@@ -234,10 +236,9 @@
       "goalEmpty.button": "Начать копить на новую цель",
       "goalEmpty.verdict": "Активной цели пока нет. Готовы начать новую?",
       // NEW: Full goal creation flow in Protocol tab — экран создания новой цели
+      // FIX: new goal creation flow — убраны ключи title / tempo / duration (поля удалены из UI).
       "newGoal.screen.title": "Новая цель",
       "newGoal.intro": "Заполните все поля — Protocol построит план достижения",
-      "newGoal.field.title": "Название цели",
-      "newGoal.field.titlePlaceholder": "Например: Квартира",
       "newGoal.field.amount": "Сумма цели",
       "newGoal.field.amountPlaceholder": "1.000.000",
       "newGoal.field.saved": "Уже накоплено",
@@ -246,11 +247,6 @@
       "newGoal.field.incomePlaceholder": "100.000",
       "newGoal.field.expenses": "Ежемесячный расход",
       "newGoal.field.expensesPlaceholder": "50.000",
-      "newGoal.field.tempoLabel": "Как копить",
-      "newGoal.field.tempoModeRate": "По скорости",
-      "newGoal.field.tempoModeDuration": "По сроку",
-      "newGoal.field.duration": "Срок (месяцев)",
-      "newGoal.field.durationPlaceholder": "12",
       "newGoal.field.modeCalm": "Спокойно",
       "newGoal.field.modeNormal": "Умеренно",
       "newGoal.field.modeAggressive": "Агрессивно",
@@ -932,7 +928,8 @@
 
       // ── GOAL COMPLETION FEATURE — congrats modal + empty state + history detail ──
       // PREMIUM GOAL COMPLETION — title с принудительным переносом (CSS white-space:pre-line).
-      "goalComplete.modal.title": "Congrats!\nGoal completed! 🎉",
+      // FIX: goal completion UI — small 🎉 removed; big emoji on top kept.
+      "goalComplete.modal.title": "Congrats!\nGoal completed!",
       "goalComplete.modal.subtitle": "{amount} \u2022 \u201C{name}\u201D",
       "goalComplete.modal.emotional": "Well done! You've successfully reached your goal.",
       "goalComplete.modal.text": "Well done! You've saved {amount} for \u201C{name}\u201D",
@@ -943,10 +940,9 @@
       "goalEmpty.button": "Start saving for a new goal",
       "goalEmpty.verdict": "No active goal yet. Ready to start a new one?",
       // NEW: Full goal creation flow in Protocol tab
+      // FIX: new goal creation flow — title / tempo / duration keys removed (fields dropped).
       "newGoal.screen.title": "New Goal",
       "newGoal.intro": "Fill in all fields \u2014 Protocol will build your savings plan",
-      "newGoal.field.title": "Goal name",
-      "newGoal.field.titlePlaceholder": "e.g., Apartment",
       "newGoal.field.amount": "Goal amount",
       "newGoal.field.amountPlaceholder": "1,000,000",
       "newGoal.field.saved": "Already saved",
@@ -955,11 +951,6 @@
       "newGoal.field.incomePlaceholder": "100,000",
       "newGoal.field.expenses": "Monthly expenses",
       "newGoal.field.expensesPlaceholder": "50,000",
-      "newGoal.field.tempoLabel": "How to save",
-      "newGoal.field.tempoModeRate": "By rate",
-      "newGoal.field.tempoModeDuration": "By duration",
-      "newGoal.field.duration": "Duration (months)",
-      "newGoal.field.durationPlaceholder": "12",
       "newGoal.field.modeCalm": "Relaxed",
       "newGoal.field.modeNormal": "Moderate",
       "newGoal.field.modeAggressive": "Aggressive",
