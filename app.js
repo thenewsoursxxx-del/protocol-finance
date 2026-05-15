@@ -2874,7 +2874,8 @@ confirmYes.onclick = () => {
   //      старые данные до следующего изменения.
   performFullReset();
   try {
-    // _updateAppLock пересчитает body.app-locked маркер (CSS-эффекта нет — оставлено для будущего).
+    // FIX: soft invisible blocking after goal completion — сбрасываем лок после полного сброса
+    //      (goal обнулён через clearState, поэтому лок пересчитается как false).
     if (typeof window._updateAppLock === "function") window._updateAppLock();
     if (typeof saveFullState === "function") saveFullState();
   } catch (e) {
