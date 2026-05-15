@@ -4673,102 +4673,348 @@ body.flip-fix-pending .flip-wrapper {
 }
 
 /* ============================================================================
-   GOAL COMPLETION FEATURE — congrats modal (after goal reached)
+   NEW: Full goal creation flow in Protocol tab
    ----------------------------------------------------------------------------
-   Mandatory модалка (overlay без onclick). Закрывается только кнопкой "Я молодец!".
+   1. .protocol-empty-goal-card — empty-state на месте графика в Protocol tab
+   2. #screen-new-goal — полноэкранная форма создания новой цели
    ============================================================================ */
-.goal-complete-sheet {
-  text-align: center;
-  padding-top: 28px;
-  box-shadow:
-    0 -8px 60px rgba(16, 185, 129, 0.25),
-    inset 0 1px 0 rgba(16, 185, 129, 0.18);
-  border-top: 1px solid rgba(16, 185, 129, 0.25);
+
+/* Empty-state карточка в Protocol tab: чуть просторнее, по центру высоты графика */
+.protocol-empty-goal-card {
+  margin-top: 18px;
+  padding: 36px 22px 32px;
+  min-height: 280px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
-.goal-complete-emoji {
-  font-size: 72px;
-  line-height: 1;
-  margin: 4px auto 14px;
-  filter: drop-shadow(0 6px 22px rgba(16, 185, 129, 0.45));
-  animation: goalCompleteEmojiPop 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+.protocol-empty-goal-card .goal-empty-icon {
+  font-size: 56px;
+  margin-bottom: 16px;
 }
-.goal-complete-title {
-  font-size: 22px;
-  font-weight: 700;
-  color: #fff;
-  margin: 0 auto 14px;
-  line-height: 1.25;
+.protocol-empty-goal-card .goal-empty-title {
+  font-size: 19px;
+}
+.protocol-empty-goal-card .goal-empty-subtitle {
   max-width: 320px;
+  margin-left: auto;
+  margin-right: auto;
 }
-.goal-complete-text {
-  font-size: 15px;
-  line-height: 1.55;
-  color: rgba(255, 255, 255, 0.78);
-  margin: 0 auto 24px;
-  max-width: 340px;
+
+/* ===== Экран создания новой цели ===== */
+#screen-new-goal {
+  padding-bottom: 96px;
 }
-.goal-complete-text b {
-  color: #6ee7b7;
-  font-weight: 600;
+.new-goal-body {
+  padding: 8px 18px 24px;
+  display: flex;
+  flex-direction: column;
 }
-.goal-complete-btn {
+.new-goal-intro {
+  margin: 4px 0 18px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.62);
+  line-height: 1.45;
+}
+#screen-new-goal label {
+  display: block;
+  margin: 14px 0 6px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.72);
+  font-weight: 500;
+}
+#screen-new-goal .input-wrap input {
   width: 100%;
-  padding: 16px 20px;
-  font-size: 17px;
-  font-weight: 700;
-  line-height: 1.2;
-  border-radius: 16px;
-  border: 1px solid rgba(16, 185, 129, 0.65);
-  color: #d1fae5;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 13px 14px;
+  color: #fff;
+  font-size: 16px;
+  outline: none;
+  transition: border-color 0.18s ease, background 0.18s ease;
+}
+#screen-new-goal .input-wrap input:focus {
+  border-color: rgba(16, 185, 129, 0.6);
+  background: rgba(16, 185, 129, 0.06);
+}
+.new-goal-tempo-segment {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.new-goal-tempo-segment .mode-btn {
+  flex: 1;
+}
+.new-goal-pace-buttons {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+.new-goal-pace-buttons .mode-btn {
+  flex: 1;
+}
+.new-goal-duration-wrap {
+  margin-top: 4px;
+}
+
+.new-goal-submit-btn {
+  margin-top: 26px;
+  width: 100%;
+  padding: 16px 18px;
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: 14px;
+  border: none;
+  color: #fff;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  box-shadow: 0 6px 18px rgba(16, 185, 129, 0.32),
+              0 1px 0 rgba(255, 255, 255, 0.08) inset;
   cursor: pointer;
-  background:
-    radial-gradient(circle at 30% 22%, rgba(255, 255, 255, 0.16), transparent 50%),
-    linear-gradient(135deg, #064e3b 0%, #047857 50%, #059669 100%);
-  box-shadow:
-    0 10px 32px rgba(4, 120, 87, 0.45),
-    inset 0 1px 0 rgba(255, 255, 255, 0.12);
-  transition: transform 0.16s ease, box-shadow 0.22s ease;
-  animation: goalCompleteBtnPulse 2.2s ease-in-out infinite;
+  transition: transform 0.15s ease, box-shadow 0.2s ease, filter 0.18s ease;
 }
-.goal-complete-btn:active {
-  transform: scale(0.97);
-  box-shadow:
-    0 5px 18px rgba(4, 120, 87, 0.5),
-    inset 0 2px 8px rgba(0, 0, 0, 0.25);
-  animation: none;
+.new-goal-submit-btn:hover {
+  filter: brightness(1.06);
 }
-@keyframes goalCompleteEmojiPop {
-  0%   { opacity: 0; transform: scale(0.5) rotate(-12deg); }
-  60%  { opacity: 1; transform: scale(1.12) rotate(6deg); }
-  100% { opacity: 1; transform: scale(1)   rotate(0);     }
+.new-goal-submit-btn:active {
+  transform: scale(0.985);
+  box-shadow: 0 3px 10px rgba(16, 185, 129, 0.24),
+              0 1px 0 rgba(255, 255, 255, 0.08) inset;
 }
-@keyframes goalCompleteBtnPulse {
-  0%, 100% { box-shadow: 0 10px 32px rgba(4, 120, 87, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.12); }
-  50%      { box-shadow: 0 14px 42px rgba(16, 185, 129, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.18); }
+.new-goal-submit-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
 }
+
 @media (prefers-reduced-motion: reduce) {
-  .goal-complete-emoji { animation: none; }
-  .goal-complete-btn   { animation: none; transition: none; }
+  .new-goal-submit-btn { transition: none; }
+  #screen-new-goal .input-wrap input { transition: none; }
 }
 
 /* ============================================================================
-   GOAL COMPLETION FEATURE — history detail modal (click on history card)
+   PREMIUM GOAL COMPLETION — congrats modal (after goal reached)
+   ----------------------------------------------------------------------------
+   Mandatory модалка (overlay без onclick). Закрывается только кнопкой "Я молодец!".
+   Иерархия:
+     emoji 🎉  →  большой 2-строчный title  →  subtitle (amount • name)
+     →  emotional text  →  большая emerald-кнопка с press-анимацией.
+   ============================================================================ */
+.goal-complete-sheet {
+  text-align: center;
+  padding-top: 32px;
+  padding-bottom: max(28px, env(safe-area-inset-bottom));
+  box-shadow:
+    0 -8px 60px rgba(16, 185, 129, 0.28),
+    inset 0 1px 0 rgba(16, 185, 129, 0.22);
+  border-top: 1px solid rgba(16, 185, 129, 0.3);
+  background:
+    radial-gradient(circle at 50% -10%, rgba(16, 185, 129, 0.12), transparent 50%),
+    #0a0a0f;
+}
+.goal-complete-emoji {
+  font-size: 80px;
+  line-height: 1;
+  margin: 0 auto 18px;
+  filter: drop-shadow(0 8px 28px rgba(16, 185, 129, 0.55));
+  animation: goalCompleteEmojiPop 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.goal-complete-title {
+  font-size: 26px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 auto 14px;
+  line-height: 1.18;
+  max-width: 340px;
+  /* PREMIUM GOAL COMPLETION — позволяет \n в i18n-значении делать перенос строки. */
+  white-space: pre-line;
+  letter-spacing: -0.3px;
+  animation: goalCompleteFadeUp 0.55s ease 0.15s both;
+}
+.goal-complete-subtitle {
+  font-size: 17px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0 auto 14px;
+  max-width: 320px;
+  line-height: 1.4;
+  animation: goalCompleteFadeUp 0.55s ease 0.25s both;
+}
+.goal-complete-subtitle b {
+  color: #6ee7b7;
+  font-weight: 700;
+  text-shadow: 0 0 14px rgba(16, 185, 129, 0.35);
+}
+.goal-complete-emotional {
+  font-size: 14px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.55);
+  margin: 0 auto 26px;
+  max-width: 320px;
+  animation: goalCompleteFadeUp 0.55s ease 0.35s both;
+}
+.goal-complete-btn {
+  width: 100%;
+  padding: 18px 22px;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  line-height: 1.2;
+  border-radius: 18px;
+  border: 1px solid rgba(16, 185, 129, 0.7);
+  color: #d1fae5;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 30% 22%, rgba(255, 255, 255, 0.18), transparent 55%),
+    linear-gradient(135deg, #064e3b 0%, #047857 45%, #059669 75%, #10b981 100%);
+  box-shadow:
+    0 12px 36px rgba(4, 120, 87, 0.5),
+    0 0 0 1px rgba(110, 231, 183, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16);
+  transition:
+    transform 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.22s ease;
+  animation: goalCompleteBtnPulse 2.4s ease-in-out infinite;
+}
+.goal-complete-btn::before {
+  /* PREMIUM GOAL COMPLETION — shimmer-полоса, проходит слева направо. */
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -120%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.16) 50%,
+    transparent 100%
+  );
+  transform: skewX(-18deg);
+  animation: goalCompleteBtnShimmer 3.6s ease-in-out infinite;
+}
+.goal-complete-btn:active {
+  transform: scale(0.965);
+  box-shadow:
+    0 6px 18px rgba(4, 120, 87, 0.55),
+    inset 0 3px 10px rgba(0, 0, 0, 0.3);
+  animation: none;
+}
+.goal-complete-btn:active::before {
+  animation: none;
+  opacity: 0;
+}
+@keyframes goalCompleteEmojiPop {
+  0%   { opacity: 0; transform: scale(0.45) rotate(-16deg); }
+  55%  { opacity: 1; transform: scale(1.18) rotate(8deg); }
+  100% { opacity: 1; transform: scale(1)    rotate(0);    }
+}
+@keyframes goalCompleteFadeUp {
+  0%   { opacity: 0; transform: translateY(12px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+@keyframes goalCompleteBtnPulse {
+  0%, 100% {
+    box-shadow:
+      0 12px 36px rgba(4, 120, 87, 0.5),
+      0 0 0 1px rgba(110, 231, 183, 0.08),
+      inset 0 1px 0 rgba(255, 255, 255, 0.16);
+  }
+  50% {
+    box-shadow:
+      0 18px 50px rgba(16, 185, 129, 0.62),
+      0 0 0 1px rgba(110, 231, 183, 0.18),
+      inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  }
+}
+@keyframes goalCompleteBtnShimmer {
+  0%   { left: -120%; }
+  60%  { left: 130%; }
+  100% { left: 130%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .goal-complete-emoji,
+  .goal-complete-title,
+  .goal-complete-subtitle,
+  .goal-complete-emotional { animation: none; }
+  .goal-complete-btn        { animation: none; transition: none; }
+  .goal-complete-btn::before { animation: none; opacity: 0; }
+}
+
+/* ============================================================================
+   PREMIUM GOAL COMPLETION — history detail modal (click on history card)
+   ----------------------------------------------------------------------------
+   Премиум success-индикатор: circular emerald badge с animated SVG checkmark
+   (stroke-draw) + soft outer glow. Заменяет старый 🏆 emoji + thin progress bar.
    ============================================================================ */
 .goal-history-detail {
   text-align: center;
-  padding-top: 22px;
+  padding-top: 26px;
 }
-.goal-history-detail-trophy {
-  font-size: 48px;
-  line-height: 1;
-  margin: 4px auto 8px;
-  filter: drop-shadow(0 4px 16px rgba(16, 185, 129, 0.35));
+.goal-history-detail-badge {
+  width: 76px;
+  height: 76px;
+  margin: 0 auto 14px;
+  position: relative;
+  filter: drop-shadow(0 6px 22px rgba(16, 185, 129, 0.5));
+  animation: goalHistoryBadgePop 0.65s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.goal-history-detail-badge::after {
+  /* Мягкий внешний glow-ореол. */
+  content: "";
+  position: absolute;
+  inset: -8px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.25), transparent 70%);
+  z-index: -1;
+  animation: goalHistoryBadgeGlow 2.6s ease-in-out infinite;
+}
+.goal-history-detail-badge-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.goal-history-detail-badge-ring {
+  fill: #064e3b;
+  fill-opacity: 0.45;
+  stroke: #10b981;
+  stroke-width: 3;
+  filter: drop-shadow(0 0 10px rgba(16, 185, 129, 0.6));
+  /* Ring draw-in анимация (по периметру). */
+  stroke-dasharray: 176;
+  stroke-dashoffset: 176;
+  animation: goalHistoryBadgeRing 0.7s cubic-bezier(0.65, 0, 0.35, 1) 0.1s forwards;
+}
+.goal-history-detail-badge-tick {
+  stroke: #6ee7b7;
+  stroke-width: 4.5;
+  stroke-dasharray: 44;
+  stroke-dashoffset: 44;
+  animation: goalHistoryBadgeTick 0.45s cubic-bezier(0.65, 0, 0.35, 1) 0.55s forwards;
+}
+@keyframes goalHistoryBadgePop {
+  0%   { opacity: 0; transform: scale(0.55); }
+  60%  { opacity: 1; transform: scale(1.08); }
+  100% { opacity: 1; transform: scale(1);    }
+}
+@keyframes goalHistoryBadgeRing {
+  to { stroke-dashoffset: 0; }
+}
+@keyframes goalHistoryBadgeTick {
+  to { stroke-dashoffset: 0; }
+}
+@keyframes goalHistoryBadgeGlow {
+  0%, 100% { opacity: 0.6; transform: scale(1);    }
+  50%      { opacity: 1;   transform: scale(1.05); }
 }
 .goal-history-detail-subtitle {
   font-size: 13px;
-  letter-spacing: 0.4px;
+  letter-spacing: 0.5px;
   text-transform: uppercase;
-  color: rgba(110, 231, 183, 0.75);
+  color: rgba(110, 231, 183, 0.8);
   font-weight: 600;
 }
 .goal-history-detail-title {
@@ -4800,26 +5046,9 @@ body.flip-fix-pending .flip-wrapper {
   max-width: 60%;
   word-break: break-word;
 }
-.goal-history-detail-progress {
-  margin: 18px 0 22px;
-  height: 6px;
-  border-radius: 3px;
-  background: rgba(255, 255, 255, 0.06);
-  overflow: hidden;
-}
-.goal-history-detail-progress-fill {
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, #6ee7b7 0%, #10b981 50%, #047857 100%);
-  box-shadow: 0 0 12px rgba(16, 185, 129, 0.5);
-  animation: goalHistoryDetailFill 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-@keyframes goalHistoryDetailFill {
-  0%   { transform: scaleX(0); transform-origin: left center; }
-  100% { transform: scaleX(1); transform-origin: left center; }
-}
 .goal-history-detail-close-btn {
   width: 100%;
+  margin-top: 18px;
   padding: 13px 16px;
   font-size: 15px;
   font-weight: 600;
@@ -4833,6 +5062,14 @@ body.flip-fix-pending .flip-wrapper {
 }
 .goal-history-detail-close-btn:active {
   background: rgba(255, 255, 255, 0.06);
+}
+@media (prefers-reduced-motion: reduce) {
+  .goal-history-detail-badge,
+  .goal-history-detail-badge::after,
+  .goal-history-detail-badge-ring,
+  .goal-history-detail-badge-tick { animation: none; }
+  .goal-history-detail-badge-ring { stroke-dashoffset: 0; }
+  .goal-history-detail-badge-tick { stroke-dashoffset: 0; }
 }
 
 /* GOAL COMPLETION FEATURE — clickable history cards */

@@ -309,6 +309,17 @@ Protocol анализирует данные…
 <div id="realScreen" class="real-screen"></div>
 
 </div>
+
+<!-- NEW: Full goal creation flow in Protocol tab — empty-state на месте графика.
+     Сосед #adviceCard внутри #flipWrapper (не внутри adviceCard, т.к. renderProtocolAdviceGraph
+     перезаписывает innerHTML adviceCard). Toggle через JS: при primary goal = 0 показываем
+     эту карточку и скрываем #adviceCard. -->
+<div class="card goal-empty-card protocol-empty-goal-card" id="protocolEmptyGoalCard" style="display:none">
+  <div class="goal-empty-icon" aria-hidden="true">🎯</div>
+  <h3 class="goal-empty-title" data-i18n="goalEmpty.title">У вас пока нет активной цели</h3>
+  <p class="goal-empty-subtitle" data-i18n="goalEmpty.subtitle">Поставьте новую цель — Protocol поможет её достичь</p>
+  <button type="button" id="protocolCreateNewGoalBtn" class="goal-empty-btn" data-i18n="goalEmpty.button">Начать копить на новую цель</button>
+</div>
 </div>
 
 <div id="protocolActionsContainer"></div>
@@ -898,6 +909,82 @@ Protocol анализирует цель…
     </div>
     <div id="goalHistoryList" class="goal-history-list"></div>
   </div>
+</div>
+
+<!-- ===== NEW: Full goal creation flow in Protocol tab — screen ===== -->
+<div class="screen" id="screen-new-goal">
+
+  <div class="app-header">
+    <div class="header-left">
+      <button id="newGoalBack" class="header-back" type="button">←</button>
+    </div>
+    <div class="header-center">
+      <div class="header-title" data-i18n="newGoal.screen.title">Новая цель</div>
+    </div>
+    <div class="header-right"></div>
+  </div>
+
+  <div class="new-goal-body">
+    <p class="new-goal-intro" data-i18n="newGoal.intro">Заполните все поля — Protocol построит план достижения</p>
+
+    <label data-i18n="newGoal.field.title">Название цели</label>
+    <div class="input-wrap">
+      <input id="newGoalTitle" type="text" maxlength="60"
+        data-i18n-placeholder="newGoal.field.titlePlaceholder"
+        placeholder="Например: Квартира" />
+    </div>
+
+    <label data-i18n="newGoal.field.amount">Сумма цели</label>
+    <div class="input-wrap">
+      <input id="newGoalAmount" inputmode="numeric"
+        data-i18n-placeholder="newGoal.field.amountPlaceholder"
+        placeholder="1.000.000" />
+    </div>
+
+    <label data-i18n="newGoal.field.saved">Уже накоплено</label>
+    <div class="input-wrap">
+      <input id="newGoalSaved" inputmode="numeric"
+        data-i18n-placeholder="newGoal.field.savedPlaceholder"
+        placeholder="0" />
+    </div>
+
+    <label data-i18n="newGoal.field.income">Ежемесячный доход</label>
+    <div class="input-wrap">
+      <input id="newGoalIncome" inputmode="numeric"
+        data-i18n-placeholder="newGoal.field.incomePlaceholder"
+        placeholder="100.000" />
+    </div>
+
+    <label data-i18n="newGoal.field.expenses">Ежемесячный расход</label>
+    <div class="input-wrap">
+      <input id="newGoalExpenses" inputmode="numeric"
+        data-i18n-placeholder="newGoal.field.expensesPlaceholder"
+        placeholder="50.000" />
+    </div>
+
+    <label data-i18n="newGoal.field.tempoLabel">Как копить</label>
+    <div class="toggle-group new-goal-tempo-segment" id="newGoalTempoSegment">
+      <button type="button" class="mode-btn active" data-tempo="rate" data-i18n="newGoal.field.tempoModeRate">По скорости</button>
+      <button type="button" class="mode-btn" data-tempo="duration" data-i18n="newGoal.field.tempoModeDuration">По сроку</button>
+    </div>
+
+    <!-- Rate mode: pace buttons (calm/normal/aggressive) -->
+    <div class="mode-buttons new-goal-pace-buttons" id="newGoalPaceButtons">
+      <button type="button" class="mode-btn active" data-mode="calm" data-i18n="newGoal.field.modeCalm">Спокойно</button>
+      <button type="button" class="mode-btn" data-mode="normal" data-i18n="newGoal.field.modeNormal">Умеренно</button>
+      <button type="button" class="mode-btn" data-mode="aggressive" data-i18n="newGoal.field.modeAggressive">Агрессивно</button>
+    </div>
+
+    <!-- Duration mode: months input (hidden by default) -->
+    <div class="input-wrap new-goal-duration-wrap" id="newGoalDurationWrap" style="display:none">
+      <input id="newGoalDuration" inputmode="numeric"
+        data-i18n-placeholder="newGoal.field.durationPlaceholder"
+        placeholder="12" />
+    </div>
+
+    <button type="button" id="newGoalSubmit" class="new-goal-submit-btn" data-i18n="newGoal.submit">Создать цель</button>
+  </div>
+
 </div>
 
 <!-- ===== NAV ===== -->
@@ -1539,21 +1626,38 @@ z-index: 999999;
   <button id="advGoalSave" style="margin-top:20px" data-i18n="advGoals.save">Сохранить</button>
 </div>
 
-<!-- ===== GOAL COMPLETION FEATURE — congrats modal ===== -->
-<!-- Overlay без cursor:pointer, без обработчика клика — модалка mandatory, только через кнопку. -->
+<!-- ===== PREMIUM GOAL COMPLETION — congrats modal ===== -->
+<!-- Overlay без обработчика клика — mandatory, закрывается только кнопкой "Я молодец!". -->
 <div id="goalCompleteOverlay" class="proto-sheet-overlay"></div>
 <div id="goalCompleteSheet" class="proto-sheet goal-complete-sheet">
   <div class="goal-complete-emoji" aria-hidden="true">🎉</div>
-  <h2 class="goal-complete-title" id="goalCompleteTitle" data-i18n="goalComplete.modal.title">Поздравляем! Цель выполнена! 🎉</h2>
-  <p class="goal-complete-text" id="goalCompleteText">Вы молодец! Вы успешно накопили <b>0</b> на «—»</p>
+  <!-- Title: white-space:pre-line + \n в i18n → красивый перенос на 2 строки. -->
+  <h2 class="goal-complete-title" id="goalCompleteTitle" data-i18n="goalComplete.modal.title">Поздравляем!
+Цель выполнена! 🎉</h2>
+  <!-- Subtitle: сумма + название цели (emerald accent через <b>) -->
+  <div class="goal-complete-subtitle" id="goalCompleteSubtitle"><b>—</b> • «—»</div>
+  <!-- Emotional text — короткая мотивационная фраза. -->
+  <p class="goal-complete-emotional" id="goalCompleteEmotional" data-i18n="goalComplete.modal.emotional">Вы молодец! Вы успешно достигли своей цели.</p>
   <button type="button" id="goalCompleteBtn" class="goal-complete-btn" data-i18n="goalComplete.modal.button">Я молодец!</button>
 </div>
 
-<!-- ===== GOAL COMPLETION FEATURE — history detail modal ===== -->
+<!-- ===== PREMIUM GOAL COMPLETION — history detail modal ===== -->
 <div id="goalHistoryDetailOverlay" class="proto-sheet-overlay"></div>
 <div id="goalHistoryDetailSheet" class="proto-sheet goal-history-detail">
   <button id="goalHistoryDetailClose" class="report-close-x" type="button" aria-label="Close">&times;</button>
-  <div class="goal-history-detail-trophy" aria-hidden="true">🏆</div>
+  <!-- PREMIUM GOAL COMPLETION — circular emerald success badge с анимированным checkmark
+       заменяет старый 🏆 emoji. SVG stroke-draw + glow дают премиум-индикатор успеха. -->
+  <div class="goal-history-detail-badge" aria-hidden="true">
+    <svg viewBox="0 0 64 64" class="goal-history-detail-badge-svg">
+      <circle class="goal-history-detail-badge-ring" cx="32" cy="32" r="28"></circle>
+      <path
+        class="goal-history-detail-badge-tick"
+        d="M20 33.5 L28.5 42 L45 24.5"
+        fill="none"
+        stroke-linecap="round"
+        stroke-linejoin="round"></path>
+    </svg>
+  </div>
   <div class="goal-history-detail-subtitle" data-i18n="goalHistory.detail.subtitle">Завершённая цель</div>
   <h2 class="goal-history-detail-title" id="goalHistoryDetailTitle" style="margin:6px 0 18px">—</h2>
 
@@ -1568,10 +1672,6 @@ z-index: 999999;
   <div class="goal-history-detail-row">
     <span class="goal-history-detail-row-label" data-i18n="goalHistory.detail.durationLabel">За сколько</span>
     <span class="goal-history-detail-row-value" id="goalHistoryDetailDuration">—</span>
-  </div>
-
-  <div class="goal-history-detail-progress" aria-hidden="true">
-    <div class="goal-history-detail-progress-fill"></div>
   </div>
 
   <button type="button" id="goalHistoryDetailCloseBtn" class="goal-history-detail-close-btn" data-i18n="goalHistory.detail.close">Закрыть</button>
