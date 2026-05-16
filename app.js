@@ -5971,8 +5971,12 @@ function allocBackMeta(item) {
   var allocProgressFill = document.getElementById("statsAllocProgressFill");
   var allocProgressLabel = document.getElementById("statsAllocProgressLabel");
   var allocProgressValue = document.getElementById("statsAllocProgressValue");
+  // FUTURE DEPOSITS PER ITEM — global savings-mode toggle removed; refs kept
+  // null-safe in case any old skin still ships the element.
   var savingsModeSeg = document.getElementById("statsSavingsMode");
   var savingsModeHint = document.getElementById("statsSavingsModeHint");
+  // FUTURE DEPOSITS PER ITEM — per-allocation auto-replenish checkboxes.
+  var stockReplenish = document.getElementById("statsStockReplenish");
 
   // ── Modal refs ─────────────────────────────────────────────────────────
   var allocOverlay = document.getElementById("statsAllocOverlay");
@@ -6123,22 +6127,20 @@ function allocBackMeta(item) {
   // PORTFOLIO ALLOCATION LOGIC — local mutable working copy. Submit pushes
   // this into appState.accountStats[_statsTargetAccount].
   var _allocations = [];          // [{ id, type, percentage, details }]
-  var _savingsMode = "current";    // 'current' | 'future'
   var _modalEditIndex = -1;       // -1 → adding; >=0 → editing existing
   var _modalDepositCap = "monthly";
 
+  // FUTURE DEPOSITS PER ITEM — global savings-mode state removed; the
+  // per-allocation `details.acceptsFutureDeposits` flag is the new source of truth.
   // Expose for openAccountStatsScreen (defined outside this IIFE).
   window._statsState = {
-    setAllocations: function (arr, mode) {
+    setAllocations: function (arr /*, mode (ignored, legacy) */) {
       _allocations = Array.isArray(arr) ? arr.map(function (a) { return Object.assign({}, a, { details: Object.assign({}, a.details || {}) }); }) : [];
-      _savingsMode = (mode === "future") ? "future" : "current";
       _renderAllocList();
       _renderAllocProgress();
-      _renderSavingsMode();
       _updateSubmitState();
     },
-    getAllocations: function () { return _allocations; },
-    getSavingsMode: function () { return _savingsMode; }
+    getAllocations: function () { return _allocations; }
   };
 
   function _genAllocId() {
@@ -6387,17 +6389,7 @@ function allocBackMeta(item) {
     }
   }
 
-  function _renderSavingsMode() {
-    if (!savingsModeSeg) return;
-    savingsModeSeg.querySelectorAll(".stats-segment-btn").forEach(function (b) {
-      b.classList.toggle("active", b.getAttribute("data-mode") === _savingsMode);
-    });
-    if (savingsModeHint) {
-      savingsModeHint.textContent = (_savingsMode === "future")
-        ? t("portfolio.savingsMode.futureHint")
-        : t("portfolio.savingsMode.currentHint");
-    }
-  }
+  // FUTURE DEPOSITS PER ITEM — savings-mode renderer removed (no UI to draw).
 
   function _updateSubmitState() {
     if (!submitBtn) return;
@@ -6446,15 +6438,7 @@ function allocBackMeta(item) {
     });
   }
 
-  // ── Savings mode segment ───────────────────────────────────────────────
-  if (savingsModeSeg) {
-    savingsModeSeg.addEventListener("click", function (e) {
-      var btn = e.target.closest(".stats-segment-btn");
-      if (!btn) return;
-      _savingsMode = btn.getAttribute("data-mode") || "current";
-      _renderSavingsMode();
-    });
-  }
+  // FUTURE DEPOSITS PER ITEM — global savings-mode listener removed.
 
   // ── Add button → open modal in "add" mode ──────────────────────────────
   if (allocAddBtn) {
@@ -6524,6 +6508,10 @@ function allocBackMeta(item) {
       if (defaultType === "stock") _refreshMoexForSelected();
       else if (moexBlock) moexBlock.style.display = "none";
     }
+    // FUTURE DEPOSITS PER ITEM — restore per-item flag for stock.
+    if (stockReplenish) {
+      stockReplenish.checked = !!(defaultType === "stock" && d.acceptsFutureDeposits);
+    }
 
     // PORTFOLIO ALLOCATION v2 — DEPOSIT: base rate + term + promo period + capitalization.
     if (depositRate) depositRate.value = (defaultType === "deposit" && d.rate != null) ? d.rate : "";
@@ -6537,7 +6525,12 @@ function allocBackMeta(item) {
         b.classList.toggle("active", b.getAttribute("data-cap") === _modalDepositCap);
       });
     }
-    if (depositReplenish) depositReplenish.checked = !!(defaultType === "deposit" && d.replenishable);
+    // FUTURE DEPOSITS PER ITEM — checkbox now reflects acceptsFutureDeposits
+    // (falls back to the legacy `replenishable` flag for back-compat).
+    if (depositReplenish) {
+      var depAccepts = (d.acceptsFutureDeposits != null) ? d.acceptsFutureDeposits : d.replenishable;
+      depositReplenish.checked = !!(defaultType === "deposit" && depAccepts);
+    }
     // FIX: sync dynamic label + live preview after restoring saved values.
     _updateDepositRateLabel();
     _updateDepositEffectivePreview();
@@ -6697,7 +6690,9 @@ function allocBackMeta(item) {
       if (!sPreset) return null;
       return {
         asset: assetVal,
-        ticker: sPreset.ticker || ""
+        ticker: sPreset.ticker || "",
+        // FUTURE DEPOSITS PER ITEM — per-allocation auto-replenishment toggle.
+        acceptsFutureDeposits: !!(stockReplenish && stockReplenish.checked)
         // expectedReturn is intentionally NOT stored — resolved at runtime from preset.
       };
     }
@@ -6713,13 +6708,18 @@ function allocBackMeta(item) {
       promoM = Math.min(promoM, 12);
       var promoR = parseFloat(depositPromoRate ? depositPromoRate.value : "");
       if (promoM > 0 && (!isFinite(promoR) || promoR <= 0)) return null; // require promo rate when months > 0
+      // FUTURE DEPOSITS PER ITEM — the replenishment checkbox now drives the
+      // shared per-item flag. We keep `replenishable` mirrored for back-compat
+      // with any legacy code path that still reads it.
+      var depAccepts = !!(depositReplenish && depositReplenish.checked);
       return {
         rate: rate,
         termMonths: term,
         promoMonths: promoM,
         promoRate: (promoM > 0) ? promoR : null,
         capitalization: _modalDepositCap || "monthly",
-        replenishable: !!(depositReplenish && depositReplenish.checked)
+        replenishable: depAccepts,
+        acceptsFutureDeposits: depAccepts
       };
     }
     if (type === "metals") {
@@ -6819,6 +6819,8 @@ function allocBackMeta(item) {
         inflation: (primary.type === "cash" ? primary.details.inflation : null),
         params: (primary.type !== "cash" ? Object.assign({}, primary.details) : null),
         // PORTFOLIO ALLOCATION v2 — full portfolio incl. withdrawn history.
+        // FUTURE DEPOSITS PER ITEM — per-allocation acceptsFutureDeposits
+        // is persisted inside `details` (no top-level futureSavingsMode anymore).
         storageAllocation: _allocations.map(function (a) {
           return {
             id: a.id,
@@ -6829,8 +6831,7 @@ function allocBackMeta(item) {
             withdrawnAt: a.withdrawnAt || null,
             withdrawnSnapshot: a.withdrawnSnapshot ? Object.assign({}, a.withdrawnSnapshot) : null
           };
-        }),
-        futureSavingsMode: _savingsMode
+        })
       };
 
       var patch = {};
@@ -6887,10 +6888,9 @@ function openAccountStatsScreen(accountKey) {
     }
     allocs = [{ id: "alloc_" + Math.random().toString(36).slice(2, 9), type: stats.type, percentage: 100, details: details }];
   }
-  var mode = (stats.futureSavingsMode === "future") ? "future" : "current";
-
+  // FUTURE DEPOSITS PER ITEM — global savings mode removed; per-item flag lives in details.
   if (window._statsState && typeof window._statsState.setAllocations === "function") {
-    window._statsState.setAllocations(allocs, mode);
+    window._statsState.setAllocations(allocs);
   }
 
   // PORTFOLIO ALLOCATION LOGIC — prime country dropdown in the modal (fast,
@@ -7134,10 +7134,16 @@ function renderAccountBackCards() {
     var _baselineInfl = (inflation != null) ? Number(inflation) : 0;
 
     if (hasPortfolio) {
-      // Header line: portfolio summary.
+      // FUTURE DEPOSITS PER ITEM — footer shows how many active slots accept
+      // auto-replenishment (replaces the old global savings-mode chip).
+      var acceptingCount = activeAllocs.filter(function (a) { return a && a.details && a.details.acceptsFutureDeposits; }).length;
+      var acceptLabel;
+      if (acceptingCount === 0) acceptLabel = t("portfolio.futureAccept.none");
+      else if (acceptingCount === activeAllocs.length) acceptLabel = t("portfolio.futureAccept.all");
+      else acceptLabel = t("portfolio.futureAccept.partial").replace("{n}", acceptingCount).replace("{total}", activeAllocs.length);
+
       html += '<div class="stats-info-row"><span>' + t("portfolio.composition") + '</span><span>' +
-              activeAllocs.length + ' · ' +
-              t(stats.futureSavingsMode === "future" ? "portfolio.savingsMode.future" : "portfolio.savingsMode.current") +
+              activeAllocs.length + ' · ' + acceptLabel +
               '</span></div>';
 
       // PORTFOLIO ALLOCATION + CARD EXPANSION — per-allocation tappable row.
@@ -7406,6 +7412,8 @@ function _allocDetailParamsHtml(item) {
   } else if (item.type === "stock") {
     rows.push([t("stats.stockInfo"), p.asset ? t("stats.asset." + p.asset) : "—"]);
     if (p.ticker) rows.push(["Ticker", p.ticker]);
+    // FUTURE DEPOSITS PER ITEM — surface the per-item flag in the detail view.
+    rows.push([t("stats.field.acceptsFutureDeposits.short"), p.acceptsFutureDeposits ? "✓" : "—"]);
   } else if (item.type === "metals") {
     // METALS - IN DEVELOPMENT — show the legacy chosen metal but no editable params.
     rows.push([t("stats.metalInfo"), p.metal ? t("stats.metal." + p.metal) : "—"]);
@@ -7417,7 +7425,9 @@ function _allocDetailParamsHtml(item) {
       if (p.promoRate != null) rows.push([t("stats.field.promoRate"), (Math.round(p.promoRate * 10) / 10) + "%"]);
     }
     rows.push([t("stats.field.capitalization"), t("stats.cap." + (p.capitalization || "monthly"))]);
-    rows.push([t("stats.field.replenishable"), p.replenishable ? "✓" : "—"]);
+    // FUTURE DEPOSITS PER ITEM — prefer the new flag, fall back to legacy `replenishable`.
+    var depAcc = (p.acceptsFutureDeposits != null) ? p.acceptsFutureDeposits : p.replenishable;
+    rows.push([t("stats.field.acceptsFutureDeposits.short"), depAcc ? "✓" : "—"]);
   }
   var html = '<div class="alloc-detail-rows">';
   rows.forEach(function (r) {
@@ -7478,7 +7488,36 @@ function _allocDetailAnalyticsHtml(accountKey, stats, item) {
     var bal = (accountKey === "main") ? (accounts ? accounts.main : 0) : (accounts ? accounts.reserve : 0);
     var sliceAmount = (Number(bal) || 0) * (Number(item.percentage) || 0) / 100;
     var rateFraction = realReturn / 100;
-    var projected = Math.round(sliceAmount * Math.pow(1 + rateFraction, years));
+    var monthlyRate = Math.pow(1 + rateFraction, 1 / 12) - 1;
+    var projectedBase = sliceAmount * Math.pow(1 + rateFraction, years);
+
+    // FUTURE DEPOSITS PER ITEM — split the household's planned monthly savings
+    // across active allocations that opted into auto-replenishment, weighted by
+    // their share of the portfolio. The current item's slice grows as an
+    // annuity at the same real return; non-accepting items see no top-ups.
+    var accepts = !!(item.details && item.details.acceptsFutureDeposits);
+    var monthlySave = (typeof lastCalc !== "undefined" && lastCalc && lastCalc.monthlySave) ? Number(lastCalc.monthlySave) : 0;
+    var acceptingPctSum = 0;
+    (stats.storageAllocation || []).forEach(function (a) {
+      if (a && !a.withdrawn && a.details && a.details.acceptsFutureDeposits) {
+        acceptingPctSum += Number(a.percentage) || 0;
+      }
+    });
+    var monthlyShare = 0;
+    if (accepts && monthlySave > 0 && acceptingPctSum > 0) {
+      monthlyShare = monthlySave * ((Number(item.percentage) || 0) / acceptingPctSum);
+    }
+
+    // Annuity future value with the real monthly rate; degrades to a plain sum
+    // when realReturn is 0 to avoid div-by-zero.
+    var contribFV = 0;
+    if (monthlyShare > 0) {
+      contribFV = (Math.abs(monthlyRate) < 1e-9)
+        ? monthlyShare * monthsLeft
+        : monthlyShare * ((Math.pow(1 + monthlyRate, monthsLeft) - 1) / monthlyRate);
+    }
+
+    var projected = Math.round(projectedBase + contribFV);
     var delta = projected - Math.round(sliceAmount);
 
     var nUnit, nVal;

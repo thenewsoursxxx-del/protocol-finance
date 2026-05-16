@@ -1056,13 +1056,8 @@ Protocol анализирует цель…
 
     <button type="button" id="statsAllocAddBtn" class="alloc-add-btn" data-i18n="portfolio.addBtn">+ Добавить тип хранения</button>
 
-    <!-- PORTFOLIO ALLOCATION LOGIC — savings model toggle -->
-    <div class="stats-section-label alloc-section-label" data-i18n="portfolio.savingsMode.title">Учёт накоплений</div>
-    <div class="stats-segment savings-mode-segment" id="statsSavingsMode" role="tablist">
-      <button type="button" class="stats-segment-btn active" data-mode="current" data-i18n="portfolio.savingsMode.current">Только текущая сумма</button>
-      <button type="button" class="stats-segment-btn" data-mode="future" data-i18n="portfolio.savingsMode.future">С будущими отложениями</button>
-    </div>
-    <div id="statsSavingsModeHint" class="stats-input-hint savings-mode-hint" data-i18n="portfolio.savingsMode.currentHint">Расчёт идёт от того, что уже накоплено</div>
+    <!-- FUTURE DEPOSITS PER ITEM — global savings-mode toggle removed; the
+         decision is now made per allocation via "Пополнять из будущих отложений". -->
 
     <button id="statsSubmit" class="stats-submit-btn" disabled data-i18n="accounts.addStats">Добавить статистику</button>
 
@@ -1147,6 +1142,13 @@ Protocol анализирует цель…
         </div>
         <div class="moex-quote-source" data-i18n="stats.moex.source">Данные с MOEX ISS</div>
       </div>
+      <!-- FUTURE DEPOSITS PER ITEM — auto-replenishment toggle for the stock allocation. -->
+      <label class="stats-checkbox-wrap">
+        <input type="checkbox" id="statsStockReplenish" />
+        <span class="stats-checkbox-box"></span>
+        <span class="stats-checkbox-label" data-i18n="stats.field.acceptsFutureDeposits">Пополнять из будущих отложений</span>
+      </label>
+      <div class="stats-input-hint stats-checkbox-hint" data-i18n="stats.field.acceptsFutureDepositsHint">Будущие отложения (доходы) будут автоматически распределяться в этот тип хранения</div>
     </div>
 
     <!-- PORTFOLIO ALLOCATION v2 — deposit: base rate + promo period + capitalization -->
@@ -1182,13 +1184,13 @@ Protocol анализирует цель…
       </div>
       <!-- FIX: live effective-rate preview (recomputed on any field change) -->
       <div id="statsDepositEffectivePreview" class="stats-deposit-preview" style="display:none"></div>
-      <!-- FIX: replenishable checkbox now has an explanatory hint underneath -->
+      <!-- FUTURE DEPOSITS PER ITEM — checkbox now drives auto-replenishment from future savings. -->
       <label class="stats-checkbox-wrap">
         <input type="checkbox" id="statsDepositReplenish" />
         <span class="stats-checkbox-box"></span>
-        <span class="stats-checkbox-label" data-i18n="stats.field.replenishable">Возможно пополнение</span>
+        <span class="stats-checkbox-label" data-i18n="stats.field.acceptsFutureDeposits">Пополнять из будущих отложений</span>
       </label>
-      <div class="stats-input-hint stats-checkbox-hint" data-i18n="stats.field.replenishableHint">Можно ли вносить дополнительные деньги на счёт в течение срока вклада</div>
+      <div class="stats-input-hint stats-checkbox-hint" data-i18n="stats.field.acceptsFutureDepositsHint">Будущие отложения (доходы) будут автоматически распределяться в этот тип хранения</div>
     </div>
 
     <!-- METALS - IN DEVELOPMENT — premium info card replaces all metal inputs -->
