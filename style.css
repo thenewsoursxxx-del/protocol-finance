@@ -4346,6 +4346,27 @@ body.flip-fix-pending .flip-wrapper {
 @media (prefers-reduced-motion: reduce) {
   .alloc-stacked-seg { transition: none; }
 }
+
+/* FIX: Promo period for deposits — visually highlight the promo rate block
+   when it's revealed so users see the connection with the promo period. */
+#statsDepositPromoRateWrap {
+  padding: 12px 14px;
+  margin-top: -4px;
+  background: linear-gradient(180deg, rgba(245,158,11,0.07), rgba(245,158,11,0.02));
+  border: 1px solid rgba(245,158,11,0.25);
+  border-radius: 14px;
+  animation: depositPromoFadeIn .3s ease;
+}
+#statsDepositPromoRateWrap > label {
+  color: #fcd34d;
+}
+@keyframes depositPromoFadeIn {
+  0%   { opacity: 0; transform: translateY(-4px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  #statsDepositPromoRateWrap { animation: none; }
+}
 .stats-input-wrap {
   margin-bottom: 0;
 }

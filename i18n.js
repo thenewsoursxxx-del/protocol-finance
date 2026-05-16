@@ -704,8 +704,10 @@
       "stats.assetGroup.indices": "Мировые индексы",
 
       // PORTFOLIO ALLOCATION v2 — deposit promo + renamed capitalization
-      "stats.field.capitalization": "Частота начисления процентов",
-      "stats.field.promoMonths": "Промо-период (мес, 0–3)",
+      // FIX: Promo period for deposits — extended to 0–12 months, clearer hint
+      "stats.field.capitalization": "Капитализация процентов",
+      "stats.field.promoMonths": "Промо-период (мес, 0–12)",
+      "stats.field.promoMonthsHint": "Обычно 1–3 месяца. В некоторых банках бывает 4–6 месяцев",
       "stats.field.promoRate":   "Повышенная ставка на промо-период (% годовых)",
       "stats.field.depositRate": "Ставка после промо-периода (% годовых)",
       "stats.deposit.effectiveBlended": "Эффективная ставка (промо + база)",
@@ -1502,8 +1504,10 @@
       "stats.assetGroup.indices": "Global indices",
 
       // PORTFOLIO ALLOCATION v2 — deposit promo + renamed capitalization
-      "stats.field.capitalization": "Interest accrual frequency",
-      "stats.field.promoMonths": "Promo period (months, 0–3)",
+      // FIX: Promo period for deposits — extended to 0–12 months, clearer hint
+      "stats.field.capitalization": "Interest capitalization",
+      "stats.field.promoMonths": "Promo period (months, 0–12)",
+      "stats.field.promoMonthsHint": "Usually 1–3 months. Some banks offer 4–6 months",
       "stats.field.promoRate":   "Promo rate (% annual)",
       "stats.field.depositRate": "Rate after promo (% annual)",
       "stats.deposit.effectiveBlended": "Effective rate (promo + base)",

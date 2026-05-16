@@ -6442,10 +6442,11 @@ var METAL_PRESETS = {
   }
 
   // PORTFOLIO ALLOCATION v2 — promo months → reveal/hide promo rate input.
+  // FIX: Promo period for deposits — clamp extended to 0–12 months.
   if (depositPromoMonths) {
     depositPromoMonths.addEventListener("input", function () {
       var n = parseInt(depositPromoMonths.value, 10);
-      if (isFinite(n) && n > 3) { depositPromoMonths.value = 3; n = 3; }
+      if (isFinite(n) && n > 12) { depositPromoMonths.value = 12; n = 12; }
       if (isFinite(n) && n < 0) { depositPromoMonths.value = 0; n = 0; }
       if (depositPromoRateWrap) depositPromoRateWrap.style.display = (n > 0) ? "" : "none";
     });
@@ -6490,9 +6491,10 @@ var METAL_PRESETS = {
       var term = parseInt(depositTerm ? depositTerm.value : "", 10);
       if (!isFinite(rate) || rate <= 0) return null;
       if (!isFinite(term) || term <= 0) return null;
+      // FIX: Promo period for deposits — extended to 0–12 months.
       var promoM = parseInt(depositPromoMonths ? depositPromoMonths.value : "0", 10);
       if (!isFinite(promoM) || promoM < 0) promoM = 0;
-      promoM = Math.min(promoM, 3);
+      promoM = Math.min(promoM, 12);
       var promoR = parseFloat(depositPromoRate ? depositPromoRate.value : "");
       if (promoM > 0 && (!isFinite(promoR) || promoR <= 0)) return null; // require promo rate when months > 0
       return {
@@ -6746,9 +6748,10 @@ function getStorageExpectedReturn(stats) {
     var term = parseInt(p.termMonths, 10);
     if (!isFinite(term) || term <= 0) term = 12;
 
+    // FIX: Promo period for deposits — extended to 0–12 months.
     var promoM = parseInt(p.promoMonths, 10);
     if (!isFinite(promoM) || promoM < 0) promoM = 0;
-    promoM = Math.min(promoM, 3, term);
+    promoM = Math.min(promoM, 12, term);
     var promoR = parseFloat(p.promoRate);
     if (!isFinite(promoR) || promoR < 0) promoR = rate;
 
