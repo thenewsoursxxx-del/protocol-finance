@@ -1108,7 +1108,7 @@ Protocol анализирует цель…
       </div>
     </div>
 
-    <!-- PORTFOLIO ALLOCATION v2 — stock with grouped preset list (no manual return) -->
+    <!-- MOEX INTEGRATION — stock with RU-only preset list + live MOEX quote card -->
     <div id="statsStockFields" class="stats-type-fields" style="display:none">
       <div class="input-wrap stats-input-wrap">
         <label data-i18n="stats.field.asset">Актив / ETF</label>
@@ -1122,21 +1122,30 @@ Protocol анализирует цель…
             <option value="ru_magnit"  data-i18n="stats.asset.ru_magnit">Магнит (MGNT)</option>
             <option value="ru_norilsk" data-i18n="stats.asset.ru_norilsk">Норникель (GMKN)</option>
             <option value="ru_rosneft" data-i18n="stats.asset.ru_rosneft">Роснефть (ROSN)</option>
+            <option value="ru_vk"      data-i18n="stats.asset.ru_vk">VK (VKCO)</option>
+            <option value="ru_polyus"  data-i18n="stats.asset.ru_polyus">Полюс (PLZL)</option>
           </optgroup>
           <optgroup label="ETF на МосБирже" data-i18n-label="stats.assetGroup.etfMoex">
             <option value="etf_fxrl" data-i18n="stats.asset.etf_fxrl">FXRL — Российские акции</option>
             <option value="etf_fxit" data-i18n="stats.asset.etf_fxit">FXIT — IT-сектор</option>
+            <option value="etf_fxus" data-i18n="stats.asset.etf_fxus">FXUS — Акции США</option>
             <option value="etf_tmos" data-i18n="stats.asset.etf_tmos">TMOS — Индекс МосБиржи</option>
             <option value="etf_sbsp" data-i18n="stats.asset.etf_sbsp">SBSP — S&P 500 (СберИнвестиции)</option>
           </optgroup>
-          <optgroup label="Мировые индексы" data-i18n-label="stats.assetGroup.indices">
-            <option value="sp500"     data-i18n="stats.asset.sp500">S&P 500</option>
-            <option value="nasdaq100" data-i18n="stats.asset.nasdaq100">NASDAQ 100</option>
-            <option value="msciWorld" data-i18n="stats.asset.msciWorld">MSCI World</option>
-            <option value="moex"      data-i18n="stats.asset.moex">Индекс МосБиржи</option>
-          </optgroup>
         </select>
         <div id="statsStockReturnHint" class="stats-input-hint"></div>
+      </div>
+      <!-- MOEX INTEGRATION — live quote card (filled async after asset change) -->
+      <div id="statsStockMoexBlock" class="moex-quote-card" style="display:none">
+        <div class="moex-quote-row">
+          <span class="moex-quote-label" data-i18n="stats.moex.price">Текущая цена</span>
+          <span class="moex-quote-price" id="statsStockMoexPrice">—</span>
+        </div>
+        <div class="moex-quote-row">
+          <span class="moex-quote-label" data-i18n="stats.moex.change">Изменение за день</span>
+          <span class="moex-quote-change" id="statsStockMoexChange">—</span>
+        </div>
+        <div class="moex-quote-source" data-i18n="stats.moex.source">Данные с MOEX ISS</div>
       </div>
     </div>
 
@@ -1182,16 +1191,12 @@ Protocol анализирует цель…
       <div class="stats-input-hint stats-checkbox-hint" data-i18n="stats.field.replenishableHint">Можно ли вносить дополнительные деньги на счёт в течение срока вклада</div>
     </div>
 
-    <!-- PORTFOLIO ALLOCATION v2 — metals: return from preset, no manual input -->
+    <!-- METALS - IN DEVELOPMENT — premium info card replaces all metal inputs -->
     <div id="statsMetalsFields" class="stats-type-fields" style="display:none">
-      <div class="input-wrap stats-input-wrap">
-        <label data-i18n="stats.field.metal">Металл</label>
-        <select id="statsMetal" class="stats-select">
-          <option value="gold"     data-i18n="stats.metal.gold">Золото</option>
-          <option value="silver"   data-i18n="stats.metal.silver">Серебро</option>
-          <option value="platinum" data-i18n="stats.metal.platinum">Платина</option>
-        </select>
-        <div id="statsMetalReturnHint" class="stats-input-hint"></div>
+      <div class="metals-in-dev">
+        <div class="metals-in-dev-icon">⚒️</div>
+        <div class="metals-in-dev-title" data-i18n="metals.inDev.title">В разработке</div>
+        <div class="metals-in-dev-desc" data-i18n="metals.inDev.desc">Поддержка золота, серебра и платины появится в одном из ближайших обновлений приложения.</div>
       </div>
     </div>
 

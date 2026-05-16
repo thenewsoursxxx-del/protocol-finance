@@ -5829,9 +5829,9 @@ function _updateInflationPreview(rate, isLoading) {
  * etc.) that used to live on the screen are now siblings of the sheet inside
  * the modal — UI / handlers were refactored accordingly.
  * ============================================================================ */
-// PORTFOLIO ALLOCATION v2 — preset assets (RU stocks, MOEX ETFs, world indices).
-// Each preset bakes the expected annual return so users don't enter it manually.
-// Returns are average long-run estimates and intentionally conservative.
+// MOEX INTEGRATION — RU-only preset assets (stocks + MOEX ETFs).
+// Each preset bakes the long-run expected return (used in projections); live
+// prices/change are fetched from MOEX ISS via window.fetchMoexQuote.
 var STOCK_ASSET_PRESETS = {
   // Russian blue chips
   ru_sber:    { return: 15.0, ticker: "SBER" },
@@ -5842,16 +5842,56 @@ var STOCK_ASSET_PRESETS = {
   ru_magnit:  { return: 9.0,  ticker: "MGNT" },
   ru_norilsk: { return: 12.0, ticker: "GMKN" },
   ru_rosneft: { return: 10.0, ticker: "ROSN" },
+  ru_vk:      { return: 14.0, ticker: "VKCO" },
+  ru_polyus:  { return: 13.0, ticker: "PLZL" },
   // MOEX ETFs
   etf_fxrl:   { return: 12.0, ticker: "FXRL" },
   etf_fxit:   { return: 14.0, ticker: "FXIT" },
+  etf_fxus:   { return: 10.0, ticker: "FXUS" },
   etf_tmos:   { return: 13.0, ticker: "TMOS" },
-  etf_sbsp:   { return: 10.0, ticker: "SBSP" },
-  // World indices
-  sp500:      { return: 10.0, ticker: "SPY"  },
-  nasdaq100:  { return: 13.0, ticker: "QQQ"  },
-  msciWorld:  { return: 8.0,  ticker: "URTH" },
-  moex:       { return: 12.0, ticker: "IMOEX" }
+  etf_sbsp:   { return: 10.0, ticker: "SBSP" }
+};
+
+// MOEX INTEGRATION — public MOEX ISS API (no auth required, CORS-friendly).
+// Quotes are cached in-memory for 60s to avoid spamming the endpoint while the
+// user toggles assets in the picker. Falls back to null on any error so the
+// UI just shows a friendly "could not fetch" state.
+var _moexQuoteCache = Object.create(null);
+var MOEX_TTL_MS = 60 * 1000;
+window.fetchMoexQuote = function (ticker) {
+  if (!ticker) return Promise.resolve(null);
+  var key = String(ticker).toUpperCase();
+  var now = Date.now();
+  var cached = _moexQuoteCache[key];
+  if (cached && (now - cached.ts) < MOEX_TTL_MS) return Promise.resolve(cached.data);
+
+  var url = "https://iss.moex.com/iss/engines/stock/markets/shares/securities/" +
+            encodeURIComponent(key) + ".json?iss.meta=off&iss.only=marketdata";
+  return fetch(url, { credentials: "omit" })
+    .then(function (resp) { return resp.ok ? resp.json() : null; })
+    .then(function (json) {
+      if (!json || !json.marketdata || !Array.isArray(json.marketdata.data)) return null;
+      var cols = json.marketdata.columns || [];
+      var iLast  = cols.indexOf("LAST");
+      var iChg   = cols.indexOf("LASTCHANGEPRCNT");
+      var iBoard = cols.indexOf("BOARDID");
+      // Prefer the first row with a non-null LAST (active board).
+      var row = json.marketdata.data.find(function (r) { return iLast >= 0 && r[iLast] != null; })
+             || json.marketdata.data[0]
+             || null;
+      if (!row) return null;
+      var data = {
+        price:     (iLast  >= 0) ? row[iLast]  : null,
+        changePct: (iChg   >= 0) ? row[iChg]   : null,
+        board:     (iBoard >= 0) ? row[iBoard] : null
+      };
+      _moexQuoteCache[key] = { ts: Date.now(), data: data };
+      return data;
+    })
+    .catch(function (e) {
+      console.warn("[MOEX] fetch failed for", key, e);
+      return null;
+    });
 };
 
 // PORTFOLIO ALLOCATION v2 — metal preset returns (long-run avg, % p.a.).
@@ -5962,9 +6002,15 @@ function allocBackMeta(item) {
   var depositCap  = document.getElementById("statsDepositCap");
   var depositReplenish = document.getElementById("statsDepositReplenish");
   var depositEffPreview = document.getElementById("statsDepositEffectivePreview"); // FIX: live preview
-  // PORTFOLIO ALLOCATION v2 — metals return is preset-derived too.
+  // METALS - IN DEVELOPMENT — metal inputs replaced by info card; refs may be null.
   var metalSelect = document.getElementById("statsMetal");
   var metalReturnHint = document.getElementById("statsMetalReturnHint");
+
+  // MOEX INTEGRATION — refs for live quote card under stock asset select.
+  var moexBlock       = document.getElementById("statsStockMoexBlock");
+  var moexPriceEl     = document.getElementById("statsStockMoexPrice");
+  var moexChangeEl    = document.getElementById("statsStockMoexChange");
+  var _moexReqToken   = 0; // guards against out-of-order async responses
 
   // PORTFOLIO ALLOCATION v2 — small helpers for showing return hints.
   function _showReturnHint(el, retVal) {
@@ -5977,6 +6023,58 @@ function allocBackMeta(item) {
     el.textContent = t("stats.field.expectedReturn") + ": " + (Math.round(retVal * 10) / 10) + "%";
     el.style.color = "#6ee7b7";
     el.style.display = "";
+  }
+
+  // MOEX INTEGRATION — render live quote card states (loading / data / error).
+  function _renderMoexCard(state, quote) {
+    if (!moexBlock) return;
+    moexBlock.style.display = "";
+    moexBlock.classList.remove("is-loading", "is-error");
+    if (state === "loading") {
+      moexBlock.classList.add("is-loading");
+      if (moexPriceEl)  moexPriceEl.textContent  = t("stats.moex.loading");
+      if (moexChangeEl) { moexChangeEl.textContent = "—"; moexChangeEl.className = "moex-quote-change muted"; }
+      return;
+    }
+    if (state === "error" || !quote || quote.price == null) {
+      moexBlock.classList.add("is-error");
+      if (moexPriceEl)  moexPriceEl.textContent  = t("stats.moex.error");
+      if (moexChangeEl) { moexChangeEl.textContent = "—"; moexChangeEl.className = "moex-quote-change muted"; }
+      return;
+    }
+    var price = Number(quote.price);
+    var chg   = (quote.changePct != null) ? Number(quote.changePct) : null;
+    if (moexPriceEl) {
+      moexPriceEl.textContent = (price >= 100 ? price.toFixed(2) : price.toFixed(3)) + " ₽";
+    }
+    if (moexChangeEl) {
+      if (chg == null || !isFinite(chg)) {
+        moexChangeEl.textContent = "—";
+        moexChangeEl.className = "moex-quote-change muted";
+      } else {
+        var sign = chg > 0 ? "+" : "";
+        moexChangeEl.textContent = sign + chg.toFixed(2) + "%";
+        moexChangeEl.className = "moex-quote-change " + (chg > 0 ? "positive" : (chg < 0 ? "negative" : "muted"));
+      }
+    }
+  }
+
+  // MOEX INTEGRATION — fetch quote for the currently selected asset and render it.
+  // Uses a request token so a late response from a previous ticker can't overwrite
+  // the card after the user has already picked another asset.
+  function _refreshMoexForSelected() {
+    if (!moexBlock || !stockAssetSel) return;
+    var preset = STOCK_ASSET_PRESETS[stockAssetSel.value] || null;
+    if (!preset || !preset.ticker || typeof window.fetchMoexQuote !== "function") {
+      moexBlock.style.display = "none";
+      return;
+    }
+    var myToken = ++_moexReqToken;
+    _renderMoexCard("loading", null);
+    window.fetchMoexQuote(preset.ticker).then(function (q) {
+      if (myToken !== _moexReqToken) return; // user picked another asset
+      _renderMoexCard(q ? "ok" : "error", q);
+    });
   }
 
   // FIX: dynamic deposit rate label — switches between base-only and after-promo.
@@ -6381,6 +6479,8 @@ function allocBackMeta(item) {
       });
     }
     _toggleFieldsForType(type);
+    // MOEX INTEGRATION — refresh live quote when user switches into stock mode.
+    if (type === "stock") _refreshMoexForSelected();
   }
 
   function _openAllocModal(editIndex) {
@@ -6420,6 +6520,9 @@ function allocBackMeta(item) {
       stockAssetSel.value = savedAsset;
       var _sPreset = STOCK_ASSET_PRESETS[stockAssetSel.value];
       _showReturnHint(stockReturnHint, _sPreset ? _sPreset.return : 0);
+      // MOEX INTEGRATION — auto-load live quote when opening the modal in stock mode.
+      if (defaultType === "stock") _refreshMoexForSelected();
+      else if (moexBlock) moexBlock.style.display = "none";
     }
 
     // PORTFOLIO ALLOCATION v2 — DEPOSIT: base rate + term + promo period + capitalization.
@@ -6529,15 +6632,16 @@ function allocBackMeta(item) {
     });
   }
 
-  // PORTFOLIO ALLOCATION v2 — stock asset → update hint (return is preset).
+  // MOEX INTEGRATION — stock asset → update return hint + pull live MOEX quote.
   if (stockAssetSel) {
     stockAssetSel.addEventListener("change", function () {
       var preset = STOCK_ASSET_PRESETS[stockAssetSel.value] || null;
       _showReturnHint(stockReturnHint, preset ? preset.return : 0);
+      _refreshMoexForSelected();
     });
   }
 
-  // PORTFOLIO ALLOCATION v2 — metal change → update hint (return is preset).
+  // METALS - IN DEVELOPMENT — metalSelect/hint refs are null (replaced by info card).
   if (metalSelect) {
     metalSelect.addEventListener("change", function () {
       var mp = METAL_PRESETS[metalSelect.value] || null;
@@ -6619,10 +6723,9 @@ function allocBackMeta(item) {
       };
     }
     if (type === "metals") {
-      // PORTFOLIO ALLOCATION v2 — no manual return, metal → preset return.
-      var metalVal = (metalSelect && metalSelect.value) || "gold";
-      if (!METAL_PRESETS[metalVal]) return null;
-      return { metal: metalVal };
+      // METALS - IN DEVELOPMENT — saving is blocked; caller handles the toast.
+      // Existing metal allocations from older state remain visible/removable.
+      return null;
     }
     return null;
   }
@@ -6631,6 +6734,13 @@ function allocBackMeta(item) {
     allocSaveBtn.addEventListener("click", async function () {
       var type = _statsSelectedType;
       if (!type) { showToast(t("portfolio.validation.fillFields"), "error"); return; }
+
+      // METALS - IN DEVELOPMENT — intercept before validation so the user gets
+      // a clear "coming soon" toast instead of a generic "fill fields" error.
+      if (type === "metals") {
+        showToast(t("metals.inDev.toast"), "info");
+        return;
+      }
 
       var details = _validateAndCollectDetails(type);
       if (!details) { showToast(t("portfolio.validation.fillFields"), "error"); return; }
@@ -7296,6 +7406,9 @@ function _allocDetailParamsHtml(item) {
   } else if (item.type === "stock") {
     rows.push([t("stats.stockInfo"), p.asset ? t("stats.asset." + p.asset) : "—"]);
     if (p.ticker) rows.push(["Ticker", p.ticker]);
+  } else if (item.type === "metals") {
+    // METALS - IN DEVELOPMENT — show the legacy chosen metal but no editable params.
+    rows.push([t("stats.metalInfo"), p.metal ? t("stats.metal." + p.metal) : "—"]);
   } else if (item.type === "deposit") {
     rows.push([t("stats.field.depositRate"), (p.rate != null) ? (Math.round(p.rate * 10) / 10) + "%" : "—"]);
     rows.push([t("stats.field.depositTerm"), (p.termMonths != null) ? p.termMonths + " " + t("misc.monthShort") : "—"]);
@@ -7305,14 +7418,21 @@ function _allocDetailParamsHtml(item) {
     }
     rows.push([t("stats.field.capitalization"), t("stats.cap." + (p.capitalization || "monthly"))]);
     rows.push([t("stats.field.replenishable"), p.replenishable ? "✓" : "—"]);
-  } else if (item.type === "metals") {
-    rows.push([t("stats.metalInfo"), p.metal ? t("stats.metal." + p.metal) : "—"]);
   }
   var html = '<div class="alloc-detail-rows">';
   rows.forEach(function (r) {
     html += '<div class="alloc-detail-row"><span class="alloc-detail-row-label">' + r[0] + '</span><span class="alloc-detail-row-value">' + r[1] + '</span></div>';
   });
   html += '</div>';
+
+  // MOEX INTEGRATION — placeholder for live quote; filled async in showAllocationDetail.
+  if (item.type === "stock" && p.ticker) {
+    html += '<div id="allocDetailMoexQuote" class="moex-quote-card is-loading" style="margin-top:12px">' +
+      '<div class="moex-quote-row"><span class="moex-quote-label">' + t("stats.moex.price") + '</span><span class="moex-quote-price">' + t("stats.moex.loading") + '</span></div>' +
+      '<div class="moex-quote-row"><span class="moex-quote-label">' + t("stats.moex.change") + '</span><span class="moex-quote-change muted">—</span></div>' +
+      '<div class="moex-quote-source">' + t("stats.moex.source") + '</div>' +
+    '</div>';
+  }
   return html;
 }
 
@@ -7439,6 +7559,36 @@ function showAllocationDetail(accountKey, allocId) {
   overlay.style.display = "block";
   sheet.style.display = "block";
   requestAnimationFrame(function () { sheet.classList.add("open"); });
+
+  // MOEX INTEGRATION — async-fill the live quote card if this is a stock allocation.
+  if (item.type === "stock" && item.details && item.details.ticker && typeof window.fetchMoexQuote === "function") {
+    var ticker = item.details.ticker;
+    window.fetchMoexQuote(ticker).then(function (q) {
+      var card = document.getElementById("allocDetailMoexQuote");
+      if (!card) return;
+      card.classList.remove("is-loading", "is-error");
+      var priceEl  = card.querySelector(".moex-quote-price");
+      var changeEl = card.querySelector(".moex-quote-change");
+      if (!q || q.price == null) {
+        card.classList.add("is-error");
+        if (priceEl)  priceEl.textContent  = t("stats.moex.error");
+        if (changeEl) { changeEl.textContent = "—"; changeEl.className = "moex-quote-change muted"; }
+        return;
+      }
+      var price = Number(q.price);
+      if (priceEl) priceEl.textContent = (price >= 100 ? price.toFixed(2) : price.toFixed(3)) + " ₽";
+      if (changeEl) {
+        var chg = (q.changePct != null) ? Number(q.changePct) : null;
+        if (chg == null || !isFinite(chg)) {
+          changeEl.textContent = "—";
+          changeEl.className = "moex-quote-change muted";
+        } else {
+          changeEl.textContent = (chg > 0 ? "+" : "") + chg.toFixed(2) + "%";
+          changeEl.className = "moex-quote-change " + (chg > 0 ? "positive" : (chg < 0 ? "negative" : "muted"));
+        }
+      }
+    });
+  }
 }
 
 function _closeAllocDetail() {

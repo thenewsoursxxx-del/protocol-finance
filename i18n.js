@@ -681,7 +681,7 @@
       "portfolio.validation.fillFields": "Заполните все обязательные поля",
       "portfolio.validation.percentageInvalid": "Доля должна быть от 1 до 100",
 
-      // PORTFOLIO ALLOCATION v2 — preset assets (RU stocks + ETF + indices)
+      // MOEX INTEGRATION — preset assets (RU stocks + MOEX ETFs only)
       "stats.asset.ru_sber":    "Сбер (SBER)",
       "stats.asset.ru_gazprom": "Газпром (GAZP)",
       "stats.asset.ru_yandex":  "Яндекс (YDEX)",
@@ -690,20 +690,30 @@
       "stats.asset.ru_magnit":  "Магнит (MGNT)",
       "stats.asset.ru_norilsk": "Норникель (GMKN)",
       "stats.asset.ru_rosneft": "Роснефть (ROSN)",
+      "stats.asset.ru_vk":      "VK (VKCO)",
+      "stats.asset.ru_polyus":  "Полюс (PLZL)",
       "stats.asset.etf_fxrl":   "FXRL — Российские акции",
       "stats.asset.etf_fxit":   "FXIT — IT-сектор",
+      "stats.asset.etf_fxus":   "FXUS — Акции США",
       "stats.asset.etf_tmos":   "TMOS — Индекс МосБиржи",
       "stats.asset.etf_sbsp":   "SBSP — S&P 500 (СберИнвестиции)",
-      "stats.asset.sp500":      "S&P 500",
-      "stats.asset.nasdaq100":  "NASDAQ 100",
-      "stats.asset.msciWorld":  "MSCI World",
-      "stats.asset.moex":       "Индекс МосБиржи",
       "stats.field.asset": "Актив / ETF",
 
-      // PORTFOLIO ALLOCATION v2 — section labels for grouped asset list
+      // MOEX INTEGRATION — section labels for grouped asset list (RU only)
       "stats.assetGroup.ru":      "Российские акции",
       "stats.assetGroup.etfMoex": "ETF на МосБирже",
-      "stats.assetGroup.indices": "Мировые индексы",
+
+      // MOEX INTEGRATION — live quote card
+      "stats.moex.price":   "Текущая цена",
+      "stats.moex.change":  "Изменение за день",
+      "stats.moex.loading": "Загружаем котировки с MOEX…",
+      "stats.moex.error":   "Не удалось получить котировки",
+      "stats.moex.source":  "Данные с MOEX ISS",
+
+      // METALS - IN DEVELOPMENT — info card
+      "metals.inDev.title": "В разработке",
+      "metals.inDev.desc":  "Поддержка золота, серебра и платины появится в одном из ближайших обновлений приложения.",
+      "metals.inDev.toast": "Драгоценные металлы пока в разработке",
 
       // PORTFOLIO ALLOCATION v2 — deposit promo + renamed capitalization
       // FIX: Promo period for deposits — extended to 0–12 months, clearer hint
@@ -1508,7 +1518,7 @@
       "portfolio.validation.fillFields": "Please fill in all required fields",
       "portfolio.validation.percentageInvalid": "Share must be between 1 and 100",
 
-      // PORTFOLIO ALLOCATION v2 — preset assets (RU stocks + ETF + indices)
+      // MOEX INTEGRATION — preset assets (RU stocks + MOEX ETFs only)
       "stats.asset.ru_sber":    "Sber (SBER)",
       "stats.asset.ru_gazprom": "Gazprom (GAZP)",
       "stats.asset.ru_yandex":  "Yandex (YDEX)",
@@ -1517,20 +1527,30 @@
       "stats.asset.ru_magnit":  "Magnit (MGNT)",
       "stats.asset.ru_norilsk": "Norilsk Nickel (GMKN)",
       "stats.asset.ru_rosneft": "Rosneft (ROSN)",
+      "stats.asset.ru_vk":      "VK (VKCO)",
+      "stats.asset.ru_polyus":  "Polyus (PLZL)",
       "stats.asset.etf_fxrl":   "FXRL — Russian equities",
       "stats.asset.etf_fxit":   "FXIT — IT sector",
+      "stats.asset.etf_fxus":   "FXUS — US equities",
       "stats.asset.etf_tmos":   "TMOS — MOEX Index",
       "stats.asset.etf_sbsp":   "SBSP — S&P 500 (SberInvest)",
-      "stats.asset.sp500":      "S&P 500",
-      "stats.asset.nasdaq100":  "NASDAQ 100",
-      "stats.asset.msciWorld":  "MSCI World",
-      "stats.asset.moex":       "MOEX Index",
       "stats.field.asset": "Asset / ETF",
 
-      // PORTFOLIO ALLOCATION v2 — section labels for grouped asset list
+      // MOEX INTEGRATION — section labels for grouped asset list (RU only)
       "stats.assetGroup.ru":      "Russian stocks",
       "stats.assetGroup.etfMoex": "MOEX ETFs",
-      "stats.assetGroup.indices": "Global indices",
+
+      // MOEX INTEGRATION — live quote card
+      "stats.moex.price":   "Current price",
+      "stats.moex.change":  "Change today",
+      "stats.moex.loading": "Loading MOEX quotes…",
+      "stats.moex.error":   "Failed to load quotes",
+      "stats.moex.source":  "Data from MOEX ISS",
+
+      // METALS - IN DEVELOPMENT — info card
+      "metals.inDev.title": "Coming soon",
+      "metals.inDev.desc":  "Support for gold, silver and platinum will arrive in one of the upcoming app updates.",
+      "metals.inDev.toast": "Precious metals are coming soon",
 
       // PORTFOLIO ALLOCATION v2 — deposit promo + renamed capitalization
       // FIX: Promo period for deposits — extended to 0–12 months, clearer hint
