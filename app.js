@@ -5854,13 +5854,46 @@ var STOCK_ASSET_PRESETS = {
 
 // FIX: portfolio UX v2 — public Tinkoff Investments CDN serves logos by ticker
 // (e.g. https://invest-brands.cdn-tinkoff.ru/SBERx160.png). It's free, CORS-friendly
-// and covers all Russian blue chips + most MOEX ETFs we list. The <img> tag has
-// an onerror handler that swaps in a neutral 📈 fallback when a ticker is missing.
+// and covers all Russian blue chips + most MOEX ETFs we list.
 function getStockLogoUrl(ticker) {
   if (!ticker) return "";
   return "https://invest-brands.cdn-tinkoff.ru/" + encodeURIComponent(String(ticker).toUpperCase()) + "x160.png";
 }
 window.getStockLogoUrl = getStockLogoUrl;
+
+// FIX: stable stock logos — global cache of tickers whose logo failed to load
+// at least once. On any subsequent re-render we skip <img> entirely and render
+// the colored letter fallback right away. This kills the "flash + disappear"
+// loop caused by re-creating <img> nodes on every list re-render.
+window._stockLogoFailed = window._stockLogoFailed || Object.create(null);
+
+// FIX: stable stock logos — exposed onerror handler. Uses CSS-only fallback
+// (does NOT replace outerHTML), so the DOM stays intact and the letter chip
+// inside the same wrapper just becomes visible.
+window._markStockLogoFailed = function (ticker, imgEl) {
+  if (ticker) window._stockLogoFailed[ticker] = true;
+  if (imgEl && imgEl.parentNode) imgEl.parentNode.classList.add("logo-failed");
+};
+
+// FIX: stable stock logos — single source of truth for rendering a stock icon.
+// Always returns a stable wrapper containing both <img> and the letter fallback;
+// CSS swaps them via `.logo-failed`, never via innerHTML reflow. Cached failures
+// short-circuit straight to the fallback (no <img> at all).
+function renderStockLogoHtml(ticker) {
+  if (!ticker) return "";
+  var safe = String(ticker).toUpperCase().replace(/[^A-Z0-9_-]/g, "");
+  var letter = safe.charAt(0) || "•";
+  if (window._stockLogoFailed[safe]) {
+    return '<span class="alloc-logo-fallback" data-ticker="' + safe + '">' + letter + '</span>';
+  }
+  return '<span class="alloc-logo-wrap" data-ticker="' + safe + '">' +
+    '<img class="alloc-logo" alt="' + safe + '" loading="eager" decoding="async" ' +
+    'src="' + getStockLogoUrl(safe) + '" ' +
+    'onerror="window._markStockLogoFailed(\'' + safe + '\', this)" />' +
+    '<span class="alloc-logo-fallback" aria-hidden="true">' + letter + '</span>' +
+  '</span>';
+}
+window.renderStockLogoHtml = renderStockLogoHtml;
 
 // MOEX INTEGRATION — public MOEX ISS API (no auth required, CORS-friendly).
 // Quotes are cached in-memory for 60s to avoid spamming the endpoint while the
@@ -6176,15 +6209,11 @@ function allocBackMeta(item) {
     return (typeof t === "function") ? t("stats.type." + item.type) : item.type;
   }
 
-  // FIX: portfolio UX v2 — stock-aware icon. Renders a round company logo for
-  // stock allocations and falls back to the type emoji for cash/deposit/metals
-  // (or when the logo fails to load via the onerror handler).
+  // FIX: stable stock logos — delegates to renderStockLogoHtml which uses a
+  // wrapper + CSS-controlled fallback (no outerHTML swap, no flash on re-render).
   function _allocIconHtml(item) {
-    if (item && item.type === "stock" && item.details && item.details.ticker && typeof getStockLogoUrl === "function") {
-      var url = getStockLogoUrl(item.details.ticker);
-      var fallback = _typeIcon(item.type).replace(/"/g, "&quot;");
-      return '<img class="alloc-logo" src="' + url + '" alt="' + (item.details.ticker || "") +
-             '" onerror="this.outerHTML=\'<span>' + fallback + '</span>\'" />';
+    if (item && item.type === "stock" && item.details && item.details.ticker && typeof renderStockLogoHtml === "function") {
+      return renderStockLogoHtml(item.details.ticker);
     }
     return _typeIcon(item.type);
   }
@@ -6664,7 +6693,11 @@ function allocBackMeta(item) {
     allocPctLive.textContent = t("portfolio.percentage.liveLabel").replace("{amount}", formatted + " " + symbol);
   }
 
-  // FIX: portfolio UX v2 — logo + name preview row under the stock asset select.
+  // FIX: stable stock logos — logo + name preview row under the stock select.
+  // The static <img id="statsStockPreviewLogo"> is replaced with a fresh
+  // wrapper from renderStockLogoHtml so the failure cache + CSS fallback work
+  // exactly like in the list. The row never hides itself on logo error
+  // (the letter chip is rendered instead).
   function _updateStockPreview() {
     if (!stockPreviewRow) return;
     var preset = STOCK_ASSET_PRESETS[stockAssetSel ? stockAssetSel.value : ""] || null;
@@ -6673,10 +6706,19 @@ function allocBackMeta(item) {
       return;
     }
     stockPreviewRow.style.display = "";
-    if (stockPreviewLogo) {
-      stockPreviewLogo.src = getStockLogoUrl(preset.ticker);
-      stockPreviewLogo.alt = preset.ticker;
-      stockPreviewLogo.onerror = function () { stockPreviewRow.style.display = "none"; };
+    // Replace the existing logo node with the stable wrapper. We re-query each
+    // call so it works on the original <img> on first open and on the wrapper
+    // after subsequent updates.
+    var slot = stockPreviewRow.querySelector("#statsStockPreviewLogo, .alloc-logo-wrap, .alloc-logo-fallback");
+    if (slot) {
+      var tmp = document.createElement("span");
+      tmp.innerHTML = renderStockLogoHtml(preset.ticker);
+      var fresh = tmp.firstChild;
+      if (fresh) {
+        // Preserve the id on whichever wrapper takes its place (used elsewhere).
+        fresh.id = "statsStockPreviewLogo";
+        slot.parentNode.replaceChild(fresh, slot);
+      }
     }
     if (stockPreviewName) {
       var label = stockAssetSel && stockAssetSel.options[stockAssetSel.selectedIndex] ? stockAssetSel.options[stockAssetSel.selectedIndex].text : preset.ticker;
@@ -7316,11 +7358,11 @@ function renderAccountBackCards() {
         var meta = allocBackMeta(a);
         html +=
           '<div class="acc-alloc-row" data-type="' + a.type + '" data-action="alloc-detail" data-account="' + accountKey + '" data-alloc-id="' + (a.id || "") + '" role="button" tabindex="0">' +
-            // FIX: portfolio UX v2 — stock allocations show the company logo
-            // (Tinkoff CDN) instead of the generic type emoji.
+            // FIX: stable stock logos — wrapper-based renderer; never replaces
+            // <img> via outerHTML so list re-renders cannot flash the icon.
             '<div class="acc-alloc-row-icon">' + (
-              (a.type === "stock" && a.details && a.details.ticker && typeof getStockLogoUrl === "function")
-                ? '<img class="alloc-logo" src="' + getStockLogoUrl(a.details.ticker) + '" alt="' + a.details.ticker + '" onerror="this.outerHTML=\'<span>' + allocTypeIcon(a.type) + '</span>\'" />'
+              (a.type === "stock" && a.details && a.details.ticker && typeof renderStockLogoHtml === "function")
+                ? renderStockLogoHtml(a.details.ticker)
                 : allocTypeIcon(a.type)
             ) + '</div>' +
             '<div class="acc-alloc-row-body">' +
@@ -7742,13 +7784,12 @@ function showAllocationDetail(accountKey, allocId) {
 
   // Header.
   sheet.setAttribute("data-type", item.type);
-  // FIX: portfolio UX v2 — show the stock company logo in the header icon slot
-  // for stock allocations; fall back to the type emoji on error or other types.
+  // FIX: stable stock logos — same wrapper-based renderer (CSS-only fallback).
   if (iconEl) {
     iconEl.classList.remove("has-logo");
-    if (item.type === "stock" && item.details && item.details.ticker && typeof getStockLogoUrl === "function") {
+    if (item.type === "stock" && item.details && item.details.ticker && typeof renderStockLogoHtml === "function") {
       iconEl.classList.add("has-logo");
-      iconEl.innerHTML = '<img class="alloc-logo" src="' + getStockLogoUrl(item.details.ticker) + '" alt="' + item.details.ticker + '" onerror="this.parentNode.classList.remove(\'has-logo\');this.parentNode.textContent=\'' + allocTypeIcon(item.type) + '\';" />';
+      iconEl.innerHTML = renderStockLogoHtml(item.details.ticker);
     } else {
       iconEl.textContent = allocTypeIcon(item.type);
     }

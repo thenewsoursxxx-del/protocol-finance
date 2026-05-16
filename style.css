@@ -4390,34 +4390,87 @@ body.flip-fix-pending .flip-wrapper {
  * btn, required-field error styling (reuses existing .shake keyframe).
  * ============================================================================ */
 
-/* Logo chip for stock assets (used in the portfolio list, the modal select
- * preview, and anywhere we render a stock allocation row). */
-.alloc-logo {
-  display: inline-block;
+/* FIX: stable stock logos — wrapper hosts both <img> and a colored letter
+ * fallback. CSS toggles visibility via `.logo-failed`, never via DOM swap, so
+ * re-renders cannot trigger the "appear → disappear" flash. */
+.alloc-logo-wrap {
+  position: relative;
+  display: inline-flex;
   width: 28px;
   height: 28px;
   min-width: 28px;
   border-radius: 50%;
   background: rgba(255,255,255,0.06);
   vertical-align: middle;
-  object-fit: contain;
+  overflow: hidden;
   box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05);
+  flex-shrink: 0;
 }
-.alloc-item .alloc-logo {
+.alloc-logo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: transparent;
+}
+.alloc-logo-wrap > .alloc-logo-fallback {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: #6ee7b7;
+  background: linear-gradient(135deg, rgba(16,185,129,0.20), rgba(16,185,129,0.04));
+  border-radius: 50%;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .15s ease;
+  letter-spacing: -0.2px;
+}
+.alloc-logo-wrap.logo-failed > .alloc-logo { display: none; }
+.alloc-logo-wrap.logo-failed > .alloc-logo-fallback { opacity: 1; }
+
+/* Standalone letter fallback (used when failure is cached → no <img> rendered). */
+.alloc-logo-fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(16,185,129,0.20), rgba(16,185,129,0.04));
+  box-shadow: inset 0 0 0 1px rgba(16,185,129,0.28);
+  color: #6ee7b7;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+  flex-shrink: 0;
+}
+
+.alloc-item .alloc-logo-wrap,
+.alloc-item .alloc-logo-fallback {
   margin-right: -2px;
 }
-.acc-alloc-row .alloc-logo {
+.acc-alloc-row .alloc-logo-wrap,
+.acc-alloc-row .alloc-logo-fallback {
   width: 30px;
   height: 30px;
   min-width: 30px;
+  font-size: 13px;
 }
 .alloc-detail-header-icon.has-logo {
   background: transparent;
   padding: 0;
 }
-.alloc-detail-header-icon .alloc-logo {
+.alloc-detail-header-icon .alloc-logo-wrap,
+.alloc-detail-header-icon .alloc-logo-fallback {
   width: 100%;
   height: 100%;
+  min-width: 0;
+  font-size: 18px;
 }
 .stock-preview-row {
   display: flex;
