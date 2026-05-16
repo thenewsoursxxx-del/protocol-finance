@@ -3833,17 +3833,138 @@ body.flip-fix-pending .flip-wrapper {
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
-  transition: border-color .2s, background .2s;
+  transition: border-color .2s, background .2s, transform .18s ease, box-shadow .25s ease;
 }
+.stats-type-card:active { transform: scale(0.97); }
 .stats-type-card.active {
   border-color: #10b981;
   background: rgba(16,185,129,0.15);
+  /* NEW: storage-type — premium active state */
+  box-shadow:
+    0 0 0 1px rgba(16,185,129,0.6),
+    0 8px 22px rgba(4, 120, 87, 0.28),
+    inset 0 1px 0 rgba(255,255,255,0.05);
+  animation: statsTypeCardActivate 0.42s ease;
 }
-.stats-cash-fields {
+@keyframes statsTypeCardActivate {
+  0%   { transform: scale(0.98); box-shadow: 0 0 0 0 rgba(16,185,129,0); }
+  55%  { transform: scale(1.025); box-shadow: 0 0 0 4px rgba(16,185,129,0.25), 0 12px 24px rgba(4,120,87,0.35); }
+  100% { transform: scale(1); box-shadow: 0 0 0 1px rgba(16,185,129,0.6), 0 8px 22px rgba(4,120,87,0.28); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .stats-type-card,
+  .stats-type-card.active { animation: none; transition: border-color .2s, background .2s; }
+}
+
+/* NEW: shared fields container for all storage types */
+.stats-cash-fields,
+.stats-type-fields {
   display: flex;
   flex-direction: column;
   gap: 12px;
   margin-bottom: 20px;
+}
+
+/* NEW: text/number inputs for storage-type fields */
+.stats-input {
+  width: 100%;
+  padding: 14px 16px;
+  background: #111;
+  border: 1px solid #222;
+  border-radius: 14px;
+  color: #fff;
+  font-size: 15px;
+  -webkit-appearance: none;
+  appearance: none;
+  font-family: inherit;
+  transition: border-color .2s;
+}
+.stats-input:focus { border-color: #10b981; outline: none; }
+.stats-input::placeholder { color: #555; }
+.stats-input-hint {
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 1.35;
+  color: rgba(255,255,255,0.45);
+}
+
+/* NEW: segment (capitalization) */
+.stats-segment {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 6px;
+  padding: 4px;
+  background: #0d0d0d;
+  border: 1px solid #1f1f1f;
+  border-radius: 14px;
+}
+.stats-segment-btn {
+  padding: 10px 6px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  color: rgba(255,255,255,0.65);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background .2s, color .2s, border-color .2s, transform .12s;
+}
+.stats-segment-btn:active { transform: scale(0.96); }
+.stats-segment-btn.active {
+  background: rgba(16,185,129,0.18);
+  border-color: rgba(16,185,129,0.55);
+  color: #6ee7b7;
+}
+@media (prefers-reduced-motion: reduce) {
+  .stats-segment-btn { transition: none; }
+}
+
+/* NEW: custom checkbox (replenishable) */
+.stats-checkbox-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  background: #0d0d0d;
+  border: 1px solid #1f1f1f;
+  border-radius: 14px;
+  cursor: pointer;
+  user-select: none;
+  transition: border-color .2s, background .2s;
+}
+.stats-checkbox-wrap:has(input:checked) {
+  border-color: rgba(16,185,129,0.55);
+  background: rgba(16,185,129,0.08);
+}
+.stats-checkbox-wrap input { position: absolute; opacity: 0; pointer-events: none; }
+.stats-checkbox-box {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  border: 1.5px solid #333;
+  background: #111;
+  position: relative;
+  transition: border-color .2s, background .2s;
+}
+.stats-checkbox-wrap input:checked + .stats-checkbox-box {
+  background: #10b981;
+  border-color: #10b981;
+}
+.stats-checkbox-wrap input:checked + .stats-checkbox-box::after {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: 2px;
+  width: 5px;
+  height: 10px;
+  border: solid #0a0a0a;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+.stats-checkbox-label {
+  font-size: 14px;
+  color: rgba(255,255,255,0.85);
 }
 .stats-input-wrap {
   margin-bottom: 0;
@@ -4043,7 +4164,8 @@ body.flip-fix-pending .flip-wrapper {
   font-weight: 500;
   line-height: 1.3;
 }
-.loss-inflation .arrow-down {
+.loss-inflation .arrow-down,
+.loss-inflation .arrow-up { /* NEW: Storage type — gain arrow for positive yield */
   font-size: 12px;
 }
 .compensation-block {

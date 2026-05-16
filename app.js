@@ -4531,12 +4531,21 @@ explainEl.innerHTML = explainText.replace(/\n/g, "<br>");
 // OPTIMIZATION: DOM cache.
 var inflationEl = getEl("inflationHint");
 if (inflationEl) {
-  var infl = (typeof getActiveInflation === "function") ? getActiveInflation() : null;
+  // NEW: Storage type — prefer effective inflation (учитывает доходность
+  // инструмента: депозит / акции / металлы), fallback на raw inflation.
+  var effInfl = (typeof getEffectiveInflation === "function") ? getEffectiveInflation() : null;
+  var infl = (effInfl != null) ? effInfl
+           : ((typeof getActiveInflation === "function") ? getActiveInflation() : null);
   if (infl != null && infl > 0) {
     // DYNAMIC INFLATION — ставка теперь decimal (e.g. 7.8). Округляем до 1 знака
     // для аккуратного отображения. Целые числа (5 → "5") тоже корректно.
     var _inflStr = (Math.round(infl * 10) / 10).toString();
     inflationEl.textContent = t("misc.inflation") + ": " + _inflStr + "%";
+    inflationEl.style.display = "";
+  } else if (infl != null && infl < 0) {
+    // NEW: Storage type — yield outpaces inflation → показываем реальную доходность.
+    var _retStr = (Math.round(Math.abs(infl) * 10) / 10).toString();
+    inflationEl.textContent = t("stats.realReturn") + ": +" + _retStr + "%";
     inflationEl.style.display = "";
   } else {
     inflationEl.textContent = "";
@@ -5812,15 +5821,60 @@ function _updateInflationPreview(rate, isLoading) {
   var backBtn = document.getElementById("accountStatsBack");
   var typeGrid = document.getElementById("statsTypeGrid");
   var cashFields = document.getElementById("statsCashFields");
+  var stockFields = document.getElementById("statsStockFields");
+  var depositFields = document.getElementById("statsDepositFields");
+  var metalsFields = document.getElementById("statsMetalsFields");
   var countrySelect = document.getElementById("statsCountry");
   var currencySelect = document.getElementById("statsCurrency");
   var submitBtn = document.getElementById("statsSubmit");
 
+  // NEW: Storage type — refs to fields per type
+  var stockTicker = document.getElementById("statsStockTicker");
+  var stockReturn = document.getElementById("statsStockReturn");
+  var depositRate = document.getElementById("statsDepositRate");
+  var depositTerm = document.getElementById("statsDepositTerm");
+  var depositCap  = document.getElementById("statsDepositCap");
+  var depositReplenish = document.getElementById("statsDepositReplenish");
+  var metalSelect = document.getElementById("statsMetal");
+  var metalReturn = document.getElementById("statsMetalReturn");
+
+  // NEW: Storage type — текущая выбранная капитализация (default monthly).
+  var _statsDepositCap = "monthly";
+
+  function _toggleFieldsForType(type) {
+    if (cashFields)    cashFields.style.display    = (type === "cash")    ? "" : "none";
+    if (stockFields)   stockFields.style.display   = (type === "stock")   ? "" : "none";
+    if (depositFields) depositFields.style.display = (type === "deposit") ? "" : "none";
+    if (metalsFields)  metalsFields.style.display  = (type === "metals")  ? "" : "none";
+  }
+
+  function _isPositiveNum(el) {
+    if (!el) return false;
+    var v = parseFloat(el.value);
+    return isFinite(v) && v > 0;
+  }
+
   function updateSubmitState() {
     if (!submitBtn) return;
     if (!_statsSelectedType) { submitBtn.disabled = true; return; }
-    if (_statsSelectedType === "cash" && !countrySelect.value) { submitBtn.disabled = true; return; }
-    submitBtn.disabled = false;
+    if (_statsSelectedType === "cash") {
+      submitBtn.disabled = !(countrySelect && countrySelect.value);
+      return;
+    }
+    // NEW: Storage type — per-type validation
+    if (_statsSelectedType === "stock") {
+      submitBtn.disabled = !_isPositiveNum(stockReturn);
+      return;
+    }
+    if (_statsSelectedType === "deposit") {
+      submitBtn.disabled = !(_isPositiveNum(depositRate) && _isPositiveNum(depositTerm));
+      return;
+    }
+    if (_statsSelectedType === "metals") {
+      submitBtn.disabled = !_isPositiveNum(metalReturn);
+      return;
+    }
+    submitBtn.disabled = true;
   }
 
   if (typeGrid) {
@@ -5830,7 +5884,7 @@ function _updateInflationPreview(rate, isLoading) {
       typeGrid.querySelectorAll(".stats-type-card").forEach(function (c) { c.classList.remove("active"); });
       card.classList.add("active");
       _statsSelectedType = card.getAttribute("data-stype");
-      cashFields.style.display = (_statsSelectedType === "cash") ? "" : "none";
+      _toggleFieldsForType(_statsSelectedType);
       updateSubmitState();
     });
   }
@@ -5855,9 +5909,32 @@ function _updateInflationPreview(rate, isLoading) {
     });
   }
 
+  // NEW: Storage type — live validation on input
+  [stockReturn, depositRate, depositTerm, metalReturn].forEach(function (el) {
+    if (el) el.addEventListener("input", updateSubmitState);
+  });
+  if (stockTicker) stockTicker.addEventListener("input", updateSubmitState);
+
+  // NEW: Storage type — capitalization segment
+  if (depositCap) {
+    depositCap.addEventListener("click", function (e) {
+      var btn = e.target.closest(".stats-segment-btn");
+      if (!btn) return;
+      depositCap.querySelectorAll(".stats-segment-btn").forEach(function (b) { b.classList.remove("active"); });
+      btn.classList.add("active");
+      _statsDepositCap = btn.getAttribute("data-cap") || "monthly";
+    });
+  }
+
   if (submitBtn) {
     submitBtn.addEventListener("click", async function () {
-      var statsData = { type: _statsSelectedType, country: null, currency: null, inflation: null };
+      var statsData = {
+        type: _statsSelectedType,
+        country: null,
+        currency: null,
+        inflation: null,
+        params: null  // NEW: Storage type — type-specific parameters
+      };
 
       if (_statsSelectedType === "cash") {
         var code = countrySelect.value;
@@ -5877,6 +5954,26 @@ function _updateInflationPreview(rate, isLoading) {
         } else {
           statsData.inflation = info ? info.inflation : null;
         }
+      } else if (_statsSelectedType === "stock") {
+        // NEW: Storage type — stock market params
+        statsData.params = {
+          ticker: stockTicker ? (stockTicker.value || "").trim() : "",
+          expectedReturn: parseFloat(stockReturn.value) || 0
+        };
+      } else if (_statsSelectedType === "deposit") {
+        // NEW: Storage type — bank deposit params
+        statsData.params = {
+          rate: parseFloat(depositRate.value) || 0,
+          termMonths: Math.max(1, parseInt(depositTerm.value, 10) || 0),
+          capitalization: _statsDepositCap || "monthly",
+          replenishable: !!(depositReplenish && depositReplenish.checked)
+        };
+      } else if (_statsSelectedType === "metals") {
+        // NEW: Storage type — precious metals params
+        statsData.params = {
+          metal: (metalSelect && metalSelect.value) || "gold",
+          expectedReturn: parseFloat(metalReturn.value) || 0
+        };
       }
 
       var patch = {};
@@ -5927,8 +6024,41 @@ function openAccountStatsScreen(accountKey) {
     }
   }
 
-  var cashFields = document.getElementById("statsCashFields");
-  if (cashFields) cashFields.style.display = (stats.type === "cash") ? "" : "none";
+  // NEW: Storage type — toggle all per-type field blocks based on saved type
+  var _cashEl    = document.getElementById("statsCashFields");
+  var _stockEl   = document.getElementById("statsStockFields");
+  var _depositEl = document.getElementById("statsDepositFields");
+  var _metalsEl  = document.getElementById("statsMetalsFields");
+  if (_cashEl)    _cashEl.style.display    = (stats.type === "cash")    ? "" : "none";
+  if (_stockEl)   _stockEl.style.display   = (stats.type === "stock")   ? "" : "none";
+  if (_depositEl) _depositEl.style.display = (stats.type === "deposit") ? "" : "none";
+  if (_metalsEl)  _metalsEl.style.display  = (stats.type === "metals")  ? "" : "none";
+
+  // NEW: Storage type — restore saved params into inputs
+  var _p = (stats && stats.params) || {};
+  var _stockTicker = document.getElementById("statsStockTicker");
+  var _stockReturn = document.getElementById("statsStockReturn");
+  if (_stockTicker) _stockTicker.value = (_p.ticker != null) ? _p.ticker : "";
+  if (_stockReturn) _stockReturn.value = (_p.expectedReturn != null && stats.type === "stock") ? _p.expectedReturn : "";
+
+  var _depRate   = document.getElementById("statsDepositRate");
+  var _depTerm   = document.getElementById("statsDepositTerm");
+  var _depCap    = document.getElementById("statsDepositCap");
+  var _depRepl   = document.getElementById("statsDepositReplenish");
+  if (_depRate) _depRate.value = (_p.rate != null && stats.type === "deposit") ? _p.rate : "";
+  if (_depTerm) _depTerm.value = (_p.termMonths != null && stats.type === "deposit") ? _p.termMonths : "";
+  if (_depCap) {
+    var capVal = (_p.capitalization && stats.type === "deposit") ? _p.capitalization : "monthly";
+    _depCap.querySelectorAll(".stats-segment-btn").forEach(function (b) {
+      b.classList.toggle("active", b.getAttribute("data-cap") === capVal);
+    });
+  }
+  if (_depRepl) _depRepl.checked = !!(_p.replenishable && stats.type === "deposit");
+
+  var _metalSel = document.getElementById("statsMetal");
+  var _metalRet = document.getElementById("statsMetalReturn");
+  if (_metalSel) _metalSel.value = (_p.metal && stats.type === "metals") ? _p.metal : "gold";
+  if (_metalRet) _metalRet.value = (_p.expectedReturn != null && stats.type === "metals") ? _p.expectedReturn : "";
 
   // DYNAMIC INFLATION — populate countries из Supabase + selected → live preview.
   _renderStatsCountryOptions(); // мгновенный рендер из кэша (или fallback) для UI без задержки
@@ -5976,6 +6106,63 @@ function getActiveInflation() {
   var resStats = allStats.reserve;
   if (resStats && resStats.inflation != null) return resStats.inflation;
   return null;
+}
+
+/* ----------------------------------------------------------------------------
+ * NEW: Storage type — annualized expected return (%) per account stats record.
+ * Returns 0 for cash / unknown / missing params (no instrument yield).
+ * For deposit: converts nominal rate to effective annual using capitalization.
+ * For stock / metals: uses raw expectedReturn (assumed annual %).
+ * -------------------------------------------------------------------------- */
+function getStorageExpectedReturn(stats) {
+  if (!stats || !stats.type) return 0;
+  var p = stats.params || {};
+  if (stats.type === "stock" || stats.type === "metals") {
+    var r = parseFloat(p.expectedReturn);
+    return (isFinite(r) && r > 0) ? r : 0;
+  }
+  if (stats.type === "deposit") {
+    var rate = parseFloat(p.rate);
+    if (!isFinite(rate) || rate <= 0) return 0;
+    // Effective annual rate from nominal + capitalization periods/year.
+    var n;
+    switch (p.capitalization) {
+      case "monthly":   n = 12; break;
+      case "quarterly": n = 4;  break;
+      case "end":       n = 1;  break;
+      default:          n = 12;
+    }
+    var nominal = rate / 100;
+    var eff = Math.pow(1 + nominal / n, n) - 1;
+    return eff * 100;
+  }
+  return 0; // cash: yield is 0
+}
+
+/* ----------------------------------------------------------------------------
+ * NEW: Storage type — effective inflation (real loss %), positive when money
+ * loses purchasing power, negative when yield outpaces inflation.
+ *   cash    → inflation
+ *   stock   → inflation − expectedReturn
+ *   deposit → inflation − effectiveDepositRate
+ *   metals  → inflation − expectedReturn
+ * Used by inflation-aware UI/calculations. Falls back to raw inflation if no
+ * stats. Returns null when nothing relevant is configured (preserves old UX).
+ * -------------------------------------------------------------------------- */
+function getEffectiveInflation() {
+  var s = getState();
+  var allStats = s.accountStats || {};
+  var stats = allStats.main || allStats.reserve;
+  if (!stats) return null;
+  var infl = (stats.inflation != null) ? Number(stats.inflation) : null;
+  if (infl == null || !isFinite(infl)) {
+    // No baseline inflation — still allow expressing real gain via expected return.
+    var rOnly = getStorageExpectedReturn(stats);
+    if (rOnly > 0) return -rOnly;
+    return null;
+  }
+  var ret = getStorageExpectedReturn(stats);
+  return infl - ret;
 }
 
 function calculateInflationAdjustedValue(amount, inflationRate, monthsLeft) {
@@ -6035,11 +6222,39 @@ function renderAccountBackCards() {
     var inflation = stats.inflation;
 
     var html = '<div class="account-back-content">' +
-      '<div class="stats-info-row"><span>' + t("stats.storageType") + '</span><span>' + typeLabel + '</span></div>' +
-      '<div class="stats-info-row"><span>' + t("stats.country") + '</span><span>' + countryLabel + '</span></div>' +
-      '<div class="stats-info-row"><span>' + t("stats.currency") + '</span><span>' + currencyLabel + '</span></div>';
+      '<div class="stats-info-row"><span>' + t("stats.storageType") + '</span><span>' + typeLabel + '</span></div>';
 
-    var inflRate = (inflation || 0) / 100;
+    // NEW: Storage type — type-specific info rows
+    if (stats.type === "cash") {
+      html += '<div class="stats-info-row"><span>' + t("stats.country") + '</span><span>' + countryLabel + '</span></div>' +
+              '<div class="stats-info-row"><span>' + t("stats.currency") + '</span><span>' + currencyLabel + '</span></div>';
+    } else if (stats.type === "stock") {
+      var _ticker = (stats.params && stats.params.ticker) ? stats.params.ticker : "—";
+      var _rStock = (stats.params && stats.params.expectedReturn != null) ? stats.params.expectedReturn : 0;
+      html += '<div class="stats-info-row"><span>' + t("stats.stockInfo") + '</span><span>' + _ticker + '</span></div>' +
+              '<div class="stats-info-row"><span>' + t("stats.field.expectedReturn") + '</span><span>' + (Math.round(_rStock * 10) / 10) + '%</span></div>';
+    } else if (stats.type === "deposit") {
+      var _depRateV = (stats.params && stats.params.rate != null) ? stats.params.rate : 0;
+      var _depTermV = (stats.params && stats.params.termMonths != null) ? stats.params.termMonths : 0;
+      var _depCapV = (stats.params && stats.params.capitalization) || "monthly";
+      var _capLabel = t("stats.cap." + _depCapV);
+      var _effRate = getStorageExpectedReturn(stats);
+      html += '<div class="stats-info-row"><span>' + t("stats.field.depositRate") + '</span><span>' + (Math.round(_depRateV * 10) / 10) + '%</span></div>' +
+              '<div class="stats-info-row"><span>' + t("stats.field.depositTerm") + '</span><span>' + _depTermV + '</span></div>' +
+              '<div class="stats-info-row"><span>' + t("stats.field.capitalization") + '</span><span>' + _capLabel + '</span></div>' +
+              '<div class="stats-info-row"><span>' + t("stats.depositInfo") + '</span><span>' + (Math.round(_effRate * 10) / 10) + '%</span></div>';
+    } else if (stats.type === "metals") {
+      var _metalV = (stats.params && stats.params.metal) || "gold";
+      var _rMetal = (stats.params && stats.params.expectedReturn != null) ? stats.params.expectedReturn : 0;
+      html += '<div class="stats-info-row"><span>' + t("stats.metalInfo") + '</span><span>' + t("stats.metal." + _metalV) + '</span></div>' +
+              '<div class="stats-info-row"><span>' + t("stats.field.expectedReturn") + '</span><span>' + (Math.round(_rMetal * 10) / 10) + '%</span></div>';
+    }
+
+    // NEW: Storage type — effective inflation = inflation − expected return.
+    // Может быть отрицательной (доходность покрывает инфляцию) → real gain UI.
+    var _expReturn = getStorageExpectedReturn(stats);
+    var _effInfl = (inflation != null ? Number(inflation) : 0) - _expReturn;
+    var inflRate = _effInfl / 100;
     var result = calculateInflationAdjustedValue(amount, inflRate, monthsLeft);
     var goalVal = parseNumber(goalInput ? goalInput.value || "0" : "0");
     var comp = calculateInflationCompensation(goalVal, monthsLeft, inflRate);
@@ -6087,6 +6302,23 @@ function renderAccountBackCards() {
       }
 
       html += '</div>';
+    } else if (_effInfl < 0 && amount > 0 && monthsLeft > 0 && isFinite(monthsLeft)) {
+      // NEW: Storage type — yield outpaces inflation → real gain UI
+      var _years = monthsLeft / 12;
+      var _grownVal = Math.round(amount * Math.pow(1 + Math.abs(inflRate), _years));
+      var _gain = _grownVal - amount;
+      var _gainPct = (Math.round(_expReturn * 10) / 10).toString();
+      html += '<div class="inflation-card">' +
+        '<div class="inflation-time" style="color:#6ee7b7;">+' + _gainPct + '% ' + t("stats.realReturn") + '</div>' +
+        '<div class="inflation-disclaimer">' + t("stats.realReturnPositive") + '</div>' +
+        '<div class="stats-purchasing-label">' + t("stats.purchasingLabel") + '</div>' +
+        '<div class="stats-purchasing-value">' + fmtConverted(_grownVal) + ' ' + getCurrencySymbol() + '</div>' +
+        '<div class="loss-inflation" style="color:#6ee7b7;">' +
+          t("stats.purchasingGain") +
+          '<br>+' + fmtConverted(_gain) + ' ' + getCurrencySymbol() + ' ' +
+          '<span class="arrow-up">↑</span>' +
+        '</div>' +
+      '</div>';
     }
 
     html += '<button type="button" class="stats-change-btn" data-action="add-stats" data-account="' + accountKey + '">' + t("stats.changeBtn") + '</button>';
