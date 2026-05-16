@@ -1128,6 +1128,11 @@ Protocol анализирует цель…
             <option value="etf_sbsp" data-i18n="stats.asset.etf_sbsp">SBSP — S&P 500 (СберИнвестиции)</option>
           </optgroup>
         </select>
+        <!-- FIX: portfolio UX v2 — logo + name preview for the currently selected stock. -->
+        <div id="statsStockPreviewRow" class="stock-preview-row" style="display:none">
+          <img id="statsStockPreviewLogo" class="alloc-logo" alt="" />
+          <span id="statsStockPreviewName">—</span>
+        </div>
         <div id="statsStockReturnHint" class="stats-input-hint"></div>
       </div>
       <!-- MOEX INTEGRATION — live quote card (filled async after asset change) -->
@@ -1208,6 +1213,8 @@ Protocol анализирует цель…
       <label data-i18n="portfolio.percentage">Доля портфеля (%)</label>
       <div class="stats-input-hint alloc-percentage-static-hint" data-i18n="portfolio.percentageHint">Какой процент от всей суммы цели вы планируете хранить в этом типе</div>
       <input type="number" id="statsAllocPercentage" class="stats-input" inputmode="numeric" min="1" max="100" step="1" data-i18n-placeholder="portfolio.percentagePlaceholder" placeholder="например, 40" />
+      <!-- FIX: portfolio UX v2 — live "= XXX ₽" amount for the current %. -->
+      <div id="statsAllocPercentageLive" class="alloc-percentage-live is-zero">—</div>
       <div id="statsAllocPercentageHint" class="stats-input-hint"></div>
     </div>
 

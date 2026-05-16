@@ -5852,6 +5852,16 @@ var STOCK_ASSET_PRESETS = {
   etf_sbsp:   { return: 10.0, ticker: "SBSP" }
 };
 
+// FIX: portfolio UX v2 — public Tinkoff Investments CDN serves logos by ticker
+// (e.g. https://invest-brands.cdn-tinkoff.ru/SBERx160.png). It's free, CORS-friendly
+// and covers all Russian blue chips + most MOEX ETFs we list. The <img> tag has
+// an onerror handler that swaps in a neutral 📈 fallback when a ticker is missing.
+function getStockLogoUrl(ticker) {
+  if (!ticker) return "";
+  return "https://invest-brands.cdn-tinkoff.ru/" + encodeURIComponent(String(ticker).toUpperCase()) + "x160.png";
+}
+window.getStockLogoUrl = getStockLogoUrl;
+
 // MOEX INTEGRATION — public MOEX ISS API (no auth required, CORS-friendly).
 // Quotes are cached in-memory for 60s to avoid spamming the endpoint while the
 // user toggles assets in the picker. Falls back to null on any error so the
@@ -5977,6 +5987,11 @@ function allocBackMeta(item) {
   var savingsModeHint = document.getElementById("statsSavingsModeHint");
   // FUTURE DEPOSITS PER ITEM — per-allocation auto-replenish checkboxes.
   var stockReplenish = document.getElementById("statsStockReplenish");
+  // FIX: portfolio UX v2 — new refs (logo preview, live percentage amount).
+  var stockPreviewRow  = document.getElementById("statsStockPreviewRow");
+  var stockPreviewLogo = document.getElementById("statsStockPreviewLogo");
+  var stockPreviewName = document.getElementById("statsStockPreviewName");
+  var allocPctLive     = document.getElementById("statsAllocPercentageLive");
 
   // ── Modal refs ─────────────────────────────────────────────────────────
   var allocOverlay = document.getElementById("statsAllocOverlay");
@@ -6161,6 +6176,19 @@ function allocBackMeta(item) {
     return (typeof t === "function") ? t("stats.type." + item.type) : item.type;
   }
 
+  // FIX: portfolio UX v2 — stock-aware icon. Renders a round company logo for
+  // stock allocations and falls back to the type emoji for cash/deposit/metals
+  // (or when the logo fails to load via the onerror handler).
+  function _allocIconHtml(item) {
+    if (item && item.type === "stock" && item.details && item.details.ticker && typeof getStockLogoUrl === "function") {
+      var url = getStockLogoUrl(item.details.ticker);
+      var fallback = _typeIcon(item.type).replace(/"/g, "&quot;");
+      return '<img class="alloc-logo" src="' + url + '" alt="' + (item.details.ticker || "") +
+             '" onerror="this.outerHTML=\'<span>' + fallback + '</span>\'" />';
+    }
+    return _typeIcon(item.type);
+  }
+
   function _allocMetaText(item) {
     var p = item.details || {};
     if (item.type === "cash") {
@@ -6325,9 +6353,12 @@ function allocBackMeta(item) {
 
     _allocations.forEach(function (item, idx) {
       if (!item || item.withdrawn) return;
+      // FIX: portfolio UX v2 — for stocks render a round company logo (with a
+      // type-icon fallback if the image fails to load).
+      var iconHtml = _allocIconHtml(item);
       html +=
         '<div class="alloc-item" data-type="' + item.type + '" data-alloc-idx="' + idx + '">' +
-          '<div class="alloc-item-icon">' + _typeIcon(item.type) + '</div>' +
+          '<div class="alloc-item-icon">' + iconHtml + '</div>' +
           '<div class="alloc-item-body">' +
             '<div class="alloc-item-title">' + _allocTitle(item) + '</div>' +
             '<div class="alloc-item-meta">' + _allocMetaText(item) + '</div>' +
@@ -6346,9 +6377,11 @@ function allocBackMeta(item) {
       _allocations.forEach(function (item, idx) {
         if (!item || !item.withdrawn) return;
         var dateStr = _formatWithdrawnDate(item.withdrawnAt);
+        // FIX: portfolio UX v2 — same logo-aware icon helper for withdrawn rows.
+        var iconHtml = _allocIconHtml(item);
         html +=
           '<div class="alloc-item alloc-item--withdrawn" data-type="' + item.type + '" data-alloc-idx="' + idx + '">' +
-            '<div class="alloc-item-icon">' + _typeIcon(item.type) + '</div>' +
+            '<div class="alloc-item-icon">' + iconHtml + '</div>' +
             '<div class="alloc-item-body">' +
               '<div class="alloc-item-title">' + _allocTitle(item) + '</div>' +
               '<div class="alloc-item-meta">' + _allocMetaText(item) + '</div>' +
@@ -6367,6 +6400,9 @@ function allocBackMeta(item) {
   }
 
   function _renderAllocProgress() {
+    // FIX: portfolio UX v2 — also keeps the "+ Add storage type" button in a
+    // soft-disabled state when the portfolio is already at 100%.
+    _syncAddBtnDisabled();
     if (!allocProgressEl) return;
     var total = _allocTotal(); // active total only
     var capped = Math.min(100, Math.max(0, total));
@@ -6387,6 +6423,16 @@ function allocBackMeta(item) {
         allocProgressLabel.textContent = t("portfolio.remaining") + ": " + (100 - total) + "%";
       }
     }
+  }
+
+  // FIX: portfolio UX v2 — soft-disable add button at exactly 100% portfolio.
+  // We don't set `disabled` so the click still reaches our handler and can
+  // surface a friendly toast.
+  function _syncAddBtnDisabled() {
+    if (!allocAddBtn) return;
+    var atFull = _allocTotal() >= 100 && _activeAllocations().length > 0;
+    allocAddBtn.classList.toggle("is-disabled", atFull);
+    allocAddBtn.setAttribute("aria-disabled", atFull ? "true" : "false");
   }
 
   // FUTURE DEPOSITS PER ITEM — savings-mode renderer removed (no UI to draw).
@@ -6442,7 +6488,15 @@ function allocBackMeta(item) {
 
   // ── Add button → open modal in "add" mode ──────────────────────────────
   if (allocAddBtn) {
-    allocAddBtn.addEventListener("click", function () { _openAllocModal(-1); });
+    // FIX: portfolio UX v2 — soft-block when portfolio is already at 100%.
+    allocAddBtn.addEventListener("click", function () {
+      if (allocAddBtn.classList.contains("is-disabled")) {
+        showToast(t("portfolio.addBtn.fullToast"), "info");
+        if (typeof haptic === "function") { try { haptic("light"); } catch (e) {} }
+        return;
+      }
+      _openAllocModal(-1);
+    });
   }
 
   // ──────────────────────────────────────────────────────────────────────
@@ -6465,6 +6519,9 @@ function allocBackMeta(item) {
     _toggleFieldsForType(type);
     // MOEX INTEGRATION — refresh live quote when user switches into stock mode.
     if (type === "stock") _refreshMoexForSelected();
+    // FIX: portfolio UX v2 — keep stock-only preview in sync with type switch.
+    if (type === "stock") _updateStockPreview();
+    else if (stockPreviewRow) stockPreviewRow.style.display = "none";
   }
 
   function _openAllocModal(editIndex) {
@@ -6561,12 +6618,19 @@ function allocBackMeta(item) {
     }
     _updatePctHint();
 
+    // FIX: portfolio UX v2 — refresh live amount & stock preview after restore.
+    _updateAllocPctLive();
+    _updateStockPreview();
+
     // Show modal.
     if (allocOverlay) allocOverlay.style.display = "block";
     if (allocSheet) {
       allocSheet.style.display = "block";
       requestAnimationFrame(function () { allocSheet.classList.add("open"); });
     }
+    // FIX: portfolio UX v2 — hide bottom nav while the modal is open so the
+    // top-right close button is never obscured by it.
+    if (typeof hideBottomNav === "function") { try { hideBottomNav(); } catch (e) {} }
   }
 
   function _closeAllocModal() {
@@ -6576,6 +6640,88 @@ function allocBackMeta(item) {
       if (allocOverlay) allocOverlay.style.display = "none";
     }, 320);
     _modalEditIndex = -1;
+    // FIX: portfolio UX v2 — restore bottom nav after the modal animates out.
+    if (typeof showBottomNav === "function") { try { showBottomNav(); } catch (e) {} }
+    // Clear any stale error highlights so the next open is pristine.
+    _clearFieldErrors();
+  }
+
+  // FIX: portfolio UX v2 — live "= XXX ₽" amount under the percentage input.
+  function _updateAllocPctLive() {
+    if (!allocPctLive) return;
+    var pct = parseInt(allocPctInput ? allocPctInput.value : "", 10);
+    var balKey = _statsTargetAccount || "main";
+    var bal = (typeof accounts !== "undefined" && accounts && accounts[balKey] != null) ? Number(accounts[balKey]) : 0;
+    if (!isFinite(pct) || pct <= 0 || pct > 100) {
+      allocPctLive.classList.add("is-zero");
+      allocPctLive.textContent = "—";
+      return;
+    }
+    var amount = Math.round(bal * pct / 100);
+    var symbol = (typeof getCurrencySymbol === "function") ? getCurrencySymbol() : "₽";
+    var formatted = (typeof fmtConverted === "function") ? fmtConverted(amount) : String(amount);
+    allocPctLive.classList.remove("is-zero");
+    allocPctLive.textContent = t("portfolio.percentage.liveLabel").replace("{amount}", formatted + " " + symbol);
+  }
+
+  // FIX: portfolio UX v2 — logo + name preview row under the stock asset select.
+  function _updateStockPreview() {
+    if (!stockPreviewRow) return;
+    var preset = STOCK_ASSET_PRESETS[stockAssetSel ? stockAssetSel.value : ""] || null;
+    if (!preset || !preset.ticker) {
+      stockPreviewRow.style.display = "none";
+      return;
+    }
+    stockPreviewRow.style.display = "";
+    if (stockPreviewLogo) {
+      stockPreviewLogo.src = getStockLogoUrl(preset.ticker);
+      stockPreviewLogo.alt = preset.ticker;
+      stockPreviewLogo.onerror = function () { stockPreviewRow.style.display = "none"; };
+    }
+    if (stockPreviewName) {
+      var label = stockAssetSel && stockAssetSel.options[stockAssetSel.selectedIndex] ? stockAssetSel.options[stockAssetSel.selectedIndex].text : preset.ticker;
+      stockPreviewName.textContent = label;
+    }
+  }
+
+  // FIX: portfolio UX v2 — required field highlight + iOS-style shake. Reuses
+  // the existing `input-shake` keyframe via `.field-error` + `.field-shake`.
+  function _flashFieldError(el) {
+    if (!el) return;
+    el.classList.add("field-error", "field-shake");
+    setTimeout(function () { el.classList.remove("field-shake"); }, 400);
+    var clear = function () { el.classList.remove("field-error"); el.removeEventListener("input", clear); el.removeEventListener("change", clear); };
+    el.addEventListener("input", clear);
+    el.addEventListener("change", clear);
+  }
+  function _clearFieldErrors() {
+    [allocPctInput, depositRate, depositTerm, depositPromoRate].forEach(function (el) {
+      if (el) el.classList.remove("field-error", "field-shake");
+    });
+  }
+  // Returns true if all required fields for the current type are valid.
+  // Side-effect: visually flashes invalid ones.
+  function _validateRequiredFields(type) {
+    _clearFieldErrors();
+    var ok = true;
+    // Portfolio share is always required.
+    var pctVal = parseInt(allocPctInput ? allocPctInput.value : "", 10);
+    if (!isFinite(pctVal) || pctVal < 1 || pctVal > 100) {
+      _flashFieldError(allocPctInput); ok = false;
+    }
+    if (type === "deposit") {
+      var r = parseFloat(depositRate ? depositRate.value : "");
+      if (!isFinite(r) || r <= 0) { _flashFieldError(depositRate); ok = false; }
+      var tm = parseInt(depositTerm ? depositTerm.value : "", 10);
+      if (!isFinite(tm) || tm <= 0) { _flashFieldError(depositTerm); ok = false; }
+      // Promo rate is only required when promo months > 0.
+      var pm = parseInt(depositPromoMonths ? depositPromoMonths.value : "0", 10) || 0;
+      if (pm > 0) {
+        var pr = parseFloat(depositPromoRate ? depositPromoRate.value : "");
+        if (!isFinite(pr) || pr <= 0) { _flashFieldError(depositPromoRate); ok = false; }
+      }
+    }
+    return ok;
   }
 
   function _updatePctHint() {
@@ -6598,7 +6744,11 @@ function allocBackMeta(item) {
     }
   }
 
-  if (allocPctInput) allocPctInput.addEventListener("input", _updatePctHint);
+  if (allocPctInput) {
+    allocPctInput.addEventListener("input", _updatePctHint);
+    // FIX: portfolio UX v2 — keep the live "= XXX ₽" amount in sync as user types.
+    allocPctInput.addEventListener("input", _updateAllocPctLive);
+  }
 
   // ── Modal: type grid → switch fields ──────────────────────────────────
   if (typeGrid) {
@@ -6631,6 +6781,8 @@ function allocBackMeta(item) {
       var preset = STOCK_ASSET_PRESETS[stockAssetSel.value] || null;
       _showReturnHint(stockReturnHint, preset ? preset.return : 0);
       _refreshMoexForSelected();
+      // FIX: portfolio UX v2 — refresh logo + name preview on asset change.
+      _updateStockPreview();
     });
   }
 
@@ -6739,6 +6891,14 @@ function allocBackMeta(item) {
       // a clear "coming soon" toast instead of a generic "fill fields" error.
       if (type === "metals") {
         showToast(t("metals.inDev.toast"), "info");
+        return;
+      }
+
+      // FIX: portfolio UX v2 — visual required-field check with red outline +
+      // iOS-style shake. Shows the new red "fill required fields" toast.
+      if (!_validateRequiredFields(type)) {
+        showToast(t("portfolio.validation.requiredFields"), "error");
+        if (typeof haptic === "function") { try { haptic("error"); } catch (e) {} }
         return;
       }
 
@@ -7156,7 +7316,13 @@ function renderAccountBackCards() {
         var meta = allocBackMeta(a);
         html +=
           '<div class="acc-alloc-row" data-type="' + a.type + '" data-action="alloc-detail" data-account="' + accountKey + '" data-alloc-id="' + (a.id || "") + '" role="button" tabindex="0">' +
-            '<div class="acc-alloc-row-icon">' + allocTypeIcon(a.type) + '</div>' +
+            // FIX: portfolio UX v2 — stock allocations show the company logo
+            // (Tinkoff CDN) instead of the generic type emoji.
+            '<div class="acc-alloc-row-icon">' + (
+              (a.type === "stock" && a.details && a.details.ticker && typeof getStockLogoUrl === "function")
+                ? '<img class="alloc-logo" src="' + getStockLogoUrl(a.details.ticker) + '" alt="' + a.details.ticker + '" onerror="this.outerHTML=\'<span>' + allocTypeIcon(a.type) + '</span>\'" />'
+                : allocTypeIcon(a.type)
+            ) + '</div>' +
             '<div class="acc-alloc-row-body">' +
               '<div class="acc-alloc-row-title">' + lbl + ' · ' + instr + '</div>' +
               (meta ? '<div class="acc-alloc-row-meta">' + meta + '</div>' : '') +
@@ -7576,7 +7742,17 @@ function showAllocationDetail(accountKey, allocId) {
 
   // Header.
   sheet.setAttribute("data-type", item.type);
-  if (iconEl) iconEl.textContent = allocTypeIcon(item.type);
+  // FIX: portfolio UX v2 — show the stock company logo in the header icon slot
+  // for stock allocations; fall back to the type emoji on error or other types.
+  if (iconEl) {
+    iconEl.classList.remove("has-logo");
+    if (item.type === "stock" && item.details && item.details.ticker && typeof getStockLogoUrl === "function") {
+      iconEl.classList.add("has-logo");
+      iconEl.innerHTML = '<img class="alloc-logo" src="' + getStockLogoUrl(item.details.ticker) + '" alt="' + item.details.ticker + '" onerror="this.parentNode.classList.remove(\'has-logo\');this.parentNode.textContent=\'' + allocTypeIcon(item.type) + '\';" />';
+    } else {
+      iconEl.textContent = allocTypeIcon(item.type);
+    }
+  }
   if (titleEl) titleEl.textContent = allocTypeLabel(item.type) + " · " + allocInstrumentLabel(item);
   if (subEl) {
     var sub = (item.percentage || 0) + "%";
@@ -7598,6 +7774,9 @@ function showAllocationDetail(accountKey, allocId) {
   overlay.style.display = "block";
   sheet.style.display = "block";
   requestAnimationFrame(function () { sheet.classList.add("open"); });
+  // FIX: portfolio UX v2 — hide bottom nav so the top-right close (✕) stays
+  // unobstructed by the tab bar while reading allocation details.
+  if (typeof hideBottomNav === "function") { try { hideBottomNav(); } catch (e) {} }
 
   // MOEX INTEGRATION — async-fill the live quote card if this is a stock allocation.
   if (item.type === "stock" && item.details && item.details.ticker && typeof window.fetchMoexQuote === "function") {
@@ -7638,6 +7817,8 @@ function _closeAllocDetail() {
     if (sheet) sheet.style.display = "none";
     if (overlay) overlay.style.display = "none";
   }, 320);
+  // FIX: portfolio UX v2 — bring the nav back after the detail sheet closes.
+  if (typeof showBottomNav === "function") { try { showBottomNav(); } catch (e) {} }
 }
 
 // PORTFOLIO ALLOCATION + CARD EXPANSION — delegated click for back-card rows

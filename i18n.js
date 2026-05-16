@@ -675,6 +675,11 @@
       "portfolio.futureAccept.none":    "Без авто-пополнения",
       "portfolio.futureAccept.partial": "Авто-пополнение: {n} из {total}",
       "portfolio.futureAccept.all":     "Авто-пополнение во все",
+
+      // FIX: portfolio UX v2 — required fields + soft-disabled add btn + live amount.
+      "portfolio.addBtn.fullToast":     "Вы уже используете 100% средств. Чтобы добавить новый тип, уменьшите долю одного из существующих.",
+      "portfolio.validation.requiredFields": "Заполните все обязательные поля",
+      "portfolio.percentage.liveLabel": "= {amount}",
       "portfolio.modal.addTitle": "Добавить тип хранения",
       "portfolio.modal.editTitle": "Изменить тип хранения",
       "portfolio.modal.save": "Сохранить",
@@ -1516,6 +1521,11 @@
       "portfolio.futureAccept.none":    "No auto top-ups",
       "portfolio.futureAccept.partial": "Auto top-ups: {n} of {total}",
       "portfolio.futureAccept.all":     "Auto top-ups in all",
+
+      // FIX: portfolio UX v2 — required fields + soft-disabled add btn + live amount.
+      "portfolio.addBtn.fullToast":     "You're already using 100% of your funds. To add a new type, reduce the share of an existing one.",
+      "portfolio.validation.requiredFields": "Please fill in all required fields",
+      "portfolio.percentage.liveLabel": "= {amount}",
       "portfolio.modal.addTitle": "Add storage type",
       "portfolio.modal.editTitle": "Edit storage type",
       "portfolio.modal.save": "Save",

@@ -4386,6 +4386,105 @@ body.flip-fix-pending .flip-wrapper {
 }
 
 /* ============================================================================
+ * FIX: portfolio UX v2 — stock logo, live percentage amount, soft-disabled add
+ * btn, required-field error styling (reuses existing .shake keyframe).
+ * ============================================================================ */
+
+/* Logo chip for stock assets (used in the portfolio list, the modal select
+ * preview, and anywhere we render a stock allocation row). */
+.alloc-logo {
+  display: inline-block;
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.06);
+  vertical-align: middle;
+  object-fit: contain;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05);
+}
+.alloc-item .alloc-logo {
+  margin-right: -2px;
+}
+.acc-alloc-row .alloc-logo {
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
+}
+.alloc-detail-header-icon.has-logo {
+  background: transparent;
+  padding: 0;
+}
+.alloc-detail-header-icon .alloc-logo {
+  width: 100%;
+  height: 100%;
+}
+.stock-preview-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.05);
+  font-size: 13px;
+  color: rgba(255,255,255,0.75);
+  animation: stockPreviewFadeIn .25s ease;
+}
+@keyframes stockPreviewFadeIn {
+  0%   { opacity: 0; transform: translateY(-3px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+/* Live "= XXX ₽" amount under the percentage input. */
+.alloc-percentage-live {
+  margin-top: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #6ee7b7;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.1px;
+  animation: allocLiveFlash .25s ease;
+}
+.alloc-percentage-live.is-zero {
+  color: rgba(255,255,255,0.4);
+  font-weight: 500;
+}
+@keyframes allocLiveFlash {
+  0%   { opacity: 0; transform: translateY(-2px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+/* Soft-disabled "+ Add storage type" button when portfolio == 100%. */
+.alloc-add-btn.is-disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  border-style: dashed;
+  border-color: rgba(255,255,255,0.18);
+  color: rgba(255,255,255,0.5);
+  filter: grayscale(0.4);
+}
+.alloc-add-btn.is-disabled:active {
+  transform: none;
+}
+
+/* Required-field error highlight (reuses the existing input-shake keyframe). */
+.stats-input.field-error,
+.stats-select.field-error {
+  border-color: #ff3b30 !important;
+  box-shadow: 0 0 0 1px rgba(255,59,48,0.35);
+  color: #fca5a5;
+}
+.stats-input.field-error::placeholder {
+  color: rgba(255,59,48,0.7);
+}
+.stats-input.field-shake,
+.stats-select.field-shake {
+  animation: input-shake 0.35s ease;
+}
+
+/* ============================================================================
  * MOEX INTEGRATION — live quote card under the stock asset select
  * ============================================================================ */
 .moex-quote-card {
