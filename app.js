@@ -5861,6 +5861,63 @@ var METAL_PRESETS = {
   platinum: { return: 5.0 }
 };
 
+// PORTFOLIO ALLOCATION + CARD EXPANSION — global helpers reused by both the
+// editor screen and the back-card detail flow. Kept here so renderAccountBackCards
+// and openAllocationDetail can compute consistent labels/icons/meta.
+function allocTypeIcon(type) {
+  switch (type) {
+    case "cash":    return "💵";
+    case "stock":   return "📈";
+    case "deposit": return "🏦";
+    case "metals":  return "🥇";
+    default:        return "•";
+  }
+}
+function allocTypeLabel(type) {
+  return (typeof t === "function") ? t("stats.type." + type) : (type || "—");
+}
+function allocInstrumentLabel(item) {
+  if (!item) return "—";
+  var p = item.details || {};
+  if (item.type === "cash") {
+    return p.country ? (STATS_COUNTRY_MAP[p.country] ? t(STATS_COUNTRY_MAP[p.country].labelKey) : p.country) : "—";
+  }
+  if (item.type === "stock") {
+    return p.asset ? t("stats.asset." + p.asset) : (p.ticker || "—");
+  }
+  if (item.type === "deposit") {
+    var er = getStorageExpectedReturn({ type: "deposit", params: p });
+    return (Math.round(er * 10) / 10) + "% · " + (p.termMonths || 0) + " " + t("misc.monthShort");
+  }
+  if (item.type === "metals") {
+    return p.metal ? t("stats.metal." + p.metal) : "—";
+  }
+  return "—";
+}
+function allocBackMeta(item) {
+  if (!item) return "";
+  var p = item.details || {};
+  if (item.type === "cash") {
+    var infl = (p.inflation != null) ? (Math.round(p.inflation * 10) / 10) + "%" : "—";
+    return (p.currency || "—") + " · " + t("misc.inflation") + " " + infl;
+  }
+  if (item.type === "stock") {
+    var sR = getStorageExpectedReturn({ type: "stock", params: p });
+    return (Math.round(sR * 10) / 10) + "%";
+  }
+  if (item.type === "deposit") {
+    if (p.promoMonths > 0 && p.promoRate != null) {
+      return t("stats.cap." + (p.capitalization || "monthly")) + " · промо " + p.promoMonths + "м @ " + (Math.round(p.promoRate * 10) / 10) + "%";
+    }
+    return t("stats.cap." + (p.capitalization || "monthly"));
+  }
+  if (item.type === "metals") {
+    var mR = getStorageExpectedReturn({ type: "metals", params: p });
+    return (Math.round(mR * 10) / 10) + "%";
+  }
+  return "";
+}
+
 (function initAccountStats() {
   var statsScreen = document.getElementById("screen-account-stats");
   if (!statsScreen) return;
@@ -6973,10 +7030,26 @@ function renderAccountBackCards() {
               t(stats.futureSavingsMode === "future" ? "portfolio.savingsMode.future" : "portfolio.savingsMode.current") +
               '</span></div>';
 
-      // One row per ACTIVE allocation slice.
+      // PORTFOLIO ALLOCATION + CARD EXPANSION — per-allocation tappable row.
+      // Mirrors the editor list visually (left accent + icon + meta + %) and
+      // opens the detail sheet via `data-action="alloc-detail"`. Each row has
+      // its own type color so users instantly see the portfolio breakdown.
       activeAllocs.forEach(function (a) {
-        var lbl = getStatsTypeLabel(a.type);
-        html += '<div class="stats-info-row"><span>' + lbl + '</span><span>' + (a.percentage || 0) + '%</span></div>';
+        var lbl = allocTypeLabel(a.type);
+        var instr = allocInstrumentLabel(a);
+        var meta = allocBackMeta(a);
+        html +=
+          '<div class="acc-alloc-row" data-type="' + a.type + '" data-action="alloc-detail" data-account="' + accountKey + '" data-alloc-id="' + (a.id || "") + '" role="button" tabindex="0">' +
+            '<div class="acc-alloc-row-icon">' + allocTypeIcon(a.type) + '</div>' +
+            '<div class="acc-alloc-row-body">' +
+              '<div class="acc-alloc-row-title">' + lbl + ' · ' + instr + '</div>' +
+              (meta ? '<div class="acc-alloc-row-meta">' + meta + '</div>' : '') +
+            '</div>' +
+            '<div class="acc-alloc-row-right">' +
+              '<div class="acc-alloc-row-pct">' + (Number(a.percentage) || 0) + '%</div>' +
+              '<div class="acc-alloc-row-chevron">›</div>' +
+            '</div>' +
+          '</div>';
       });
 
       if (withdrawnAllocs.length) {
@@ -7203,6 +7276,195 @@ document.addEventListener("click", function (e) {
 })();
 
 renderAccountBackCards();
+
+/* ============================================================================
+ * PORTFOLIO ALLOCATION + CARD EXPANSION — per-allocation deep-detail sheet
+ * ----------------------------------------------------------------------------
+ * Opens a premium bottom sheet when the user taps any allocation row on the
+ * account back-card. Renders four sections (params / share / analytics /
+ * history) tailored to the slice type. All numbers are computed live from
+ * current state; goal-related calculations remain untouched.
+ * ============================================================================ */
+function _allocDetailParamsHtml(item) {
+  if (!item) return "";
+  var p = item.details || {};
+  var rows = [];
+  if (item.type === "cash") {
+    rows.push([t("stats.country"),  p.country ? (STATS_COUNTRY_MAP[p.country] ? t(STATS_COUNTRY_MAP[p.country].labelKey) : p.country) : "—"]);
+    rows.push([t("stats.currency"), p.currency || "—"]);
+    rows.push([t("misc.inflation"), (p.inflation != null) ? (Math.round(p.inflation * 10) / 10) + "%" : "—"]);
+  } else if (item.type === "stock") {
+    rows.push([t("stats.stockInfo"), p.asset ? t("stats.asset." + p.asset) : "—"]);
+    if (p.ticker) rows.push(["Ticker", p.ticker]);
+  } else if (item.type === "deposit") {
+    rows.push([t("stats.field.depositRate"), (p.rate != null) ? (Math.round(p.rate * 10) / 10) + "%" : "—"]);
+    rows.push([t("stats.field.depositTerm"), (p.termMonths != null) ? p.termMonths + " " + t("misc.monthShort") : "—"]);
+    if (p.promoMonths > 0) {
+      rows.push([t("stats.field.promoMonths"), p.promoMonths + " " + t("misc.monthShort")]);
+      if (p.promoRate != null) rows.push([t("stats.field.promoRate"), (Math.round(p.promoRate * 10) / 10) + "%"]);
+    }
+    rows.push([t("stats.field.capitalization"), t("stats.cap." + (p.capitalization || "monthly"))]);
+    rows.push([t("stats.field.replenishable"), p.replenishable ? "✓" : "—"]);
+  } else if (item.type === "metals") {
+    rows.push([t("stats.metalInfo"), p.metal ? t("stats.metal." + p.metal) : "—"]);
+  }
+  var html = '<div class="alloc-detail-rows">';
+  rows.forEach(function (r) {
+    html += '<div class="alloc-detail-row"><span class="alloc-detail-row-label">' + r[0] + '</span><span class="alloc-detail-row-value">' + r[1] + '</span></div>';
+  });
+  html += '</div>';
+  return html;
+}
+
+function _allocShareAmountStr(accountKey, percentage) {
+  var bal = (accountKey === "main") ? (accounts ? accounts.main : 0) : (accounts ? accounts.reserve : 0);
+  var amt = Math.round((Number(bal) || 0) * (Number(percentage) || 0) / 100);
+  return fmtConverted(amt) + " " + getCurrencySymbol();
+}
+
+function _allocDetailShareHtml(accountKey, item) {
+  var pct = Number(item.percentage) || 0;
+  return '<div class="alloc-detail-rows">' +
+    '<div class="alloc-detail-row"><span class="alloc-detail-row-label">' + t("portfolio.detail.share.percent") + '</span><span class="alloc-detail-row-value positive">' + pct + '%</span></div>' +
+    '<div class="alloc-detail-row"><span class="alloc-detail-row-label">' + t("portfolio.detail.share.amount") + '</span><span class="alloc-detail-row-value">' + _allocShareAmountStr(accountKey, pct) + '</span></div>' +
+  '</div>';
+}
+
+function _allocDetailAnalyticsHtml(accountKey, stats, item) {
+  var expReturn = (item.type === "cash") ? 0 : getStorageExpectedReturn({ type: item.type, params: item.details });
+  // Baseline inflation = cash-weighted across ACTIVE portfolio.
+  var cashSum = 0, cashWeight = 0;
+  (stats.storageAllocation || []).forEach(function (a) {
+    if (a && !a.withdrawn && a.type === "cash" && a.details && a.details.inflation != null) {
+      var w = Number(a.percentage) || 0;
+      cashSum += Number(a.details.inflation) * w;
+      cashWeight += w;
+    }
+  });
+  var baselineInfl = (cashWeight > 0) ? (cashSum / cashWeight) : 0;
+  var localInfl = (item.type === "cash" && item.details && item.details.inflation != null) ? Number(item.details.inflation) : baselineInfl;
+  var realReturn = expReturn - localInfl; // positive = beats inflation
+
+  var html = '<div class="alloc-detail-rows">' +
+    '<div class="alloc-detail-row"><span class="alloc-detail-row-label">' + t("portfolio.detail.analytics.expectedReturn") + '</span><span class="alloc-detail-row-value ' + (expReturn > 0 ? "positive" : "muted") + '">' + (Math.round(expReturn * 10) / 10) + '%</span></div>' +
+    '<div class="alloc-detail-row"><span class="alloc-detail-row-label">' + t("portfolio.detail.analytics.inflation") + '</span><span class="alloc-detail-row-value muted">' + (Math.round(localInfl * 10) / 10) + '%</span></div>' +
+    '<div class="alloc-detail-row"><span class="alloc-detail-row-label">' + t("portfolio.detail.analytics.realReturn") + '</span><span class="alloc-detail-row-value ' + (realReturn > 0 ? "positive" : (realReturn < 0 ? "negative" : "muted")) + '">' + (realReturn > 0 ? "+" : "") + (Math.round(realReturn * 10) / 10) + '%</span></div>' +
+  '</div>';
+
+  // Projection block — uses goal timeline if known, otherwise show note.
+  var monthsLeft = (typeof lastCalc !== "undefined" && lastCalc && lastCalc.months) ? lastCalc.months : 0;
+  if (monthsLeft > 0 && isFinite(monthsLeft)) {
+    var years = monthsLeft / 12;
+    var bal = (accountKey === "main") ? (accounts ? accounts.main : 0) : (accounts ? accounts.reserve : 0);
+    var sliceAmount = (Number(bal) || 0) * (Number(item.percentage) || 0) / 100;
+    var rateFraction = realReturn / 100;
+    var projected = Math.round(sliceAmount * Math.pow(1 + rateFraction, years));
+    var delta = projected - Math.round(sliceAmount);
+
+    var nUnit, nVal;
+    if (years < 1) {
+      nVal = Math.round(monthsLeft);
+      nUnit = nVal === 1 ? t("stats.monthUnit1") : (nVal >= 2 && nVal <= 4 ? t("stats.monthUnit2_4") : t("stats.monthUnit5"));
+    } else {
+      nVal = years.toFixed(1);
+      nUnit = t("misc.yearShort") || "лет";
+    }
+
+    html += '<div class="alloc-detail-section-label" style="margin-top:14px;">' + t("portfolio.detail.analytics.projection", { n: nVal, unit: nUnit }) + '</div>';
+    html += '<div class="alloc-detail-metric"><div class="alloc-detail-metric-label">' + t("portfolio.detail.analytics.projectionValue") + '</div><div class="alloc-detail-metric-value">' + fmtConverted(projected) + ' ' + getCurrencySymbol() + '</div></div>';
+    html += '<div class="alloc-detail-rows" style="margin-top:8px;">' +
+      '<div class="alloc-detail-row"><span class="alloc-detail-row-label">' + t("portfolio.detail.analytics.projectionDelta") + '</span><span class="alloc-detail-row-value ' + (delta > 0 ? "positive" : (delta < 0 ? "negative" : "muted")) + '">' + (delta > 0 ? "+" : "") + fmtConverted(delta) + ' ' + getCurrencySymbol() + '</span></div>' +
+    '</div>';
+  } else {
+    html += '<div class="alloc-detail-empty" style="margin-top:10px;">' + t("portfolio.detail.analytics.noProjection") + '</div>';
+  }
+
+  return html;
+}
+
+function _allocDetailHistoryHtml(item) {
+  if (!item || !item.withdrawn) return "";
+  var dateStr = "";
+  try {
+    var d = new Date(item.withdrawnAt);
+    var dd = String(d.getDate()).padStart(2, "0");
+    var mm = String(d.getMonth() + 1).padStart(2, "0");
+    dateStr = dd + "." + mm + "." + d.getFullYear();
+  } catch (e) {}
+  var snap = item.withdrawnSnapshot || {};
+  return '<div class="alloc-detail-rows">' +
+    '<div class="alloc-detail-row"><span class="alloc-detail-row-label">' + t("portfolio.withdrawnOn", { date: "" }).replace("{date}", "").replace(/^\s+|\s+$/g, "") + '</span><span class="alloc-detail-row-value">' + (dateStr || "—") + '</span></div>' +
+    '<div class="alloc-detail-row"><span class="alloc-detail-row-label">' + t("portfolio.detail.history.snapshotShare") + '</span><span class="alloc-detail-row-value">' + (snap.percentage != null ? snap.percentage + "%" : "—") + '</span></div>' +
+    '<div class="alloc-detail-row"><span class="alloc-detail-row-label">' + t("portfolio.detail.history.snapshotReturn") + '</span><span class="alloc-detail-row-value">' + (snap.expectedReturn != null ? (Math.round(snap.expectedReturn * 10) / 10) + "%" : "—") + '</span></div>' +
+  '</div>';
+}
+
+function showAllocationDetail(accountKey, allocId) {
+  var sheet = document.getElementById("allocDetailSheet");
+  var overlay = document.getElementById("allocDetailOverlay");
+  var titleEl = document.getElementById("allocDetailTitle");
+  var subEl = document.getElementById("allocDetailSubtitle");
+  var iconEl = document.getElementById("allocDetailHeaderIcon");
+  var bodyEl = document.getElementById("allocDetailBody");
+  if (!sheet || !overlay || !bodyEl) return;
+
+  var s = getState();
+  var allStats = s.accountStats || {};
+  var stats = allStats[accountKey];
+  if (!stats || !Array.isArray(stats.storageAllocation)) return;
+  var item = stats.storageAllocation.filter(function (a) { return a && a.id === allocId; })[0];
+  if (!item) return;
+
+  // Header.
+  sheet.setAttribute("data-type", item.type);
+  if (iconEl) iconEl.textContent = allocTypeIcon(item.type);
+  if (titleEl) titleEl.textContent = allocTypeLabel(item.type) + " · " + allocInstrumentLabel(item);
+  if (subEl) {
+    var sub = (item.percentage || 0) + "%";
+    if (item.withdrawn) sub += " · " + t("portfolio.withdrawnSection").toLowerCase();
+    subEl.textContent = sub;
+  }
+
+  // Body.
+  var html = "";
+  html += '<div><div class="alloc-detail-section-label">' + t("portfolio.detail.section.params") + '</div>' + _allocDetailParamsHtml(item) + '</div>';
+  html += '<div><div class="alloc-detail-section-label">' + t("portfolio.detail.section.share") + '</div>' + _allocDetailShareHtml(accountKey, item) + '</div>';
+  if (!item.withdrawn) {
+    html += '<div><div class="alloc-detail-section-label">' + t("portfolio.detail.section.analytics") + '</div>' + _allocDetailAnalyticsHtml(accountKey, stats, item) + '</div>';
+  } else {
+    html += '<div><div class="alloc-detail-section-label">' + t("portfolio.detail.section.history") + '</div>' + _allocDetailHistoryHtml(item) + '</div>';
+  }
+  bodyEl.innerHTML = html;
+
+  overlay.style.display = "block";
+  sheet.style.display = "block";
+  requestAnimationFrame(function () { sheet.classList.add("open"); });
+}
+
+function _closeAllocDetail() {
+  var sheet = document.getElementById("allocDetailSheet");
+  var overlay = document.getElementById("allocDetailOverlay");
+  if (sheet) sheet.classList.remove("open");
+  setTimeout(function () {
+    if (sheet) sheet.style.display = "none";
+    if (overlay) overlay.style.display = "none";
+  }, 320);
+}
+
+// PORTFOLIO ALLOCATION + CARD EXPANSION — delegated click for back-card rows
+// and the modal close/overlay. Lives on document so it survives any DOM
+// re-render of `.account-back-content`.
+document.addEventListener("click", function (e) {
+  var row = e.target.closest("[data-action='alloc-detail']");
+  if (row) {
+    e.stopPropagation();
+    showAllocationDetail(row.getAttribute("data-account") || "main", row.getAttribute("data-alloc-id") || "");
+    return;
+  }
+  if (e.target.closest("#allocDetailClose") || e.target.id === "allocDetailOverlay") {
+    _closeAllocDetail();
+  }
+});
 
 /* ============================================================
  *  ADVANCED GOALS SYSTEM

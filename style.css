@@ -4368,6 +4368,226 @@ body.flip-fix-pending .flip-wrapper {
   #statsDepositPromoRateWrap { animation: none; }
 }
 
+/* FIX: explanatory hint under the replenishable checkbox — aligned with
+   the checkbox label, matches premium calm tone. */
+.stats-checkbox-hint {
+  margin: 6px 0 0 30px;
+  line-height: 1.4;
+  color: rgba(255,255,255,0.45);
+}
+
+/* FIX: static hint just under "Share of portfolio (%)" label, before the input.
+   Lives above the dynamic rebalance hint so users see context first, then
+   the live state. */
+.alloc-percentage-static-hint {
+  margin: -2px 0 8px;
+  line-height: 1.4;
+  color: rgba(255,255,255,0.55);
+}
+
+/* ============================================================================
+ * PORTFOLIO ALLOCATION + CARD EXPANSION — back-card per-allocation row + sheet
+ * ============================================================================ */
+
+/* Back-card: each active allocation gets a compact, tappable row with
+   a left accent bar (per-type color), icon, label, meta and chevron. */
+.acc-alloc-row {
+  display: grid;
+  grid-template-columns: 28px 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+  margin: 6px 0;
+  background: rgba(255,255,255,0.025);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 12px;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  transition: background .15s, transform .12s, border-color .15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.acc-alloc-row::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+}
+.acc-alloc-row[data-type="cash"]::before    { background: linear-gradient(180deg, var(--alloc-cash, #10b981), #047857); }
+.acc-alloc-row[data-type="stock"]::before   { background: linear-gradient(180deg, var(--alloc-stock, #8b5cf6), #6d28d9); }
+.acc-alloc-row[data-type="deposit"]::before { background: linear-gradient(180deg, var(--alloc-deposit, #3b82f6), #1d4ed8); }
+.acc-alloc-row[data-type="metals"]::before  { background: linear-gradient(180deg, var(--alloc-metals, #f59e0b), #b45309); }
+.acc-alloc-row:active {
+  background: rgba(255,255,255,0.05);
+  transform: scale(0.99);
+  border-color: rgba(255,255,255,0.12);
+}
+.acc-alloc-row-icon {
+  width: 28px; height: 28px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 8px;
+  font-size: 14px;
+}
+.acc-alloc-row[data-type="cash"]    .acc-alloc-row-icon { background: rgba(16,185,129,0.10);  color: #6ee7b7; }
+.acc-alloc-row[data-type="stock"]   .acc-alloc-row-icon { background: rgba(139,92,246,0.10);  color: #c4b5fd; }
+.acc-alloc-row[data-type="deposit"] .acc-alloc-row-icon { background: rgba(59,130,246,0.10);  color: #93c5fd; }
+.acc-alloc-row[data-type="metals"]  .acc-alloc-row-icon { background: rgba(245,158,11,0.10);  color: #fcd34d; }
+.acc-alloc-row-body {
+  display: flex; flex-direction: column; gap: 1px;
+  min-width: 0;
+}
+.acc-alloc-row-title {
+  font-size: 13px; font-weight: 600; color: #fff;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.acc-alloc-row-meta {
+  font-size: 11px; color: rgba(255,255,255,0.55);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.acc-alloc-row-right {
+  display: flex; align-items: center; gap: 6px;
+}
+.acc-alloc-row-pct {
+  font-size: 13px; font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.acc-alloc-row[data-type="cash"]    .acc-alloc-row-pct { color: #6ee7b7; }
+.acc-alloc-row[data-type="stock"]   .acc-alloc-row-pct { color: #c4b5fd; }
+.acc-alloc-row[data-type="deposit"] .acc-alloc-row-pct { color: #93c5fd; }
+.acc-alloc-row[data-type="metals"]  .acc-alloc-row-pct { color: #fcd34d; }
+.acc-alloc-row-chevron {
+  color: rgba(255,255,255,0.4);
+  font-size: 14px;
+  margin-left: 2px;
+}
+
+/* Detail sheet */
+.alloc-detail-sheet {
+  max-height: 92vh;
+  padding-bottom: max(20px, env(safe-area-inset-bottom));
+}
+.alloc-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 18px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.alloc-detail-header-icon {
+  width: 48px; height: 48px;
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+.alloc-detail-sheet[data-type="cash"]    .alloc-detail-header-icon { background: rgba(16,185,129,0.10);  color: #6ee7b7; box-shadow: 0 0 0 1px rgba(16,185,129,0.3); }
+.alloc-detail-sheet[data-type="stock"]   .alloc-detail-header-icon { background: rgba(139,92,246,0.10);  color: #c4b5fd; box-shadow: 0 0 0 1px rgba(139,92,246,0.3); }
+.alloc-detail-sheet[data-type="deposit"] .alloc-detail-header-icon { background: rgba(59,130,246,0.10);  color: #93c5fd; box-shadow: 0 0 0 1px rgba(59,130,246,0.3); }
+.alloc-detail-sheet[data-type="metals"]  .alloc-detail-header-icon { background: rgba(245,158,11,0.10);  color: #fcd34d; box-shadow: 0 0 0 1px rgba(245,158,11,0.3); }
+.alloc-detail-header-text {
+  flex: 1;
+  min-width: 0;
+}
+.alloc-detail-title {
+  margin: 0 0 2px;
+  font-size: 18px;
+  font-weight: 700;
+  text-align: left;
+}
+.alloc-detail-subtitle {
+  font-size: 13px;
+  color: rgba(255,255,255,0.55);
+}
+
+.alloc-detail-body {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+.alloc-detail-section-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.45);
+  margin: 0 0 8px;
+}
+.alloc-detail-rows {
+  display: flex;
+  flex-direction: column;
+  background: rgba(255,255,255,0.025);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.alloc-detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 11px 14px;
+  font-size: 14px;
+}
+.alloc-detail-row + .alloc-detail-row {
+  border-top: 1px solid rgba(255,255,255,0.04);
+}
+.alloc-detail-row-label {
+  color: rgba(255,255,255,0.6);
+  margin-right: 12px;
+}
+.alloc-detail-row-value {
+  color: #fff;
+  font-weight: 600;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.alloc-detail-row-value.positive { color: #6ee7b7; }
+.alloc-detail-row-value.negative { color: #ef4444; }
+.alloc-detail-row-value.muted    { color: rgba(255,255,255,0.45); }
+
+/* Big metric — like the share amount card */
+.alloc-detail-metric {
+  padding: 16px 18px;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(110,231,183,0.06), transparent 55%),
+    linear-gradient(180deg, rgba(16,185,129,0.08), rgba(16,185,129,0.02));
+  border: 1px solid rgba(16,185,129,0.25);
+  border-radius: 14px;
+  text-align: center;
+}
+.alloc-detail-metric-label {
+  font-size: 12px;
+  color: rgba(255,255,255,0.55);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  margin-bottom: 6px;
+}
+.alloc-detail-metric-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: #6ee7b7;
+  font-variant-numeric: tabular-nums;
+}
+
+.alloc-detail-empty {
+  padding: 16px;
+  text-align: center;
+  font-size: 13px;
+  color: rgba(255,255,255,0.45);
+  background: rgba(255,255,255,0.025);
+  border: 1px dashed rgba(255,255,255,0.1);
+  border-radius: 12px;
+}
+
+.alloc-detail-close {
+  width: 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .acc-alloc-row { transition: none; }
+}
+
 /* FIX: live effective-rate preview for deposits — premium emerald card,
    updates as the user types (no manual recalc needed). */
 .stats-deposit-preview {

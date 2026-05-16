@@ -1162,20 +1162,24 @@ Protocol анализирует цель…
         <input type="number" id="statsDepositPromoRate" class="stats-input" inputmode="decimal" min="0" max="100" step="0.1" placeholder="14.0" />
       </div>
       <div class="input-wrap stats-input-wrap">
-        <label data-i18n="stats.field.capitalization">Капитализация процентов</label>
+        <!-- FIX: friendlier capitalization label + explanatory hint -->
+        <label data-i18n="stats.field.capitalization">Как часто начисляются проценты</label>
         <div class="stats-segment" id="statsDepositCap" role="tablist">
           <button type="button" class="stats-segment-btn active" data-cap="monthly" data-i18n="stats.cap.monthly">Ежемесячно</button>
           <button type="button" class="stats-segment-btn" data-cap="quarterly" data-i18n="stats.cap.quarterly">Ежеквартально</button>
           <button type="button" class="stats-segment-btn" data-cap="end" data-i18n="stats.cap.end">В конце срока</button>
         </div>
+        <div class="stats-input-hint" data-i18n="stats.cap.hint">Чем чаще начисляются проценты — тем быстрее они «работают» сами на себя и увеличивают итоговую доходность</div>
       </div>
       <!-- FIX: live effective-rate preview (recomputed on any field change) -->
       <div id="statsDepositEffectivePreview" class="stats-deposit-preview" style="display:none"></div>
+      <!-- FIX: replenishable checkbox now has an explanatory hint underneath -->
       <label class="stats-checkbox-wrap">
         <input type="checkbox" id="statsDepositReplenish" />
         <span class="stats-checkbox-box"></span>
         <span class="stats-checkbox-label" data-i18n="stats.field.replenishable">Возможно пополнение</span>
       </label>
+      <div class="stats-input-hint stats-checkbox-hint" data-i18n="stats.field.replenishableHint">Можно ли вносить дополнительные деньги на счёт в течение срока вклада</div>
     </div>
 
     <!-- PORTFOLIO ALLOCATION v2 — metals: return from preset, no manual input -->
@@ -1192,8 +1196,10 @@ Protocol анализирует цель…
     </div>
 
     <!-- PORTFOLIO ALLOCATION LOGIC — share of portfolio (always required) -->
+    <!-- FIX: added static hint explaining what the share means -->
     <div class="input-wrap stats-input-wrap alloc-percentage-wrap">
       <label data-i18n="portfolio.percentage">Доля портфеля (%)</label>
+      <div class="stats-input-hint alloc-percentage-static-hint" data-i18n="portfolio.percentageHint">Какой процент от всей суммы цели вы планируете хранить в этом типе</div>
       <input type="number" id="statsAllocPercentage" class="stats-input" inputmode="numeric" min="1" max="100" step="1" data-i18n-placeholder="portfolio.percentagePlaceholder" placeholder="например, 40" />
       <div id="statsAllocPercentageHint" class="stats-input-hint"></div>
     </div>
@@ -1204,6 +1210,22 @@ Protocol анализирует цель…
     <button type="button" id="statsAllocCancel" class="confirmBtn confirmBtn--cancel" data-i18n="portfolio.modal.cancel">Отмена</button>
     <button type="button" id="statsAllocSave" class="confirmBtn confirmBtn--primary" data-i18n="portfolio.modal.save">Сохранить</button>
   </div>
+</div>
+
+<!-- PORTFOLIO ALLOCATION + CARD EXPANSION — per-allocation deep-detail sheet -->
+<div id="allocDetailOverlay" class="proto-sheet-overlay" style="display:none"></div>
+<div id="allocDetailSheet" class="proto-sheet alloc-detail-sheet" style="display:none">
+  <div class="alloc-detail-header">
+    <div class="alloc-detail-header-icon" id="allocDetailHeaderIcon">•</div>
+    <div class="alloc-detail-header-text">
+      <h2 id="allocDetailTitle" class="alloc-detail-title">—</h2>
+      <div id="allocDetailSubtitle" class="alloc-detail-subtitle">—</div>
+    </div>
+  </div>
+
+  <div id="allocDetailBody" class="alloc-detail-body"></div>
+
+  <button type="button" id="allocDetailClose" class="confirmBtn confirmBtn--cancel alloc-detail-close" data-i18n="portfolio.detail.close">Закрыть</button>
 </div>
 
 <!-- ===== ADVANCED BUTTON ===== -->

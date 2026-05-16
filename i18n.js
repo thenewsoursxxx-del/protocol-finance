@@ -640,6 +640,7 @@
       "stats.cap.quarterly": "Ежеквартально",
       "stats.cap.end": "В конце срока",
       "stats.field.replenishable": "Возможно пополнение",
+      "stats.field.replenishableHint": "Можно ли вносить дополнительные деньги на счёт в течение срока вклада",
       "stats.field.metal": "Металл",
       "stats.metal.gold": "Золото",
       "stats.metal.silver": "Серебро",
@@ -661,6 +662,7 @@
       "portfolio.over": "Превышено",
       "portfolio.complete": "Портфель распределён полностью",
       "portfolio.percentage": "Доля портфеля (%)",
+      "portfolio.percentageHint": "Какой процент от всей суммы цели вы планируете хранить в этом типе",
       "portfolio.percentagePlaceholder": "например, 40",
       "portfolio.remove": "Удалить",
       "portfolio.edit": "Изменить",
@@ -705,7 +707,9 @@
 
       // PORTFOLIO ALLOCATION v2 — deposit promo + renamed capitalization
       // FIX: Promo period for deposits — extended to 0–12 months, clearer hint
-      "stats.field.capitalization": "Капитализация процентов",
+      // FIX: friendlier capitalization label + hint, replenishable hint, portfolio percentage hint
+      "stats.field.capitalization": "Как часто начисляются проценты",
+      "stats.cap.hint": "Чем чаще начисляются проценты — тем быстрее они «работают» сами на себя и увеличивают итоговую доходность",
       "stats.field.promoMonths": "Промо-период (мес, 0–12)",
       "stats.field.promoMonthsHint": "Повышенная ставка на первые месяцы (обычно 1–3 мес, иногда до 6)",
       "stats.field.promoRate":   "Повышенная ставка на промо-период (% годовых)",
@@ -724,6 +728,26 @@
       "portfolio.withdrawnEmpty":   "Здесь будут появляться выведенные типы",
       "portfolio.rebalanced":      "Доли пересчитаны автоматически",
       "portfolio.composition":     "Состав",
+
+      // PORTFOLIO ALLOCATION + CARD EXPANSION — back-card per-type detail flow
+      "portfolio.detail.viewMore":     "Посмотреть более детально",
+      "portfolio.detail.section.params":    "Параметры",
+      "portfolio.detail.section.share":     "Доля в портфеле",
+      "portfolio.detail.section.analytics": "Аналитика и прогноз",
+      "portfolio.detail.section.history":   "История",
+      "portfolio.detail.share.percent":  "Процент от портфеля",
+      "portfolio.detail.share.amount":   "Сумма в этом типе",
+      "portfolio.detail.analytics.expectedReturn": "Ожидаемая годовая доходность",
+      "portfolio.detail.analytics.inflation":      "Инфляция (для cash-долей)",
+      "portfolio.detail.analytics.realReturn":     "Реальная доходность",
+      "portfolio.detail.analytics.projection":     "Прогноз через {n} {unit}",
+      "portfolio.detail.analytics.projectionValue":"Ожидаемая сумма",
+      "portfolio.detail.analytics.projectionDelta":"Прирост за период",
+      "portfolio.detail.analytics.noProjection":   "Прогноз появится, когда будет рассчитан срок цели",
+      "portfolio.detail.history.withdrawnOn":  "Выведено {date}",
+      "portfolio.detail.history.snapshotShare":"Доля на момент вывода",
+      "portfolio.detail.history.snapshotReturn":"Доходность на момент вывода",
+      "portfolio.detail.close": "Закрыть",
 
       // ── Event toasts ──
       "event.incomeAdded": "Доход добавлен",
@@ -1443,6 +1467,7 @@
       "stats.cap.quarterly": "Quarterly",
       "stats.cap.end": "At the end",
       "stats.field.replenishable": "Top-ups allowed",
+      "stats.field.replenishableHint": "Whether you can deposit additional money into this account during its term",
       "stats.field.metal": "Metal",
       "stats.metal.gold": "Gold",
       "stats.metal.silver": "Silver",
@@ -1464,6 +1489,7 @@
       "portfolio.over": "Over allocated",
       "portfolio.complete": "Portfolio is fully allocated",
       "portfolio.percentage": "Share of portfolio (%)",
+      "portfolio.percentageHint": "How much of your total goal you plan to keep in this storage type",
       "portfolio.percentagePlaceholder": "e.g. 40",
       "portfolio.remove": "Remove",
       "portfolio.edit": "Edit",
@@ -1508,7 +1534,9 @@
 
       // PORTFOLIO ALLOCATION v2 — deposit promo + renamed capitalization
       // FIX: Promo period for deposits — extended to 0–12 months, clearer hint
-      "stats.field.capitalization": "Interest capitalization",
+      // FIX: friendlier capitalization label + hint, replenishable hint, portfolio percentage hint
+      "stats.field.capitalization": "How often interest is credited",
+      "stats.cap.hint": "The more often interest is credited, the more it compounds and grows your final yield",
       "stats.field.promoMonths": "Promo period (months, 0–12)",
       "stats.field.promoMonthsHint": "Higher rate for the first months (usually 1–3, sometimes up to 6)",
       "stats.field.promoRate":   "Promo rate (% annual)",
@@ -1527,6 +1555,26 @@
       "portfolio.withdrawnEmpty":   "Withdrawn storage types will appear here",
       "portfolio.rebalanced":      "Shares rebalanced automatically",
       "portfolio.composition":     "Composition",
+
+      // PORTFOLIO ALLOCATION + CARD EXPANSION — back-card per-type detail flow
+      "portfolio.detail.viewMore":     "View more details",
+      "portfolio.detail.section.params":    "Parameters",
+      "portfolio.detail.section.share":     "Share of portfolio",
+      "portfolio.detail.section.analytics": "Analytics & projection",
+      "portfolio.detail.section.history":   "History",
+      "portfolio.detail.share.percent":  "Portfolio share",
+      "portfolio.detail.share.amount":   "Amount in this type",
+      "portfolio.detail.analytics.expectedReturn": "Expected annual return",
+      "portfolio.detail.analytics.inflation":      "Inflation (for cash slices)",
+      "portfolio.detail.analytics.realReturn":     "Real return",
+      "portfolio.detail.analytics.projection":     "Forecast in {n} {unit}",
+      "portfolio.detail.analytics.projectionValue":"Projected amount",
+      "portfolio.detail.analytics.projectionDelta":"Change over period",
+      "portfolio.detail.analytics.noProjection":   "Forecast will appear once a goal timeline is computed",
+      "portfolio.detail.history.withdrawnOn":  "Withdrawn on {date}",
+      "portfolio.detail.history.snapshotShare":"Share at withdrawal",
+      "portfolio.detail.history.snapshotReturn":"Yield at withdrawal",
+      "portfolio.detail.close": "Close",
 
       // ── Event toasts ──
       "event.incomeAdded": "Income added",
