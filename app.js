@@ -5829,17 +5829,36 @@ function _updateInflationPreview(rate, isLoading) {
  * etc.) that used to live on the screen are now siblings of the sheet inside
  * the modal — UI / handlers were refactored accordingly.
  * ============================================================================ */
+// PORTFOLIO ALLOCATION v2 — preset assets (RU stocks, MOEX ETFs, world indices).
+// Each preset bakes the expected annual return so users don't enter it manually.
+// Returns are average long-run estimates and intentionally conservative.
 var STOCK_ASSET_PRESETS = {
-  sp500:     { return: 10.0, ticker: "SPY"   },
-  nasdaq100: { return: 13.0, ticker: "QQQ"   },
-  moex:      { return: 12.0, ticker: "IMOEX" },
-  ftse100:   { return: 6.0,  ticker: "ISF"   },
-  msciWorld: { return: 8.0,  ticker: "URTH"  },
-  aapl:      { return: 18.0, ticker: "AAPL"  },
-  msft:      { return: 18.0, ticker: "MSFT"  },
-  tsla:      { return: 22.0, ticker: "TSLA"  },
-  amzn:      { return: 16.0, ticker: "AMZN"  },
-  custom:    { return: 0,    ticker: ""      }
+  // Russian blue chips
+  ru_sber:    { return: 15.0, ticker: "SBER" },
+  ru_gazprom: { return: 8.0,  ticker: "GAZP" },
+  ru_yandex:  { return: 14.0, ticker: "YDEX" },
+  ru_tinkoff: { return: 16.0, ticker: "T"    },
+  ru_lukoil:  { return: 11.0, ticker: "LKOH" },
+  ru_magnit:  { return: 9.0,  ticker: "MGNT" },
+  ru_norilsk: { return: 12.0, ticker: "GMKN" },
+  ru_rosneft: { return: 10.0, ticker: "ROSN" },
+  // MOEX ETFs
+  etf_fxrl:   { return: 12.0, ticker: "FXRL" },
+  etf_fxit:   { return: 14.0, ticker: "FXIT" },
+  etf_tmos:   { return: 13.0, ticker: "TMOS" },
+  etf_sbsp:   { return: 10.0, ticker: "SBSP" },
+  // World indices
+  sp500:      { return: 10.0, ticker: "SPY"  },
+  nasdaq100:  { return: 13.0, ticker: "QQQ"  },
+  msciWorld:  { return: 8.0,  ticker: "URTH" },
+  moex:       { return: 12.0, ticker: "IMOEX" }
+};
+
+// PORTFOLIO ALLOCATION v2 — metal preset returns (long-run avg, % p.a.).
+var METAL_PRESETS = {
+  gold:     { return: 8.0 },
+  silver:   { return: 6.0 },
+  platinum: { return: 5.0 }
 };
 
 (function initAccountStats() {
@@ -5874,16 +5893,32 @@ var STOCK_ASSET_PRESETS = {
   var metalsFields = document.getElementById("statsMetalsFields");
   var countrySelect = document.getElementById("statsCountry");
   var currencySelect = document.getElementById("statsCurrency");
+  // PORTFOLIO ALLOCATION v2 — stocks now resolve return from preset (no manual input).
   var stockAssetSel = document.getElementById("statsStockAsset");
-  var stockCustomWrap = document.getElementById("statsStockCustomWrap");
-  var stockTicker = document.getElementById("statsStockTicker");
-  var stockReturn = document.getElementById("statsStockReturn");
+  var stockReturnHint = document.getElementById("statsStockReturnHint");
   var depositRate = document.getElementById("statsDepositRate");
   var depositTerm = document.getElementById("statsDepositTerm");
+  var depositPromoMonths = document.getElementById("statsDepositPromoMonths");
+  var depositPromoRate = document.getElementById("statsDepositPromoRate");
+  var depositPromoRateWrap = document.getElementById("statsDepositPromoRateWrap");
   var depositCap  = document.getElementById("statsDepositCap");
   var depositReplenish = document.getElementById("statsDepositReplenish");
+  // PORTFOLIO ALLOCATION v2 — metals return is preset-derived too.
   var metalSelect = document.getElementById("statsMetal");
-  var metalReturn = document.getElementById("statsMetalReturn");
+  var metalReturnHint = document.getElementById("statsMetalReturnHint");
+
+  // PORTFOLIO ALLOCATION v2 — small helpers for showing return hints.
+  function _showReturnHint(el, retVal) {
+    if (!el) return;
+    if (!isFinite(retVal) || retVal <= 0) {
+      el.textContent = "";
+      el.style.display = "none";
+      return;
+    }
+    el.textContent = t("stats.field.expectedReturn") + ": " + (Math.round(retVal * 10) / 10) + "%";
+    el.style.color = "#6ee7b7";
+    el.style.display = "";
+  }
 
   // ── Working state (mirrors what will be written into appState on submit) ─
   // PORTFOLIO ALLOCATION LOGIC — local mutable working copy. Submit pushes
@@ -5933,37 +5968,164 @@ var STOCK_ASSET_PRESETS = {
       return country + " · " + (p.currency || "—") + " · " + t("misc.inflation") + " " + infl;
     }
     if (item.type === "stock") {
+      // PORTFOLIO ALLOCATION v2 — return is preset-resolved (no manual field).
       var asset = p.asset ? t("stats.asset." + p.asset) : (p.ticker || "—");
-      var r = (p.expectedReturn != null) ? (Math.round(p.expectedReturn * 10) / 10) + "%" : "—";
-      return asset + " · " + r;
+      var sR = getStorageExpectedReturn({ type: "stock", params: p });
+      return asset + " · " + (Math.round(sR * 10) / 10) + "%";
     }
     if (item.type === "deposit") {
-      var rate = (p.rate != null) ? (Math.round(p.rate * 10) / 10) + "%" : "—";
+      // PORTFOLIO ALLOCATION v2 — show the blended effective rate so users see
+      // the actual yield reflecting promo + base + capitalization.
+      var dR = getStorageExpectedReturn({ type: "deposit", params: p });
       var term = (p.termMonths != null) ? p.termMonths + " " + t("misc.monthShort") : "—";
-      return rate + " · " + term + " · " + t("stats.cap." + (p.capitalization || "monthly"));
+      var promoStr = (p.promoMonths > 0 && p.promoRate != null) ? " · " + p.promoMonths + "m@" + (Math.round(p.promoRate * 10) / 10) + "%" : "";
+      return (Math.round(dR * 10) / 10) + "% · " + term + promoStr;
     }
     if (item.type === "metals") {
       var metal = p.metal ? t("stats.metal." + p.metal) : "—";
-      var mr = (p.expectedReturn != null) ? (Math.round(p.expectedReturn * 10) / 10) + "%" : "—";
-      return metal + " · " + mr;
+      var mR = getStorageExpectedReturn({ type: "metals", params: p });
+      return metal + " · " + (Math.round(mR * 10) / 10) + "%";
     }
     return "";
   }
 
+  // PORTFOLIO ALLOCATION v2 — withdrawn allocations are tracked in the same
+  // array but skipped from rebalance / totals / calc; they live in a separate
+  // visual section as a history snapshot.
+  function _isActive(a) { return a && !a.withdrawn; }
+  function _activeAllocations() { return _allocations.filter(_isActive); }
+  function _withdrawnAllocations() { return _allocations.filter(function (a) { return a && a.withdrawn; }); }
+
   function _allocTotal() {
-    return _allocations.reduce(function (acc, a) { return acc + (Number(a.percentage) || 0); }, 0);
+    // Total is computed over ACTIVE allocations only.
+    return _allocations.reduce(function (acc, a) { return _isActive(a) ? acc + (Number(a.percentage) || 0) : acc; }, 0);
+  }
+
+  /* PORTFOLIO ALLOCATION v2 — auto-rebalance helper.
+   * After the user adds, edits or removes an active allocation, the remaining
+   * active items are rescaled proportionally so the total = 100%. Rounding is
+   * absorbed by the last touched item to guarantee exact 100 sum (integers).
+   *
+   * @param fixedIndex  index in _allocations whose percentage should NOT change
+   *                    (e.g. the just-edited item). Pass -1 to rebalance all.
+   */
+  function _autoRebalanceActive(fixedIndex) {
+    var actives = _allocations.map(function (a, i) { return _isActive(a) ? { ref: a, i: i } : null; }).filter(Boolean);
+    if (!actives.length) return;
+
+    var fixed = (typeof fixedIndex === "number" && fixedIndex >= 0)
+      ? actives.filter(function (x) { return x.i === fixedIndex; })[0]
+      : null;
+    var movable = actives.filter(function (x) { return x !== fixed; });
+    var fixedPct = fixed ? (Number(fixed.ref.percentage) || 0) : 0;
+    var targetForMovable = Math.max(0, 100 - fixedPct);
+
+    if (!movable.length) {
+      // Only the fixed item exists → it must be 100.
+      if (fixed) fixed.ref.percentage = 100;
+      return;
+    }
+
+    var sumMovable = movable.reduce(function (s, m) { return s + (Number(m.ref.percentage) || 0); }, 0);
+
+    if (sumMovable === 0) {
+      // Distribute equally with integer remainder spread across first items.
+      var per = Math.floor(targetForMovable / movable.length);
+      var leftover = targetForMovable - per * movable.length;
+      movable.forEach(function (m, idx) { m.ref.percentage = per + (idx < leftover ? 1 : 0); });
+    } else {
+      // Proportional rescale.
+      var assigned = 0;
+      movable.forEach(function (m, idx) {
+        var scaled;
+        if (idx === movable.length - 1) {
+          scaled = targetForMovable - assigned; // absorb rounding
+        } else {
+          scaled = Math.round((Number(m.ref.percentage) || 0) * targetForMovable / sumMovable);
+          assigned += scaled;
+        }
+        m.ref.percentage = Math.max(0, scaled);
+      });
+    }
+
+    // Final guard — any over-100 due to rounding sums clipped.
+    var total = _allocTotal();
+    if (total !== 100 && actives.length) {
+      var diff = 100 - total;
+      var last = actives[actives.length - 1];
+      last.ref.percentage = Math.max(0, (Number(last.ref.percentage) || 0) + diff);
+    }
+  }
+
+  function _withdrawAlloc(idx) {
+    var a = _allocations[idx];
+    if (!a || a.withdrawn) return;
+    a.withdrawn = true;
+    a.withdrawnAt = new Date().toISOString();
+    // Snapshot the share + effective return at the moment of withdrawal so
+    // history rows can show what the slice was earning.
+    a.withdrawnSnapshot = {
+      percentage: a.percentage,
+      expectedReturn: getStorageExpectedReturn({ type: a.type, params: a.details })
+    };
+    _autoRebalanceActive(-1);
+    _renderAllocList();
+    _renderAllocProgress();
+    _updateSubmitState();
+    if (typeof showToast === "function") showToast(t("portfolio.rebalanced"), "success");
+  }
+
+  function _restoreAlloc(idx) {
+    var a = _allocations[idx];
+    if (!a || !a.withdrawn) return;
+    a.withdrawn = false;
+    a.withdrawnAt = null;
+    a.withdrawnSnapshot = null;
+    // Bring back with whatever share was stored (may be 0 → auto-rebalance reflows).
+    if (!a.percentage || a.percentage <= 0) a.percentage = 1;
+    _autoRebalanceActive(-1);
+    _renderAllocList();
+    _renderAllocProgress();
+    _updateSubmitState();
+  }
+
+  function _formatWithdrawnDate(iso) {
+    if (!iso) return "";
+    try {
+      var d = new Date(iso);
+      var dd = String(d.getDate()).padStart(2, "0");
+      var mm = String(d.getMonth() + 1).padStart(2, "0");
+      return dd + "." + mm + "." + d.getFullYear();
+    } catch (e) { return ""; }
   }
 
   function _renderAllocList() {
     if (!allocListEl) return;
-    if (!_allocations.length) {
+    var active = _activeAllocations();
+    var withdrawn = _withdrawnAllocations();
+
+    if (!active.length && !withdrawn.length) {
       allocListEl.innerHTML = '<div class="alloc-empty">' + t("portfolio.empty") + '</div>';
       return;
     }
+
     var html = "";
+
+    // PORTFOLIO ALLOCATION v2 — stacked composition bar (color per type).
+    if (active.length) {
+      html += '<div class="alloc-stacked" aria-hidden="true">';
+      active.forEach(function (a) {
+        var p = Number(a.percentage) || 0;
+        if (p <= 0) return;
+        html += '<div class="alloc-stacked-seg" data-type="' + a.type + '" style="width:' + p + '%" title="' + _allocTitle(a) + ' ' + p + '%"></div>';
+      });
+      html += '</div>';
+    }
+
     _allocations.forEach(function (item, idx) {
+      if (!item || item.withdrawn) return;
       html +=
-        '<div class="alloc-item" data-alloc-idx="' + idx + '">' +
+        '<div class="alloc-item" data-type="' + item.type + '" data-alloc-idx="' + idx + '">' +
           '<div class="alloc-item-icon">' + _typeIcon(item.type) + '</div>' +
           '<div class="alloc-item-body">' +
             '<div class="alloc-item-title">' + _allocTitle(item) + '</div>' +
@@ -5972,16 +6134,40 @@ var STOCK_ASSET_PRESETS = {
           '<div class="alloc-item-right">' +
             '<div class="alloc-item-pct">' + (Number(item.percentage) || 0) + '%</div>' +
             '<button type="button" class="alloc-item-action alloc-item-action--edit" data-alloc-edit="' + idx + '" aria-label="' + t("portfolio.edit") + '">✎</button>' +
+            '<button type="button" class="alloc-item-action alloc-item-action--withdraw" data-alloc-withdraw="' + idx + '" aria-label="' + t("portfolio.withdraw") + '">↓</button>' +
             '<button type="button" class="alloc-item-action alloc-item-action--remove" data-alloc-remove="' + idx + '" aria-label="' + t("portfolio.remove") + '">✕</button>' +
           '</div>' +
         '</div>';
     });
+
+    if (withdrawn.length) {
+      html += '<div class="alloc-withdrawn-section-label">' + t("portfolio.withdrawnSection") + '</div>';
+      _allocations.forEach(function (item, idx) {
+        if (!item || !item.withdrawn) return;
+        var dateStr = _formatWithdrawnDate(item.withdrawnAt);
+        html +=
+          '<div class="alloc-item alloc-item--withdrawn" data-type="' + item.type + '" data-alloc-idx="' + idx + '">' +
+            '<div class="alloc-item-icon">' + _typeIcon(item.type) + '</div>' +
+            '<div class="alloc-item-body">' +
+              '<div class="alloc-item-title">' + _allocTitle(item) + '</div>' +
+              '<div class="alloc-item-meta">' + _allocMetaText(item) + '</div>' +
+              (dateStr ? '<span class="alloc-withdrawn-badge">' + t("portfolio.withdrawnOn", { date: dateStr }) + '</span>' : '') +
+            '</div>' +
+            '<div class="alloc-item-right">' +
+              '<div class="alloc-item-pct">' + (Number(item.percentage) || 0) + '%</div>' +
+              '<button type="button" class="alloc-item-action alloc-item-action--restore" data-alloc-restore="' + idx + '" aria-label="' + t("portfolio.restore") + '">↑</button>' +
+              '<button type="button" class="alloc-item-action alloc-item-action--remove" data-alloc-remove="' + idx + '" aria-label="' + t("portfolio.remove") + '">✕</button>' +
+            '</div>' +
+          '</div>';
+      });
+    }
+
     allocListEl.innerHTML = html;
   }
 
   function _renderAllocProgress() {
     if (!allocProgressEl) return;
-    var total = _allocTotal();
+    var total = _allocTotal(); // active total only
     var capped = Math.min(100, Math.max(0, total));
     if (allocProgressFill) allocProgressFill.style.width = capped + "%";
     allocProgressEl.classList.remove("is-over", "is-complete");
@@ -5994,7 +6180,7 @@ var STOCK_ASSET_PRESETS = {
         allocProgressLabel.textContent = t("portfolio.over") + ": +" + (total - 100) + "%";
       } else if (total === 100) {
         allocProgressLabel.textContent = t("portfolio.complete");
-      } else if (total === 0 && !_allocations.length) {
+      } else if (total === 0 && !_activeAllocations().length) {
         allocProgressLabel.textContent = t("portfolio.empty");
       } else {
         allocProgressLabel.textContent = t("portfolio.remaining") + ": " + (100 - total) + "%";
@@ -6020,14 +6206,18 @@ var STOCK_ASSET_PRESETS = {
     submitBtn.disabled = !(_allocations.length > 0 && total === 100);
   }
 
-  // ── List interactions: edit / remove ───────────────────────────────────
+  // ── List interactions: edit / remove / withdraw / restore ─────────────
+  // PORTFOLIO ALLOCATION v2 — every action that mutates active set triggers
+  // an auto-rebalance so the active total stays at exactly 100%.
   if (allocListEl) {
     allocListEl.addEventListener("click", function (e) {
       var rmBtn = e.target.closest("[data-alloc-remove]");
       if (rmBtn) {
         var ri = parseInt(rmBtn.getAttribute("data-alloc-remove"), 10);
         if (!isNaN(ri) && _allocations[ri]) {
+          var wasActive = _isActive(_allocations[ri]);
           _allocations.splice(ri, 1);
+          if (wasActive) _autoRebalanceActive(-1);
           _renderAllocList();
           _renderAllocProgress();
           _updateSubmitState();
@@ -6038,6 +6228,20 @@ var STOCK_ASSET_PRESETS = {
       if (edBtn) {
         var ei = parseInt(edBtn.getAttribute("data-alloc-edit"), 10);
         if (!isNaN(ei) && _allocations[ei]) _openAllocModal(ei);
+        return;
+      }
+      var wBtn = e.target.closest("[data-alloc-withdraw]");
+      if (wBtn) {
+        var wi = parseInt(wBtn.getAttribute("data-alloc-withdraw"), 10);
+        if (!isNaN(wi) && _allocations[wi]) {
+          if (window.confirm(t("portfolio.withdrawConfirm"))) _withdrawAlloc(wi);
+        }
+        return;
+      }
+      var rsBtn = e.target.closest("[data-alloc-restore]");
+      if (rsBtn) {
+        var rsi = parseInt(rsBtn.getAttribute("data-alloc-restore"), 10);
+        if (!isNaN(rsi) && _allocations[rsi]) _restoreAlloc(rsi);
         return;
       }
     });
@@ -6109,23 +6313,20 @@ var STOCK_ASSET_PRESETS = {
     }
     _renderStatsCountryOptions();
 
-    // STOCK
-    if (stockAssetSel) stockAssetSel.value = (defaultType === "stock" && d.asset) ? d.asset : "sp500";
-    if (stockCustomWrap) stockCustomWrap.style.display = (stockAssetSel && stockAssetSel.value === "custom") ? "" : "none";
-    if (stockTicker) stockTicker.value = (defaultType === "stock" && d.ticker) ? d.ticker : "";
-    if (stockReturn) {
-      if (defaultType === "stock" && d.expectedReturn != null) {
-        stockReturn.value = d.expectedReturn;
-      } else if (stockAssetSel && STOCK_ASSET_PRESETS[stockAssetSel.value]) {
-        stockReturn.value = STOCK_ASSET_PRESETS[stockAssetSel.value].return || "";
-      } else {
-        stockReturn.value = "";
-      }
+    // PORTFOLIO ALLOCATION v2 — STOCK: only preset asset; return is shown as a hint.
+    if (stockAssetSel) {
+      var savedAsset = (defaultType === "stock" && d.asset && STOCK_ASSET_PRESETS[d.asset]) ? d.asset : "ru_sber";
+      stockAssetSel.value = savedAsset;
+      var _sPreset = STOCK_ASSET_PRESETS[stockAssetSel.value];
+      _showReturnHint(stockReturnHint, _sPreset ? _sPreset.return : 0);
     }
 
-    // DEPOSIT
+    // PORTFOLIO ALLOCATION v2 — DEPOSIT: base rate + term + promo period + capitalization.
     if (depositRate) depositRate.value = (defaultType === "deposit" && d.rate != null) ? d.rate : "";
     if (depositTerm) depositTerm.value = (defaultType === "deposit" && d.termMonths != null) ? d.termMonths : "";
+    if (depositPromoMonths) depositPromoMonths.value = (defaultType === "deposit" && d.promoMonths != null) ? d.promoMonths : "0";
+    if (depositPromoRate) depositPromoRate.value = (defaultType === "deposit" && d.promoRate != null) ? d.promoRate : "";
+    if (depositPromoRateWrap) depositPromoRateWrap.style.display = (depositPromoMonths && parseInt(depositPromoMonths.value, 10) > 0) ? "" : "none";
     _modalDepositCap = (defaultType === "deposit" && d.capitalization) ? d.capitalization : "monthly";
     if (depositCap) {
       depositCap.querySelectorAll(".stats-segment-btn").forEach(function (b) {
@@ -6134,17 +6335,28 @@ var STOCK_ASSET_PRESETS = {
     }
     if (depositReplenish) depositReplenish.checked = !!(defaultType === "deposit" && d.replenishable);
 
-    // METALS
-    if (metalSelect) metalSelect.value = (defaultType === "metals" && d.metal) ? d.metal : "gold";
-    if (metalReturn) metalReturn.value = (defaultType === "metals" && d.expectedReturn != null) ? d.expectedReturn : "";
+    // PORTFOLIO ALLOCATION v2 — METALS: preset only, return shown as a hint.
+    if (metalSelect) {
+      var savedMetal = (defaultType === "metals" && d.metal && METAL_PRESETS[d.metal]) ? d.metal : "gold";
+      metalSelect.value = savedMetal;
+      var _mPreset = METAL_PRESETS[metalSelect.value];
+      _showReturnHint(metalReturnHint, _mPreset ? _mPreset.return : 0);
+    }
 
-    // Percentage — pre-fill with remaining (when adding) or current value (when editing).
+    // PORTFOLIO ALLOCATION v2 — Percentage prefill:
+    //   editing → existing value;
+    //   adding  → remaining slot (100 − active total), or 100/N+1 if portfolio full.
     if (allocPctInput) {
       if (editing) {
         allocPctInput.value = item.percentage || "";
       } else {
         var remaining = 100 - _allocTotal();
-        allocPctInput.value = (remaining > 0) ? remaining : "";
+        if (remaining > 0) {
+          allocPctInput.value = remaining;
+        } else {
+          var n = _activeAllocations().length;
+          allocPctInput.value = (n > 0) ? Math.max(1, Math.round(100 / (n + 1))) : 100;
+        }
       }
     }
     _updatePctHint();
@@ -6168,14 +6380,20 @@ var STOCK_ASSET_PRESETS = {
 
   function _updatePctHint() {
     if (!allocPctHint) return;
+    // PORTFOLIO ALLOCATION v2 — with auto-rebalance, any 1-100 share is valid;
+    // the hint just tells the user what will happen ("others will be rescaled").
     var current = parseInt(allocPctInput ? allocPctInput.value : "0", 10) || 0;
-    var others = _allocTotal() - (_modalEditIndex >= 0 ? (_allocations[_modalEditIndex].percentage || 0) : 0);
-    var max = 100 - others;
-    if (current > max) {
-      allocPctHint.textContent = t("portfolio.validation.over") + " (" + (current - max) + "%)";
+    var othersCount = _activeAllocations().filter(function (a, i) {
+      return _modalEditIndex < 0 || _allocations.indexOf(a) !== _modalEditIndex;
+    }).length;
+    if (current < 1 || current > 100) {
+      allocPctHint.textContent = t("portfolio.validation.percentageInvalid");
       allocPctHint.style.color = "#ef4444";
+    } else if (othersCount > 0) {
+      allocPctHint.textContent = t("portfolio.rebalanced");
+      allocPctHint.style.color = "rgba(110,231,183,0.75)";
     } else {
-      allocPctHint.textContent = t("portfolio.remaining") + ": " + (max - current) + "%";
+      allocPctHint.textContent = "";
       allocPctHint.style.color = "";
     }
   }
@@ -6207,13 +6425,29 @@ var STOCK_ASSET_PRESETS = {
     });
   }
 
-  // ── Modal: stock asset → autofill expected return + show custom ────────
+  // PORTFOLIO ALLOCATION v2 — stock asset → update hint (return is preset).
   if (stockAssetSel) {
     stockAssetSel.addEventListener("change", function () {
-      var v = stockAssetSel.value;
-      var preset = STOCK_ASSET_PRESETS[v] || null;
-      if (stockCustomWrap) stockCustomWrap.style.display = (v === "custom") ? "" : "none";
-      if (preset && v !== "custom" && stockReturn) stockReturn.value = preset.return;
+      var preset = STOCK_ASSET_PRESETS[stockAssetSel.value] || null;
+      _showReturnHint(stockReturnHint, preset ? preset.return : 0);
+    });
+  }
+
+  // PORTFOLIO ALLOCATION v2 — metal change → update hint (return is preset).
+  if (metalSelect) {
+    metalSelect.addEventListener("change", function () {
+      var mp = METAL_PRESETS[metalSelect.value] || null;
+      _showReturnHint(metalReturnHint, mp ? mp.return : 0);
+    });
+  }
+
+  // PORTFOLIO ALLOCATION v2 — promo months → reveal/hide promo rate input.
+  if (depositPromoMonths) {
+    depositPromoMonths.addEventListener("input", function () {
+      var n = parseInt(depositPromoMonths.value, 10);
+      if (isFinite(n) && n > 3) { depositPromoMonths.value = 3; n = 3; }
+      if (isFinite(n) && n < 0) { depositPromoMonths.value = 0; n = 0; }
+      if (depositPromoRateWrap) depositPromoRateWrap.style.display = (n > 0) ? "" : "none";
     });
   }
 
@@ -6240,34 +6474,41 @@ var STOCK_ASSET_PRESETS = {
       };
     }
     if (type === "stock") {
-      var sret = parseFloat(stockReturn ? stockReturn.value : "");
-      if (!isFinite(sret) || sret <= 0) return null;
-      var assetVal = stockAssetSel ? stockAssetSel.value : "custom";
+      // PORTFOLIO ALLOCATION v2 — no manual return, asset → preset return.
+      var assetVal = stockAssetSel ? stockAssetSel.value : "";
+      var sPreset = STOCK_ASSET_PRESETS[assetVal];
+      if (!sPreset) return null;
       return {
         asset: assetVal,
-        ticker: (assetVal === "custom" && stockTicker) ? (stockTicker.value || "").trim() : (STOCK_ASSET_PRESETS[assetVal] ? STOCK_ASSET_PRESETS[assetVal].ticker : ""),
-        expectedReturn: sret
+        ticker: sPreset.ticker || ""
+        // expectedReturn is intentionally NOT stored — resolved at runtime from preset.
       };
     }
     if (type === "deposit") {
+      // PORTFOLIO ALLOCATION v2 — base rate, term, promo period, capitalization.
       var rate = parseFloat(depositRate ? depositRate.value : "");
       var term = parseInt(depositTerm ? depositTerm.value : "", 10);
       if (!isFinite(rate) || rate <= 0) return null;
       if (!isFinite(term) || term <= 0) return null;
+      var promoM = parseInt(depositPromoMonths ? depositPromoMonths.value : "0", 10);
+      if (!isFinite(promoM) || promoM < 0) promoM = 0;
+      promoM = Math.min(promoM, 3);
+      var promoR = parseFloat(depositPromoRate ? depositPromoRate.value : "");
+      if (promoM > 0 && (!isFinite(promoR) || promoR <= 0)) return null; // require promo rate when months > 0
       return {
         rate: rate,
         termMonths: term,
+        promoMonths: promoM,
+        promoRate: (promoM > 0) ? promoR : null,
         capitalization: _modalDepositCap || "monthly",
         replenishable: !!(depositReplenish && depositReplenish.checked)
       };
     }
     if (type === "metals") {
-      var mret = parseFloat(metalReturn ? metalReturn.value : "");
-      if (!isFinite(mret) || mret <= 0) return null;
-      return {
-        metal: (metalSelect && metalSelect.value) || "gold",
-        expectedReturn: mret
-      };
+      // PORTFOLIO ALLOCATION v2 — no manual return, metal → preset return.
+      var metalVal = (metalSelect && metalSelect.value) || "gold";
+      if (!METAL_PRESETS[metalVal]) return null;
+      return { metal: metalVal };
     }
     return null;
   }
@@ -6297,26 +6538,34 @@ var STOCK_ASSET_PRESETS = {
         return;
       }
 
-      // PORTFOLIO ALLOCATION LOGIC — prevent overflow over 100% on save.
-      var others = _allocTotal() - (_modalEditIndex >= 0 ? (_allocations[_modalEditIndex].percentage || 0) : 0);
-      if (others + pct > 100) {
-        showToast(t("portfolio.validation.over"), "error");
-        return;
-      }
-
       var item = {
         id: (_modalEditIndex >= 0 && _allocations[_modalEditIndex].id) ? _allocations[_modalEditIndex].id : _genAllocId(),
         type: type,
         percentage: pct,
-        details: details
+        details: details,
+        withdrawn: false
       };
-      if (_modalEditIndex >= 0) _allocations[_modalEditIndex] = item;
-      else _allocations.push(item);
+
+      var newIndex;
+      if (_modalEditIndex >= 0) {
+        _allocations[_modalEditIndex] = item;
+        newIndex = _modalEditIndex;
+      } else {
+        _allocations.push(item);
+        newIndex = _allocations.length - 1;
+      }
+
+      // PORTFOLIO ALLOCATION v2 — auto-rebalance: fix the just-edited slice and
+      // rescale the other ACTIVE slices proportionally to keep total = 100%.
+      _autoRebalanceActive(newIndex);
 
       _renderAllocList();
       _renderAllocProgress();
       _updateSubmitState();
       _closeAllocModal();
+      if (_activeAllocations().length > 1 && typeof showToast === "function") {
+        showToast(t("portfolio.rebalanced"), "success");
+      }
     });
   }
 
@@ -6328,23 +6577,34 @@ var STOCK_ASSET_PRESETS = {
   // ──────────────────────────────────────────────────────────────────────
   if (submitBtn) {
     submitBtn.addEventListener("click", function () {
-      if (!_allocations.length || _allocTotal() !== 100) {
-        showToast(t(_allocations.length ? "portfolio.validation.notFull" : "portfolio.validation.empty"), "error");
+      // PORTFOLIO ALLOCATION v2 — active total must hit 100% (withdrawn excluded).
+      var activeTotal = _allocTotal();
+      var activeCount = _activeAllocations().length;
+      if (!activeCount || activeTotal !== 100) {
+        showToast(t(activeCount ? "portfolio.validation.notFull" : "portfolio.validation.empty"), "error");
         return;
       }
 
       // Keep a "primary" type for legacy consumers (renderAccountBackCards
-      // fallback before they read storageAllocation). Use the largest slice.
-      var primary = _allocations.slice().sort(function (a, b) { return (b.percentage || 0) - (a.percentage || 0); })[0];
+      // fallback before they read storageAllocation). Use the largest ACTIVE slice.
+      var primary = _activeAllocations().slice().sort(function (a, b) { return (b.percentage || 0) - (a.percentage || 0); })[0];
       var statsData = {
         type: primary.type,
         country: (primary.type === "cash" ? primary.details.country : null) || null,
         currency: (primary.type === "cash" ? primary.details.currency : null) || null,
         inflation: (primary.type === "cash" ? primary.details.inflation : null),
         params: (primary.type !== "cash" ? Object.assign({}, primary.details) : null),
-        // NEW: portfolio shape
+        // PORTFOLIO ALLOCATION v2 — full portfolio incl. withdrawn history.
         storageAllocation: _allocations.map(function (a) {
-          return { id: a.id, type: a.type, percentage: a.percentage, details: Object.assign({}, a.details) };
+          return {
+            id: a.id,
+            type: a.type,
+            percentage: a.percentage,
+            details: Object.assign({}, a.details),
+            withdrawn: !!a.withdrawn,
+            withdrawnAt: a.withdrawnAt || null,
+            withdrawnSnapshot: a.withdrawnSnapshot ? Object.assign({}, a.withdrawnSnapshot) : null
+          };
         }),
         futureSavingsMode: _savingsMode
       };
@@ -6422,10 +6682,9 @@ function openAccountStatsScreen(accountKey) {
   }
 }
 
-/* PORTFOLIO ALLOCATION LOGIC — weighted active inflation across the portfolio.
+/* PORTFOLIO ALLOCATION v2 — weighted active inflation across the portfolio.
  * Uses storageAllocation when available, falls back to legacy single `inflation`.
- * Only "cash" allocations carry inflation (deposit/stock/metals → 0 baseline);
- * the result is therefore the weighted inflation of the cash portion. */
+ * Only ACTIVE (non-withdrawn) "cash" allocations carry inflation. */
 function getActiveInflation() {
   var s = getState();
   var allStats = s.accountStats || {};
@@ -6434,13 +6693,13 @@ function getActiveInflation() {
     if (Array.isArray(st.storageAllocation) && st.storageAllocation.length) {
       var sum = 0, weight = 0;
       st.storageAllocation.forEach(function (a) {
-        if (a && a.type === "cash" && a.details && a.details.inflation != null) {
+        if (a && !a.withdrawn && a.type === "cash" && a.details && a.details.inflation != null) {
           var w = Number(a.percentage) || 0;
           sum += Number(a.details.inflation) * w;
           weight += w;
         }
       });
-      if (weight > 0) return sum / weight; // weighted average of cash inflation
+      if (weight > 0) return sum / weight;
       return null;
     }
     if (st.inflation != null) return st.inflation;
@@ -6460,14 +6719,47 @@ function getActiveInflation() {
 function getStorageExpectedReturn(stats) {
   if (!stats || !stats.type) return 0;
   var p = stats.params || {};
-  if (stats.type === "stock" || stats.type === "metals") {
-    var r = parseFloat(p.expectedReturn);
-    return (isFinite(r) && r > 0) ? r : 0;
+
+  // PORTFOLIO ALLOCATION v2 — stocks now resolve return from preset (no manual).
+  if (stats.type === "stock") {
+    var preset = p.asset ? STOCK_ASSET_PRESETS[p.asset] : null;
+    if (preset && isFinite(preset.return)) return preset.return;
+    // Backwards compat: legacy entries that still stored expectedReturn directly.
+    var lr = parseFloat(p.expectedReturn);
+    return (isFinite(lr) && lr > 0) ? lr : 0;
   }
+
+  // PORTFOLIO ALLOCATION v2 — metals now resolve return from preset (no manual).
+  if (stats.type === "metals") {
+    var mPreset = p.metal ? METAL_PRESETS[p.metal] : null;
+    if (mPreset && isFinite(mPreset.return)) return mPreset.return;
+    var mLR = parseFloat(p.expectedReturn);
+    return (isFinite(mLR) && mLR > 0) ? mLR : 0;
+  }
+
   if (stats.type === "deposit") {
+    // PORTFOLIO ALLOCATION v2 — blended effective rate:
+    //   weighted-avg(promoRate, baseRate) by months, then compounded per capitalization.
     var rate = parseFloat(p.rate);
     if (!isFinite(rate) || rate <= 0) return 0;
-    // Effective annual rate from nominal + capitalization periods/year.
+
+    var term = parseInt(p.termMonths, 10);
+    if (!isFinite(term) || term <= 0) term = 12;
+
+    var promoM = parseInt(p.promoMonths, 10);
+    if (!isFinite(promoM) || promoM < 0) promoM = 0;
+    promoM = Math.min(promoM, 3, term);
+    var promoR = parseFloat(p.promoRate);
+    if (!isFinite(promoR) || promoR < 0) promoR = rate;
+
+    // Weighted nominal annual rate (promo portion gets the higher promoRate).
+    var blendedNominal;
+    if (promoM > 0) {
+      blendedNominal = (promoR * promoM + rate * (term - promoM)) / term;
+    } else {
+      blendedNominal = rate;
+    }
+
     var n;
     switch (p.capitalization) {
       case "monthly":   n = 12; break;
@@ -6475,7 +6767,7 @@ function getStorageExpectedReturn(stats) {
       case "end":       n = 1;  break;
       default:          n = 12;
     }
-    var nominal = rate / 100;
+    var nominal = blendedNominal / 100;
     var eff = Math.pow(1 + nominal / n, n) - 1;
     return eff * 100;
   }
@@ -6503,37 +6795,40 @@ function getEffectiveInflation() {
   var stats = allStats.main || allStats.reserve;
   if (!stats) return null;
 
-  // Portfolio branch (preferred).
+  // PORTFOLIO ALLOCATION v2 — portfolio branch over ACTIVE allocations only.
+  // Withdrawn slices are history and do not contribute to live calculations.
   if (Array.isArray(stats.storageAllocation) && stats.storageAllocation.length) {
-    // Baseline inflation = weighted avg of cash slices (or 0 if none).
-    var cashSum = 0, cashWeight = 0;
-    stats.storageAllocation.forEach(function (a) {
-      if (a && a.type === "cash" && a.details && a.details.inflation != null) {
-        var w = Number(a.percentage) || 0;
-        cashSum += Number(a.details.inflation) * w;
-        cashWeight += w;
-      }
-    });
-    var baseline = (cashWeight > 0) ? (cashSum / cashWeight) : 0;
+    var active = stats.storageAllocation.filter(function (a) { return a && !a.withdrawn; });
+    if (!active.length) {
+      // Edge case: everything withdrawn → fall through to legacy below.
+    } else {
+      var cashSum = 0, cashWeight = 0;
+      active.forEach(function (a) {
+        if (a.type === "cash" && a.details && a.details.inflation != null) {
+          var w = Number(a.percentage) || 0;
+          cashSum += Number(a.details.inflation) * w;
+          cashWeight += w;
+        }
+      });
+      var baseline = (cashWeight > 0) ? (cashSum / cashWeight) : 0;
 
-    var totalWeight = 0, weightedEff = 0;
-    stats.storageAllocation.forEach(function (a) {
-      if (!a) return;
-      var w = Number(a.percentage) || 0;
-      if (w <= 0) return;
-      var localInfl, localReturn;
-      if (a.type === "cash") {
-        localInfl = (a.details && a.details.inflation != null) ? Number(a.details.inflation) : baseline;
-        localReturn = 0;
-      } else {
-        localInfl = baseline;
-        localReturn = getStorageExpectedReturn({ type: a.type, params: a.details });
-      }
-      weightedEff += (localInfl - localReturn) * w;
-      totalWeight += w;
-    });
-    if (totalWeight === 0) return null;
-    return weightedEff / totalWeight;
+      var totalWeight = 0, weightedEff = 0;
+      active.forEach(function (a) {
+        var w = Number(a.percentage) || 0;
+        if (w <= 0) return;
+        var localInfl, localReturn;
+        if (a.type === "cash") {
+          localInfl = (a.details && a.details.inflation != null) ? Number(a.details.inflation) : baseline;
+          localReturn = 0;
+        } else {
+          localInfl = baseline;
+          localReturn = getStorageExpectedReturn({ type: a.type, params: a.details });
+        }
+        weightedEff += (localInfl - localReturn) * w;
+        totalWeight += w;
+      });
+      if (totalWeight > 0) return weightedEff / totalWeight;
+    }
   }
 
   // Legacy single-type fallback.
@@ -6602,31 +6897,38 @@ function renderAccountBackCards() {
 
     var html = '<div class="account-back-content">';
 
-    // PORTFOLIO ALLOCATION LOGIC — composite back card for the portfolio,
-    // or legacy single-type rendering when no allocation is present.
-    var hasPortfolio = Array.isArray(stats.storageAllocation) && stats.storageAllocation.length > 0;
+    // PORTFOLIO ALLOCATION v2 — composite back card uses ACTIVE allocations.
+    // Withdrawn slices appear as a single summary line so users still see they
+    // existed, but they don't influence live calculations.
+    var allAllocs = Array.isArray(stats.storageAllocation) ? stats.storageAllocation : [];
+    var activeAllocs = allAllocs.filter(function (a) { return a && !a.withdrawn; });
+    var withdrawnAllocs = allAllocs.filter(function (a) { return a && a.withdrawn; });
+    var hasPortfolio = activeAllocs.length > 0;
 
     var _expReturn = 0;
     var _baselineInfl = (inflation != null) ? Number(inflation) : 0;
 
     if (hasPortfolio) {
       // Header line: portfolio summary.
-      html += '<div class="stats-info-row"><span>' + t("portfolio.title") + '</span><span>' +
-              stats.storageAllocation.length + ' · ' +
+      html += '<div class="stats-info-row"><span>' + t("portfolio.composition") + '</span><span>' +
+              activeAllocs.length + ' · ' +
               t(stats.futureSavingsMode === "future" ? "portfolio.savingsMode.future" : "portfolio.savingsMode.current") +
               '</span></div>';
 
-      // One row per allocation slice (compact composition).
-      stats.storageAllocation.forEach(function (a) {
-        if (!a) return;
+      // One row per ACTIVE allocation slice.
+      activeAllocs.forEach(function (a) {
         var lbl = getStatsTypeLabel(a.type);
         html += '<div class="stats-info-row"><span>' + lbl + '</span><span>' + (a.percentage || 0) + '%</span></div>';
       });
 
-      // Compute baseline (cash-weighted) inflation + weighted expected return.
+      if (withdrawnAllocs.length) {
+        html += '<div class="stats-info-row" style="opacity:0.55"><span>' + t("portfolio.withdrawnSection") + '</span><span>' + withdrawnAllocs.length + '</span></div>';
+      }
+
+      // Compute baseline (cash-weighted) inflation + weighted expected return from ACTIVE only.
       var cashSum = 0, cashWeight = 0;
-      stats.storageAllocation.forEach(function (a) {
-        if (a && a.type === "cash" && a.details && a.details.inflation != null) {
+      activeAllocs.forEach(function (a) {
+        if (a.type === "cash" && a.details && a.details.inflation != null) {
           var w = Number(a.percentage) || 0;
           cashSum += Number(a.details.inflation) * w;
           cashWeight += w;
@@ -6635,8 +6937,7 @@ function renderAccountBackCards() {
       _baselineInfl = (cashWeight > 0) ? (cashSum / cashWeight) : 0;
 
       var retSum = 0, retWeight = 0;
-      stats.storageAllocation.forEach(function (a) {
-        if (!a) return;
+      activeAllocs.forEach(function (a) {
         var w = Number(a.percentage) || 0;
         if (w <= 0) return;
         var r = (a.type === "cash") ? 0 : getStorageExpectedReturn({ type: a.type, params: a.details });

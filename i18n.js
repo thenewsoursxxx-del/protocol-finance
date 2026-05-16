@@ -679,19 +679,46 @@
       "portfolio.validation.fillFields": "Заполните все обязательные поля",
       "portfolio.validation.percentageInvalid": "Доля должна быть от 1 до 100",
 
-      // PORTFOLIO ALLOCATION LOGIC — stock preset assets
-      "stats.asset.sp500": "S&P 500",
-      "stats.asset.nasdaq100": "NASDAQ 100",
-      "stats.asset.moex": "Индекс МосБиржи",
-      "stats.asset.ftse100": "FTSE 100",
-      "stats.asset.msciWorld": "MSCI World",
-      "stats.asset.aapl": "Apple (AAPL)",
-      "stats.asset.msft": "Microsoft (MSFT)",
-      "stats.asset.tsla": "Tesla (TSLA)",
-      "stats.asset.amzn": "Amazon (AMZN)",
-      "stats.asset.custom": "Свой актив",
+      // PORTFOLIO ALLOCATION v2 — preset assets (RU stocks + ETF + indices)
+      "stats.asset.ru_sber":    "Сбер (SBER)",
+      "stats.asset.ru_gazprom": "Газпром (GAZP)",
+      "stats.asset.ru_yandex":  "Яндекс (YDEX)",
+      "stats.asset.ru_tinkoff": "Т-Технологии (T)",
+      "stats.asset.ru_lukoil":  "Лукойл (LKOH)",
+      "stats.asset.ru_magnit":  "Магнит (MGNT)",
+      "stats.asset.ru_norilsk": "Норникель (GMKN)",
+      "stats.asset.ru_rosneft": "Роснефть (ROSN)",
+      "stats.asset.etf_fxrl":   "FXRL — Российские акции",
+      "stats.asset.etf_fxit":   "FXIT — IT-сектор",
+      "stats.asset.etf_tmos":   "TMOS — Индекс МосБиржи",
+      "stats.asset.etf_sbsp":   "SBSP — S&P 500 (СберИнвестиции)",
+      "stats.asset.sp500":      "S&P 500",
+      "stats.asset.nasdaq100":  "NASDAQ 100",
+      "stats.asset.msciWorld":  "MSCI World",
+      "stats.asset.moex":       "Индекс МосБиржи",
       "stats.field.asset": "Актив / ETF",
-      "stats.field.customTicker": "Тикер своего актива",
+
+      // PORTFOLIO ALLOCATION v2 — section labels for grouped asset list
+      "stats.assetGroup.ru":      "Российские акции",
+      "stats.assetGroup.etfMoex": "ETF на МосБирже",
+      "stats.assetGroup.indices": "Мировые индексы",
+
+      // PORTFOLIO ALLOCATION v2 — deposit promo + renamed capitalization
+      "stats.field.capitalization": "Частота начисления процентов",
+      "stats.field.promoMonths": "Промо-период (мес, 0–3)",
+      "stats.field.promoRate":   "Повышенная ставка на промо-период (% годовых)",
+      "stats.field.depositRate": "Ставка после промо-периода (% годовых)",
+      "stats.deposit.effectiveBlended": "Эффективная ставка (промо + база)",
+
+      // PORTFOLIO ALLOCATION v2 — withdraw flow
+      "portfolio.withdraw":        "Вывести",
+      "portfolio.restore":         "Вернуть",
+      "portfolio.withdrawConfirm": "Вывести этот тип хранения? Доли активных типов будут пересчитаны автоматически.",
+      "portfolio.withdrawnOn":     "Выведено {date}",
+      "portfolio.withdrawnSection": "Выведено из портфеля",
+      "portfolio.withdrawnEmpty":   "Здесь будут появляться выведенные типы",
+      "portfolio.rebalanced":      "Доли пересчитаны автоматически",
+      "portfolio.composition":     "Состав",
 
       // ── Event toasts ──
       "event.incomeAdded": "Доход добавлен",
@@ -1450,19 +1477,46 @@
       "portfolio.validation.fillFields": "Please fill in all required fields",
       "portfolio.validation.percentageInvalid": "Share must be between 1 and 100",
 
-      // PORTFOLIO ALLOCATION LOGIC — stock preset assets
-      "stats.asset.sp500": "S&P 500",
-      "stats.asset.nasdaq100": "NASDAQ 100",
-      "stats.asset.moex": "MOEX Index",
-      "stats.asset.ftse100": "FTSE 100",
-      "stats.asset.msciWorld": "MSCI World",
-      "stats.asset.aapl": "Apple (AAPL)",
-      "stats.asset.msft": "Microsoft (MSFT)",
-      "stats.asset.tsla": "Tesla (TSLA)",
-      "stats.asset.amzn": "Amazon (AMZN)",
-      "stats.asset.custom": "Custom asset",
+      // PORTFOLIO ALLOCATION v2 — preset assets (RU stocks + ETF + indices)
+      "stats.asset.ru_sber":    "Sber (SBER)",
+      "stats.asset.ru_gazprom": "Gazprom (GAZP)",
+      "stats.asset.ru_yandex":  "Yandex (YDEX)",
+      "stats.asset.ru_tinkoff": "T-Technologies (T)",
+      "stats.asset.ru_lukoil":  "Lukoil (LKOH)",
+      "stats.asset.ru_magnit":  "Magnit (MGNT)",
+      "stats.asset.ru_norilsk": "Norilsk Nickel (GMKN)",
+      "stats.asset.ru_rosneft": "Rosneft (ROSN)",
+      "stats.asset.etf_fxrl":   "FXRL — Russian equities",
+      "stats.asset.etf_fxit":   "FXIT — IT sector",
+      "stats.asset.etf_tmos":   "TMOS — MOEX Index",
+      "stats.asset.etf_sbsp":   "SBSP — S&P 500 (SberInvest)",
+      "stats.asset.sp500":      "S&P 500",
+      "stats.asset.nasdaq100":  "NASDAQ 100",
+      "stats.asset.msciWorld":  "MSCI World",
+      "stats.asset.moex":       "MOEX Index",
       "stats.field.asset": "Asset / ETF",
-      "stats.field.customTicker": "Custom ticker",
+
+      // PORTFOLIO ALLOCATION v2 — section labels for grouped asset list
+      "stats.assetGroup.ru":      "Russian stocks",
+      "stats.assetGroup.etfMoex": "MOEX ETFs",
+      "stats.assetGroup.indices": "Global indices",
+
+      // PORTFOLIO ALLOCATION v2 — deposit promo + renamed capitalization
+      "stats.field.capitalization": "Interest accrual frequency",
+      "stats.field.promoMonths": "Promo period (months, 0–3)",
+      "stats.field.promoRate":   "Promo rate (% annual)",
+      "stats.field.depositRate": "Rate after promo (% annual)",
+      "stats.deposit.effectiveBlended": "Effective rate (promo + base)",
+
+      // PORTFOLIO ALLOCATION v2 — withdraw flow
+      "portfolio.withdraw":        "Withdraw",
+      "portfolio.restore":         "Restore",
+      "portfolio.withdrawConfirm": "Withdraw this storage type? Active shares will be recalculated automatically.",
+      "portfolio.withdrawnOn":     "Withdrawn on {date}",
+      "portfolio.withdrawnSection": "Withdrawn from portfolio",
+      "portfolio.withdrawnEmpty":   "Withdrawn storage types will appear here",
+      "portfolio.rebalanced":      "Shares rebalanced automatically",
+      "portfolio.composition":     "Composition",
 
       // ── Event toasts ──
       "event.incomeAdded": "Income added",

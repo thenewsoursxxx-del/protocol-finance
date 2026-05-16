@@ -1108,37 +1108,42 @@ Protocol анализирует цель…
       </div>
     </div>
 
-    <!-- PORTFOLIO ALLOCATION LOGIC — stock with preset list + custom -->
+    <!-- PORTFOLIO ALLOCATION v2 — stock with grouped preset list (no manual return) -->
     <div id="statsStockFields" class="stats-type-fields" style="display:none">
       <div class="input-wrap stats-input-wrap">
         <label data-i18n="stats.field.asset">Актив / ETF</label>
         <select id="statsStockAsset" class="stats-select">
-          <option value="sp500" data-i18n="stats.asset.sp500">S&P 500</option>
-          <option value="nasdaq100" data-i18n="stats.asset.nasdaq100">NASDAQ 100</option>
-          <option value="moex" data-i18n="stats.asset.moex">Индекс МосБиржи</option>
-          <option value="ftse100" data-i18n="stats.asset.ftse100">FTSE 100</option>
-          <option value="msciWorld" data-i18n="stats.asset.msciWorld">MSCI World</option>
-          <option value="aapl" data-i18n="stats.asset.aapl">Apple (AAPL)</option>
-          <option value="msft" data-i18n="stats.asset.msft">Microsoft (MSFT)</option>
-          <option value="tsla" data-i18n="stats.asset.tsla">Tesla (TSLA)</option>
-          <option value="amzn" data-i18n="stats.asset.amzn">Amazon (AMZN)</option>
-          <option value="custom" data-i18n="stats.asset.custom">Свой актив</option>
+          <optgroup label="Российские акции" data-i18n-label="stats.assetGroup.ru">
+            <option value="ru_sber"    data-i18n="stats.asset.ru_sber">Сбер (SBER)</option>
+            <option value="ru_gazprom" data-i18n="stats.asset.ru_gazprom">Газпром (GAZP)</option>
+            <option value="ru_yandex"  data-i18n="stats.asset.ru_yandex">Яндекс (YDEX)</option>
+            <option value="ru_tinkoff" data-i18n="stats.asset.ru_tinkoff">Т-Технологии (T)</option>
+            <option value="ru_lukoil"  data-i18n="stats.asset.ru_lukoil">Лукойл (LKOH)</option>
+            <option value="ru_magnit"  data-i18n="stats.asset.ru_magnit">Магнит (MGNT)</option>
+            <option value="ru_norilsk" data-i18n="stats.asset.ru_norilsk">Норникель (GMKN)</option>
+            <option value="ru_rosneft" data-i18n="stats.asset.ru_rosneft">Роснефть (ROSN)</option>
+          </optgroup>
+          <optgroup label="ETF на МосБирже" data-i18n-label="stats.assetGroup.etfMoex">
+            <option value="etf_fxrl" data-i18n="stats.asset.etf_fxrl">FXRL — Российские акции</option>
+            <option value="etf_fxit" data-i18n="stats.asset.etf_fxit">FXIT — IT-сектор</option>
+            <option value="etf_tmos" data-i18n="stats.asset.etf_tmos">TMOS — Индекс МосБиржи</option>
+            <option value="etf_sbsp" data-i18n="stats.asset.etf_sbsp">SBSP — S&P 500 (СберИнвестиции)</option>
+          </optgroup>
+          <optgroup label="Мировые индексы" data-i18n-label="stats.assetGroup.indices">
+            <option value="sp500"     data-i18n="stats.asset.sp500">S&P 500</option>
+            <option value="nasdaq100" data-i18n="stats.asset.nasdaq100">NASDAQ 100</option>
+            <option value="msciWorld" data-i18n="stats.asset.msciWorld">MSCI World</option>
+            <option value="moex"      data-i18n="stats.asset.moex">Индекс МосБиржи</option>
+          </optgroup>
         </select>
-      </div>
-      <div class="input-wrap stats-input-wrap" id="statsStockCustomWrap" style="display:none">
-        <label data-i18n="stats.field.customTicker">Тикер своего актива</label>
-        <input type="text" id="statsStockTicker" class="stats-input" maxlength="32" placeholder="SBER, VOO, AAPL…" />
-        <div class="stats-input-hint" data-i18n="stats.field.tickerHint">Свободный ввод — используется для подсказки</div>
-      </div>
-      <div class="input-wrap stats-input-wrap">
-        <label data-i18n="stats.field.expectedReturn">Ожидаемая годовая доходность (%)</label>
-        <input type="number" id="statsStockReturn" class="stats-input" inputmode="decimal" min="0" max="100" step="0.1" placeholder="12.0" />
+        <div id="statsStockReturnHint" class="stats-input-hint"></div>
       </div>
     </div>
 
+    <!-- PORTFOLIO ALLOCATION v2 — deposit: base rate after promo + promo period + capitalization -->
     <div id="statsDepositFields" class="stats-type-fields" style="display:none">
       <div class="input-wrap stats-input-wrap">
-        <label data-i18n="stats.field.depositRate">Процентная ставка (% годовых)</label>
+        <label data-i18n="stats.field.depositRate">Ставка после промо-периода (% годовых)</label>
         <input type="number" id="statsDepositRate" class="stats-input" inputmode="decimal" min="0" max="100" step="0.1" placeholder="8.5" />
       </div>
       <div class="input-wrap stats-input-wrap">
@@ -1146,7 +1151,15 @@ Protocol анализирует цель…
         <input type="number" id="statsDepositTerm" class="stats-input" inputmode="numeric" min="1" max="600" step="1" placeholder="12" />
       </div>
       <div class="input-wrap stats-input-wrap">
-        <label data-i18n="stats.field.capitalization">Капитализация процентов</label>
+        <label data-i18n="stats.field.promoMonths">Промо-период (мес, 0–3)</label>
+        <input type="number" id="statsDepositPromoMonths" class="stats-input" inputmode="numeric" min="0" max="3" step="1" placeholder="0" />
+      </div>
+      <div class="input-wrap stats-input-wrap" id="statsDepositPromoRateWrap" style="display:none">
+        <label data-i18n="stats.field.promoRate">Повышенная ставка на промо-период (% годовых)</label>
+        <input type="number" id="statsDepositPromoRate" class="stats-input" inputmode="decimal" min="0" max="100" step="0.1" placeholder="14.0" />
+      </div>
+      <div class="input-wrap stats-input-wrap">
+        <label data-i18n="stats.field.capitalization">Частота начисления процентов</label>
         <div class="stats-segment" id="statsDepositCap" role="tablist">
           <button type="button" class="stats-segment-btn active" data-cap="monthly" data-i18n="stats.cap.monthly">Ежемесячно</button>
           <button type="button" class="stats-segment-btn" data-cap="quarterly" data-i18n="stats.cap.quarterly">Ежеквартально</button>
@@ -1160,18 +1173,16 @@ Protocol анализирует цель…
       </label>
     </div>
 
+    <!-- PORTFOLIO ALLOCATION v2 — metals: return from preset, no manual input -->
     <div id="statsMetalsFields" class="stats-type-fields" style="display:none">
       <div class="input-wrap stats-input-wrap">
         <label data-i18n="stats.field.metal">Металл</label>
         <select id="statsMetal" class="stats-select">
-          <option value="gold" data-i18n="stats.metal.gold">Золото</option>
-          <option value="silver" data-i18n="stats.metal.silver">Серебро</option>
+          <option value="gold"     data-i18n="stats.metal.gold">Золото</option>
+          <option value="silver"   data-i18n="stats.metal.silver">Серебро</option>
           <option value="platinum" data-i18n="stats.metal.platinum">Платина</option>
         </select>
-      </div>
-      <div class="input-wrap stats-input-wrap">
-        <label data-i18n="stats.field.expectedReturn">Ожидаемая годовая доходность (%)</label>
-        <input type="number" id="statsMetalReturn" class="stats-input" inputmode="decimal" min="0" max="100" step="0.1" placeholder="7.0" />
+        <div id="statsMetalReturnHint" class="stats-input-hint"></div>
       </div>
     </div>
 

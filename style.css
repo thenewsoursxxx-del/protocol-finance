@@ -4254,6 +4254,98 @@ body.flip-fix-pending .flip-wrapper {
   opacity: .4;
   pointer-events: none;
 }
+
+/* ============================================================================
+ * PORTFOLIO ALLOCATION v2 — type color tokens, stacked progress, withdrawn UI
+ * ============================================================================ */
+:root {
+  --alloc-cash:    #10b981;
+  --alloc-stock:   #8b5cf6;
+  --alloc-deposit: #3b82f6;
+  --alloc-metals:  #f59e0b;
+}
+
+.alloc-item[data-type="cash"]::before    { background: linear-gradient(180deg, var(--alloc-cash), #047857); }
+.alloc-item[data-type="stock"]::before   { background: linear-gradient(180deg, var(--alloc-stock), #6d28d9); }
+.alloc-item[data-type="deposit"]::before { background: linear-gradient(180deg, var(--alloc-deposit), #1d4ed8); }
+.alloc-item[data-type="metals"]::before  { background: linear-gradient(180deg, var(--alloc-metals), #b45309); }
+
+.alloc-item[data-type="cash"]    .alloc-item-icon { background: rgba(16,185,129,0.10);  border-color: rgba(16,185,129,0.35);  color: #6ee7b7; }
+.alloc-item[data-type="stock"]   .alloc-item-icon { background: rgba(139,92,246,0.10);  border-color: rgba(139,92,246,0.35);  color: #c4b5fd; }
+.alloc-item[data-type="deposit"] .alloc-item-icon { background: rgba(59,130,246,0.10);  border-color: rgba(59,130,246,0.35);  color: #93c5fd; }
+.alloc-item[data-type="metals"]  .alloc-item-icon { background: rgba(245,158,11,0.10);  border-color: rgba(245,158,11,0.35);  color: #fcd34d; }
+
+.alloc-item[data-type="cash"]    .alloc-item-pct { color: #6ee7b7; }
+.alloc-item[data-type="stock"]   .alloc-item-pct { color: #c4b5fd; }
+.alloc-item[data-type="deposit"] .alloc-item-pct { color: #93c5fd; }
+.alloc-item[data-type="metals"]  .alloc-item-pct { color: #fcd34d; }
+
+/* Stacked composition bar */
+.alloc-stacked {
+  display: flex;
+  width: 100%;
+  height: 10px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #111;
+  border: 1px solid #1f1f1f;
+  margin-bottom: 8px;
+}
+.alloc-stacked-seg {
+  height: 100%;
+  position: relative;
+  transition: width .4s cubic-bezier(.4,0,.2,1);
+  background: linear-gradient(180deg, rgba(255,255,255,0.08), transparent);
+}
+.alloc-stacked-seg[data-type="cash"]    { background-color: var(--alloc-cash); }
+.alloc-stacked-seg[data-type="stock"]   { background-color: var(--alloc-stock); }
+.alloc-stacked-seg[data-type="deposit"] { background-color: var(--alloc-deposit); }
+.alloc-stacked-seg[data-type="metals"]  { background-color: var(--alloc-metals); }
+.alloc-stacked-seg + .alloc-stacked-seg {
+  border-left: 1px solid rgba(0,0,0,0.45);
+}
+
+/* Withdrawn allocations */
+.alloc-item--withdrawn {
+  opacity: 0.55;
+  filter: saturate(0.4);
+}
+.alloc-item--withdrawn::before {
+  background: linear-gradient(180deg, #555, #333) !important;
+}
+.alloc-item--withdrawn .alloc-item-pct {
+  color: rgba(255,255,255,0.45) !important;
+  text-decoration: line-through;
+}
+.alloc-withdrawn-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.55);
+  margin-top: 3px;
+}
+
+.alloc-withdrawn-section-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.4);
+  margin: 18px 0 8px;
+}
+
+.alloc-item-action--withdraw:active { color: #f59e0b; }
+.alloc-item-action--restore:active  { color: #6ee7b7; }
+
+@media (prefers-reduced-motion: reduce) {
+  .alloc-stacked-seg { transition: none; }
+}
 .stats-input-wrap {
   margin-bottom: 0;
 }
