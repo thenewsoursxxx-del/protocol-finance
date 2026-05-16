@@ -707,10 +707,13 @@
       // FIX: Promo period for deposits — extended to 0–12 months, clearer hint
       "stats.field.capitalization": "Капитализация процентов",
       "stats.field.promoMonths": "Промо-период (мес, 0–12)",
-      "stats.field.promoMonthsHint": "Обычно 1–3 месяца. В некоторых банках бывает 4–6 месяцев",
+      "stats.field.promoMonthsHint": "Повышенная ставка на первые месяцы (обычно 1–3 мес, иногда до 6)",
       "stats.field.promoRate":   "Повышенная ставка на промо-период (% годовых)",
-      "stats.field.depositRate": "Ставка после промо-периода (% годовых)",
+      // FIX: dynamic deposit rate label — base only / after promo
+      "stats.field.depositRate":     "Процентная ставка (% годовых)",
+      "stats.field.depositRateAfterPromo": "Ставка после промо-периода (% годовых)",
       "stats.deposit.effectiveBlended": "Эффективная ставка (промо + база)",
+      "stats.deposit.effectivePreview": "Итоговая ожидаемая доходность: {pct}% годовых",
 
       // PORTFOLIO ALLOCATION v2 — withdraw flow
       "portfolio.withdraw":        "Вывести",
@@ -1507,10 +1510,13 @@
       // FIX: Promo period for deposits — extended to 0–12 months, clearer hint
       "stats.field.capitalization": "Interest capitalization",
       "stats.field.promoMonths": "Promo period (months, 0–12)",
-      "stats.field.promoMonthsHint": "Usually 1–3 months. Some banks offer 4–6 months",
+      "stats.field.promoMonthsHint": "Higher rate for the first months (usually 1–3, sometimes up to 6)",
       "stats.field.promoRate":   "Promo rate (% annual)",
-      "stats.field.depositRate": "Rate after promo (% annual)",
+      // FIX: dynamic deposit rate label — base only / after promo
+      "stats.field.depositRate":     "Interest rate (% annual)",
+      "stats.field.depositRateAfterPromo": "Rate after promo (% annual)",
       "stats.deposit.effectiveBlended": "Effective rate (promo + base)",
+      "stats.deposit.effectivePreview": "Estimated annual yield: {pct}% p.a.",
 
       // PORTFOLIO ALLOCATION v2 — withdraw flow
       "portfolio.withdraw":        "Withdraw",

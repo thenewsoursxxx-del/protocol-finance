@@ -4367,6 +4367,31 @@ body.flip-fix-pending .flip-wrapper {
 @media (prefers-reduced-motion: reduce) {
   #statsDepositPromoRateWrap { animation: none; }
 }
+
+/* FIX: live effective-rate preview for deposits — premium emerald card,
+   updates as the user types (no manual recalc needed). */
+.stats-deposit-preview {
+  margin: -4px 0 4px;
+  padding: 12px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: #6ee7b7;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(110,231,183,0.08), transparent 55%),
+    linear-gradient(180deg, rgba(16,185,129,0.10), rgba(16,185,129,0.04));
+  border: 1px solid rgba(16,185,129,0.32);
+  border-radius: 12px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+  animation: depositPreviewFadeIn .25s ease;
+}
+@keyframes depositPreviewFadeIn {
+  0%   { opacity: 0; transform: translateY(-3px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .stats-deposit-preview { animation: none; }
+}
 .stats-input-wrap {
   margin-bottom: 0;
 }

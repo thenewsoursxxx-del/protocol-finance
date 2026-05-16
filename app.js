@@ -5897,12 +5897,14 @@ var METAL_PRESETS = {
   var stockAssetSel = document.getElementById("statsStockAsset");
   var stockReturnHint = document.getElementById("statsStockReturnHint");
   var depositRate = document.getElementById("statsDepositRate");
+  var depositRateLabel = document.getElementById("statsDepositRateLabel"); // FIX: dynamic label
   var depositTerm = document.getElementById("statsDepositTerm");
   var depositPromoMonths = document.getElementById("statsDepositPromoMonths");
   var depositPromoRate = document.getElementById("statsDepositPromoRate");
   var depositPromoRateWrap = document.getElementById("statsDepositPromoRateWrap");
   var depositCap  = document.getElementById("statsDepositCap");
   var depositReplenish = document.getElementById("statsDepositReplenish");
+  var depositEffPreview = document.getElementById("statsDepositEffectivePreview"); // FIX: live preview
   // PORTFOLIO ALLOCATION v2 — metals return is preset-derived too.
   var metalSelect = document.getElementById("statsMetal");
   var metalReturnHint = document.getElementById("statsMetalReturnHint");
@@ -5918,6 +5920,48 @@ var METAL_PRESETS = {
     el.textContent = t("stats.field.expectedReturn") + ": " + (Math.round(retVal * 10) / 10) + "%";
     el.style.color = "#6ee7b7";
     el.style.display = "";
+  }
+
+  // FIX: dynamic deposit rate label — switches between base-only and after-promo.
+  function _updateDepositRateLabel() {
+    if (!depositRateLabel) return;
+    var n = depositPromoMonths ? (parseInt(depositPromoMonths.value, 10) || 0) : 0;
+    var key = (n > 0) ? "stats.field.depositRateAfterPromo" : "stats.field.depositRate";
+    depositRateLabel.setAttribute("data-i18n", key);
+    depositRateLabel.textContent = t(key);
+  }
+
+  // FIX: live recompute of blended effective deposit rate as user types.
+  function _updateDepositEffectivePreview() {
+    if (!depositEffPreview) return;
+    var rate = parseFloat(depositRate ? depositRate.value : "");
+    var term = parseInt(depositTerm ? depositTerm.value : "", 10);
+    if (!isFinite(rate) || rate <= 0 || !isFinite(term) || term <= 0) {
+      depositEffPreview.style.display = "none";
+      depositEffPreview.textContent = "";
+      return;
+    }
+    var promoM = parseInt(depositPromoMonths ? depositPromoMonths.value : "0", 10);
+    if (!isFinite(promoM) || promoM < 0) promoM = 0;
+    promoM = Math.min(promoM, 12);
+    var promoR = parseFloat(depositPromoRate ? depositPromoRate.value : "");
+    // If promo months > 0 but promo rate missing → preview only base (not blended).
+    var params = {
+      rate: rate,
+      termMonths: term,
+      promoMonths: promoM,
+      promoRate: (promoM > 0 && isFinite(promoR) && promoR > 0) ? promoR : null,
+      capitalization: _modalDepositCap || "monthly"
+    };
+    var eff = getStorageExpectedReturn({ type: "deposit", params: params });
+    if (!isFinite(eff) || eff <= 0) {
+      depositEffPreview.style.display = "none";
+      depositEffPreview.textContent = "";
+      return;
+    }
+    var pct = (Math.round(eff * 10) / 10).toString();
+    depositEffPreview.textContent = t("stats.deposit.effectivePreview", { pct: pct });
+    depositEffPreview.style.display = "";
   }
 
   // ── Working state (mirrors what will be written into appState on submit) ─
@@ -6334,6 +6378,9 @@ var METAL_PRESETS = {
       });
     }
     if (depositReplenish) depositReplenish.checked = !!(defaultType === "deposit" && d.replenishable);
+    // FIX: sync dynamic label + live preview after restoring saved values.
+    _updateDepositRateLabel();
+    _updateDepositEffectivePreview();
 
     // PORTFOLIO ALLOCATION v2 — METALS: preset only, return shown as a hint.
     if (metalSelect) {
@@ -6442,15 +6489,22 @@ var METAL_PRESETS = {
   }
 
   // PORTFOLIO ALLOCATION v2 — promo months → reveal/hide promo rate input.
-  // FIX: Promo period for deposits — clamp extended to 0–12 months.
+  // FIX: Promo period for deposits — clamp 0–12, dynamic rate label, live preview.
   if (depositPromoMonths) {
     depositPromoMonths.addEventListener("input", function () {
       var n = parseInt(depositPromoMonths.value, 10);
       if (isFinite(n) && n > 12) { depositPromoMonths.value = 12; n = 12; }
       if (isFinite(n) && n < 0) { depositPromoMonths.value = 0; n = 0; }
       if (depositPromoRateWrap) depositPromoRateWrap.style.display = (n > 0) ? "" : "none";
+      _updateDepositRateLabel();
+      _updateDepositEffectivePreview();
     });
   }
+
+  // FIX: live recompute on any deposit field change.
+  [depositRate, depositTerm, depositPromoRate].forEach(function (el) {
+    if (el) el.addEventListener("input", _updateDepositEffectivePreview);
+  });
 
   // ── Modal: deposit capitalization segment ──────────────────────────────
   if (depositCap) {
@@ -6460,6 +6514,7 @@ var METAL_PRESETS = {
       depositCap.querySelectorAll(".stats-segment-btn").forEach(function (b) { b.classList.remove("active"); });
       btn.classList.add("active");
       _modalDepositCap = btn.getAttribute("data-cap") || "monthly";
+      _updateDepositEffectivePreview(); // FIX: recompute when capitalization changes
     });
   }
 
