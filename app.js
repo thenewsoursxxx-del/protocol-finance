@@ -5832,47 +5832,87 @@ function _updateInflationPreview(rate, isLoading) {
 // MOEX INTEGRATION — RU-only preset assets (stocks + MOEX ETFs).
 // Each preset bakes the long-run expected return (used in projections); live
 // prices/change are fetched from MOEX ISS via window.fetchMoexQuote.
+// FIX: stable stock logos — ISIN is required because Tinkoff brand CDN keys by
+// ISIN, not by ticker (https://invest-brands.cdn-tinkoff.ru/{ISIN}x160.png).
+// For Tinkoff/Sber funds the ticker also works; for FinEx (FX*) ETFs the IE...
+// ISINs are used.
 var STOCK_ASSET_PRESETS = {
   // Russian blue chips
-  ru_sber:    { return: 15.0, ticker: "SBER" },
-  ru_gazprom: { return: 8.0,  ticker: "GAZP" },
-  ru_yandex:  { return: 14.0, ticker: "YDEX" },
-  ru_tinkoff: { return: 16.0, ticker: "T"    },
-  ru_lukoil:  { return: 11.0, ticker: "LKOH" },
-  ru_magnit:  { return: 9.0,  ticker: "MGNT" },
-  ru_norilsk: { return: 12.0, ticker: "GMKN" },
-  ru_rosneft: { return: 10.0, ticker: "ROSN" },
-  ru_vk:      { return: 14.0, ticker: "VKCO" },
-  ru_polyus:  { return: 13.0, ticker: "PLZL" },
-  // MOEX ETFs
-  etf_fxrl:   { return: 12.0, ticker: "FXRL" },
-  etf_fxit:   { return: 14.0, ticker: "FXIT" },
-  etf_fxus:   { return: 10.0, ticker: "FXUS" },
-  etf_tmos:   { return: 13.0, ticker: "TMOS" },
-  etf_sbsp:   { return: 10.0, ticker: "SBSP" }
+  ru_sber:    { return: 15.0, ticker: "SBER", isin: "RU0009029540" },
+  ru_gazprom: { return: 8.0,  ticker: "GAZP", isin: "RU0007661625" },
+  ru_yandex:  { return: 14.0, ticker: "YDEX", isin: "RU000A107T19" },
+  ru_tinkoff: { return: 16.0, ticker: "T",    isin: "RU000A107UL4" },
+  ru_lukoil:  { return: 11.0, ticker: "LKOH", isin: "RU0009024277" },
+  ru_magnit:  { return: 9.0,  ticker: "MGNT", isin: "RU000A0JKQU8" },
+  ru_norilsk: { return: 12.0, ticker: "GMKN", isin: "RU0007288411" },
+  ru_rosneft: { return: 10.0, ticker: "ROSN", isin: "RU000A0J2Q06" },
+  ru_vk:      { return: 14.0, ticker: "VKCO", isin: "RU000A106YF0" },
+  ru_polyus:  { return: 13.0, ticker: "PLZL", isin: "RU000A0JNAA8" },
+  // MOEX ETFs (FinEx + Tinkoff/Sber funds)
+  etf_fxrl:   { return: 12.0, ticker: "FXRL", isin: "IE00BQ1Y6480" },
+  etf_fxit:   { return: 14.0, ticker: "FXIT", isin: "IE00BD3QHZ91" },
+  etf_fxus:   { return: 10.0, ticker: "FXUS", isin: "IE00BD3QJN10" },
+  etf_tmos:   { return: 13.0, ticker: "TMOS", isin: "RU000A102E61" },
+  etf_sbsp:   { return: 10.0, ticker: "SBSP", isin: "RU000A1014L8" }
 };
 
-// FIX: portfolio UX v2 — public Tinkoff Investments CDN serves logos by ticker
-// (e.g. https://invest-brands.cdn-tinkoff.ru/SBERx160.png). It's free, CORS-friendly
-// and covers all Russian blue chips + most MOEX ETFs we list.
+// FIX: stable stock logos — Tinkoff brand CDN keys assets by ISIN, not ticker
+// (see https://github.com/Tinkoff/investAPI/issues/135). For Tinkoff/Sber funds
+// the ticker also resolves; for FinEx ETFs we use the IE-prefixed ISIN.
+// We build a ticker → ISIN map from the presets and produce a CHAIN of URLs:
+// the <img> first tries the ISIN URL, then falls back to the ticker URL, and
+// only if both fail does the colored letter chip take over.
+
+// Build ticker→ISIN map once from STOCK_ASSET_PRESETS (presets defined above).
+var _isinByTicker = (function () {
+  var m = Object.create(null);
+  try {
+    Object.keys(STOCK_ASSET_PRESETS).forEach(function (k) {
+      var p = STOCK_ASSET_PRESETS[k];
+      if (p && p.ticker && p.isin) m[String(p.ticker).toUpperCase()] = p.isin;
+    });
+  } catch (e) {}
+  return m;
+})();
+
+function getStockLogoUrls(ticker) {
+  var safe = String(ticker || "").toUpperCase();
+  if (!safe) return [];
+  var urls = [];
+  var isin = _isinByTicker[safe];
+  if (isin) urls.push("https://invest-brands.cdn-tinkoff.ru/" + isin + "x160.png");
+  urls.push("https://invest-brands.cdn-tinkoff.ru/" + encodeURIComponent(safe) + "x160.png");
+  return urls;
+}
+// Back-compat: single-URL helper still works for non-list callers.
 function getStockLogoUrl(ticker) {
-  if (!ticker) return "";
-  return "https://invest-brands.cdn-tinkoff.ru/" + encodeURIComponent(String(ticker).toUpperCase()) + "x160.png";
+  var u = getStockLogoUrls(ticker);
+  return u.length ? u[0] : "";
 }
 window.getStockLogoUrl = getStockLogoUrl;
+window.getStockLogoUrls = getStockLogoUrls;
 
-// FIX: stable stock logos — global cache of tickers whose logo failed to load
-// at least once. On any subsequent re-render we skip <img> entirely and render
+// FIX: stable stock logos — global cache of tickers whose ENTIRE candidate
+// chain failed. On any subsequent re-render we skip <img> entirely and render
 // the colored letter fallback right away. This kills the "flash + disappear"
 // loop caused by re-creating <img> nodes on every list re-render.
 window._stockLogoFailed = window._stockLogoFailed || Object.create(null);
 
-// FIX: stable stock logos — exposed onerror handler. Uses CSS-only fallback
-// (does NOT replace outerHTML), so the DOM stays intact and the letter chip
-// inside the same wrapper just becomes visible.
-window._markStockLogoFailed = function (ticker, imgEl) {
+// FIX: stable stock logos — try the next URL in the candidate chain; if there
+// is none left, mark the ticker as failed and swap to the CSS-only letter
+// fallback (the <img> is just hidden, no outerHTML mutation).
+window._tryNextLogoUrl = function (imgEl) {
+  if (!imgEl) return;
+  var ticker = imgEl.getAttribute("data-ticker") || "";
+  var urls = (imgEl.getAttribute("data-urls") || "").split("|").filter(Boolean);
+  var idx = parseInt(imgEl.getAttribute("data-idx") || "0", 10) + 1;
+  if (idx < urls.length) {
+    imgEl.setAttribute("data-idx", String(idx));
+    imgEl.src = urls[idx];
+    return;
+  }
   if (ticker) window._stockLogoFailed[ticker] = true;
-  if (imgEl && imgEl.parentNode) imgEl.parentNode.classList.add("logo-failed");
+  if (imgEl.parentNode) imgEl.parentNode.classList.add("logo-failed");
 };
 
 // FIX: stable stock logos — single source of truth for rendering a stock icon.
@@ -5886,10 +5926,17 @@ function renderStockLogoHtml(ticker) {
   if (window._stockLogoFailed[safe]) {
     return '<span class="alloc-logo-fallback" data-ticker="' + safe + '">' + letter + '</span>';
   }
+  var urls = getStockLogoUrls(safe);
+  if (!urls.length) {
+    return '<span class="alloc-logo-fallback" data-ticker="' + safe + '">' + letter + '</span>';
+  }
   return '<span class="alloc-logo-wrap" data-ticker="' + safe + '">' +
     '<img class="alloc-logo" alt="' + safe + '" loading="eager" decoding="async" ' +
-    'src="' + getStockLogoUrl(safe) + '" ' +
-    'onerror="window._markStockLogoFailed(\'' + safe + '\', this)" />' +
+    'data-ticker="' + safe + '" ' +
+    'data-urls="' + urls.join("|") + '" ' +
+    'data-idx="0" ' +
+    'src="' + urls[0] + '" ' +
+    'onerror="window._tryNextLogoUrl(this)" />' +
     '<span class="alloc-logo-fallback" aria-hidden="true">' + letter + '</span>' +
   '</span>';
 }
