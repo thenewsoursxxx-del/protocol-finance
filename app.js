@@ -5814,11 +5814,59 @@ function _updateInflationPreview(rate, isLoading) {
   el.style.display = "";
 }
 
+/* ============================================================================
+ * PORTFOLIO ALLOCATION LOGIC — Account Statistics portfolio composition
+ * ----------------------------------------------------------------------------
+ * The screen now holds an array of allocations (`storageAllocation: []`) per
+ * account (`main` / `reserve`), with a per-account savingsMode toggle. The
+ * legacy single-type fields stay on disk (for `bootstrapInflation` to refresh
+ * cash inflation) until the user re-submits; after that they are kept but
+ * superseded by the portfolio. Effective inflation is the weighted average of
+ * `(inflation − expectedReturn)` across allocations.
+ *
+ * Inside the modal (`#statsAllocSheet`) the user picks one type and fills
+ * type-specific fields. The same DOM nodes for fields (`#statsCashFields`
+ * etc.) that used to live on the screen are now siblings of the sheet inside
+ * the modal — UI / handlers were refactored accordingly.
+ * ============================================================================ */
+var STOCK_ASSET_PRESETS = {
+  sp500:     { return: 10.0, ticker: "SPY"   },
+  nasdaq100: { return: 13.0, ticker: "QQQ"   },
+  moex:      { return: 12.0, ticker: "IMOEX" },
+  ftse100:   { return: 6.0,  ticker: "ISF"   },
+  msciWorld: { return: 8.0,  ticker: "URTH"  },
+  aapl:      { return: 18.0, ticker: "AAPL"  },
+  msft:      { return: 18.0, ticker: "MSFT"  },
+  tsla:      { return: 22.0, ticker: "TSLA"  },
+  amzn:      { return: 16.0, ticker: "AMZN"  },
+  custom:    { return: 0,    ticker: ""      }
+};
+
 (function initAccountStats() {
   var statsScreen = document.getElementById("screen-account-stats");
   if (!statsScreen) return;
 
+  // ── Screen refs ────────────────────────────────────────────────────────
   var backBtn = document.getElementById("accountStatsBack");
+  var submitBtn = document.getElementById("statsSubmit");
+  var allocListEl = document.getElementById("statsAllocList");
+  var allocAddBtn = document.getElementById("statsAllocAddBtn");
+  var allocProgressEl = document.getElementById("statsAllocProgress");
+  var allocProgressFill = document.getElementById("statsAllocProgressFill");
+  var allocProgressLabel = document.getElementById("statsAllocProgressLabel");
+  var allocProgressValue = document.getElementById("statsAllocProgressValue");
+  var savingsModeSeg = document.getElementById("statsSavingsMode");
+  var savingsModeHint = document.getElementById("statsSavingsModeHint");
+
+  // ── Modal refs ─────────────────────────────────────────────────────────
+  var allocOverlay = document.getElementById("statsAllocOverlay");
+  var allocSheet = document.getElementById("statsAllocSheet");
+  var allocSheetTitle = document.getElementById("statsAllocSheetTitle");
+  var allocSaveBtn = document.getElementById("statsAllocSave");
+  var allocCancelBtn = document.getElementById("statsAllocCancel");
+  var allocPctInput = document.getElementById("statsAllocPercentage");
+  var allocPctHint = document.getElementById("statsAllocPercentageHint");
+
   var typeGrid = document.getElementById("statsTypeGrid");
   var cashFields = document.getElementById("statsCashFields");
   var stockFields = document.getElementById("statsStockFields");
@@ -5826,9 +5874,8 @@ function _updateInflationPreview(rate, isLoading) {
   var metalsFields = document.getElementById("statsMetalsFields");
   var countrySelect = document.getElementById("statsCountry");
   var currencySelect = document.getElementById("statsCurrency");
-  var submitBtn = document.getElementById("statsSubmit");
-
-  // NEW: Storage type — refs to fields per type
+  var stockAssetSel = document.getElementById("statsStockAsset");
+  var stockCustomWrap = document.getElementById("statsStockCustomWrap");
   var stockTicker = document.getElementById("statsStockTicker");
   var stockReturn = document.getElementById("statsStockReturn");
   var depositRate = document.getElementById("statsDepositRate");
@@ -5838,9 +5885,182 @@ function _updateInflationPreview(rate, isLoading) {
   var metalSelect = document.getElementById("statsMetal");
   var metalReturn = document.getElementById("statsMetalReturn");
 
-  // NEW: Storage type — текущая выбранная капитализация (default monthly).
-  var _statsDepositCap = "monthly";
+  // ── Working state (mirrors what will be written into appState on submit) ─
+  // PORTFOLIO ALLOCATION LOGIC — local mutable working copy. Submit pushes
+  // this into appState.accountStats[_statsTargetAccount].
+  var _allocations = [];          // [{ id, type, percentage, details }]
+  var _savingsMode = "current";    // 'current' | 'future'
+  var _modalEditIndex = -1;       // -1 → adding; >=0 → editing existing
+  var _modalDepositCap = "monthly";
 
+  // Expose for openAccountStatsScreen (defined outside this IIFE).
+  window._statsState = {
+    setAllocations: function (arr, mode) {
+      _allocations = Array.isArray(arr) ? arr.map(function (a) { return Object.assign({}, a, { details: Object.assign({}, a.details || {}) }); }) : [];
+      _savingsMode = (mode === "future") ? "future" : "current";
+      _renderAllocList();
+      _renderAllocProgress();
+      _renderSavingsMode();
+      _updateSubmitState();
+    },
+    getAllocations: function () { return _allocations; },
+    getSavingsMode: function () { return _savingsMode; }
+  };
+
+  function _genAllocId() {
+    return "alloc_" + Math.random().toString(36).slice(2, 9);
+  }
+
+  function _typeIcon(type) {
+    switch (type) {
+      case "cash":    return "💵";
+      case "stock":   return "📈";
+      case "deposit": return "🏦";
+      case "metals":  return "🥇";
+      default:        return "•";
+    }
+  }
+
+  function _allocTitle(item) {
+    return (typeof t === "function") ? t("stats.type." + item.type) : item.type;
+  }
+
+  function _allocMetaText(item) {
+    var p = item.details || {};
+    if (item.type === "cash") {
+      var country = p.country ? (STATS_COUNTRY_MAP[p.country] ? t(STATS_COUNTRY_MAP[p.country].labelKey) : p.country) : "—";
+      var infl = (p.inflation != null) ? (Math.round(p.inflation * 10) / 10) + "%" : "—";
+      return country + " · " + (p.currency || "—") + " · " + t("misc.inflation") + " " + infl;
+    }
+    if (item.type === "stock") {
+      var asset = p.asset ? t("stats.asset." + p.asset) : (p.ticker || "—");
+      var r = (p.expectedReturn != null) ? (Math.round(p.expectedReturn * 10) / 10) + "%" : "—";
+      return asset + " · " + r;
+    }
+    if (item.type === "deposit") {
+      var rate = (p.rate != null) ? (Math.round(p.rate * 10) / 10) + "%" : "—";
+      var term = (p.termMonths != null) ? p.termMonths + " " + t("misc.monthShort") : "—";
+      return rate + " · " + term + " · " + t("stats.cap." + (p.capitalization || "monthly"));
+    }
+    if (item.type === "metals") {
+      var metal = p.metal ? t("stats.metal." + p.metal) : "—";
+      var mr = (p.expectedReturn != null) ? (Math.round(p.expectedReturn * 10) / 10) + "%" : "—";
+      return metal + " · " + mr;
+    }
+    return "";
+  }
+
+  function _allocTotal() {
+    return _allocations.reduce(function (acc, a) { return acc + (Number(a.percentage) || 0); }, 0);
+  }
+
+  function _renderAllocList() {
+    if (!allocListEl) return;
+    if (!_allocations.length) {
+      allocListEl.innerHTML = '<div class="alloc-empty">' + t("portfolio.empty") + '</div>';
+      return;
+    }
+    var html = "";
+    _allocations.forEach(function (item, idx) {
+      html +=
+        '<div class="alloc-item" data-alloc-idx="' + idx + '">' +
+          '<div class="alloc-item-icon">' + _typeIcon(item.type) + '</div>' +
+          '<div class="alloc-item-body">' +
+            '<div class="alloc-item-title">' + _allocTitle(item) + '</div>' +
+            '<div class="alloc-item-meta">' + _allocMetaText(item) + '</div>' +
+          '</div>' +
+          '<div class="alloc-item-right">' +
+            '<div class="alloc-item-pct">' + (Number(item.percentage) || 0) + '%</div>' +
+            '<button type="button" class="alloc-item-action alloc-item-action--edit" data-alloc-edit="' + idx + '" aria-label="' + t("portfolio.edit") + '">✎</button>' +
+            '<button type="button" class="alloc-item-action alloc-item-action--remove" data-alloc-remove="' + idx + '" aria-label="' + t("portfolio.remove") + '">✕</button>' +
+          '</div>' +
+        '</div>';
+    });
+    allocListEl.innerHTML = html;
+  }
+
+  function _renderAllocProgress() {
+    if (!allocProgressEl) return;
+    var total = _allocTotal();
+    var capped = Math.min(100, Math.max(0, total));
+    if (allocProgressFill) allocProgressFill.style.width = capped + "%";
+    allocProgressEl.classList.remove("is-over", "is-complete");
+    if (total > 100) allocProgressEl.classList.add("is-over");
+    else if (total === 100) allocProgressEl.classList.add("is-complete");
+
+    if (allocProgressValue) allocProgressValue.textContent = total + "% / 100%";
+    if (allocProgressLabel) {
+      if (total > 100) {
+        allocProgressLabel.textContent = t("portfolio.over") + ": +" + (total - 100) + "%";
+      } else if (total === 100) {
+        allocProgressLabel.textContent = t("portfolio.complete");
+      } else if (total === 0 && !_allocations.length) {
+        allocProgressLabel.textContent = t("portfolio.empty");
+      } else {
+        allocProgressLabel.textContent = t("portfolio.remaining") + ": " + (100 - total) + "%";
+      }
+    }
+  }
+
+  function _renderSavingsMode() {
+    if (!savingsModeSeg) return;
+    savingsModeSeg.querySelectorAll(".stats-segment-btn").forEach(function (b) {
+      b.classList.toggle("active", b.getAttribute("data-mode") === _savingsMode);
+    });
+    if (savingsModeHint) {
+      savingsModeHint.textContent = (_savingsMode === "future")
+        ? t("portfolio.savingsMode.futureHint")
+        : t("portfolio.savingsMode.currentHint");
+    }
+  }
+
+  function _updateSubmitState() {
+    if (!submitBtn) return;
+    var total = _allocTotal();
+    submitBtn.disabled = !(_allocations.length > 0 && total === 100);
+  }
+
+  // ── List interactions: edit / remove ───────────────────────────────────
+  if (allocListEl) {
+    allocListEl.addEventListener("click", function (e) {
+      var rmBtn = e.target.closest("[data-alloc-remove]");
+      if (rmBtn) {
+        var ri = parseInt(rmBtn.getAttribute("data-alloc-remove"), 10);
+        if (!isNaN(ri) && _allocations[ri]) {
+          _allocations.splice(ri, 1);
+          _renderAllocList();
+          _renderAllocProgress();
+          _updateSubmitState();
+        }
+        return;
+      }
+      var edBtn = e.target.closest("[data-alloc-edit]");
+      if (edBtn) {
+        var ei = parseInt(edBtn.getAttribute("data-alloc-edit"), 10);
+        if (!isNaN(ei) && _allocations[ei]) _openAllocModal(ei);
+        return;
+      }
+    });
+  }
+
+  // ── Savings mode segment ───────────────────────────────────────────────
+  if (savingsModeSeg) {
+    savingsModeSeg.addEventListener("click", function (e) {
+      var btn = e.target.closest(".stats-segment-btn");
+      if (!btn) return;
+      _savingsMode = btn.getAttribute("data-mode") || "current";
+      _renderSavingsMode();
+    });
+  }
+
+  // ── Add button → open modal in "add" mode ──────────────────────────────
+  if (allocAddBtn) {
+    allocAddBtn.addEventListener("click", function () { _openAllocModal(-1); });
+  }
+
+  // ──────────────────────────────────────────────────────────────────────
+  // PORTFOLIO ALLOCATION LOGIC — modal: open / close / save
+  // ──────────────────────────────────────────────────────────────────────
   function _toggleFieldsForType(type) {
     if (cashFields)    cashFields.style.display    = (type === "cash")    ? "" : "none";
     if (stockFields)   stockFields.style.display   = (type === "stock")   ? "" : "none";
@@ -5848,59 +6068,137 @@ function _updateInflationPreview(rate, isLoading) {
     if (metalsFields)  metalsFields.style.display  = (type === "metals")  ? "" : "none";
   }
 
-  function _isPositiveNum(el) {
-    if (!el) return false;
-    var v = parseFloat(el.value);
-    return isFinite(v) && v > 0;
+  function _selectTypeCard(type) {
+    _statsSelectedType = type;
+    if (typeGrid) {
+      typeGrid.querySelectorAll(".stats-type-card").forEach(function (c) {
+        c.classList.toggle("active", c.getAttribute("data-stype") === type);
+      });
+    }
+    _toggleFieldsForType(type);
   }
 
-  function updateSubmitState() {
-    if (!submitBtn) return;
-    if (!_statsSelectedType) { submitBtn.disabled = true; return; }
-    if (_statsSelectedType === "cash") {
-      submitBtn.disabled = !(countrySelect && countrySelect.value);
-      return;
+  function _openAllocModal(editIndex) {
+    _modalEditIndex = (typeof editIndex === "number") ? editIndex : -1;
+    var editing = _modalEditIndex >= 0;
+    var item = editing ? _allocations[_modalEditIndex] : null;
+
+    if (allocSheetTitle) {
+      allocSheetTitle.textContent = editing ? t("portfolio.modal.editTitle") : t("portfolio.modal.addTitle");
     }
-    // NEW: Storage type — per-type validation
-    if (_statsSelectedType === "stock") {
-      submitBtn.disabled = !_isPositiveNum(stockReturn);
-      return;
+
+    // Default type: existing item's type, else first not-yet-picked, else 'cash'.
+    var defaultType = editing ? item.type : "cash";
+    _selectTypeCard(defaultType);
+
+    // Restore details into the modal inputs.
+    var d = (item && item.details) || {};
+
+    // CASH
+    if (countrySelect) countrySelect.value = (defaultType === "cash" && d.country) ? d.country : "";
+    if (currencySelect) currencySelect.value = (defaultType === "cash" && d.currency) ? d.currency : "";
+    _updateInflationPreview(null, false);
+    if (defaultType === "cash" && d.country) {
+      var info = STATS_COUNTRY_MAP[d.country];
+      if (info && info.dbName && typeof window.getInflationRate === "function") {
+        _updateInflationPreview(null, true);
+        Promise.resolve(window.getInflationRate(info.dbName)).then(function (rate) { _updateInflationPreview(rate, false); });
+      } else if (d.inflation != null) {
+        _updateInflationPreview(d.inflation, false);
+      }
     }
-    if (_statsSelectedType === "deposit") {
-      submitBtn.disabled = !(_isPositiveNum(depositRate) && _isPositiveNum(depositTerm));
-      return;
+    _renderStatsCountryOptions();
+
+    // STOCK
+    if (stockAssetSel) stockAssetSel.value = (defaultType === "stock" && d.asset) ? d.asset : "sp500";
+    if (stockCustomWrap) stockCustomWrap.style.display = (stockAssetSel && stockAssetSel.value === "custom") ? "" : "none";
+    if (stockTicker) stockTicker.value = (defaultType === "stock" && d.ticker) ? d.ticker : "";
+    if (stockReturn) {
+      if (defaultType === "stock" && d.expectedReturn != null) {
+        stockReturn.value = d.expectedReturn;
+      } else if (stockAssetSel && STOCK_ASSET_PRESETS[stockAssetSel.value]) {
+        stockReturn.value = STOCK_ASSET_PRESETS[stockAssetSel.value].return || "";
+      } else {
+        stockReturn.value = "";
+      }
     }
-    if (_statsSelectedType === "metals") {
-      submitBtn.disabled = !_isPositiveNum(metalReturn);
-      return;
+
+    // DEPOSIT
+    if (depositRate) depositRate.value = (defaultType === "deposit" && d.rate != null) ? d.rate : "";
+    if (depositTerm) depositTerm.value = (defaultType === "deposit" && d.termMonths != null) ? d.termMonths : "";
+    _modalDepositCap = (defaultType === "deposit" && d.capitalization) ? d.capitalization : "monthly";
+    if (depositCap) {
+      depositCap.querySelectorAll(".stats-segment-btn").forEach(function (b) {
+        b.classList.toggle("active", b.getAttribute("data-cap") === _modalDepositCap);
+      });
     }
-    submitBtn.disabled = true;
+    if (depositReplenish) depositReplenish.checked = !!(defaultType === "deposit" && d.replenishable);
+
+    // METALS
+    if (metalSelect) metalSelect.value = (defaultType === "metals" && d.metal) ? d.metal : "gold";
+    if (metalReturn) metalReturn.value = (defaultType === "metals" && d.expectedReturn != null) ? d.expectedReturn : "";
+
+    // Percentage — pre-fill with remaining (when adding) or current value (when editing).
+    if (allocPctInput) {
+      if (editing) {
+        allocPctInput.value = item.percentage || "";
+      } else {
+        var remaining = 100 - _allocTotal();
+        allocPctInput.value = (remaining > 0) ? remaining : "";
+      }
+    }
+    _updatePctHint();
+
+    // Show modal.
+    if (allocOverlay) allocOverlay.style.display = "block";
+    if (allocSheet) {
+      allocSheet.style.display = "block";
+      requestAnimationFrame(function () { allocSheet.classList.add("open"); });
+    }
   }
 
+  function _closeAllocModal() {
+    if (allocSheet) allocSheet.classList.remove("open");
+    setTimeout(function () {
+      if (allocSheet) allocSheet.style.display = "none";
+      if (allocOverlay) allocOverlay.style.display = "none";
+    }, 320);
+    _modalEditIndex = -1;
+  }
+
+  function _updatePctHint() {
+    if (!allocPctHint) return;
+    var current = parseInt(allocPctInput ? allocPctInput.value : "0", 10) || 0;
+    var others = _allocTotal() - (_modalEditIndex >= 0 ? (_allocations[_modalEditIndex].percentage || 0) : 0);
+    var max = 100 - others;
+    if (current > max) {
+      allocPctHint.textContent = t("portfolio.validation.over") + " (" + (current - max) + "%)";
+      allocPctHint.style.color = "#ef4444";
+    } else {
+      allocPctHint.textContent = t("portfolio.remaining") + ": " + (max - current) + "%";
+      allocPctHint.style.color = "";
+    }
+  }
+
+  if (allocPctInput) allocPctInput.addEventListener("input", _updatePctHint);
+
+  // ── Modal: type grid → switch fields ──────────────────────────────────
   if (typeGrid) {
     typeGrid.addEventListener("click", function (e) {
       var card = e.target.closest(".stats-type-card");
       if (!card) return;
-      typeGrid.querySelectorAll(".stats-type-card").forEach(function (c) { c.classList.remove("active"); });
-      card.classList.add("active");
-      _statsSelectedType = card.getAttribute("data-stype");
-      _toggleFieldsForType(_statsSelectedType);
-      updateSubmitState();
+      var type = card.getAttribute("data-stype");
+      _selectTypeCard(type);
     });
   }
 
+  // ── Modal: country live preview (cash) ────────────────────────────────
   if (countrySelect) {
     countrySelect.addEventListener("change", async function () {
       var code = countrySelect.value;
       var info = STATS_COUNTRY_MAP[code];
       if (info && currencySelect) currencySelect.value = info.currency;
-      updateSubmitState();
-
-      // DYNAMIC INFLATION — тянем актуальную ставку из Supabase для preview.
-      if (!info || !info.dbName) {
-        _updateInflationPreview(null, false);
-        return;
-      }
+      if (!info || !info.dbName) { _updateInflationPreview(null, false); return; }
       _updateInflationPreview(null, true);
       var rate = (typeof window.getInflationRate === "function")
         ? await window.getInflationRate(info.dbName)
@@ -5909,77 +6207,151 @@ function _updateInflationPreview(rate, isLoading) {
     });
   }
 
-  // NEW: Storage type — live validation on input
-  [stockReturn, depositRate, depositTerm, metalReturn].forEach(function (el) {
-    if (el) el.addEventListener("input", updateSubmitState);
-  });
-  if (stockTicker) stockTicker.addEventListener("input", updateSubmitState);
+  // ── Modal: stock asset → autofill expected return + show custom ────────
+  if (stockAssetSel) {
+    stockAssetSel.addEventListener("change", function () {
+      var v = stockAssetSel.value;
+      var preset = STOCK_ASSET_PRESETS[v] || null;
+      if (stockCustomWrap) stockCustomWrap.style.display = (v === "custom") ? "" : "none";
+      if (preset && v !== "custom" && stockReturn) stockReturn.value = preset.return;
+    });
+  }
 
-  // NEW: Storage type — capitalization segment
+  // ── Modal: deposit capitalization segment ──────────────────────────────
   if (depositCap) {
     depositCap.addEventListener("click", function (e) {
       var btn = e.target.closest(".stats-segment-btn");
       if (!btn) return;
       depositCap.querySelectorAll(".stats-segment-btn").forEach(function (b) { b.classList.remove("active"); });
       btn.classList.add("active");
-      _statsDepositCap = btn.getAttribute("data-cap") || "monthly";
+      _modalDepositCap = btn.getAttribute("data-cap") || "monthly";
     });
   }
 
-  if (submitBtn) {
-    submitBtn.addEventListener("click", async function () {
-      var statsData = {
-        type: _statsSelectedType,
-        country: null,
-        currency: null,
-        inflation: null,
-        params: null  // NEW: Storage type — type-specific parameters
+  // ── Modal: save / cancel ───────────────────────────────────────────────
+  function _validateAndCollectDetails(type) {
+    if (type === "cash") {
+      if (!countrySelect || !countrySelect.value) return null;
+      var info = STATS_COUNTRY_MAP[countrySelect.value];
+      return {
+        country: countrySelect.value,
+        currency: currencySelect ? currencySelect.value : (info ? info.currency : null),
+        inflation: null // resolved async below in caller
       };
+    }
+    if (type === "stock") {
+      var sret = parseFloat(stockReturn ? stockReturn.value : "");
+      if (!isFinite(sret) || sret <= 0) return null;
+      var assetVal = stockAssetSel ? stockAssetSel.value : "custom";
+      return {
+        asset: assetVal,
+        ticker: (assetVal === "custom" && stockTicker) ? (stockTicker.value || "").trim() : (STOCK_ASSET_PRESETS[assetVal] ? STOCK_ASSET_PRESETS[assetVal].ticker : ""),
+        expectedReturn: sret
+      };
+    }
+    if (type === "deposit") {
+      var rate = parseFloat(depositRate ? depositRate.value : "");
+      var term = parseInt(depositTerm ? depositTerm.value : "", 10);
+      if (!isFinite(rate) || rate <= 0) return null;
+      if (!isFinite(term) || term <= 0) return null;
+      return {
+        rate: rate,
+        termMonths: term,
+        capitalization: _modalDepositCap || "monthly",
+        replenishable: !!(depositReplenish && depositReplenish.checked)
+      };
+    }
+    if (type === "metals") {
+      var mret = parseFloat(metalReturn ? metalReturn.value : "");
+      if (!isFinite(mret) || mret <= 0) return null;
+      return {
+        metal: (metalSelect && metalSelect.value) || "gold",
+        expectedReturn: mret
+      };
+    }
+    return null;
+  }
 
-      if (_statsSelectedType === "cash") {
-        var code = countrySelect.value;
-        var info = STATS_COUNTRY_MAP[code];
-        statsData.country = code;
-        statsData.currency = currencySelect ? currencySelect.value : (info ? info.currency : null);
+  if (allocSaveBtn) {
+    allocSaveBtn.addEventListener("click", async function () {
+      var type = _statsSelectedType;
+      if (!type) { showToast(t("portfolio.validation.fillFields"), "error"); return; }
 
-        // DYNAMIC INFLATION — fetch свежей ставки на submit. Кэш предотвращает
-        // повторный round-trip, если страну уже трогали в change-handler.
+      var details = _validateAndCollectDetails(type);
+      if (!details) { showToast(t("portfolio.validation.fillFields"), "error"); return; }
+
+      // For cash, resolve fresh inflation from Supabase (with fallback).
+      if (type === "cash" && details.country) {
+        var info = STATS_COUNTRY_MAP[details.country];
         if (info && info.dbName && typeof window.getInflationRate === "function") {
-          try {
-            statsData.inflation = await window.getInflationRate(info.dbName);
-          } catch (e) {
-            console.warn("[Inflation] submit: fallback на статическую ставку:", e);
-            statsData.inflation = info.inflation;
-          }
+          try { details.inflation = await window.getInflationRate(info.dbName); }
+          catch (e) { details.inflation = info.inflation; }
         } else {
-          statsData.inflation = info ? info.inflation : null;
+          details.inflation = info ? info.inflation : null;
         }
-      } else if (_statsSelectedType === "stock") {
-        // NEW: Storage type — stock market params
-        statsData.params = {
-          ticker: stockTicker ? (stockTicker.value || "").trim() : "",
-          expectedReturn: parseFloat(stockReturn.value) || 0
-        };
-      } else if (_statsSelectedType === "deposit") {
-        // NEW: Storage type — bank deposit params
-        statsData.params = {
-          rate: parseFloat(depositRate.value) || 0,
-          termMonths: Math.max(1, parseInt(depositTerm.value, 10) || 0),
-          capitalization: _statsDepositCap || "monthly",
-          replenishable: !!(depositReplenish && depositReplenish.checked)
-        };
-      } else if (_statsSelectedType === "metals") {
-        // NEW: Storage type — precious metals params
-        statsData.params = {
-          metal: (metalSelect && metalSelect.value) || "gold",
-          expectedReturn: parseFloat(metalReturn.value) || 0
-        };
       }
+
+      var pct = parseInt(allocPctInput ? allocPctInput.value : "", 10);
+      if (!isFinite(pct) || pct < 1 || pct > 100) {
+        showToast(t("portfolio.validation.percentageInvalid"), "error");
+        return;
+      }
+
+      // PORTFOLIO ALLOCATION LOGIC — prevent overflow over 100% on save.
+      var others = _allocTotal() - (_modalEditIndex >= 0 ? (_allocations[_modalEditIndex].percentage || 0) : 0);
+      if (others + pct > 100) {
+        showToast(t("portfolio.validation.over"), "error");
+        return;
+      }
+
+      var item = {
+        id: (_modalEditIndex >= 0 && _allocations[_modalEditIndex].id) ? _allocations[_modalEditIndex].id : _genAllocId(),
+        type: type,
+        percentage: pct,
+        details: details
+      };
+      if (_modalEditIndex >= 0) _allocations[_modalEditIndex] = item;
+      else _allocations.push(item);
+
+      _renderAllocList();
+      _renderAllocProgress();
+      _updateSubmitState();
+      _closeAllocModal();
+    });
+  }
+
+  if (allocCancelBtn) allocCancelBtn.addEventListener("click", _closeAllocModal);
+  if (allocOverlay) allocOverlay.addEventListener("click", _closeAllocModal);
+
+  // ──────────────────────────────────────────────────────────────────────
+  // PORTFOLIO ALLOCATION LOGIC — main submit: persist portfolio to state
+  // ──────────────────────────────────────────────────────────────────────
+  if (submitBtn) {
+    submitBtn.addEventListener("click", function () {
+      if (!_allocations.length || _allocTotal() !== 100) {
+        showToast(t(_allocations.length ? "portfolio.validation.notFull" : "portfolio.validation.empty"), "error");
+        return;
+      }
+
+      // Keep a "primary" type for legacy consumers (renderAccountBackCards
+      // fallback before they read storageAllocation). Use the largest slice.
+      var primary = _allocations.slice().sort(function (a, b) { return (b.percentage || 0) - (a.percentage || 0); })[0];
+      var statsData = {
+        type: primary.type,
+        country: (primary.type === "cash" ? primary.details.country : null) || null,
+        currency: (primary.type === "cash" ? primary.details.currency : null) || null,
+        inflation: (primary.type === "cash" ? primary.details.inflation : null),
+        params: (primary.type !== "cash" ? Object.assign({}, primary.details) : null),
+        // NEW: portfolio shape
+        storageAllocation: _allocations.map(function (a) {
+          return { id: a.id, type: a.type, percentage: a.percentage, details: Object.assign({}, a.details) };
+        }),
+        futureSavingsMode: _savingsMode
+      };
 
       var patch = {};
       patch[_statsTargetAccount] = statsData;
       updateState({ accountStats: patch });
-      // DYNAMIC INFLATION — сохраняем сразу, чтобы свежая ставка попала в Supabase user_state.
       if (typeof saveFullState === "function") saveFullState();
 
       document.querySelectorAll(".screen").forEach(function (s) { s.classList.remove("active"); });
@@ -6008,104 +6380,75 @@ function openAccountStatsScreen(accountKey) {
   var s = getState();
   var allStats = s.accountStats || {};
   var stats = allStats[_statsTargetAccount] || {};
-  _statsSelectedType = stats.type || null;
+  _statsSelectedType = null;
 
   document.querySelectorAll(".screen").forEach(function (sc) { sc.classList.remove("active"); });
   document.getElementById("screen-account-stats").classList.add("active");
   hideBottomNav();
   moveProfileToActiveHeader();
 
-  var typeGrid = document.getElementById("statsTypeGrid");
-  if (typeGrid) {
-    typeGrid.querySelectorAll(".stats-type-card").forEach(function (c) { c.classList.remove("active"); });
-    if (stats.type) {
-      var existing = typeGrid.querySelector('[data-stype="' + stats.type + '"]');
-      if (existing) existing.classList.add("active");
+  // PORTFOLIO ALLOCATION LOGIC — derive the working portfolio from saved state.
+  // 1) If `storageAllocation` exists → use as-is.
+  // 2) Else if legacy `type` exists → migrate to a one-item 100% portfolio.
+  // 3) Otherwise → empty list.
+  var allocs = [];
+  if (Array.isArray(stats.storageAllocation) && stats.storageAllocation.length) {
+    allocs = stats.storageAllocation;
+  } else if (stats.type) {
+    var details = {};
+    if (stats.type === "cash") {
+      details = { country: stats.country || null, currency: stats.currency || null, inflation: (stats.inflation != null ? stats.inflation : null) };
+    } else if (stats.params) {
+      details = Object.assign({}, stats.params);
     }
+    allocs = [{ id: "alloc_" + Math.random().toString(36).slice(2, 9), type: stats.type, percentage: 100, details: details }];
+  }
+  var mode = (stats.futureSavingsMode === "future") ? "future" : "current";
+
+  if (window._statsState && typeof window._statsState.setAllocations === "function") {
+    window._statsState.setAllocations(allocs, mode);
   }
 
-  // NEW: Storage type — toggle all per-type field blocks based on saved type
-  var _cashEl    = document.getElementById("statsCashFields");
-  var _stockEl   = document.getElementById("statsStockFields");
-  var _depositEl = document.getElementById("statsDepositFields");
-  var _metalsEl  = document.getElementById("statsMetalsFields");
-  if (_cashEl)    _cashEl.style.display    = (stats.type === "cash")    ? "" : "none";
-  if (_stockEl)   _stockEl.style.display   = (stats.type === "stock")   ? "" : "none";
-  if (_depositEl) _depositEl.style.display = (stats.type === "deposit") ? "" : "none";
-  if (_metalsEl)  _metalsEl.style.display  = (stats.type === "metals")  ? "" : "none";
-
-  // NEW: Storage type — restore saved params into inputs
-  var _p = (stats && stats.params) || {};
-  var _stockTicker = document.getElementById("statsStockTicker");
-  var _stockReturn = document.getElementById("statsStockReturn");
-  if (_stockTicker) _stockTicker.value = (_p.ticker != null) ? _p.ticker : "";
-  if (_stockReturn) _stockReturn.value = (_p.expectedReturn != null && stats.type === "stock") ? _p.expectedReturn : "";
-
-  var _depRate   = document.getElementById("statsDepositRate");
-  var _depTerm   = document.getElementById("statsDepositTerm");
-  var _depCap    = document.getElementById("statsDepositCap");
-  var _depRepl   = document.getElementById("statsDepositReplenish");
-  if (_depRate) _depRate.value = (_p.rate != null && stats.type === "deposit") ? _p.rate : "";
-  if (_depTerm) _depTerm.value = (_p.termMonths != null && stats.type === "deposit") ? _p.termMonths : "";
-  if (_depCap) {
-    var capVal = (_p.capitalization && stats.type === "deposit") ? _p.capitalization : "monthly";
-    _depCap.querySelectorAll(".stats-segment-btn").forEach(function (b) {
-      b.classList.toggle("active", b.getAttribute("data-cap") === capVal);
-    });
-  }
-  if (_depRepl) _depRepl.checked = !!(_p.replenishable && stats.type === "deposit");
-
-  var _metalSel = document.getElementById("statsMetal");
-  var _metalRet = document.getElementById("statsMetalReturn");
-  if (_metalSel) _metalSel.value = (_p.metal && stats.type === "metals") ? _p.metal : "gold";
-  if (_metalRet) _metalRet.value = (_p.expectedReturn != null && stats.type === "metals") ? _p.expectedReturn : "";
-
-  // DYNAMIC INFLATION — populate countries из Supabase + selected → live preview.
-  _renderStatsCountryOptions(); // мгновенный рендер из кэша (или fallback) для UI без задержки
-  var countrySelect = document.getElementById("statsCountry");
-  if (countrySelect) countrySelect.value = stats.country || "";
-
-  var currencySelect = document.getElementById("statsCurrency");
-  if (currencySelect) currencySelect.value = stats.currency || "";
-
-  // Live preview для уже выбранной страны (если есть).
-  _updateInflationPreview(null, false);
-  if (stats.country) {
-    var info = STATS_COUNTRY_MAP[stats.country];
-    if (info && info.dbName && typeof window.getInflationRate === "function") {
-      _updateInflationPreview(null, true);
-      Promise.resolve(window.getInflationRate(info.dbName)).then(function (rate) {
-        _updateInflationPreview(rate, false);
-      });
-    } else if (stats.inflation != null) {
-      _updateInflationPreview(stats.inflation, false);
-    }
-  }
-
-  // Фоновое обновление списка стран (если кэш ещё не прогрет — наполнит дропдаун).
+  // PORTFOLIO ALLOCATION LOGIC — prime country dropdown in the modal (fast,
+  // uses cached _statsInflationRows; refresh from Supabase in background).
+  _renderStatsCountryOptions();
   if (typeof window.loadInflationRates === "function") {
     Promise.resolve(window.loadInflationRates()).then(function (rows) {
       if (rows && rows.length) {
         _statsInflationRows = rows;
         _renderStatsCountryOptions();
-        // Восстанавливаем selected после ре-рендера.
-        if (countrySelect) countrySelect.value = stats.country || "";
       }
     });
   }
-
-  var submitBtn = document.getElementById("statsSubmit");
-  if (submitBtn) submitBtn.disabled = !stats.type;
 }
 
+/* PORTFOLIO ALLOCATION LOGIC — weighted active inflation across the portfolio.
+ * Uses storageAllocation when available, falls back to legacy single `inflation`.
+ * Only "cash" allocations carry inflation (deposit/stock/metals → 0 baseline);
+ * the result is therefore the weighted inflation of the cash portion. */
 function getActiveInflation() {
   var s = getState();
   var allStats = s.accountStats || {};
-  var mainStats = allStats.main;
-  if (mainStats && mainStats.inflation != null) return mainStats.inflation;
-  var resStats = allStats.reserve;
-  if (resStats && resStats.inflation != null) return resStats.inflation;
-  return null;
+  function _fromStats(st) {
+    if (!st) return null;
+    if (Array.isArray(st.storageAllocation) && st.storageAllocation.length) {
+      var sum = 0, weight = 0;
+      st.storageAllocation.forEach(function (a) {
+        if (a && a.type === "cash" && a.details && a.details.inflation != null) {
+          var w = Number(a.percentage) || 0;
+          sum += Number(a.details.inflation) * w;
+          weight += w;
+        }
+      });
+      if (weight > 0) return sum / weight; // weighted average of cash inflation
+      return null;
+    }
+    if (st.inflation != null) return st.inflation;
+    return null;
+  }
+  var v = _fromStats(allStats.main);
+  if (v != null) return v;
+  return _fromStats(allStats.reserve);
 }
 
 /* ----------------------------------------------------------------------------
@@ -6140,23 +6483,62 @@ function getStorageExpectedReturn(stats) {
 }
 
 /* ----------------------------------------------------------------------------
- * NEW: Storage type — effective inflation (real loss %), positive when money
- * loses purchasing power, negative when yield outpaces inflation.
- *   cash    → inflation
- *   stock   → inflation − expectedReturn
- *   deposit → inflation − effectiveDepositRate
- *   metals  → inflation − expectedReturn
- * Used by inflation-aware UI/calculations. Falls back to raw inflation if no
- * stats. Returns null when nothing relevant is configured (preserves old UX).
+ * PORTFOLIO ALLOCATION LOGIC — weighted effective inflation for the whole
+ * portfolio: Σ((inflation_i − expectedReturn_i) × weight_i) / Σ(weight_i)
+ *
+ *   cash    contributes (inflation − 0)
+ *   stock   contributes (cashBaselineInflation − expectedReturn)
+ *   deposit contributes (cashBaselineInflation − effectiveDepositRate)
+ *   metals  contributes (cashBaselineInflation − expectedReturn)
+ *
+ * cashBaselineInflation = inflation taken from the cash slice (weighted avg).
+ * If no cash slice → uses 0 baseline (pure yield reduces effective inflation).
+ *
+ * Returns null when nothing is configured. Positive = real purchasing-power
+ * loss; negative = yield outpaces inflation.
  * -------------------------------------------------------------------------- */
 function getEffectiveInflation() {
   var s = getState();
   var allStats = s.accountStats || {};
   var stats = allStats.main || allStats.reserve;
   if (!stats) return null;
+
+  // Portfolio branch (preferred).
+  if (Array.isArray(stats.storageAllocation) && stats.storageAllocation.length) {
+    // Baseline inflation = weighted avg of cash slices (or 0 if none).
+    var cashSum = 0, cashWeight = 0;
+    stats.storageAllocation.forEach(function (a) {
+      if (a && a.type === "cash" && a.details && a.details.inflation != null) {
+        var w = Number(a.percentage) || 0;
+        cashSum += Number(a.details.inflation) * w;
+        cashWeight += w;
+      }
+    });
+    var baseline = (cashWeight > 0) ? (cashSum / cashWeight) : 0;
+
+    var totalWeight = 0, weightedEff = 0;
+    stats.storageAllocation.forEach(function (a) {
+      if (!a) return;
+      var w = Number(a.percentage) || 0;
+      if (w <= 0) return;
+      var localInfl, localReturn;
+      if (a.type === "cash") {
+        localInfl = (a.details && a.details.inflation != null) ? Number(a.details.inflation) : baseline;
+        localReturn = 0;
+      } else {
+        localInfl = baseline;
+        localReturn = getStorageExpectedReturn({ type: a.type, params: a.details });
+      }
+      weightedEff += (localInfl - localReturn) * w;
+      totalWeight += w;
+    });
+    if (totalWeight === 0) return null;
+    return weightedEff / totalWeight;
+  }
+
+  // Legacy single-type fallback.
   var infl = (stats.inflation != null) ? Number(stats.inflation) : null;
   if (infl == null || !isFinite(infl)) {
-    // No baseline inflation — still allow expressing real gain via expected return.
     var rOnly = getStorageExpectedReturn(stats);
     if (rOnly > 0) return -rOnly;
     return null;
@@ -6216,44 +6598,89 @@ function renderAccountBackCards() {
     }
 
     var amount = (accountKey === "main") ? accounts.main : accounts.reserve;
-    var typeLabel = getStatsTypeLabel(stats.type);
-    var countryLabel = stats.country ? (STATS_COUNTRY_MAP[stats.country] ? t(STATS_COUNTRY_MAP[stats.country].labelKey) : stats.country) : "—";
-    var currencyLabel = stats.currency || "—";
     var inflation = stats.inflation;
 
-    var html = '<div class="account-back-content">' +
-      '<div class="stats-info-row"><span>' + t("stats.storageType") + '</span><span>' + typeLabel + '</span></div>';
+    var html = '<div class="account-back-content">';
 
-    // NEW: Storage type — type-specific info rows
-    if (stats.type === "cash") {
-      html += '<div class="stats-info-row"><span>' + t("stats.country") + '</span><span>' + countryLabel + '</span></div>' +
-              '<div class="stats-info-row"><span>' + t("stats.currency") + '</span><span>' + currencyLabel + '</span></div>';
-    } else if (stats.type === "stock") {
-      var _ticker = (stats.params && stats.params.ticker) ? stats.params.ticker : "—";
-      var _rStock = (stats.params && stats.params.expectedReturn != null) ? stats.params.expectedReturn : 0;
-      html += '<div class="stats-info-row"><span>' + t("stats.stockInfo") + '</span><span>' + _ticker + '</span></div>' +
-              '<div class="stats-info-row"><span>' + t("stats.field.expectedReturn") + '</span><span>' + (Math.round(_rStock * 10) / 10) + '%</span></div>';
-    } else if (stats.type === "deposit") {
-      var _depRateV = (stats.params && stats.params.rate != null) ? stats.params.rate : 0;
-      var _depTermV = (stats.params && stats.params.termMonths != null) ? stats.params.termMonths : 0;
-      var _depCapV = (stats.params && stats.params.capitalization) || "monthly";
-      var _capLabel = t("stats.cap." + _depCapV);
-      var _effRate = getStorageExpectedReturn(stats);
-      html += '<div class="stats-info-row"><span>' + t("stats.field.depositRate") + '</span><span>' + (Math.round(_depRateV * 10) / 10) + '%</span></div>' +
-              '<div class="stats-info-row"><span>' + t("stats.field.depositTerm") + '</span><span>' + _depTermV + '</span></div>' +
-              '<div class="stats-info-row"><span>' + t("stats.field.capitalization") + '</span><span>' + _capLabel + '</span></div>' +
-              '<div class="stats-info-row"><span>' + t("stats.depositInfo") + '</span><span>' + (Math.round(_effRate * 10) / 10) + '%</span></div>';
-    } else if (stats.type === "metals") {
-      var _metalV = (stats.params && stats.params.metal) || "gold";
-      var _rMetal = (stats.params && stats.params.expectedReturn != null) ? stats.params.expectedReturn : 0;
-      html += '<div class="stats-info-row"><span>' + t("stats.metalInfo") + '</span><span>' + t("stats.metal." + _metalV) + '</span></div>' +
-              '<div class="stats-info-row"><span>' + t("stats.field.expectedReturn") + '</span><span>' + (Math.round(_rMetal * 10) / 10) + '%</span></div>';
+    // PORTFOLIO ALLOCATION LOGIC — composite back card for the portfolio,
+    // or legacy single-type rendering when no allocation is present.
+    var hasPortfolio = Array.isArray(stats.storageAllocation) && stats.storageAllocation.length > 0;
+
+    var _expReturn = 0;
+    var _baselineInfl = (inflation != null) ? Number(inflation) : 0;
+
+    if (hasPortfolio) {
+      // Header line: portfolio summary.
+      html += '<div class="stats-info-row"><span>' + t("portfolio.title") + '</span><span>' +
+              stats.storageAllocation.length + ' · ' +
+              t(stats.futureSavingsMode === "future" ? "portfolio.savingsMode.future" : "portfolio.savingsMode.current") +
+              '</span></div>';
+
+      // One row per allocation slice (compact composition).
+      stats.storageAllocation.forEach(function (a) {
+        if (!a) return;
+        var lbl = getStatsTypeLabel(a.type);
+        html += '<div class="stats-info-row"><span>' + lbl + '</span><span>' + (a.percentage || 0) + '%</span></div>';
+      });
+
+      // Compute baseline (cash-weighted) inflation + weighted expected return.
+      var cashSum = 0, cashWeight = 0;
+      stats.storageAllocation.forEach(function (a) {
+        if (a && a.type === "cash" && a.details && a.details.inflation != null) {
+          var w = Number(a.percentage) || 0;
+          cashSum += Number(a.details.inflation) * w;
+          cashWeight += w;
+        }
+      });
+      _baselineInfl = (cashWeight > 0) ? (cashSum / cashWeight) : 0;
+
+      var retSum = 0, retWeight = 0;
+      stats.storageAllocation.forEach(function (a) {
+        if (!a) return;
+        var w = Number(a.percentage) || 0;
+        if (w <= 0) return;
+        var r = (a.type === "cash") ? 0 : getStorageExpectedReturn({ type: a.type, params: a.details });
+        retSum += r * w;
+        retWeight += w;
+      });
+      _expReturn = (retWeight > 0) ? (retSum / retWeight) : 0;
+    } else {
+      // Legacy single-type back card (preserves original layout/behaviour).
+      var typeLabel = getStatsTypeLabel(stats.type);
+      var countryLabel = stats.country ? (STATS_COUNTRY_MAP[stats.country] ? t(STATS_COUNTRY_MAP[stats.country].labelKey) : stats.country) : "—";
+      var currencyLabel = stats.currency || "—";
+
+      html += '<div class="stats-info-row"><span>' + t("stats.storageType") + '</span><span>' + typeLabel + '</span></div>';
+
+      if (stats.type === "cash") {
+        html += '<div class="stats-info-row"><span>' + t("stats.country") + '</span><span>' + countryLabel + '</span></div>' +
+                '<div class="stats-info-row"><span>' + t("stats.currency") + '</span><span>' + currencyLabel + '</span></div>';
+      } else if (stats.type === "stock") {
+        var _ticker = (stats.params && stats.params.ticker) ? stats.params.ticker : "—";
+        var _rStock = (stats.params && stats.params.expectedReturn != null) ? stats.params.expectedReturn : 0;
+        html += '<div class="stats-info-row"><span>' + t("stats.stockInfo") + '</span><span>' + _ticker + '</span></div>' +
+                '<div class="stats-info-row"><span>' + t("stats.field.expectedReturn") + '</span><span>' + (Math.round(_rStock * 10) / 10) + '%</span></div>';
+      } else if (stats.type === "deposit") {
+        var _depRateV = (stats.params && stats.params.rate != null) ? stats.params.rate : 0;
+        var _depTermV = (stats.params && stats.params.termMonths != null) ? stats.params.termMonths : 0;
+        var _depCapV = (stats.params && stats.params.capitalization) || "monthly";
+        var _capLabel = t("stats.cap." + _depCapV);
+        var _effRate = getStorageExpectedReturn(stats);
+        html += '<div class="stats-info-row"><span>' + t("stats.field.depositRate") + '</span><span>' + (Math.round(_depRateV * 10) / 10) + '%</span></div>' +
+                '<div class="stats-info-row"><span>' + t("stats.field.depositTerm") + '</span><span>' + _depTermV + '</span></div>' +
+                '<div class="stats-info-row"><span>' + t("stats.field.capitalization") + '</span><span>' + _capLabel + '</span></div>' +
+                '<div class="stats-info-row"><span>' + t("stats.depositInfo") + '</span><span>' + (Math.round(_effRate * 10) / 10) + '%</span></div>';
+      } else if (stats.type === "metals") {
+        var _metalV = (stats.params && stats.params.metal) || "gold";
+        var _rMetal = (stats.params && stats.params.expectedReturn != null) ? stats.params.expectedReturn : 0;
+        html += '<div class="stats-info-row"><span>' + t("stats.metalInfo") + '</span><span>' + t("stats.metal." + _metalV) + '</span></div>' +
+                '<div class="stats-info-row"><span>' + t("stats.field.expectedReturn") + '</span><span>' + (Math.round(_rMetal * 10) / 10) + '%</span></div>';
+      }
+      _expReturn = getStorageExpectedReturn(stats);
     }
 
-    // NEW: Storage type — effective inflation = inflation − expected return.
-    // Может быть отрицательной (доходность покрывает инфляцию) → real gain UI.
-    var _expReturn = getStorageExpectedReturn(stats);
-    var _effInfl = (inflation != null ? Number(inflation) : 0) - _expReturn;
+    // PORTFOLIO ALLOCATION LOGIC — effective inflation drives the rest of the card.
+    var _effInfl = _baselineInfl - _expReturn;
     var inflRate = _effInfl / 100;
     var result = calculateInflationAdjustedValue(amount, inflRate, monthsLeft);
     var goalVal = parseNumber(goalInput ? goalInput.value || "0" : "0");
@@ -6275,9 +6702,11 @@ function renderAccountBackCards() {
 
       if (timeStr) {
         html += '<div class="inflation-time">' + timeStr + '</div>';
-        if (inflation) {
-          // DYNAMIC INFLATION — decimal → строка с 1 знаком после запятой.
-          var _pctStr = (Math.round(inflation * 10) / 10).toString();
+        // PORTFOLIO ALLOCATION LOGIC — disclaimer shows the effective inflation
+        // (after subtracting weighted yield) so users see what actually drives
+        // the loss in the card below.
+        if (_effInfl > 0) {
+          var _pctStr = (Math.round(_effInfl * 10) / 10).toString();
           html += '<div class="inflation-disclaimer">' + t("stats.inflationDisclaimer", { pct: _pctStr }) + '</div>';
         }
       }
@@ -6356,6 +6785,8 @@ document.addEventListener("click", function (e) {
         _statsInflationRows = rows;
       }
       // Обновляем accountStats только если в state есть сохранённая страна.
+      // PORTFOLIO ALLOCATION LOGIC — refresh both legacy `inflation` field and
+      // every cash slice inside storageAllocation (each may have its own country).
       var s = (typeof getState === "function") ? getState() : null;
       var allStats = (s && s.accountStats) || {};
       var keys = ["main", "reserve"];
@@ -6363,17 +6794,39 @@ document.addEventListener("click", function (e) {
       var pending = [];
       keys.forEach(function (key) {
         var st = allStats[key];
-        if (!st || !st.country) return;
-        var info = STATS_COUNTRY_MAP[st.country];
-        if (!info || !info.dbName) return;
-        pending.push(
-          Promise.resolve(window.getInflationRate(info.dbName)).then(function (rate) {
-            if (rate != null && isFinite(rate) && rate !== st.inflation) {
-              st.inflation = rate;
-              changed = true;
-            }
-          }).catch(function () { /* keep old */ })
-        );
+        if (!st) return;
+
+        // Legacy single-field refresh.
+        if (st.country) {
+          var info = STATS_COUNTRY_MAP[st.country];
+          if (info && info.dbName) {
+            pending.push(
+              Promise.resolve(window.getInflationRate(info.dbName)).then(function (rate) {
+                if (rate != null && isFinite(rate) && rate !== st.inflation) {
+                  st.inflation = rate;
+                  changed = true;
+                }
+              }).catch(function () { /* keep old */ })
+            );
+          }
+        }
+
+        // Portfolio cash slices refresh.
+        if (Array.isArray(st.storageAllocation)) {
+          st.storageAllocation.forEach(function (a) {
+            if (!a || a.type !== "cash" || !a.details || !a.details.country) return;
+            var aInfo = STATS_COUNTRY_MAP[a.details.country];
+            if (!aInfo || !aInfo.dbName) return;
+            pending.push(
+              Promise.resolve(window.getInflationRate(aInfo.dbName)).then(function (rate) {
+                if (rate != null && isFinite(rate) && rate !== a.details.inflation) {
+                  a.details.inflation = rate;
+                  changed = true;
+                }
+              }).catch(function () { /* keep old */ })
+            );
+          });
+        }
       });
       Promise.all(pending).then(function () {
         if (changed) {

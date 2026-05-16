@@ -1040,6 +1040,43 @@ Protocol анализирует цель…
 
   <div class="stats-body">
 
+    <!-- PORTFOLIO ALLOCATION LOGIC — composition list + progress + add button -->
+    <div class="stats-section-label" data-i18n="portfolio.title">Состав портфеля</div>
+    <div class="alloc-subtitle" data-i18n="portfolio.subtitle">Распределите накопления по типам хранения</div>
+
+    <div id="statsAllocList" class="alloc-list"></div>
+
+    <div class="alloc-progress" id="statsAllocProgress">
+      <div class="alloc-progress-bar"><div class="alloc-progress-fill" id="statsAllocProgressFill"></div></div>
+      <div class="alloc-progress-meta">
+        <span class="alloc-progress-label" id="statsAllocProgressLabel">—</span>
+        <span class="alloc-progress-value" id="statsAllocProgressValue">0% / 100%</span>
+      </div>
+    </div>
+
+    <button type="button" id="statsAllocAddBtn" class="alloc-add-btn" data-i18n="portfolio.addBtn">+ Добавить тип хранения</button>
+
+    <!-- PORTFOLIO ALLOCATION LOGIC — savings model toggle -->
+    <div class="stats-section-label alloc-section-label" data-i18n="portfolio.savingsMode.title">Учёт накоплений</div>
+    <div class="stats-segment savings-mode-segment" id="statsSavingsMode" role="tablist">
+      <button type="button" class="stats-segment-btn active" data-mode="current" data-i18n="portfolio.savingsMode.current">Только текущая сумма</button>
+      <button type="button" class="stats-segment-btn" data-mode="future" data-i18n="portfolio.savingsMode.future">С будущими отложениями</button>
+    </div>
+    <div id="statsSavingsModeHint" class="stats-input-hint savings-mode-hint" data-i18n="portfolio.savingsMode.currentHint">Расчёт идёт от того, что уже накоплено</div>
+
+    <button id="statsSubmit" class="stats-submit-btn" disabled data-i18n="accounts.addStats">Добавить статистику</button>
+
+  </div>
+
+</div>
+
+<!-- PORTFOLIO ALLOCATION LOGIC — modal for adding/editing a single allocation -->
+<div id="statsAllocOverlay" class="proto-sheet-overlay" style="display:none"></div>
+<div id="statsAllocSheet" class="proto-sheet alloc-sheet" style="display:none">
+  <h2 id="statsAllocSheetTitle" data-i18n="portfolio.modal.addTitle">Добавить тип хранения</h2>
+
+  <div class="alloc-sheet-body">
+
     <div class="stats-section-label" data-i18n="accounts.storageType">Тип хранения</div>
     <div class="stats-type-grid" id="statsTypeGrid">
       <div class="card stats-type-card" data-stype="cash" data-i18n="accounts.cash">Наличные</div>
@@ -1051,12 +1088,9 @@ Protocol анализирует цель…
     <div id="statsCashFields" class="stats-cash-fields" style="display:none">
       <div class="input-wrap stats-input-wrap">
         <label data-i18n="stats.country">Страна</label>
-        <!-- DYNAMIC INFLATION — options заполняются из Supabase (loadInflationRates).
-             Placeholder + fallback options остаются на случай оффлайна. -->
         <select id="statsCountry" class="stats-select">
           <option value="" data-i18n="settings.selectCountry">Выберите страну</option>
         </select>
-        <!-- DYNAMIC INFLATION — live preview ставки после выбора страны -->
         <div id="statsInflationPreview" class="stats-inflation-preview" style="display:none"></div>
       </div>
 
@@ -1074,10 +1108,25 @@ Protocol анализирует цель…
       </div>
     </div>
 
-    <!-- NEW: Storage type — stock market fields -->
+    <!-- PORTFOLIO ALLOCATION LOGIC — stock with preset list + custom -->
     <div id="statsStockFields" class="stats-type-fields" style="display:none">
       <div class="input-wrap stats-input-wrap">
-        <label data-i18n="stats.stockInfo">Инструмент</label>
+        <label data-i18n="stats.field.asset">Актив / ETF</label>
+        <select id="statsStockAsset" class="stats-select">
+          <option value="sp500" data-i18n="stats.asset.sp500">S&P 500</option>
+          <option value="nasdaq100" data-i18n="stats.asset.nasdaq100">NASDAQ 100</option>
+          <option value="moex" data-i18n="stats.asset.moex">Индекс МосБиржи</option>
+          <option value="ftse100" data-i18n="stats.asset.ftse100">FTSE 100</option>
+          <option value="msciWorld" data-i18n="stats.asset.msciWorld">MSCI World</option>
+          <option value="aapl" data-i18n="stats.asset.aapl">Apple (AAPL)</option>
+          <option value="msft" data-i18n="stats.asset.msft">Microsoft (MSFT)</option>
+          <option value="tsla" data-i18n="stats.asset.tsla">Tesla (TSLA)</option>
+          <option value="amzn" data-i18n="stats.asset.amzn">Amazon (AMZN)</option>
+          <option value="custom" data-i18n="stats.asset.custom">Свой актив</option>
+        </select>
+      </div>
+      <div class="input-wrap stats-input-wrap" id="statsStockCustomWrap" style="display:none">
+        <label data-i18n="stats.field.customTicker">Тикер своего актива</label>
         <input type="text" id="statsStockTicker" class="stats-input" maxlength="32" placeholder="SBER, VOO, AAPL…" />
         <div class="stats-input-hint" data-i18n="stats.field.tickerHint">Свободный ввод — используется для подсказки</div>
       </div>
@@ -1087,7 +1136,6 @@ Protocol анализирует цель…
       </div>
     </div>
 
-    <!-- NEW: Storage type — bank deposit fields -->
     <div id="statsDepositFields" class="stats-type-fields" style="display:none">
       <div class="input-wrap stats-input-wrap">
         <label data-i18n="stats.field.depositRate">Процентная ставка (% годовых)</label>
@@ -1112,7 +1160,6 @@ Protocol анализирует цель…
       </label>
     </div>
 
-    <!-- NEW: Storage type — precious metals fields -->
     <div id="statsMetalsFields" class="stats-type-fields" style="display:none">
       <div class="input-wrap stats-input-wrap">
         <label data-i18n="stats.field.metal">Металл</label>
@@ -1128,10 +1175,19 @@ Protocol анализирует цель…
       </div>
     </div>
 
-    <button id="statsSubmit" class="stats-submit-btn" disabled data-i18n="accounts.addStats">Добавить статистику</button>
+    <!-- PORTFOLIO ALLOCATION LOGIC — share of portfolio (always required) -->
+    <div class="input-wrap stats-input-wrap alloc-percentage-wrap">
+      <label data-i18n="portfolio.percentage">Доля портфеля (%)</label>
+      <input type="number" id="statsAllocPercentage" class="stats-input" inputmode="numeric" min="1" max="100" step="1" data-i18n-placeholder="portfolio.percentagePlaceholder" placeholder="например, 40" />
+      <div id="statsAllocPercentageHint" class="stats-input-hint"></div>
+    </div>
 
   </div>
 
+  <div class="alloc-sheet-actions">
+    <button type="button" id="statsAllocCancel" class="confirmBtn confirmBtn--cancel" data-i18n="portfolio.modal.cancel">Отмена</button>
+    <button type="button" id="statsAllocSave" class="confirmBtn confirmBtn--primary" data-i18n="portfolio.modal.save">Сохранить</button>
+  </div>
 </div>
 
 <!-- ===== ADVANCED BUTTON ===== -->

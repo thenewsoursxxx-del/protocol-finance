@@ -588,6 +588,30 @@ function applyState(saved) {
     } else {
       appState.accountStats = { main: null, reserve: null };
     }
+
+    // PORTFOLIO ALLOCATION LOGIC — migrate legacy single-type stats into a
+    // 100% one-item portfolio so the new UI/calc treats every record the same.
+    // The legacy fields stay intact for backward compat (renderAccountBackCards
+    // fallback, bootstrapInflation refresh, etc.) until next user submit.
+    ["main", "reserve"].forEach(function (key) {
+      var st = appState.accountStats[key];
+      if (!st || typeof st !== "object") return;
+      if (Array.isArray(st.storageAllocation) && st.storageAllocation.length) return;
+      if (!st.type) return;
+      var details = {};
+      if (st.type === "cash") {
+        details = { country: st.country || null, currency: st.currency || null, inflation: (st.inflation != null ? st.inflation : null) };
+      } else if (st.params && typeof st.params === "object") {
+        details = Object.assign({}, st.params);
+      }
+      st.storageAllocation = [{
+        id: "alloc_" + Math.random().toString(36).slice(2, 9),
+        type: st.type,
+        percentage: 100,
+        details: details
+      }];
+      if (!st.futureSavingsMode) st.futureSavingsMode = "current";
+    });
   } else {
     appState.accountStats = { main: null, reserve: null };
   }
