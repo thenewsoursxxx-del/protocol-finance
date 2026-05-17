@@ -103,6 +103,9 @@ function getDefaultState() {
     // выставляется true после успешного отложения дохода, сбрасывается после
     // добавления expense-записи или ручного закрытия пользователем.
     customScheduleExpensePrompt: false,
+    // CUSTOM SCHEDULE v2 - fix main plan display — зеркальный флаг для обратного
+    // направления: после ввода/отложения расхода предлагаем зафиксировать доход.
+    customScheduleIncomePrompt: false,
 
     // ── Settings (v9) ──
     settings: {
@@ -609,6 +612,10 @@ function applyState(saved) {
     : [];
   appState.customScheduleExpensePrompt = typeof saved.customScheduleExpensePrompt === "boolean"
     ? saved.customScheduleExpensePrompt
+    : false;
+  // CUSTOM SCHEDULE v2 - fix main plan display — зеркальный флаг для expense → income.
+  appState.customScheduleIncomePrompt = typeof saved.customScheduleIncomePrompt === "boolean"
+    ? saved.customScheduleIncomePrompt
     : false;
 
   // ── Settings (v9) ──

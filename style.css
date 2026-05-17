@@ -9233,6 +9233,113 @@ body.reduce-motion .settings-seg-btn {
   font-weight: 600;
 }
 
+/* CUSTOM SCHEDULE v2 - fix main plan display — строка разбивки income − expense = free. */
+.cs-alloc-breakdown {
+  position: relative;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.1);
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+  letter-spacing: 0.01em;
+}
+
+.cs-alloc-breakdown b {
+  color: rgba(255, 255, 255, 0.92);
+  font-weight: 600;
+}
+
+.cs-alloc-breakdown:empty {
+  display: none;
+}
+
+/* CUSTOM SCHEDULE v2 - fix main plan display — income-reminder использует
+ * ту же раскладку, что и expense-reminder, но в другой тональности (emerald). */
+.cs-income-reminder {
+  background: linear-gradient(180deg, rgba(16, 185, 129, 0.14) 0%, rgba(16, 185, 129, 0.05) 100%);
+  border-color: rgba(16, 185, 129, 0.32);
+}
+
+.cs-income-reminder .cs-expense-reminder-title {
+  color: #a7f3d0;
+}
+
+.cs-income-reminder .cs-expense-reminder-sub {
+  color: rgba(167, 243, 208, 0.78);
+}
+
+.cs-income-reminder .cs-reminder-cta {
+  border-color: rgba(16, 185, 129, 0.55);
+  background: rgba(16, 185, 129, 0.22);
+  color: #a7f3d0;
+}
+
+.cs-income-reminder .cs-reminder-cta:active {
+  background: rgba(16, 185, 129, 0.32);
+}
+
+.cs-income-reminder .cs-reminder-dismiss {
+  color: rgba(167, 243, 208, 0.85);
+}
+
+/* CUSTOM SCHEDULE v2 - fix main plan display — кастомный экран в «Текущий план». */
+.plan-cs-mode #planMonthly {
+  font-size: 18px;
+  line-height: 1.3;
+}
+
+.plan-cs-block {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.plan-cs-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.plan-cs-row b {
+  color: #fff;
+  font-weight: 600;
+}
+
+.plan-cs-row--primary {
+  font-size: 15px;
+  padding-bottom: 8px;
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.1);
+  margin-bottom: 2px;
+}
+
+.plan-cs-row--primary b {
+  font-size: 20px;
+  font-weight: 700;
+  color: #6ee7b7;
+}
+
+.plan-cs-sub {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.45);
+  line-height: 1.45;
+}
+
+.plan-cs-counterpart {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.4);
+  font-style: italic;
+}
+
+.plan-cs-empty {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.55);
+  text-align: left;
+  line-height: 1.45;
+}
+
 .cs-alloc-mode {
   margin-top: 12px;
   text-align: center;

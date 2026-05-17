@@ -250,6 +250,19 @@ viewport-fit=cover" />
         <!-- CUSTOM SCHEDULE LOGIC — ручной ввод расходов (зеркало income-блока). -->
         <div class="custom-schedule-block" id="expenseCustomBlock" data-side="expense" style="display:none">
           <div class="cs-summary" id="expenseCsSummary"></div>
+          <!-- CUSTOM SCHEDULE v2 - fix main plan display — зеркальный reminder
+               после ввода расхода: подсказываем зафиксировать доход за период. -->
+          <div class="cs-expense-reminder cs-income-reminder" id="csIncomeReminder" style="display:none">
+            <div class="cs-expense-reminder-icon" aria-hidden="true">💡</div>
+            <div class="cs-expense-reminder-text">
+              <div class="cs-expense-reminder-title" data-i18n="cs.reminder.income.title">Зафиксируйте доход за период</div>
+              <div class="cs-expense-reminder-sub" data-i18n="cs.reminder.income.subtitle">Если за этот период был доход — впишите его, чтобы план отложений был точнее.</div>
+            </div>
+            <div class="cs-expense-reminder-actions">
+              <button type="button" class="cs-reminder-cta" id="csIncomeReminderCta" data-i18n="cs.reminder.income.cta">Записать поступление</button>
+              <button type="button" class="cs-reminder-dismiss" id="csIncomeReminderDismiss" aria-label="Dismiss">×</button>
+            </div>
+          </div>
           <button type="button" class="cs-add-record-btn" data-side="expense" data-i18n="cs.btn.add.expense">+ Записать расход</button>
           <div class="cs-history-title" data-i18n="cs.history.title.expense">История расходов</div>
           <div class="cs-history" id="expenseCsHistory"></div>
@@ -1801,6 +1814,8 @@ z-index: 999999;
         <span data-i18n="cs.alloc.fromAmount">от суммы</span>
         <b id="csAllocBase">—</b>
       </div>
+      <!-- CUSTOM SCHEDULE v2 - fix main plan display — строка разбивки: income − expense = free. -->
+      <div class="cs-alloc-breakdown" id="csAllocBreakdown"></div>
     </div>
     <div class="cs-alloc-mode" id="csAllocMode" data-i18n="cs.alloc.modeLabel">Расчёт от текущего режима накопления</div>
 

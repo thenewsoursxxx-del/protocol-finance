@@ -4507,6 +4507,113 @@ var explainEl = getEl("planExplanation");
 
 if (!monthlyEl || !explainEl) return;
 
+// CUSTOM SCHEDULE v2 - fix main plan display ─────────────────────────────────
+// Override стандартного отображения, если активна гибкая модель и хотя бы одна
+// сторона использует freq="custom". Тогда вместо фиксированного «N ₽ /мес»
+// показываем индивидуальный расчёт от последней введённой суммы с учётом
+// counterpart-стороны (фикс. или последний ручной ввод противоположной стороны).
+var _cpInfo = (typeof window.getCustomPlanInfo === "function") ? window.getCustomPlanInfo() : null;
+if (_cpInfo && _cpInfo.anyCustomActive) {
+  var _cardEl = document.getElementById("planHeader");
+  if (_cardEl) _cardEl.classList.add("plan-cs-mode");
+  var _csSym = (typeof getCurrencySymbol === "function") ? getCurrencySymbol() : "₽";
+
+  if (!_cpInfo.hasAnyEntry) {
+    // Нет ручных вводов — даём подсказку, не отображаем старый «0 ₽».
+    monthlyEl.innerText = t("flex.noDataTitle");
+    explainEl.innerHTML = '<div class="plan-cs-empty">' + t("cs.plan.emptyHint") + '</div>';
+    var _inflEl0 = getEl("inflationHint");
+    if (_inflEl0) { _inflEl0.textContent = ""; _inflEl0.style.display = "none"; }
+    return;
+  }
+
+  // Подзаголовок «от последнего ...» — зависит от стороны записи.
+  var _fromKey = "cs.plan.fromLast." + _cpInfo.side;
+  var _fromLine = t(_fromKey, { amount: _cpInfo.lastAmountFormatted + " " + _csSym });
+
+  // Заголовок: «Нужно отложить: X ₽».
+  monthlyEl.innerHTML =
+    t("cs.plan.title") + ': <b>' + _cpInfo.depositFormatted + ' ' + _csSym + '</b>';
+
+  // Подсказка про counterpart (что было учтено).
+  var _cp = _cpInfo.counterpart || { amount: 0, kind: "none" };
+  var _cpLine = "";
+  if (_cp.amount > 0) {
+    var _cpKey;
+    if (_cp.kind === "customLast") {
+      _cpKey = _cpInfo.side === "income" ? "cs.plan.counterpart.lastExpense" : "cs.plan.counterpart.lastIncome";
+    } else {
+      _cpKey = _cpInfo.side === "income" ? "cs.plan.counterpart.expense" : "cs.plan.counterpart.income";
+    }
+    _cpLine = t(_cpKey, { amount: (typeof fmtNum === "function" ? fmtNum(_cp.amount) : String(_cp.amount)) + " " + _csSym });
+  } else {
+    var _noCpKey = _cpInfo.side === "income" ? "cs.plan.noCounterpart.expense" : "cs.plan.noCounterpart.income";
+    _cpLine = t(_noCpKey);
+  }
+
+  // «Отложено от этой суммы» + «Отложено на цель (total)».
+  var _depFromThis = _cpInfo.depositedFromThis + ' ' + _csSym;
+  var _goalSaved = (typeof accounts !== "undefined" && accounts && accounts.main) ? accounts.main : 0;
+  var _goalSavedFmt = (typeof fmtConverted === "function") ? fmtConverted(_goalSaved) : (typeof fmtNum === "function" ? fmtNum(_goalSaved) : String(_goalSaved));
+
+  // Срок.
+  var _etaLine;
+  if (_cpInfo.etaMonths == null) {
+    _etaLine = t("cs.plan.termInsufficient");
+  } else {
+    _etaLine = t("cs.plan.termMonths", { n: _cpInfo.etaMonths });
+  }
+
+  explainEl.innerHTML =
+    '<div class="plan-cs-block">' +
+      '<div class="plan-cs-row plan-cs-row--primary">' +
+        '<span>' + _fromLine + '</span>' +
+      '</div>' +
+      '<div class="plan-cs-counterpart">' + _cpLine + '</div>' +
+      '<div class="plan-cs-row">' +
+        '<span>' + t("cs.plan.depositedFromLast") + '</span>' +
+        '<b>' + _depFromThis + '</b>' +
+      '</div>' +
+      '<div class="plan-cs-row">' +
+        '<span>' + t("cs.plan.deposited") + '</span>' +
+        '<b>' + _goalSavedFmt + ' ' + _csSym + '</b>' +
+      '</div>' +
+      '<div class="plan-cs-row">' +
+        '<span>' + t("cs.plan.term") + '</span>' +
+        '<b>' + _etaLine + '</b>' +
+      '</div>' +
+    '</div>';
+
+  // Обновляем индикатор «summaryMonths» (та же ETA).
+  var _sumEl0 = getEl("summaryMonths");
+  if (_sumEl0) _sumEl0.innerText = (_cpInfo.etaMonths == null ? "—" : _cpInfo.etaMonths);
+
+  // Инфляция/storage type — оставляем штатный рендер (полезен и в custom-режиме).
+  var _inflEl1 = getEl("inflationHint");
+  if (_inflEl1) {
+    var _effInfl = (typeof getEffectiveInflation === "function") ? getEffectiveInflation() : null;
+    var _infl = (_effInfl != null) ? _effInfl : ((typeof getActiveInflation === "function") ? getActiveInflation() : null);
+    if (_infl != null && _infl > 0) {
+      var _is = (Math.round(_infl * 10) / 10).toString();
+      _inflEl1.textContent = t("misc.inflation") + ": " + _is + "%";
+      _inflEl1.style.display = "";
+    } else if (_infl != null && _infl < 0) {
+      var _rs = (Math.round(Math.abs(_infl) * 10) / 10).toString();
+      _inflEl1.textContent = t("stats.realReturn") + ": +" + _rs + "%";
+      _inflEl1.style.display = "";
+    } else {
+      _inflEl1.textContent = "";
+      _inflEl1.style.display = "none";
+    }
+  }
+  return;
+}
+
+// CUSTOM SCHEDULE v2 - fix main plan display — снимаем custom-класс, если режим
+// больше не активен (пользователь переключил частоту обратно).
+var _cardElOff = document.getElementById("planHeader");
+if (_cardElOff) _cardElOff.classList.remove("plan-cs-mode");
+
 if (isCashflowNoData()) {
   monthlyEl.innerText = t("flex.noDataTitle");
   explainEl.innerHTML = t("flex.noDataHint");
@@ -5878,6 +5985,62 @@ initCashflowSettings();
     return (PACE[m] != null) ? PACE[m] : 0.6;
   }
 
+  // CUSTOM SCHEDULE v2 - fix main plan display ─────────────────────────────
+  // Возвращает «monthly-эквивалент» противоположной стороны для конкретной
+  // entry-стороны:
+  //   • side="income"  → сколько вычесть как expense
+  //   • side="expense" → сколько прибавить как income
+  // Источник зависит от настроек гибкой модели:
+  //   • тип "fixed"               → simple-поле s.income / s.expenses
+  //   • variable + freq≠custom    → s.fixedIncomeAmount / s.fixedExpenseAmount
+  //   • variable + freq="custom"  → последняя ручная запись на той стороне (или 0)
+  // Возвращает { amount, kind } где kind ∈ "fixed"|"variablePeriodic"|"customLast"|"none".
+  function _counterpartMonthly(forSide) {
+    var s = (typeof getState === "function") ? getState() : {};
+    var otherSide = forSide === "income" ? "expense" : "income";
+    var typeKey = otherSide + "Type";
+    var freqKey = otherSide + "Frequency";
+    var simpleField = otherSide === "income" ? "income" : "expenses";
+    var varField = otherSide === "income" ? "fixedIncomeAmount" : "fixedExpenseAmount";
+    var type = s[typeKey] || "fixed";
+    var freq = s[freqKey] || "monthly";
+    var parser = (typeof parseFlexAmount === "function") ? parseFlexAmount : Number;
+
+    if (type === "fixed") {
+      var fixedAmt = parser(s[simpleField]);
+      return { amount: fixedAmt > 0 ? fixedAmt : 0, kind: fixedAmt > 0 ? "fixed" : "none" };
+    }
+    // variable
+    if (freq === "custom") {
+      var entries = _entriesBySide(otherSide).slice().sort(function (a, b) {
+        var dCmp = String(b.date).localeCompare(String(a.date));
+        if (dCmp !== 0) return dCmp;
+        return String(b.createdAt || "").localeCompare(String(a.createdAt || ""));
+      });
+      var last = entries[0];
+      var lastAmt = last ? (Number(last.amount) || 0) : 0;
+      return { amount: lastAmt, kind: lastAmt > 0 ? "customLast" : "none" };
+    }
+    var vAmt = parser(s[varField]);
+    return { amount: vAmt > 0 ? vAmt : 0, kind: vAmt > 0 ? "variablePeriodic" : "none" };
+  }
+
+  // CUSTOM SCHEDULE v2 - fix main plan display — расчёт «нужно отложить» от
+  // конкретной записи: free = (income − expense) × pace. Учитывает counterpart
+  // (фикс. или последний custom-ввод другой стороны).
+  function _computeDepositForEntry(side, amount) {
+    amount = Number(amount) || 0;
+    var cp = _counterpartMonthly(side);
+    var free;
+    if (side === "income") {
+      free = amount - cp.amount;
+    } else {
+      free = cp.amount - amount;
+    }
+    var deposit = Math.max(0, Math.round(free * _paceFraction()));
+    return { deposit: deposit, free: Math.max(0, free), counterpart: cp };
+  }
+
   function _modeLabel() {
     return t("cs.mode." + _currentSaveMode());
   }
@@ -5897,33 +6060,54 @@ initCashflowSettings();
   }
 
   // ── ETA ───────────────────────────────────────────────────────────────────
-  // CUSTOM SCHEDULE LOGIC — примерный срок до цели на основе среднего
-  // последних income-вводов и текущего темпа накоплений. Если данных <2 → null.
+  // CUSTOM SCHEDULE v2 - fix main plan display — примерный срок до цели на
+  // основе средних ручных вводов с УЧЁТОМ counterpart-стороны:
+  //   monthlySave = max(0, avg_income - avg_expense_or_fixed) × pace.
+  // Если по income стороне <2 записей → недостаточно данных.
   function _computeEta() {
     var incomes = _entriesBySide("income");
-    if (incomes.length < 2) return null;
+    var expenses = _entriesBySide("expense");
 
-    // Среднее по последним 3 ручным income-вводам (новейшие сверху).
-    var sorted = incomes.slice().sort(function (a, b) {
-      return String(b.date).localeCompare(String(a.date));
-    });
-    var sample = sorted.slice(0, Math.min(3, sorted.length));
-    var avg = 0;
-    for (var i = 0; i < sample.length; i++) avg += (Number(sample[i].amount) || 0);
-    avg = avg / sample.length;
-    if (avg <= 0) return null;
+    // Источник avg_income: либо custom-журнал, либо фикс.
+    var s = (typeof getState === "function") ? getState() : {};
+    var incomeIsCustom = (s.incomeType === "variable") && ((s.incomeFrequency || "monthly") === "custom");
+    var expenseIsCustom = (s.expenseType === "variable") && ((s.expenseFrequency || "monthly") === "custom");
 
-    var monthlyEffective = avg * _paceFraction();
+    var avgIncome = 0;
+    if (incomeIsCustom) {
+      if (incomes.length < 2) return null;
+      var sortedI = incomes.slice().sort(function (a, b) { return String(b.date).localeCompare(String(a.date)); });
+      var sampleI = sortedI.slice(0, Math.min(3, sortedI.length));
+      for (var i = 0; i < sampleI.length; i++) avgIncome += (Number(sampleI[i].amount) || 0);
+      avgIncome = avgIncome / sampleI.length;
+    } else {
+      var cpInc = _counterpartMonthly("expense"); // counterpart of expense = income side
+      avgIncome = cpInc.amount;
+    }
+
+    var avgExpense = 0;
+    if (expenseIsCustom) {
+      if (expenses.length > 0) {
+        var sortedE = expenses.slice().sort(function (a, b) { return String(b.date).localeCompare(String(a.date)); });
+        var sampleE = sortedE.slice(0, Math.min(3, sortedE.length));
+        for (var k = 0; k < sampleE.length; k++) avgExpense += (Number(sampleE[k].amount) || 0);
+        avgExpense = avgExpense / sampleE.length;
+      }
+    } else {
+      var cpExp = _counterpartMonthly("income"); // counterpart of income = expense side
+      avgExpense = cpExp.amount;
+    }
+
+    var freeMonthly = Math.max(0, avgIncome - avgExpense);
+    var monthlyEffective = freeMonthly * _paceFraction();
     if (monthlyEffective <= 0) return null;
 
-    // remaining: пробуем взять lastCalc, иначе из state.
     var goalVal = 0;
-    var savedVal = 0;
     try {
       var gi = document.getElementById("goal");
       goalVal = gi ? (typeof parseNumber === "function" ? parseNumber(gi.value || "0") : Number(gi.value) || 0) : 0;
     } catch (e) { goalVal = 0; }
-    savedVal = (typeof accounts !== "undefined" && accounts && accounts.main) ? accounts.main : 0;
+    var savedVal = (typeof accounts !== "undefined" && accounts && accounts.main) ? accounts.main : 0;
     var remaining = Math.max(0, goalVal - savedVal);
     if (remaining <= 0) return null;
 
@@ -6038,16 +6222,25 @@ initCashflowSettings();
 
   // ── Expense reminder (sticky-card после income deposit) ───────────────────
 
+  // CUSTOM SCHEDULE v2 - fix main plan display — обе reminder-карточки.
   function _renderExpenseReminder() {
-    var card = document.getElementById("csExpenseReminder");
-    if (!card) return;
+    var expCard = document.getElementById("csExpenseReminder");
+    var incCard = document.getElementById("csIncomeReminder");
     var s = (typeof getState === "function") ? getState() : {};
-    card.style.display = s.customScheduleExpensePrompt ? "flex" : "none";
+    if (expCard) expCard.style.display = s.customScheduleExpensePrompt ? "flex" : "none";
+    if (incCard) incCard.style.display = s.customScheduleIncomePrompt ? "flex" : "none";
   }
 
   function _setExpensePrompt(active) {
     if (typeof updateState !== "function") return;
     updateState({ customScheduleExpensePrompt: !!active });
+    _renderExpenseReminder();
+  }
+
+  // CUSTOM SCHEDULE v2 - fix main plan display — зеркальный сеттер для income-prompt.
+  function _setIncomePrompt(active) {
+    if (typeof updateState !== "function") return;
+    updateState({ customScheduleIncomePrompt: !!active });
     _renderExpenseReminder();
   }
 
@@ -6207,8 +6400,24 @@ initCashflowSettings();
     }
     updateState({ customScheduleEntries: arr });
 
-    // Sticky-reminder про расходы.
-    updateState({ customScheduleExpensePrompt: true });
+    // CUSTOM SCHEDULE v2 - fix main plan display — Sticky-reminder ставим
+    // только если ПРОТИВОПОЛОЖНАЯ сторона тоже в custom-режиме (иначе фикс.
+    // counterpart уже учтён в расчёте и предлагать дополнительные ручные
+    // записи бессмысленно).
+    var sNow = (typeof getState === "function") ? getState() : {};
+    var incomeIsCustom = (sNow.incomeType === "variable") && ((sNow.incomeFrequency || "monthly") === "custom");
+    var expenseIsCustom = (sNow.expenseType === "variable") && ((sNow.expenseFrequency || "monthly") === "custom");
+    if (entry.side === "income") {
+      updateState({
+        customScheduleExpensePrompt: !!expenseIsCustom,
+        customScheduleIncomePrompt: false
+      });
+    } else {
+      updateState({
+        customScheduleIncomePrompt: !!incomeIsCustom,
+        customScheduleExpensePrompt: false
+      });
+    }
   }
 
   // ── Events: Continue / Deposit / Skip / History clicks ────────────────────
@@ -6239,34 +6448,74 @@ initCashflowSettings();
         return;
       }
 
-      // Новая запись.
-      if (ctx.side === "expense") {
-        // Для расходов alloc-шаг не показываем — сразу сохраняем.
-        _addEntry("expense", rawAmount, dateVal);
+      // CUSTOM SCHEDULE v2 - fix main plan display — теперь и расход тоже идёт
+      // через alloc-шаг, если есть counterpart-доход (фикс. или последний
+      // custom-ввод). Это позволяет показать "Нужно отложить" с учётом обеих
+      // сторон. Если counterpart нулевой и сторона = expense — alloc-шаг
+      // бессмысленен (нет дохода → откладывать не из чего) → закрываем сразу.
+
+      var entry = _addEntry(ctx.side, rawAmount, dateVal);
+      ctx.baseAmount = rawAmount;
+      ctx.entryDate = dateVal;
+      ctx.editId = entry.id;
+
+      var calc = _computeDepositForEntry(ctx.side, rawAmount);
+      ctx.pendingDeposit = calc.deposit;
+
+      // Для expense: если counterpart=0 или deposit≤0 — нет смысла в alloc-шаге.
+      if (ctx.side === "expense" && (calc.counterpart.amount <= 0 || calc.deposit <= 0)) {
         // Если стоял sticky-reminder про расходы — гасим (пользователь как раз их ввёл).
         _setExpensePrompt(false);
+        // CUSTOM SCHEDULE v2 - fix main plan display — reminder про доход только
+        // если income-сторона тоже в custom-режиме (иначе фикс. доход уже учтён).
+        var _sNow = (typeof getState === "function") ? getState() : {};
+        var _incIsCustom = (_sNow.incomeType === "variable") && ((_sNow.incomeFrequency || "monthly") === "custom");
+        _setIncomePrompt(!!_incIsCustom);
         if (typeof showToast === "function") showToast(t("cs.toast.added.expense"), "success");
         closeCustomScheduleSheet();
         if (typeof recalcPlan === "function") recalcPlan();
         return;
       }
 
-      // Income: добавляем запись (deposited:0), переходим к alloc-шагу.
-      var entry = _addEntry("income", rawAmount, dateVal);
-      ctx.baseAmount = rawAmount;
-      ctx.entryDate = dateVal;
-      ctx.pendingDeposit = Math.round(rawAmount * _paceFraction());
-      // Сохраняем id новой записи для последующего commit/skip.
-      ctx.editId = entry.id;
-
-      if (allocAmountEl) {
-        allocAmountEl.textContent = (typeof fmtNum === "function") ? fmtNum(ctx.pendingDeposit) : String(ctx.pendingDeposit);
-      }
-      if (allocBaseEl) allocBaseEl.textContent = _amount(rawAmount);
-
+      // Заполняем alloc-step.
+      _renderAllocStep(ctx.side, rawAmount, calc);
       _showStep("alloc");
       if (typeof recalcPlan === "function") recalcPlan();
     });
+  }
+
+  // CUSTOM SCHEDULE v2 - fix main plan display — рендер шага «График отложений»
+  // с учётом обеих сторон. Заголовки и breakdown зависят от стороны и наличия
+  // counterpart-источника. Для income → «от поступления X», для expense →
+  // «после расхода X» + breakdown «income − expense = free».
+  function _renderAllocStep(side, amount, calc) {
+    if (allocAmountEl) {
+      allocAmountEl.textContent = (typeof fmtNum === "function") ? fmtNum(calc.deposit) : String(calc.deposit);
+    }
+    // Side-specific "from-line" — перерисовываем целиком, чтобы текст и сумма
+    // согласовались с типом записи (доход/расход).
+    var fromWrap = sheet ? sheet.querySelector(".cs-alloc-from") : null;
+    if (fromWrap) {
+      var subKey = side === "expense" ? "cs.alloc.subTitle.expense" : "cs.alloc.subTitle.income";
+      fromWrap.innerHTML = t(subKey, { amount: '<b>' + _amount(amount) + '</b>' });
+    } else if (allocBaseEl) {
+      allocBaseEl.textContent = _amount(amount);
+    }
+    var breakdownEl = document.getElementById("csAllocBreakdown");
+    if (breakdownEl) {
+      var cp = calc.counterpart;
+      if (cp.amount > 0) {
+        var incomeForBreakdown = side === "income" ? amount : cp.amount;
+        var expenseForBreakdown = side === "expense" ? amount : cp.amount;
+        breakdownEl.innerHTML = t("cs.alloc.breakdown", {
+          income: '<b>' + _amount(incomeForBreakdown) + '</b>',
+          expense: '<b>' + _amount(expenseForBreakdown) + '</b>',
+          free: '<b>' + _amount(calc.free) + '</b>'
+        });
+      } else {
+        breakdownEl.textContent = "";
+      }
+    }
   }
 
   if (depositBtn) {
@@ -6300,7 +6549,21 @@ initCashflowSettings();
   if (skipDepositBtn) {
     skipDepositBtn.addEventListener("click", function () {
       if (typeof haptic === "function") haptic("light");
-      if (typeof showToast === "function") showToast(t("cs.toast.added.income"), "success");
+      // CUSTOM SCHEDULE v2 - fix main plan display — даже без отложения важно
+      // показать соответствующий reminder: пользователь зафиксировал движение
+      // одной стороны, имеет смысл предложить дополнить другую (но только если
+      // противоположная сторона тоже в custom-режиме).
+      var sSkip = (typeof getState === "function") ? getState() : {};
+      var incCustomS = (sSkip.incomeType === "variable") && ((sSkip.incomeFrequency || "monthly") === "custom");
+      var expCustomS = (sSkip.expenseType === "variable") && ((sSkip.expenseFrequency || "monthly") === "custom");
+      if (ctx.side === "income") {
+        _setExpensePrompt(!!expCustomS);
+        if (typeof showToast === "function") showToast(t("cs.toast.added.income"), "success");
+      } else {
+        _setExpensePrompt(false);
+        _setIncomePrompt(!!incCustomS);
+        if (typeof showToast === "function") showToast(t("cs.toast.added.expense"), "success");
+      }
       closeCustomScheduleSheet();
       if (typeof recalcPlan === "function") recalcPlan();
     });
@@ -6329,6 +6592,10 @@ initCashflowSettings();
     if (addBtn) {
       var side = addBtn.getAttribute("data-side") || "income";
       if (typeof haptic === "function") haptic("light");
+      // CUSTOM SCHEDULE v2 - fix main plan display — открывая модалку нужной
+      // стороны, гасим соответствующий sticky-reminder (он становится неактуален).
+      if (side === "income") _setIncomePrompt(false);
+      if (side === "expense") _setExpensePrompt(false);
       openCustomScheduleSheet(side);
       return;
     }
@@ -6366,7 +6633,10 @@ initCashflowSettings();
           if (typeof showToast === "function") showToast(t("cs.toast.noGoal"), "info");
           return;
         }
-        var dep = Math.round((Number(entD.amount) || 0) * _paceFraction());
+        // CUSTOM SCHEDULE v2 - fix main plan display — inline-кнопка тоже считает
+        // с учётом counterpart (фикс. расходы или последний custom-расход).
+        var calcD = _computeDepositForEntry("income", Number(entD.amount) || 0);
+        var dep = calcD.deposit;
         if (dep <= 0) return;
         if (typeof haptic === "function") haptic("success");
         _commitDeposit(entD, dep);
@@ -6397,11 +6667,83 @@ initCashflowSettings();
     });
   }
 
+  // CUSTOM SCHEDULE v2 - fix main plan display — зеркальные handlers для income-reminder.
+  var reminderIncCta = document.getElementById("csIncomeReminderCta");
+  var reminderIncDismiss = document.getElementById("csIncomeReminderDismiss");
+  if (reminderIncCta) {
+    reminderIncCta.addEventListener("click", function () {
+      if (typeof haptic === "function") haptic("light");
+      _setIncomePrompt(false);
+      openCustomScheduleSheet("income");
+    });
+  }
+  if (reminderIncDismiss) {
+    reminderIncDismiss.addEventListener("click", function () {
+      if (typeof haptic === "function") haptic("light");
+      _setIncomePrompt(false);
+    });
+  }
+
   // ── Public API ────────────────────────────────────────────────────────────
 
   window.renderCustomSchedule = renderCustomSchedule;
   window.openCustomScheduleSheet = openCustomScheduleSheet;
   window.closeCustomScheduleSheet = closeCustomScheduleSheet;
+
+  // CUSTOM SCHEDULE v2 - fix main plan display — публичные helpers для блока «Текущий план».
+  //
+  // Возвращает информацию для кастомного экрана плана либо null, если custom-режим
+  // не активен / нет данных. Структура:
+  //   {
+  //     side:        "income" | "expense" — сторона последнего ввода
+  //     entry:       последняя запись (объект customScheduleEntries)
+  //     deposit:     рассчитанная сумма "Нужно отложить" с учётом counterpart
+  //     free:        income - expense за период
+  //     counterpart: { amount, kind }
+  //     etaMonths:   number | null
+  //     hasAnyEntry: true/false (есть ли вообще хотя бы одна запись)
+  //     anyCustomActive: true/false (любая сторона использует freq=custom)
+  //   }
+  function getCustomPlanInfo() {
+    var s = (typeof getState === "function") ? getState() : {};
+    // CUSTOM SCHEDULE v2 - fix main plan display — override актуален только в
+    // гибкой модели; в simple ничего не подменяем.
+    if (s.financialModel !== "cashflow") return null;
+    var incomeIsCustom = (s.incomeType === "variable") && ((s.incomeFrequency || "monthly") === "custom");
+    var expenseIsCustom = (s.expenseType === "variable") && ((s.expenseFrequency || "monthly") === "custom");
+    var anyCustomActive = incomeIsCustom || expenseIsCustom;
+    if (!anyCustomActive) return null;
+
+    var allEntries = _entries().slice().sort(function (a, b) {
+      var dCmp = String(b.date).localeCompare(String(a.date));
+      if (dCmp !== 0) return dCmp;
+      return String(b.createdAt || "").localeCompare(String(a.createdAt || ""));
+    });
+
+    if (!allEntries.length) {
+      return { anyCustomActive: true, hasAnyEntry: false, etaMonths: _computeEta() };
+    }
+
+    var last = allEntries[0];
+    var calc = _computeDepositForEntry(last.side, Number(last.amount) || 0);
+
+    return {
+      anyCustomActive: true,
+      hasAnyEntry: true,
+      side: last.side,
+      entry: last,
+      deposit: calc.deposit,
+      free: calc.free,
+      counterpart: calc.counterpart,
+      etaMonths: _computeEta(),
+      // CUSTOM SCHEDULE v2 - fix main plan display — fmt-помощник для main-plan render.
+      lastAmountFormatted: _amount(Number(last.amount) || 0),
+      depositFormatted: _amount(calc.deposit),
+      depositedFromThis: _amount(Number(last.deposited) || 0)
+    };
+  }
+
+  window.getCustomPlanInfo = getCustomPlanInfo;
 
   // CUSTOM SCHEDULE LOGIC — первичный рендер на момент загрузки страницы.
   // syncFlexibleUI() мог отработать ДО парсинга этой IIFE, тогда блоки
