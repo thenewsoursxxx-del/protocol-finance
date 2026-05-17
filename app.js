@@ -4527,21 +4527,24 @@ if (_cpInfo && _cpInfo.anyCustomActive) {
     return;
   }
 
-  // Подзаголовок «от последнего ...» — зависит от стороны записи.
-  var _fromKey = "cs.plan.fromLast." + _cpInfo.side;
-  var _fromLine = t(_fromKey, { amount: _cpInfo.lastAmountFormatted + " " + _csSym });
-
-  // Заголовок: «Нужно отложить: X ₽».
+  // FIX: custom schedule accumulation + counters update — главный экран
+  // полностью переходит на АККУМУЛИРОВАННЫЕ счётчики.
+  //
+  // Заголовок: «Нужно отложить: pending ₽» — что ещё нужно докинуть.
+  // Если pending=0 (всё отложено или free=0), показываем target и подпись
+  // «Уже отложено полностью».
+  var _showPending = _cpInfo.pendingDeposit > 0 ? _cpInfo.pendingDeposit : _cpInfo.targetDeposit;
+  var _showFormatted = _cpInfo.pendingDeposit > 0 ? _cpInfo.pendingFormatted : _cpInfo.targetFormatted;
   monthlyEl.innerHTML =
-    t("cs.plan.title") + ': <b>' + _cpInfo.depositFormatted + ' ' + _csSym + '</b>';
+    t("cs.plan.title") + ': <b>' + _showFormatted + ' ' + _csSym + '</b>';
 
-  // Подсказка про counterpart (что было учтено).
+  // Подсказка про counterpart (что было учтено в free).
   var _cp = _cpInfo.counterpart || { amount: 0, kind: "none" };
   var _cpLine = "";
   if (_cp.amount > 0) {
     var _cpKey;
-    if (_cp.kind === "customLast") {
-      _cpKey = _cpInfo.side === "income" ? "cs.plan.counterpart.lastExpense" : "cs.plan.counterpart.lastIncome";
+    if (_cp.kind === "customTotal") {
+      _cpKey = _cpInfo.side === "income" ? "cs.plan.counterpart.totalExpense" : "cs.plan.counterpart.totalIncome";
     } else {
       _cpKey = _cpInfo.side === "income" ? "cs.plan.counterpart.expense" : "cs.plan.counterpart.income";
     }
@@ -4551,11 +4554,6 @@ if (_cpInfo && _cpInfo.anyCustomActive) {
     _cpLine = t(_noCpKey);
   }
 
-  // «Отложено от этой суммы» + «Отложено на цель (total)».
-  var _depFromThis = _cpInfo.depositedFromThis + ' ' + _csSym;
-  var _goalSaved = (typeof accounts !== "undefined" && accounts && accounts.main) ? accounts.main : 0;
-  var _goalSavedFmt = (typeof fmtConverted === "function") ? fmtConverted(_goalSaved) : (typeof fmtNum === "function" ? fmtNum(_goalSaved) : String(_goalSaved));
-
   // Срок.
   var _etaLine;
   if (_cpInfo.etaMonths == null) {
@@ -4564,25 +4562,46 @@ if (_cpInfo && _cpInfo.anyCustomActive) {
     _etaLine = t("cs.plan.termMonths", { n: _cpInfo.etaMonths });
   }
 
-  explainEl.innerHTML =
-    '<div class="plan-cs-block">' +
-      '<div class="plan-cs-row plan-cs-row--primary">' +
-        '<span>' + _fromLine + '</span>' +
-      '</div>' +
-      '<div class="plan-cs-counterpart">' + _cpLine + '</div>' +
-      '<div class="plan-cs-row">' +
-        '<span>' + t("cs.plan.depositedFromLast") + '</span>' +
-        '<b>' + _depFromThis + '</b>' +
-      '</div>' +
-      '<div class="plan-cs-row">' +
-        '<span>' + t("cs.plan.deposited") + '</span>' +
-        '<b>' + _goalSavedFmt + ' ' + _csSym + '</b>' +
-      '</div>' +
-      '<div class="plan-cs-row">' +
-        '<span>' + t("cs.plan.term") + '</span>' +
-        '<b>' + _etaLine + '</b>' +
-      '</div>' +
-    '</div>';
+  // Состав счётчиков. Все значения — от накопленных тоталов:
+  //   • «Накоплено дохода» — totalIncome
+  //   • «Расходы за период» — totalExpense (если > 0)
+  //   • «Свободно» — free (только если есть расходы)
+  //   • «Отложено от этой суммы» — alreadyDeposited (Σ entry.deposited)
+  //   • «Отложено на цель» — accounts.main (total)
+  //   • «Срок» — ETA
+  var rowsHtml = '';
+  // primary row: «Накоплено дохода» — главная сумма-источник.
+  rowsHtml += '<div class="plan-cs-row plan-cs-row--primary">' +
+                '<span>' + t("cs.plan.totalIncome") + '</span>' +
+                '<b>' + _cpInfo.totalIncomeFormatted + ' ' + _csSym + '</b>' +
+              '</div>';
+  rowsHtml += '<div class="plan-cs-counterpart">' + _cpLine + '</div>';
+
+  if (_cpInfo.totalExpense > 0) {
+    rowsHtml += '<div class="plan-cs-row">' +
+                  '<span>' + t("cs.plan.totalExpense") + '</span>' +
+                  '<b>' + _cpInfo.totalExpenseFormatted + ' ' + _csSym + '</b>' +
+                '</div>';
+    rowsHtml += '<div class="plan-cs-row">' +
+                  '<span>' + t("cs.plan.free") + '</span>' +
+                  '<b>' + _cpInfo.freeFormatted + ' ' + _csSym + '</b>' +
+                '</div>';
+  }
+
+  rowsHtml += '<div class="plan-cs-row">' +
+                '<span>' + t("cs.plan.depositedFromTotal") + '</span>' +
+                '<b>' + _cpInfo.alreadyFormatted + ' ' + _csSym + '</b>' +
+              '</div>';
+  rowsHtml += '<div class="plan-cs-row">' +
+                '<span>' + t("cs.plan.deposited") + '</span>' +
+                '<b>' + _cpInfo.goalSavedFormatted + ' ' + _csSym + '</b>' +
+              '</div>';
+  rowsHtml += '<div class="plan-cs-row">' +
+                '<span>' + t("cs.plan.term") + '</span>' +
+                '<b>' + _etaLine + '</b>' +
+              '</div>';
+
+  explainEl.innerHTML = '<div class="plan-cs-block">' + rowsHtml + '</div>';
 
   // Обновляем индикатор «summaryMonths» (та же ETA).
   var _sumEl0 = getEl("summaryMonths");
@@ -5985,16 +6004,32 @@ initCashflowSettings();
     return (PACE[m] != null) ? PACE[m] : 0.6;
   }
 
-  // CUSTOM SCHEDULE v2 - fix main plan display ─────────────────────────────
-  // Возвращает «monthly-эквивалент» противоположной стороны для конкретной
-  // entry-стороны:
-  //   • side="income"  → сколько вычесть как expense
-  //   • side="expense" → сколько прибавить как income
-  // Источник зависит от настроек гибкой модели:
-  //   • тип "fixed"               → simple-поле s.income / s.expenses
-  //   • variable + freq≠custom    → s.fixedIncomeAmount / s.fixedExpenseAmount
-  //   • variable + freq="custom"  → последняя ручная запись на той стороне (или 0)
-  // Возвращает { amount, kind } где kind ∈ "fixed"|"variablePeriodic"|"customLast"|"none".
+  // FIX: custom schedule accumulation + counters update ─────────────────────
+  // Сумма всех ручных вводов для одной стороны (income | expense).
+  // Заменяет «последняя запись» — теперь работаем с накопленным итогом периода.
+  function _periodTotal(side) {
+    return _entriesBySide(side).reduce(function (sum, e) {
+      return sum + (Number(e.amount) || 0);
+    }, 0);
+  }
+
+  // FIX: custom schedule accumulation + counters update — суммарно отложено
+  // по всем записям (поле entry.deposited; expense-записи всегда 0 — туда
+  // отложения не записываются, см. _commitDeposit).
+  function _alreadyDepositedTotal() {
+    return _entries().reduce(function (sum, e) {
+      return sum + (Number(e.deposited) || 0);
+    }, 0);
+  }
+
+  // FIX: custom schedule accumulation + counters update — counterpart другой
+  // стороны. Для custom-стороны возвращаем СУММУ всех записей (а не последнюю),
+  // что критично для корректного расчёта «Нужно отложить» при нескольких
+  // ручных вводах в одном периоде.
+  //   forSide="income"  → counterpart = expense сумма
+  //   forSide="expense" → counterpart = income сумма
+  // Возвращает { amount, kind } где kind ∈
+  //   "fixed" | "variablePeriodic" | "customTotal" | "none"
   function _counterpartMonthly(forSide) {
     var s = (typeof getState === "function") ? getState() : {};
     var otherSide = forSide === "income" ? "expense" : "income";
@@ -6010,35 +6045,89 @@ initCashflowSettings();
       var fixedAmt = parser(s[simpleField]);
       return { amount: fixedAmt > 0 ? fixedAmt : 0, kind: fixedAmt > 0 ? "fixed" : "none" };
     }
-    // variable
+    // variable + freq="custom" → сумма всех ручных записей этой стороны.
     if (freq === "custom") {
-      var entries = _entriesBySide(otherSide).slice().sort(function (a, b) {
-        var dCmp = String(b.date).localeCompare(String(a.date));
-        if (dCmp !== 0) return dCmp;
-        return String(b.createdAt || "").localeCompare(String(a.createdAt || ""));
-      });
-      var last = entries[0];
-      var lastAmt = last ? (Number(last.amount) || 0) : 0;
-      return { amount: lastAmt, kind: lastAmt > 0 ? "customLast" : "none" };
+      var sumCustom = _periodTotal(otherSide);
+      return { amount: sumCustom, kind: sumCustom > 0 ? "customTotal" : "none" };
     }
     var vAmt = parser(s[varField]);
     return { amount: vAmt > 0 ? vAmt : 0, kind: vAmt > 0 ? "variablePeriodic" : "none" };
   }
 
-  // CUSTOM SCHEDULE v2 - fix main plan display — расчёт «нужно отложить» от
-  // конкретной записи: free = (income − expense) × pace. Учитывает counterpart
-  // (фикс. или последний custom-ввод другой стороны).
-  function _computeDepositForEntry(side, amount) {
-    amount = Number(amount) || 0;
-    var cp = _counterpartMonthly(side);
-    var free;
-    if (side === "income") {
-      free = amount - cp.amount;
+  // FIX: custom schedule accumulation + counters update — главный калькулятор
+  // отложения. Параметр amount сохранён для backward-compat, но игнорируется:
+  // расчёт идёт от АККУМУЛИРОВАННЫХ сумм за период (всех income- и expense-
+  // ручных вводов плюс фикс. counterpart при варьирующемся типе).
+  //
+  // Возвращает богатую структуру:
+  //   {
+  //     deposit:           pending = max(0, target - already)   ← что докинуть СЕЙЧАС
+  //     targetDeposit:     free × pace                          ← сколько ВСЕГО надо
+  //     alreadyDeposited:  Σ entry.deposited                    ← сколько уже сделано
+  //     totalIncome:       income side total (custom sum или фикс)
+  //     totalExpense:      expense side total (custom sum или фикс)
+  //     free:              max(0, totalIncome − totalExpense)
+  //     counterpart:       { amount, kind } — для UI-текста «учтено …»
+  //   }
+  function _computeDepositForEntry(/* side, amount — игнорируются */) {
+    var s = (typeof getState === "function") ? getState() : {};
+    var incomeIsCustom = (s.incomeType === "variable") && ((s.incomeFrequency || "monthly") === "custom");
+    var expenseIsCustom = (s.expenseType === "variable") && ((s.expenseFrequency || "monthly") === "custom");
+
+    var parser = (typeof parseFlexAmount === "function") ? parseFlexAmount : Number;
+
+    var totalIncome, incomeKind;
+    if (incomeIsCustom) {
+      totalIncome = _periodTotal("income");
+      incomeKind = totalIncome > 0 ? "customTotal" : "none";
     } else {
-      free = cp.amount - amount;
+      var iType = s.incomeType || "fixed";
+      if (iType === "fixed") {
+        totalIncome = parser(s.income);
+        incomeKind = totalIncome > 0 ? "fixed" : "none";
+      } else {
+        totalIncome = parser(s.fixedIncomeAmount);
+        incomeKind = totalIncome > 0 ? "variablePeriodic" : "none";
+      }
     }
-    var deposit = Math.max(0, Math.round(free * _paceFraction()));
-    return { deposit: deposit, free: Math.max(0, free), counterpart: cp };
+
+    var totalExpense, expenseKind;
+    if (expenseIsCustom) {
+      totalExpense = _periodTotal("expense");
+      expenseKind = totalExpense > 0 ? "customTotal" : "none";
+    } else {
+      var eType = s.expenseType || "fixed";
+      if (eType === "fixed") {
+        totalExpense = parser(s.expenses);
+        expenseKind = totalExpense > 0 ? "fixed" : "none";
+      } else {
+        totalExpense = parser(s.fixedExpenseAmount);
+        expenseKind = totalExpense > 0 ? "variablePeriodic" : "none";
+      }
+    }
+
+    var free = Math.max(0, totalIncome - totalExpense);
+    var targetDeposit = Math.round(free * _paceFraction());
+    var alreadyDeposited = _alreadyDepositedTotal();
+    var pendingDeposit = Math.max(0, targetDeposit - alreadyDeposited);
+
+    // Для совместимости — какой counterpart актуален для side="income"|"expense".
+    // (Используется в UI-подсказке «учтён ...».) Берём ту сторону, которая ВЫЧИТАЕТСЯ.
+    var arg = arguments[0];
+    var side = (arg === "expense") ? "expense" : "income";
+    var counterpart = side === "income"
+      ? { amount: totalExpense, kind: expenseKind }
+      : { amount: totalIncome,  kind: incomeKind };
+
+    return {
+      deposit: pendingDeposit,
+      targetDeposit: targetDeposit,
+      alreadyDeposited: alreadyDeposited,
+      totalIncome: totalIncome,
+      totalExpense: totalExpense,
+      free: free,
+      counterpart: counterpart
+    };
   }
 
   function _modeLabel() {
@@ -6116,38 +6205,42 @@ initCashflowSettings();
 
   // ── Summary card ──────────────────────────────────────────────────────────
 
+  // FIX: custom schedule accumulation + counters update — summary в cs-блоке
+  // (под кнопкой «+ Записать») теперь показывает АККУМУЛИРОВАННЫЕ значения:
+  //   • «Накоплено» — Σ entry.amount для этой стороны
+  //   • «Отложено» (для income) — Σ entry.deposited
+  //   • «Срок» — ETA
   function _renderSummary(side) {
     var summaryId = side === "income" ? "incomeCsSummary" : "expenseCsSummary";
     var el = document.getElementById(summaryId);
     if (!el) return;
 
-    var entries = _entriesBySide(side).slice().sort(function (a, b) {
-      return String(b.date).localeCompare(String(a.date));
-    });
-
+    var entries = _entriesBySide(side);
     if (!entries.length) {
       el.className = "cs-summary cs-summary--empty";
       el.innerHTML = "<span>" + t("cs.summary.empty." + side) + "</span>";
       return;
     }
 
-    var last = entries[0];
-    var lastAmt = Number(last.amount) || 0;
-    var deposited = Number(last.deposited) || 0;
+    var totalAmt = _periodTotal(side);
+    // Σ entry.deposited по этой же стороне (для expense всегда 0).
+    var depositedSide = entries.reduce(function (sum, e) {
+      return sum + (Number(e.deposited) || 0);
+    }, 0);
 
     var html = "";
     html += '<div class="cs-summary-row cs-summary-row--primary">';
-    html += '<span>' + t("cs.summary.last." + side) + '</span>';
-    html += '<b>' + _amount(lastAmt) + '</b>';
+    html += '<span>' + t("cs.summary.total." + side) + '</span>';
+    html += '<b>' + _amount(totalAmt) + '</b>';
     html += '</div>';
 
     if (side === "income") {
       html += '<div class="cs-summary-row">';
       html += '<span>' + t("cs.summary.deposited") + '</span>';
-      html += '<b>' + (deposited > 0 ? _amount(deposited) : '—') + '</b>';
+      html += '<b>' + (depositedSide > 0 ? _amount(depositedSide) : '—') + '</b>';
       html += '</div>';
 
-      // ETA — только для income, расход не имеет смысла в context-е срока цели.
+      // ETA — только для income.
       var eta = _computeEta();
       if (eta == null) {
         html += '<div class="cs-summary-eta cs-summary-eta--insufficient">';
@@ -6448,30 +6541,36 @@ initCashflowSettings();
         return;
       }
 
-      // CUSTOM SCHEDULE v2 - fix main plan display — теперь и расход тоже идёт
-      // через alloc-шаг, если есть counterpart-доход (фикс. или последний
-      // custom-ввод). Это позволяет показать "Нужно отложить" с учётом обеих
-      // сторон. Если counterpart нулевой и сторона = expense — alloc-шаг
-      // бессмысленен (нет дохода → откладывать не из чего) → закрываем сразу.
+      // FIX: custom schedule accumulation + counters update — alloc-step
+      // показываем, если есть что отложить (pendingDeposit > 0). При нулевом
+      // pending (всё уже отложено или counterpart покрывает доход) сразу
+      // закрываем модалку с подходящим toast'ом и reminder'ом.
 
       var entry = _addEntry(ctx.side, rawAmount, dateVal);
       ctx.baseAmount = rawAmount;
       ctx.entryDate = dateVal;
       ctx.editId = entry.id;
 
+      // ВАЖНО: _computeDepositForEntry читает state ПОСЛЕ _addEntry,
+      // поэтому totalIncome/totalExpense уже включают только что добавленную
+      // запись — это и даёт накопительный эффект.
       var calc = _computeDepositForEntry(ctx.side, rawAmount);
       ctx.pendingDeposit = calc.deposit;
 
-      // Для expense: если counterpart=0 или deposit≤0 — нет смысла в alloc-шаге.
-      if (ctx.side === "expense" && (calc.counterpart.amount <= 0 || calc.deposit <= 0)) {
-        // Если стоял sticky-reminder про расходы — гасим (пользователь как раз их ввёл).
-        _setExpensePrompt(false);
-        // CUSTOM SCHEDULE v2 - fix main plan display — reminder про доход только
-        // если income-сторона тоже в custom-режиме (иначе фикс. доход уже учтён).
-        var _sNow = (typeof getState === "function") ? getState() : {};
-        var _incIsCustom = (_sNow.incomeType === "variable") && ((_sNow.incomeFrequency || "monthly") === "custom");
-        _setIncomePrompt(!!_incIsCustom);
-        if (typeof showToast === "function") showToast(t("cs.toast.added.expense"), "success");
+      var _sNow = (typeof getState === "function") ? getState() : {};
+      var _incIsCustom = (_sNow.incomeType === "variable") && ((_sNow.incomeFrequency || "monthly") === "custom");
+      var _expIsCustom = (_sNow.expenseType === "variable") && ((_sNow.expenseFrequency || "monthly") === "custom");
+
+      // Если откладывать нечего — пропускаем alloc-step.
+      if (calc.deposit <= 0) {
+        if (ctx.side === "income") {
+          _setExpensePrompt(!!_expIsCustom);
+          if (typeof showToast === "function") showToast(t("cs.toast.added.income"), "success");
+        } else {
+          _setExpensePrompt(false);
+          _setIncomePrompt(!!_incIsCustom);
+          if (typeof showToast === "function") showToast(t("cs.toast.added.expense"), "success");
+        }
         closeCustomScheduleSheet();
         if (typeof recalcPlan === "function") recalcPlan();
         return;
@@ -6484,37 +6583,46 @@ initCashflowSettings();
     });
   }
 
-  // CUSTOM SCHEDULE v2 - fix main plan display — рендер шага «График отложений»
-  // с учётом обеих сторон. Заголовки и breakdown зависят от стороны и наличия
-  // counterpart-источника. Для income → «от поступления X», для expense →
-  // «после расхода X» + breakdown «income − expense = free».
+  // FIX: custom schedule accumulation + counters update — рендер шага
+  // «График отложений» теперь показывает АККУМУЛИРОВАННЫЕ тоталы за период,
+  // а не одну только что введённую сумму. Это даёт пользователю полную
+  // картину: «всего накопилось X, расходы Y, нужно отложить Z (уже отложено W)».
   function _renderAllocStep(side, amount, calc) {
+    // Главное число — это pending deposit (то, что ещё надо докинуть).
     if (allocAmountEl) {
       allocAmountEl.textContent = (typeof fmtNum === "function") ? fmtNum(calc.deposit) : String(calc.deposit);
     }
-    // Side-specific "from-line" — перерисовываем целиком, чтобы текст и сумма
-    // согласовались с типом записи (доход/расход).
+    // "Откуда" — теперь от накопленных тоталов (а не от введённой суммы).
     var fromWrap = sheet ? sheet.querySelector(".cs-alloc-from") : null;
     if (fromWrap) {
-      var subKey = side === "expense" ? "cs.alloc.subTitle.expense" : "cs.alloc.subTitle.income";
-      fromWrap.innerHTML = t(subKey, { amount: '<b>' + _amount(amount) + '</b>' });
+      // Для income: «от накопленного дохода X (вы только что добавили Y)»
+      // Для expense: «накопленный расход X (вы только что добавили Y)»
+      var subKey = side === "expense" ? "cs.alloc.fromTotal.expense" : "cs.alloc.fromTotal.income";
+      var baseTotal = side === "expense" ? calc.totalExpense : calc.totalIncome;
+      fromWrap.innerHTML = t(subKey, {
+        total: '<b>' + _amount(baseTotal) + '</b>',
+        added: '<b>' + _amount(amount) + '</b>'
+      });
     } else if (allocBaseEl) {
-      allocBaseEl.textContent = _amount(amount);
+      allocBaseEl.textContent = _amount(side === "expense" ? calc.totalExpense : calc.totalIncome);
     }
+
+    // Breakdown: income − expense = free  (и при необходимости — уже отложено).
     var breakdownEl = document.getElementById("csAllocBreakdown");
     if (breakdownEl) {
-      var cp = calc.counterpart;
-      if (cp.amount > 0) {
-        var incomeForBreakdown = side === "income" ? amount : cp.amount;
-        var expenseForBreakdown = side === "expense" ? amount : cp.amount;
-        breakdownEl.innerHTML = t("cs.alloc.breakdown", {
-          income: '<b>' + _amount(incomeForBreakdown) + '</b>',
-          expense: '<b>' + _amount(expenseForBreakdown) + '</b>',
+      var html = "";
+      if (calc.totalIncome > 0 || calc.totalExpense > 0) {
+        html += t("cs.alloc.breakdown", {
+          income: '<b>' + _amount(calc.totalIncome) + '</b>',
+          expense: '<b>' + _amount(calc.totalExpense) + '</b>',
           free: '<b>' + _amount(calc.free) + '</b>'
         });
-      } else {
-        breakdownEl.textContent = "";
       }
+      if (calc.alreadyDeposited > 0) {
+        if (html) html += '<br>';
+        html += t("cs.alloc.alreadyDeposited") + ': <b>' + _amount(calc.alreadyDeposited) + '</b>';
+      }
+      breakdownEl.innerHTML = html;
     }
   }
 
@@ -6533,16 +6641,42 @@ initCashflowSettings();
         if (typeof recalcPlan === "function") recalcPlan();
         return;
       }
-      // Текущая запись (только что созданная на шаге form).
-      var entry = _entries().filter(function (e) { return e.id === ctx.editId; })[0];
-      if (entry) {
-        _commitDeposit(entry, ctx.pendingDeposit);
+      // FIX: custom schedule accumulation + counters update — пересчитываем
+      // pendingDeposit непосредственно перед commit, чтобы избежать гонок
+      // (state мог поменяться, пока модалка была открыта).
+      var freshCalc = _computeDepositForEntry(ctx.side);
+      var commitAmount = freshCalc.deposit > 0 ? freshCalc.deposit : ctx.pendingDeposit;
+
+      // FIX: custom schedule accumulation + counters update — атрибуцию
+      // delta-отложения держим на income-entry (даже если триггер был от
+      // expense-стороны). Это нужно потому, что:
+      //   • в истории badge «Отложено X» показывается только у income-записей
+      //   • смысл deposited — «сколько денег ушло на цель», что концептуально
+      //     связано с источником дохода, а не с расходом
+      // Если income-записей нет (только что введён expense без custom-доходов) —
+      // fallback на ту запись, что только что создана (поведение прежнее).
+      var targetEntry = _entries().filter(function (e) { return e.id === ctx.editId; })[0];
+      if (ctx.side === "expense") {
+        var incomeEntries = _entriesBySide("income").slice().sort(function (a, b) {
+          var dCmp = String(b.date).localeCompare(String(a.date));
+          if (dCmp !== 0) return dCmp;
+          return String(b.createdAt || "").localeCompare(String(a.createdAt || ""));
+        });
+        if (incomeEntries.length) targetEntry = incomeEntries[0];
+      }
+      if (targetEntry && commitAmount > 0) {
+        _commitDeposit(targetEntry, commitAmount);
       }
       if (typeof showToast === "function") {
-        showToast(t("cs.toast.deposited", { amount: _amount(ctx.pendingDeposit) }), "success");
+        showToast(t("cs.toast.deposited", { amount: _amount(commitAmount) }), "success");
       }
       closeCustomScheduleSheet();
+      // FIX: custom schedule accumulation + counters update — гарантированный
+      // re-render счётчиков «Отложено от этой суммы» / «Отложено на цель»
+      // сразу после клика, не дожидаясь следующего естественного recalcPlan.
       if (typeof recalcPlan === "function") recalcPlan();
+      if (typeof window.renderCustomSchedule === "function") window.renderCustomSchedule();
+      if (typeof updatePlanHeader === "function") updatePlanHeader();
     });
   }
 
@@ -6633,17 +6767,26 @@ initCashflowSettings();
           if (typeof showToast === "function") showToast(t("cs.toast.noGoal"), "info");
           return;
         }
-        // CUSTOM SCHEDULE v2 - fix main plan display — inline-кнопка тоже считает
-        // с учётом counterpart (фикс. расходы или последний custom-расход).
-        var calcD = _computeDepositForEntry("income", Number(entD.amount) || 0);
+        // FIX: custom schedule accumulation + counters update — inline-кнопка
+        // докидывает оставшийся pending от АККУМУЛИРОВАННЫХ сумм (а не от одной
+        // записи). Это значит, что одно нажатие закрывает весь period-debt;
+        // если pending=0 — показываем info-toast и ничего не делаем.
+        var calcD = _computeDepositForEntry("income");
         var dep = calcD.deposit;
-        if (dep <= 0) return;
+        if (dep <= 0) {
+          if (typeof showToast === "function") showToast(t("cs.toast.alreadyDeposited"), "info");
+          return;
+        }
         if (typeof haptic === "function") haptic("success");
         _commitDeposit(entD, dep);
         if (typeof showToast === "function") {
           showToast(t("cs.toast.deposited", { amount: _amount(dep) }), "success");
         }
         if (typeof recalcPlan === "function") recalcPlan();
+        // FIX: custom schedule accumulation + counters update — force-render
+        // history и main-plan сразу после inline-deposit.
+        if (typeof window.renderCustomSchedule === "function") window.renderCustomSchedule();
+        if (typeof updatePlanHeader === "function") updatePlanHeader();
         return;
       }
     }
@@ -6690,24 +6833,31 @@ initCashflowSettings();
   window.openCustomScheduleSheet = openCustomScheduleSheet;
   window.closeCustomScheduleSheet = closeCustomScheduleSheet;
 
-  // CUSTOM SCHEDULE v2 - fix main plan display — публичные helpers для блока «Текущий план».
+  // FIX: custom schedule accumulation + counters update — публичный API для
+  // блока «Текущий план» и других внешних потребителей. ВСЕ значения теперь
+  // от АККУМУЛИРОВАННЫХ тоталов (а не от последней записи).
   //
-  // Возвращает информацию для кастомного экрана плана либо null, если custom-режим
-  // не активен / нет данных. Структура:
+  // Возвращает:
   //   {
-  //     side:        "income" | "expense" — сторона последнего ввода
-  //     entry:       последняя запись (объект customScheduleEntries)
-  //     deposit:     рассчитанная сумма "Нужно отложить" с учётом counterpart
-  //     free:        income - expense за период
-  //     counterpart: { amount, kind }
-  //     etaMonths:   number | null
-  //     hasAnyEntry: true/false (есть ли вообще хотя бы одна запись)
-  //     anyCustomActive: true/false (любая сторона использует freq=custom)
+  //     anyCustomActive,   // boolean — хотя бы одна сторона freq=custom
+  //     hasAnyEntry,       // boolean — есть ли хоть одна ручная запись
+  //     side,              // последняя сторона ввода (для контекстного UI)
+  //     entry,             // последняя запись (объект)
+  //     totalIncome,       // ΣincomeEntries (или фикс)
+  //     totalExpense,      // ΣexpenseEntries (или фикс)
+  //     free,              // max(0, totalIncome − totalExpense)
+  //     targetDeposit,     // free × pace
+  //     alreadyDeposited,  // Σentry.deposited
+  //     pendingDeposit,    // max(0, target − already) — "Осталось отложить"
+  //     counterpart,       // { amount, kind } для UI-подсказки «учтено …»
+  //     etaMonths,         // примерный срок до цели или null
+  //     // fmt-помощники для render-кода:
+  //     totalIncomeFormatted, totalExpenseFormatted, freeFormatted,
+  //     targetFormatted, alreadyFormatted, pendingFormatted,
+  //     goalSavedFormatted // accounts.main (общая сумма на цели)
   //   }
   function getCustomPlanInfo() {
     var s = (typeof getState === "function") ? getState() : {};
-    // CUSTOM SCHEDULE v2 - fix main plan display — override актуален только в
-    // гибкой модели; в simple ничего не подменяем.
     if (s.financialModel !== "cashflow") return null;
     var incomeIsCustom = (s.incomeType === "variable") && ((s.incomeFrequency || "monthly") === "custom");
     var expenseIsCustom = (s.expenseType === "variable") && ((s.expenseFrequency || "monthly") === "custom");
@@ -6725,21 +6875,31 @@ initCashflowSettings();
     }
 
     var last = allEntries[0];
-    var calc = _computeDepositForEntry(last.side, Number(last.amount) || 0);
+    var calc = _computeDepositForEntry(last.side);
+
+    var goalSaved = (typeof accounts !== "undefined" && accounts && accounts.main) ? accounts.main : 0;
 
     return {
       anyCustomActive: true,
       hasAnyEntry: true,
       side: last.side,
       entry: last,
-      deposit: calc.deposit,
+      totalIncome: calc.totalIncome,
+      totalExpense: calc.totalExpense,
       free: calc.free,
+      targetDeposit: calc.targetDeposit,
+      alreadyDeposited: calc.alreadyDeposited,
+      pendingDeposit: calc.deposit,
       counterpart: calc.counterpart,
       etaMonths: _computeEta(),
-      // CUSTOM SCHEDULE v2 - fix main plan display — fmt-помощник для main-plan render.
-      lastAmountFormatted: _amount(Number(last.amount) || 0),
-      depositFormatted: _amount(calc.deposit),
-      depositedFromThis: _amount(Number(last.deposited) || 0)
+      // fmt-хелперы для рендера в main-plan-header.
+      totalIncomeFormatted: _amount(calc.totalIncome),
+      totalExpenseFormatted: _amount(calc.totalExpense),
+      freeFormatted: _amount(calc.free),
+      targetFormatted: _amount(calc.targetDeposit),
+      alreadyFormatted: _amount(calc.alreadyDeposited),
+      pendingFormatted: _amount(calc.deposit),
+      goalSavedFormatted: _amount(goalSaved)
     };
   }
 
