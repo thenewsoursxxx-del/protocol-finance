@@ -179,6 +179,25 @@ viewport-fit=cover" />
           <input type="date" id="incomeMonthDaysDate" class="monthdays-date-input" />
           <div id="incomeMonthDaysList" class="monthdays-list"></div>
         </div>
+        <!-- CUSTOM SCHEDULE LOGIC — новый блок ручного ввода поступлений
+             (полностью заменяет старый month-days picker, который теперь скрыт постоянно). -->
+        <div class="custom-schedule-block" id="incomeCustomBlock" data-side="income" style="display:none">
+          <div class="cs-summary" id="incomeCsSummary"></div>
+          <div class="cs-expense-reminder" id="csExpenseReminder" style="display:none">
+            <div class="cs-expense-reminder-icon" aria-hidden="true">💡</div>
+            <div class="cs-expense-reminder-text">
+              <div class="cs-expense-reminder-title" data-i18n="cs.reminder.expenses.title">Не забудьте ввести расходы</div>
+              <div class="cs-expense-reminder-sub" data-i18n="cs.reminder.expenses.subtitle">Запишите расходы за этот период, если они были — прогноз станет точнее.</div>
+            </div>
+            <div class="cs-expense-reminder-actions">
+              <button type="button" class="cs-reminder-cta" id="csExpenseReminderCta" data-i18n="cs.reminder.expenses.cta">Записать расход</button>
+              <button type="button" class="cs-reminder-dismiss" id="csExpenseReminderDismiss" aria-label="Dismiss">×</button>
+            </div>
+          </div>
+          <button type="button" class="cs-add-record-btn" data-side="income" data-i18n="cs.btn.add.income">+ Записать поступление</button>
+          <div class="cs-history-title" data-i18n="cs.history.title.income">История поступлений</div>
+          <div class="cs-history" id="incomeCsHistory"></div>
+        </div>
       </div>
       <div class="cf-card-inline-summary" id="incomeInlineSummary"></div>
     </div>
@@ -227,6 +246,13 @@ viewport-fit=cover" />
           <div class="cf-hint" style="margin-top:8px" data-i18n="flex.customDays.expense">Выберите дни месяца, когда происходят расходы</div>
           <input type="date" id="expenseMonthDaysDate" class="monthdays-date-input" />
           <div id="expenseMonthDaysList" class="monthdays-list"></div>
+        </div>
+        <!-- CUSTOM SCHEDULE LOGIC — ручной ввод расходов (зеркало income-блока). -->
+        <div class="custom-schedule-block" id="expenseCustomBlock" data-side="expense" style="display:none">
+          <div class="cs-summary" id="expenseCsSummary"></div>
+          <button type="button" class="cs-add-record-btn" data-side="expense" data-i18n="cs.btn.add.expense">+ Записать расход</button>
+          <div class="cs-history-title" data-i18n="cs.history.title.expense">История расходов</div>
+          <div class="cs-history" id="expenseCsHistory"></div>
         </div>
       </div>
       <div class="cf-card-inline-summary" id="expenseInlineSummary"></div>
@@ -1736,6 +1762,51 @@ z-index: 999999;
   </div>
 
   <button id="eventSubmit" class="unexpected-confirm-btn" style="margin-top:20px" data-i18n="event.add">Добавить</button>
+</div>
+
+<!-- ===== CUSTOM SCHEDULE LOGIC — ручной ввод «Свой график» (форма + предпросмотр отложения) ===== -->
+<div id="customScheduleOverlay" class="proto-sheet-overlay"></div>
+<div id="customScheduleSheet" class="proto-sheet proto-sheet--form cs-sheet">
+  <!-- Step 1: Form (amount + date) -->
+  <div class="cs-step cs-step--form" data-cs-step="form">
+    <h2 id="csSheetTitle" data-i18n="cs.modal.title.income">Ручной ввод поступления</h2>
+    <div class="cs-mode-badge" id="csModeBadge">—</div>
+
+    <div class="input-wrap" style="margin-top:14px">
+      <label id="csAmountLabel" data-i18n="cs.field.amount.income">Сумма, которую я получил сейчас</label>
+      <input id="csAmountInput" inputmode="numeric" placeholder="0" />
+      <div class="cs-amount-hint" id="csAmountHint" data-i18n="cs.field.amountHint.income">
+        Введите реальную сумму, которую вы получили. Приложение сразу рассчитает, сколько от неё нужно отложить на цель.
+      </div>
+    </div>
+
+    <div class="input-wrap" style="margin-top:8px">
+      <label data-i18n="cs.field.date">Дата</label>
+      <input id="csDateInput" type="date" />
+    </div>
+
+    <button type="button" id="csContinueBtn" class="cs-primary-btn" data-i18n="cs.modal.continue">Продолжить</button>
+  </div>
+
+  <!-- Step 2: Allocation preview — показывается только для income (не для expense и не при редактировании) -->
+  <div class="cs-step cs-step--alloc" data-cs-step="alloc" style="display:none">
+    <div class="cs-alloc-title" data-i18n="cs.alloc.title">График отложений</div>
+    <div class="cs-alloc-amount-card">
+      <div class="cs-alloc-amount-label" data-i18n="cs.alloc.needTitle">Нужно отложить</div>
+      <div class="cs-alloc-amount-value">
+        <span id="csAllocAmount">0</span>
+        <span class="currency-symbol">₽</span>
+      </div>
+      <div class="cs-alloc-from">
+        <span data-i18n="cs.alloc.fromAmount">от суммы</span>
+        <b id="csAllocBase">—</b>
+      </div>
+    </div>
+    <div class="cs-alloc-mode" id="csAllocMode" data-i18n="cs.alloc.modeLabel">Расчёт от текущего режима накопления</div>
+
+    <button type="button" id="csDepositBtn" class="cs-deposit-btn" data-i18n="cs.alloc.depositBtn">Отложить на цель</button>
+    <button type="button" id="csSkipDepositBtn" class="cs-skip-btn" data-i18n="cs.alloc.skipBtn">Только записать без отложения</button>
+  </div>
 </div>
 
 <!-- Иконка профиля: фиксирована справа сверху, выровнена по высоте с названием вкладки -->

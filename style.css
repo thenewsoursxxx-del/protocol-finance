@@ -8824,3 +8824,456 @@ body.reduce-motion .settings-seg-btn {
   font-size: 12px;
   line-height: 1.4;
 }
+
+/* ============================================================================
+ * CUSTOM SCHEDULE LOGIC — премиум-стили для блока «Свой график»
+ * ----------------------------------------------------------------------------
+ * Блок появляется на месте старого picker-а дней месяца, когда выбрана
+ * частота "custom" в гибкой модели. Содержит:
+ *   • Сводку (последняя сумма / отложено / примерный срок)
+ *   • Sticky-напоминание ввести расходы (только income)
+ *   • Кнопку «+ Записать поступление / расход»
+ *   • Историю записей с inline edit/delete
+ * Парная sheet-модалка `.cs-sheet` использует двушаговый flow:
+ *   step "form"  — сумма + дата
+ *   step "alloc" — крупный «Нужно отложить» + кнопки (только income)
+ * ============================================================================ */
+
+.custom-schedule-block {
+  margin-top: 12px;
+  padding: 14px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(16, 185, 129, 0.05) 0%, rgba(255, 255, 255, 0.03) 100%);
+  border: 1px solid rgba(16, 185, 129, 0.15);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cs-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.cs-summary--empty {
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 13px;
+  text-align: center;
+  padding: 16px 14px;
+}
+
+.cs-summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.cs-summary-row b {
+  color: rgba(255, 255, 255, 0.95);
+  font-weight: 600;
+}
+
+.cs-summary-row--primary {
+  font-size: 14px;
+}
+
+.cs-summary-row--primary b {
+  font-size: 18px;
+}
+
+.cs-summary-eta {
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.08);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.cs-summary-eta b {
+  color: #10b981;
+  font-weight: 600;
+}
+
+.cs-summary-eta--insufficient b {
+  color: rgba(255, 255, 255, 0.45);
+  font-weight: 500;
+  font-size: 12px;
+}
+
+.cs-add-record-btn {
+  width: 100%;
+  padding: 13px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  background: linear-gradient(180deg, rgba(16, 185, 129, 0.22) 0%, rgba(16, 185, 129, 0.1) 100%);
+  color: #d1fae5;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.cs-add-record-btn:active {
+  transform: scale(0.98);
+  background: linear-gradient(180deg, rgba(16, 185, 129, 0.3) 0%, rgba(16, 185, 129, 0.15) 100%);
+}
+
+.cs-history-title {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.45);
+  margin-top: 2px;
+}
+
+.cs-history {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cs-history-empty {
+  padding: 14px;
+  text-align: center;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.4);
+  border-radius: 10px;
+  border: 1px dashed rgba(255, 255, 255, 0.08);
+}
+
+.cs-history-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.cs-history-item--expense {
+  background: rgba(239, 68, 68, 0.04);
+  border-color: rgba(239, 68, 68, 0.12);
+}
+
+.cs-history-item-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cs-history-item-amount {
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+}
+
+.cs-history-item-amount--expense { color: #fecaca; }
+
+.cs-history-item-date {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.cs-history-item-badge {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(16, 185, 129, 0.18);
+  color: #6ee7b7;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.cs-history-item-badge--none {
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.cs-history-item-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.cs-history-icon-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.cs-history-icon-btn:active {
+  transform: scale(0.93);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.cs-history-icon-btn--deposit {
+  border-color: rgba(16, 185, 129, 0.35);
+  background: rgba(16, 185, 129, 0.14);
+  color: #6ee7b7;
+}
+
+.cs-history-icon-btn--delete:active {
+  background: rgba(239, 68, 68, 0.18);
+  color: #fecaca;
+}
+
+/* Sticky reminder card after income deposit ─────────────────────────────── */
+
+.cs-expense-reminder {
+  display: flex;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(245, 158, 11, 0.14) 0%, rgba(245, 158, 11, 0.06) 100%);
+  border: 1px solid rgba(245, 158, 11, 0.32);
+  align-items: flex-start;
+}
+
+.cs-expense-reminder-icon {
+  font-size: 20px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.cs-expense-reminder-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.cs-expense-reminder-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #fde68a;
+  margin-bottom: 2px;
+}
+
+.cs-expense-reminder-sub {
+  font-size: 12px;
+  color: rgba(253, 230, 138, 0.78);
+  line-height: 1.45;
+}
+
+.cs-expense-reminder-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: stretch;
+  flex-shrink: 0;
+}
+
+.cs-reminder-cta {
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 8px;
+  border: 1px solid rgba(245, 158, 11, 0.55);
+  background: rgba(245, 158, 11, 0.22);
+  color: #fde68a;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.cs-reminder-cta:active { background: rgba(245, 158, 11, 0.32); }
+
+.cs-reminder-dismiss {
+  align-self: flex-end;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.25);
+  color: rgba(253, 230, 138, 0.85);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+/* Modal sheet (.cs-sheet) — двушаговый flow ─────────────────────────────── */
+
+.cs-sheet h2 {
+  margin: 0 0 4px;
+}
+
+.cs-mode-badge {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #6ee7b7;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.28);
+  border-radius: 999px;
+  padding: 5px 12px;
+  display: inline-block;
+  margin-bottom: 4px;
+}
+
+.cs-amount-hint {
+  margin-top: 8px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.55);
+  line-height: 1.45;
+}
+
+.cs-primary-btn {
+  width: 100%;
+  margin-top: 22px;
+  padding: 14px;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(180deg, #10b981 0%, #047857 100%);
+  color: #fff;
+  font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+  box-shadow: 0 8px 22px rgba(16, 185, 129, 0.32);
+  transition: transform 0.15s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+}
+
+.cs-primary-btn:active {
+  transform: scale(0.98);
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.22);
+}
+
+.cs-primary-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cs-alloc-title {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.55);
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.cs-alloc-amount-card {
+  padding: 22px 18px;
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(16, 185, 129, 0.16) 0%, rgba(16, 185, 129, 0.04) 100%);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  text-align: center;
+  box-shadow: 0 10px 32px rgba(16, 185, 129, 0.12);
+  position: relative;
+  overflow: hidden;
+}
+
+.cs-alloc-amount-card::before {
+  content: "";
+  position: absolute;
+  inset: -40% -10% auto -10%;
+  height: 120px;
+  background: radial-gradient(closest-side, rgba(16, 185, 129, 0.35), transparent 70%);
+  pointer-events: none;
+}
+
+.cs-alloc-amount-label {
+  position: relative;
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(209, 250, 229, 0.78);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.cs-alloc-amount-value {
+  position: relative;
+  margin-top: 8px;
+  font-size: 38px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.01em;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 6px;
+}
+
+.cs-alloc-amount-value .currency-symbol {
+  font-size: 22px;
+  font-weight: 600;
+  color: rgba(167, 243, 208, 0.85);
+}
+
+.cs-alloc-from {
+  position: relative;
+  margin-top: 6px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.cs-alloc-from b {
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 600;
+}
+
+.cs-alloc-mode {
+  margin-top: 12px;
+  text-align: center;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+  line-height: 1.45;
+}
+
+.cs-deposit-btn {
+  width: 100%;
+  margin-top: 18px;
+  padding: 14px;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(180deg, #10b981 0%, #047857 100%);
+  color: #fff;
+  font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+  box-shadow: 0 8px 22px rgba(16, 185, 129, 0.32);
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
+}
+
+.cs-deposit-btn:active {
+  transform: scale(0.98);
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.22);
+}
+
+.cs-skip-btn {
+  width: 100%;
+  margin-top: 10px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.cs-skip-btn:active {
+  background: rgba(255, 255, 255, 0.05);
+}

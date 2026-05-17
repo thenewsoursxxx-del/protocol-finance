@@ -9,7 +9,7 @@
  * Загружается ДО app.js.
  */
 
-const STATE_VERSION = 11;
+const STATE_VERSION = 12;
 const STORAGE_KEY = "protocol_app_state";
 
 // ─── Default State ────────────────────────────────────────────
@@ -90,6 +90,19 @@ function getDefaultState() {
 
     // ── Expenses Tracker (v8) ──
     expensesLog: [],
+
+    // CUSTOM SCHEDULE LOGIC (v12) ──
+    // Полная история ручных вводов «Свой график» для income / expense сторон.
+    // Запись: { id, side: "income"|"expense", amount, date: "YYYY-MM-DD",
+    //          deposited: number, depositedAt: ISO|null, note?: string, createdAt: ISO }
+    // `deposited` хранит сумму, реально отложенную в основной счёт по этой записи
+    // (только для income; для expense всегда 0). Это позволяет показывать
+    // в истории, какие поступления уже превращены в накопления.
+    customScheduleEntries: [],
+    // CUSTOM SCHEDULE LOGIC — sticky-флаг «попросить ввести расходы за период»
+    // выставляется true после успешного отложения дохода, сбрасывается после
+    // добавления expense-записи или ручного закрытия пользователем.
+    customScheduleExpensePrompt: false,
 
     // ── Settings (v9) ──
     settings: {
@@ -333,6 +346,17 @@ function migrateState(saved) {
     if (typeof saved.expenseStartDate !== "string") saved.expenseStartDate = "";
   }
 
+  // CUSTOM SCHEDULE LOGIC — v11 → v12: manual-entry log for custom-frequency
+  // mode. Bootstrap the array + reminder flag so all read-sites can assume the
+  // canonical shape without optional-chaining everywhere.
+  if (version < 12) {
+    saved.stateVersion = 12;
+    if (!Array.isArray(saved.customScheduleEntries)) saved.customScheduleEntries = [];
+    if (typeof saved.customScheduleExpensePrompt !== "boolean") {
+      saved.customScheduleExpensePrompt = false;
+    }
+  }
+
   // Ensure settings has all expected keys
   if (saved.settings && typeof saved.settings === "object") {
     var ds = getDefaultState().settings;
@@ -443,7 +467,14 @@ function updateState(partial) {
   Object.keys(partial).forEach(key => {
     if (key === "accounts" || key === "goalMeta" || key === "uiState" || key === "accountStats" || key === "settings") {
       appState[key] = { ...appState[key], ...partial[key] };
-    } else if (key === "goals" || key === "completedGoals" || key === "debts" || key === "expensesLog" || key === "debtPaymentHistory") {
+    } else if (
+      key === "goals" || key === "completedGoals" || key === "debts" ||
+      key === "expensesLog" || key === "debtPaymentHistory" ||
+      // CUSTOM SCHEDULE LOGIC — manual income/expense entries are stored as an
+      // array of plain objects; treat them like the other domain arrays so the
+      // shallow-clone preserves immutability semantics expected by consumers.
+      key === "customScheduleEntries"
+    ) {
       appState[key] = Array.isArray(partial[key]) ? partial[key].map(g => ({ ...g })) : appState[key];
     } else {
       appState[key] = partial[key];
@@ -571,6 +602,14 @@ function applyState(saved) {
 
   // ── Expenses Tracker (v8) ──
   appState.expensesLog = Array.isArray(saved.expensesLog) ? saved.expensesLog.map(function (e) { return { ...e }; }) : [];
+
+  // CUSTOM SCHEDULE LOGIC (v12) — restore manual entries log + reminder flag.
+  appState.customScheduleEntries = Array.isArray(saved.customScheduleEntries)
+    ? saved.customScheduleEntries.map(function (e) { return { ...e }; })
+    : [];
+  appState.customScheduleExpensePrompt = typeof saved.customScheduleExpensePrompt === "boolean"
+    ? saved.customScheduleExpensePrompt
+    : false;
 
   // ── Settings (v9) ──
   appState.settings = saved.settings && typeof saved.settings === "object"

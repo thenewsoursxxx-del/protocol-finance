@@ -1085,21 +1085,40 @@ function assembleCashflowEvents() {
     }
   } else {
     // VARIABLE: user-configured schedule.
-    var incVarAmt = parseFlexAmount(s.fixedIncomeAmount);
-    if (incVarAmt > 0) {
-      var incFreq = s.incomeFrequency || "monthly";
-      var incStart = s.incomeStartDate || nowIso;
-      var incMeta = { kind: "periodic", source: "flexModel", side: "income", origin: "variable" };
-      if (incFreq === "custom" && Array.isArray(s.incomeMonthDays) && s.incomeMonthDays.length) {
-        incMeta.monthDays = s.incomeMonthDays;
+    var incFreq = s.incomeFrequency || "monthly";
+    // CUSTOM SCHEDULE LOGIC — для freq=custom периодическое событие НЕ генерируем.
+    // Вместо него в forecast уходят one-time INCOME-события из customScheduleEntries
+    // (отдельный блок ниже). Это даёт «по среднему последних ручных вводов».
+    if (incFreq === "custom") {
+      var csEntriesInc = Array.isArray(s.customScheduleEntries) ? s.customScheduleEntries : [];
+      for (var ci = 0; ci < csEntriesInc.length; ci++) {
+        var ceInc = csEntriesInc[ci];
+        if (!ceInc || ceInc.side !== "income") continue;
+        var ceAmtI = Number(ceInc.amount) || 0;
+        if (ceAmtI <= 0) continue;
+        events.push(H.normalizeEvent({
+          id: "cs_" + ceInc.id,
+          type: H.EVENT_TYPE.INCOME,
+          amount: ceAmtI,
+          frequency: "once",
+          startDate: ceInc.date || nowIso,
+          // userCreated: true → cashflow-engine включает one-time события в forecast.
+          meta: { kind: "manual", source: "customSchedule", side: "income", userCreated: true, csId: ceInc.id }
+        }));
       }
-      events.push(H.normalizeEvent({
-        type: H.EVENT_TYPE.INCOME,
-        amount: incVarAmt,
-        frequency: incFreq,
-        startDate: incStart,
-        meta: incMeta
-      }));
+    } else {
+      var incVarAmt = parseFlexAmount(s.fixedIncomeAmount);
+      if (incVarAmt > 0) {
+        var incStart = s.incomeStartDate || nowIso;
+        var incMeta = { kind: "periodic", source: "flexModel", side: "income", origin: "variable" };
+        events.push(H.normalizeEvent({
+          type: H.EVENT_TYPE.INCOME,
+          amount: incVarAmt,
+          frequency: incFreq,
+          startDate: incStart,
+          meta: incMeta
+        }));
+      }
     }
   }
 
@@ -1116,21 +1135,37 @@ function assembleCashflowEvents() {
       }));
     }
   } else {
-    var expVarAmt = parseFlexAmount(s.fixedExpenseAmount);
-    if (expVarAmt > 0) {
-      var expFreq = s.expenseFrequency || "monthly";
-      var expStart = s.expenseStartDate || nowIso;
-      var expMeta = { kind: "periodic", source: "flexModel", side: "expense", origin: "variable" };
-      if (expFreq === "custom" && Array.isArray(s.expenseMonthDays) && s.expenseMonthDays.length) {
-        expMeta.monthDays = s.expenseMonthDays;
+    var expFreq = s.expenseFrequency || "monthly";
+    // CUSTOM SCHEDULE LOGIC — зеркальная логика для расходов.
+    if (expFreq === "custom") {
+      var csEntriesExp = Array.isArray(s.customScheduleEntries) ? s.customScheduleEntries : [];
+      for (var cj = 0; cj < csEntriesExp.length; cj++) {
+        var ceExp = csEntriesExp[cj];
+        if (!ceExp || ceExp.side !== "expense") continue;
+        var ceAmtE = Number(ceExp.amount) || 0;
+        if (ceAmtE <= 0) continue;
+        events.push(H.normalizeEvent({
+          id: "cs_" + ceExp.id,
+          type: H.EVENT_TYPE.EXPENSE,
+          amount: ceAmtE,
+          frequency: "once",
+          startDate: ceExp.date || nowIso,
+          meta: { kind: "manual", source: "customSchedule", side: "expense", userCreated: true, csId: ceExp.id }
+        }));
       }
-      events.push(H.normalizeEvent({
-        type: H.EVENT_TYPE.EXPENSE,
-        amount: expVarAmt,
-        frequency: expFreq,
-        startDate: expStart,
-        meta: expMeta
-      }));
+    } else {
+      var expVarAmt = parseFlexAmount(s.fixedExpenseAmount);
+      if (expVarAmt > 0) {
+        var expStart = s.expenseStartDate || nowIso;
+        var expMeta = { kind: "periodic", source: "flexModel", side: "expense", origin: "variable" };
+        events.push(H.normalizeEvent({
+          type: H.EVENT_TYPE.EXPENSE,
+          amount: expVarAmt,
+          frequency: expFreq,
+          startDate: expStart,
+          meta: expMeta
+        }));
+      }
     }
   }
 
@@ -4946,8 +4981,13 @@ function freqLabel(freq, days) {
     case "weekly": return t("freq.weekly");
     case "biweekly": return t("freq.biweekly");
     case "custom":
-      var daysStr = Array.isArray(days) && days.length ? days.join(", ") : "—";
-      return t("freq.custom") + " (" + daysStr + ")";
+      // CUSTOM SCHEDULE LOGIC — для freq=custom теперь используется журнал
+      // ручного ввода (customScheduleEntries). Старые days показываем только
+      // если они уже были сохранены — иначе просто "Свой график".
+      if (Array.isArray(days) && days.length) {
+        return t("freq.custom") + " (" + days.join(", ") + ")";
+      }
+      return t("freq.custom");
     default: return t("freq.fixed");
   }
 }
@@ -5116,6 +5156,22 @@ function syncFlexibleUI() {
   if (expCard) expCard.classList.add("cf-card--configured");
 
   if (typeof renderFlexModelSummary === "function") renderFlexModelSummary();
+
+  // CUSTOM SCHEDULE LOGIC — синхронизируем видимость нового блока «Свой график»
+  // и перерендериваем его сводку/историю (сюда попадаем из recalcPlan на любое
+  // изменение state, поэтому summary всегда актуален: последняя сумма, отложено,
+  // примерный срок до цели).
+  var sCustom = (typeof getState === "function") ? getState() : {};
+  var incCb = document.getElementById("incomeCustomBlock");
+  var expCb = document.getElementById("expenseCustomBlock");
+  var incIsCustom = (sCustom.incomeType === "variable") && ((sCustom.incomeFrequency || "monthly") === "custom");
+  var expIsCustom = (sCustom.expenseType === "variable") && ((sCustom.expenseFrequency || "monthly") === "custom");
+  if (incCb) incCb.style.display = incIsCustom ? "flex" : "none";
+  if (expCb) expCb.style.display = expIsCustom ? "flex" : "none";
+  if (typeof window.renderCustomSchedule === "function") {
+    if (incIsCustom) window.renderCustomSchedule("income");
+    if (expIsCustom) window.renderCustomSchedule("expense");
+  }
 }
 
 /**
@@ -5491,8 +5547,20 @@ function initCashflowSettings() {
     var sideType = type === "income"
       ? (getState().incomeType || "fixed")
       : (getState().expenseType || "fixed");
-    // NEW: логика fixed vs variable 11.05.2026 — custom-day picker only meaningful in VARIABLE mode.
-    if (wrap) wrap.style.display = (freq === "custom" && sideType === "variable") ? "block" : "none";
+    var shouldShow = (freq === "custom" && sideType === "variable");
+    // CUSTOM SCHEDULE LOGIC — старый picker дней месяца полностью заменён
+    // блоком ручного ввода `.custom-schedule-block`. Прежний wrap скрыт всегда,
+    // чтобы не путать пользователя двумя UI одновременно. Сам элемент оставлен
+    // в DOM для обратной совместимости с прежними listener'ами setupMonthDaysDateInput.
+    if (wrap) wrap.style.display = "none";
+    var customBlockId = type === "income" ? "incomeCustomBlock" : "expenseCustomBlock";
+    var customBlock = document.getElementById(customBlockId);
+    if (customBlock) {
+      customBlock.style.display = shouldShow ? "flex" : "none";
+      if (shouldShow && typeof window.renderCustomSchedule === "function") {
+        window.renderCustomSchedule(type);
+      }
+    }
   }
 
   // NEW: логика fixed vs variable 11.05.2026 — thin wrapper around the module-level
@@ -5711,6 +5779,635 @@ if (eventAmountInput) {
 }
 
 initCashflowSettings();
+
+/* ============================================================================
+ * CUSTOM SCHEDULE LOGIC — ручной ввод «Свой график»
+ * ----------------------------------------------------------------------------
+ * Полная замена прежнего picker-а дней месяца. Когда пользователь выбирает
+ * частоту "custom" в гибкой модели (на income или expense стороне), вместо
+ * автоматического периодического события используется ручной журнал записей:
+ *
+ *   state.customScheduleEntries: Array<{
+ *     id, side: "income"|"expense",
+ *     amount: number,
+ *     date: "YYYY-MM-DD",
+ *     deposited: number,       // сколько реально ушло в накопления (income)
+ *     depositedAt: ISO|null,
+ *     createdAt: ISO
+ *   }>
+ *
+ * Поток:
+ *   1) Клик «+ Записать поступление / расход» → открывается двухшаговая sheet:
+ *      step "form"  — сумма + дата (+ подсказка).
+ *      step "alloc" — крупно «Нужно отложить: X ₽» + кнопки «Отложить» /
+ *                     «Только записать». Шаг alloc — ТОЛЬКО для income.
+ *   2) После отложения дохода:
+ *      • factHistory получает запись (как обычный взнос пользователя)
+ *      • accounts.main += deposited
+ *      • выставляется sticky-флаг customScheduleExpensePrompt → reminder card
+ *        «Теперь введите расходы за этот период».
+ *   3) История рендерится прямо под кнопкой ввода (edit/delete inline).
+ *   4) Примерный срок до цели = remaining / (avg amount × PACE_MAP[saveMode]).
+ *      Если записей <2 → «недостаточно данных».
+ *
+ * Все события engine получает через assembleCashflowEvents() как one-time
+ * INCOME/EXPENSE c meta.userCreated:true — это совместимо с forecast-логикой
+ * cashflow-engine.js (см. _getForecastFromEvents).
+ * ============================================================================ */
+
+(function () {
+  "use strict";
+
+  var PACE = (typeof CashflowEngineHelpers !== "undefined" && CashflowEngineHelpers.PACE_MAP)
+    ? CashflowEngineHelpers.PACE_MAP
+    : { calm: 0.4, normal: 0.6, aggressive: 0.8 };
+
+  // ── DOM cache ─────────────────────────────────────────────────────────────
+  var sheet = document.getElementById("customScheduleSheet");
+  var overlay = document.getElementById("customScheduleOverlay");
+  var stepForm = sheet ? sheet.querySelector('[data-cs-step="form"]') : null;
+  var stepAlloc = sheet ? sheet.querySelector('[data-cs-step="alloc"]') : null;
+  var titleEl = document.getElementById("csSheetTitle");
+  var modeBadgeEl = document.getElementById("csModeBadge");
+  var amountLabelEl = document.getElementById("csAmountLabel");
+  var amountHintEl = document.getElementById("csAmountHint");
+  var amountInput = document.getElementById("csAmountInput");
+  var dateInput = document.getElementById("csDateInput");
+  var continueBtn = document.getElementById("csContinueBtn");
+  var allocAmountEl = document.getElementById("csAllocAmount");
+  var allocBaseEl = document.getElementById("csAllocBase");
+  var depositBtn = document.getElementById("csDepositBtn");
+  var skipDepositBtn = document.getElementById("csSkipDepositBtn");
+
+  // CUSTOM SCHEDULE LOGIC — текущий контекст модалки (закрыта по умолчанию).
+  // editId !== null → режим редактирования существующей записи; шаг alloc пропускаем.
+  var ctx = { side: "income", editId: null, pendingDeposit: 0, baseAmount: 0, entryDate: "" };
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
+
+  function _genId() {
+    return "cs_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 7);
+  }
+
+  function _todayIso() {
+    return (new Date()).toISOString().slice(0, 10);
+  }
+
+  function _entries() {
+    var s = (typeof getState === "function") ? getState() : {};
+    return Array.isArray(s.customScheduleEntries) ? s.customScheduleEntries.slice() : [];
+  }
+
+  function _entriesBySide(side) {
+    return _entries().filter(function (e) { return e && e.side === side; });
+  }
+
+  function _persist(entries) {
+    if (typeof updateState !== "function") return;
+    updateState({ customScheduleEntries: entries });
+    if (typeof saveFullState === "function") saveFullState();
+  }
+
+  function _currentSaveMode() {
+    var s = (typeof getState === "function") ? getState() : {};
+    return (s.saveMode || (typeof saveMode !== "undefined" ? saveMode : "calm")) || "calm";
+  }
+
+  function _paceFraction() {
+    var m = _currentSaveMode();
+    return (PACE[m] != null) ? PACE[m] : 0.6;
+  }
+
+  function _modeLabel() {
+    return t("cs.mode." + _currentSaveMode());
+  }
+
+  function _amount(n) {
+    return (typeof fmtAmount === "function") ? fmtAmount(n) : String(Math.round(n));
+  }
+
+  function _formatHumanDate(iso) {
+    if (!iso) return "—";
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return iso;
+    var day = d.getDate();
+    var monGen = (typeof getMonthNameGenitive === "function") ? getMonthNameGenitive(d.getMonth()) : (d.getMonth() + 1);
+    var y = d.getFullYear();
+    return day + " " + monGen + " " + y;
+  }
+
+  // ── ETA ───────────────────────────────────────────────────────────────────
+  // CUSTOM SCHEDULE LOGIC — примерный срок до цели на основе среднего
+  // последних income-вводов и текущего темпа накоплений. Если данных <2 → null.
+  function _computeEta() {
+    var incomes = _entriesBySide("income");
+    if (incomes.length < 2) return null;
+
+    // Среднее по последним 3 ручным income-вводам (новейшие сверху).
+    var sorted = incomes.slice().sort(function (a, b) {
+      return String(b.date).localeCompare(String(a.date));
+    });
+    var sample = sorted.slice(0, Math.min(3, sorted.length));
+    var avg = 0;
+    for (var i = 0; i < sample.length; i++) avg += (Number(sample[i].amount) || 0);
+    avg = avg / sample.length;
+    if (avg <= 0) return null;
+
+    var monthlyEffective = avg * _paceFraction();
+    if (monthlyEffective <= 0) return null;
+
+    // remaining: пробуем взять lastCalc, иначе из state.
+    var goalVal = 0;
+    var savedVal = 0;
+    try {
+      var gi = document.getElementById("goal");
+      goalVal = gi ? (typeof parseNumber === "function" ? parseNumber(gi.value || "0") : Number(gi.value) || 0) : 0;
+    } catch (e) { goalVal = 0; }
+    savedVal = (typeof accounts !== "undefined" && accounts && accounts.main) ? accounts.main : 0;
+    var remaining = Math.max(0, goalVal - savedVal);
+    if (remaining <= 0) return null;
+
+    return Math.ceil(remaining / monthlyEffective);
+  }
+
+  // ── Summary card ──────────────────────────────────────────────────────────
+
+  function _renderSummary(side) {
+    var summaryId = side === "income" ? "incomeCsSummary" : "expenseCsSummary";
+    var el = document.getElementById(summaryId);
+    if (!el) return;
+
+    var entries = _entriesBySide(side).slice().sort(function (a, b) {
+      return String(b.date).localeCompare(String(a.date));
+    });
+
+    if (!entries.length) {
+      el.className = "cs-summary cs-summary--empty";
+      el.innerHTML = "<span>" + t("cs.summary.empty." + side) + "</span>";
+      return;
+    }
+
+    var last = entries[0];
+    var lastAmt = Number(last.amount) || 0;
+    var deposited = Number(last.deposited) || 0;
+
+    var html = "";
+    html += '<div class="cs-summary-row cs-summary-row--primary">';
+    html += '<span>' + t("cs.summary.last." + side) + '</span>';
+    html += '<b>' + _amount(lastAmt) + '</b>';
+    html += '</div>';
+
+    if (side === "income") {
+      html += '<div class="cs-summary-row">';
+      html += '<span>' + t("cs.summary.deposited") + '</span>';
+      html += '<b>' + (deposited > 0 ? _amount(deposited) : '—') + '</b>';
+      html += '</div>';
+
+      // ETA — только для income, расход не имеет смысла в context-е срока цели.
+      var eta = _computeEta();
+      if (eta == null) {
+        html += '<div class="cs-summary-eta cs-summary-eta--insufficient">';
+        html += '<span>' + t("cs.summary.eta") + '</span>';
+        html += '<b>' + t("cs.summary.eta.insufficient") + '</b>';
+        html += '</div>';
+      } else {
+        html += '<div class="cs-summary-eta">';
+        html += '<span>' + t("cs.summary.eta") + '</span>';
+        html += '<b>' + t("cs.summary.eta.months", { n: eta }) + '</b>';
+        html += '</div>';
+      }
+    }
+
+    el.className = "cs-summary";
+    el.innerHTML = html;
+  }
+
+  // ── History list ──────────────────────────────────────────────────────────
+
+  function _renderHistory(side) {
+    var listId = side === "income" ? "incomeCsHistory" : "expenseCsHistory";
+    var listEl = document.getElementById(listId);
+    if (!listEl) return;
+
+    var entries = _entriesBySide(side).slice().sort(function (a, b) {
+      // Сортируем по date desc, при равной дате — по createdAt desc.
+      var dCmp = String(b.date).localeCompare(String(a.date));
+      if (dCmp !== 0) return dCmp;
+      return String(b.createdAt || "").localeCompare(String(a.createdAt || ""));
+    });
+
+    if (!entries.length) {
+      listEl.innerHTML = '<div class="cs-history-empty">' + t("cs.history.empty") + '</div>';
+      return;
+    }
+
+    var html = "";
+    for (var i = 0; i < entries.length; i++) {
+      var e = entries[i];
+      var amt = Number(e.amount) || 0;
+      var dep = Number(e.deposited) || 0;
+      var itemCls = "cs-history-item" + (side === "expense" ? " cs-history-item--expense" : "");
+      var amtCls = "cs-history-item-amount" + (side === "expense" ? " cs-history-item-amount--expense" : "");
+
+      html += '<div class="' + itemCls + '" data-cs-id="' + e.id + '">';
+      html +=   '<div class="cs-history-item-main">';
+      html +=     '<div class="' + amtCls + '">' + (side === "expense" ? "−" : "") + _amount(amt) + '</div>';
+      html +=     '<div class="cs-history-item-date">' + _formatHumanDate(e.date) + '</div>';
+      html +=   '</div>';
+
+      if (side === "income") {
+        if (dep > 0) {
+          html += '<div class="cs-history-item-badge">' + t("cs.history.deposited.badge", { amount: _amount(dep) }) + '</div>';
+        } else {
+          html += '<div class="cs-history-item-badge cs-history-item-badge--none">' + t("cs.history.notDeposited.badge") + '</div>';
+        }
+      }
+
+      html += '<div class="cs-history-item-actions">';
+      // Кнопка «Отложить» — только для income, не отложенных ранее записей.
+      if (side === "income" && dep <= 0) {
+        html += '<button type="button" class="cs-history-icon-btn cs-history-icon-btn--deposit" data-cs-action="deposit" data-cs-id="' + e.id + '" title="' + t("cs.history.deposit") + '">↑</button>';
+      }
+      html += '<button type="button" class="cs-history-icon-btn" data-cs-action="edit" data-cs-id="' + e.id + '" title="' + t("cs.history.edit") + '">✎</button>';
+      html += '<button type="button" class="cs-history-icon-btn cs-history-icon-btn--delete" data-cs-action="delete" data-cs-id="' + e.id + '" title="' + t("cs.history.delete") + '">🗑</button>';
+      html += '</div>';
+      html += '</div>';
+    }
+    listEl.innerHTML = html;
+  }
+
+  // ── Expense reminder (sticky-card после income deposit) ───────────────────
+
+  function _renderExpenseReminder() {
+    var card = document.getElementById("csExpenseReminder");
+    if (!card) return;
+    var s = (typeof getState === "function") ? getState() : {};
+    card.style.display = s.customScheduleExpensePrompt ? "flex" : "none";
+  }
+
+  function _setExpensePrompt(active) {
+    if (typeof updateState !== "function") return;
+    updateState({ customScheduleExpensePrompt: !!active });
+    _renderExpenseReminder();
+  }
+
+  // ── Public render ─────────────────────────────────────────────────────────
+
+  function renderCustomSchedule(side) {
+    if (side === "income" || side === "expense") {
+      _renderSummary(side);
+      _renderHistory(side);
+      if (side === "income") _renderExpenseReminder();
+      return;
+    }
+    // Без аргумента — рендерим обе стороны.
+    _renderSummary("income");
+    _renderHistory("income");
+    _renderSummary("expense");
+    _renderHistory("expense");
+    _renderExpenseReminder();
+  }
+
+  // ── Sheet open / close ────────────────────────────────────────────────────
+
+  function _showStep(step) {
+    if (stepForm) stepForm.style.display = step === "form" ? "" : "none";
+    if (stepAlloc) stepAlloc.style.display = step === "alloc" ? "" : "none";
+  }
+
+  function _applySheetTextsForSide(side, isEdit) {
+    if (titleEl) {
+      titleEl.textContent = t(isEdit
+        ? "cs.modal.title.edit." + side
+        : "cs.modal.title." + side);
+    }
+    if (amountLabelEl) amountLabelEl.textContent = t("cs.field.amount." + side);
+    if (amountHintEl) amountHintEl.textContent = t("cs.field.amountHint." + side);
+    if (modeBadgeEl) {
+      modeBadgeEl.textContent = _modeLabel();
+      modeBadgeEl.style.display = side === "income" ? "" : "none";
+    }
+    if (continueBtn) {
+      // Income → "Продолжить" (откроет шаг alloc); expense / edit → "Сохранить".
+      continueBtn.textContent = (side === "income" && !isEdit) ? t("cs.modal.continue") : t("cs.modal.save");
+    }
+  }
+
+  function openCustomScheduleSheet(side, opts) {
+    if (!sheet) return;
+    opts = opts || {};
+    var isEdit = !!opts.editId;
+    ctx.side = side === "expense" ? "expense" : "income";
+    ctx.editId = opts.editId || null;
+    ctx.pendingDeposit = 0;
+    ctx.baseAmount = 0;
+    ctx.entryDate = "";
+
+    _applySheetTextsForSide(ctx.side, isEdit);
+    _showStep("form");
+
+    // Заполняем поля. Для редактирования — текущие значения, иначе чистая форма.
+    if (isEdit) {
+      var existing = _entries().filter(function (e) { return e.id === ctx.editId; })[0];
+      if (existing) {
+        if (amountInput) amountInput.value = (typeof formatNumber === "function")
+          ? formatNumber(String(existing.amount || 0))
+          : String(existing.amount || 0);
+        if (dateInput) dateInput.value = existing.date || _todayIso();
+      }
+    } else {
+      if (amountInput) amountInput.value = "";
+      if (dateInput) dateInput.value = _todayIso();
+    }
+
+    if (typeof ProtoSheet !== "undefined") ProtoSheet.open(sheet, overlay);
+  }
+
+  function closeCustomScheduleSheet() {
+    if (typeof ProtoSheet !== "undefined") ProtoSheet.close(sheet, overlay);
+  }
+
+  // ── Save / commit deposit ─────────────────────────────────────────────────
+
+  // CUSTOM SCHEDULE LOGIC — добавление новой записи в журнал.
+  function _addEntry(side, amount, dateIso) {
+    var arr = _entries();
+    var entry = {
+      id: _genId(),
+      side: side,
+      amount: amount,
+      date: dateIso || _todayIso(),
+      deposited: 0,
+      depositedAt: null,
+      createdAt: (new Date()).toISOString()
+    };
+    arr.push(entry);
+    _persist(arr);
+    return entry;
+  }
+
+  // CUSTOM SCHEDULE LOGIC — обновление amount/date существующей записи.
+  // Намеренно НЕ трогаем `deposited`: если пользователь уже отложил по этой
+  // записи, его реальный взнос остаётся в factHistory неизменным.
+  function _updateEntry(id, amount, dateIso) {
+    var arr = _entries();
+    for (var i = 0; i < arr.length; i++) {
+      if (arr[i].id === id) {
+        arr[i].amount = amount;
+        arr[i].date = dateIso || arr[i].date || _todayIso();
+        break;
+      }
+    }
+    _persist(arr);
+  }
+
+  // CUSTOM SCHEDULE LOGIC — удаление записи из истории.
+  // factHistory НЕ откатываем: уже отложенные деньги остаются на счёте, чтобы
+  // не создавать резких просадок баланса при чистке истории.
+  function _deleteEntry(id) {
+    var arr = _entries().filter(function (e) { return e.id !== id; });
+    _persist(arr);
+  }
+
+  // CUSTOM SCHEDULE LOGIC — отложить взнос на цель по конкретной записи.
+  // Использует тот же канал, что и обычные взносы пользователя:
+  //   factHistory.push({ value, date, to: "main", timestamp })
+  // + accounts.main += amount. Это даёт корректное отображение в графике,
+  // в истории операций и в derived balance движка.
+  function _commitDeposit(entry, depositAmount) {
+    if (!entry || depositAmount <= 0) return;
+    var realTimestamp = (new Date()).toISOString();
+    var d = entry.date ? new Date(entry.date) : new Date();
+    if (isNaN(d.getTime())) d = new Date();
+    // factHistory ожидает 1-е число месяца (см. deserializeFactHistory).
+    var periodDate = new Date(d);
+    periodDate.setDate(1);
+    periodDate.setHours(0, 0, 0, 0);
+
+    if (typeof factHistory !== "undefined" && Array.isArray(factHistory)) {
+      factHistory.push({
+        value: depositAmount,
+        date: periodDate,
+        to: "main",
+        timestamp: realTimestamp
+      });
+    }
+    if (typeof accounts !== "undefined" && accounts) {
+      accounts.main = (Number(accounts.main) || 0) + depositAmount;
+    }
+
+    // Обновим запись в журнале.
+    var arr = _entries();
+    for (var i = 0; i < arr.length; i++) {
+      if (arr[i].id === entry.id) {
+        arr[i].deposited = (Number(arr[i].deposited) || 0) + depositAmount;
+        arr[i].depositedAt = realTimestamp;
+        break;
+      }
+    }
+    updateState({ customScheduleEntries: arr });
+
+    // Sticky-reminder про расходы.
+    updateState({ customScheduleExpensePrompt: true });
+  }
+
+  // ── Events: Continue / Deposit / Skip / History clicks ────────────────────
+
+  if (continueBtn) {
+    continueBtn.addEventListener("click", function () {
+      if (typeof haptic === "function") haptic("light");
+      var rawAmount = (typeof parseNumber === "function")
+        ? parseNumber(amountInput ? amountInput.value : "0")
+        : Number(amountInput && amountInput.value || 0);
+      if (!rawAmount || rawAmount <= 0) {
+        if (typeof haptic === "function") haptic("error");
+        if (amountInput) {
+          amountInput.classList.add("error", "shake");
+          setTimeout(function () { amountInput.classList.remove("error", "shake"); }, 400);
+        }
+        if (typeof showToast === "function") showToast(t("cs.toast.invalidAmount"), "error");
+        return;
+      }
+      var dateVal = (dateInput && dateInput.value) ? dateInput.value : _todayIso();
+
+      // Редактирование — просто пишем и закрываем (без шага alloc).
+      if (ctx.editId) {
+        _updateEntry(ctx.editId, rawAmount, dateVal);
+        if (typeof showToast === "function") showToast(t("cs.toast.updated"), "success");
+        closeCustomScheduleSheet();
+        if (typeof recalcPlan === "function") recalcPlan();
+        return;
+      }
+
+      // Новая запись.
+      if (ctx.side === "expense") {
+        // Для расходов alloc-шаг не показываем — сразу сохраняем.
+        _addEntry("expense", rawAmount, dateVal);
+        // Если стоял sticky-reminder про расходы — гасим (пользователь как раз их ввёл).
+        _setExpensePrompt(false);
+        if (typeof showToast === "function") showToast(t("cs.toast.added.expense"), "success");
+        closeCustomScheduleSheet();
+        if (typeof recalcPlan === "function") recalcPlan();
+        return;
+      }
+
+      // Income: добавляем запись (deposited:0), переходим к alloc-шагу.
+      var entry = _addEntry("income", rawAmount, dateVal);
+      ctx.baseAmount = rawAmount;
+      ctx.entryDate = dateVal;
+      ctx.pendingDeposit = Math.round(rawAmount * _paceFraction());
+      // Сохраняем id новой записи для последующего commit/skip.
+      ctx.editId = entry.id;
+
+      if (allocAmountEl) {
+        allocAmountEl.textContent = (typeof fmtNum === "function") ? fmtNum(ctx.pendingDeposit) : String(ctx.pendingDeposit);
+      }
+      if (allocBaseEl) allocBaseEl.textContent = _amount(rawAmount);
+
+      _showStep("alloc");
+      if (typeof recalcPlan === "function") recalcPlan();
+    });
+  }
+
+  if (depositBtn) {
+    depositBtn.addEventListener("click", function () {
+      if (typeof haptic === "function") haptic("success");
+      var goalVal = 0;
+      try {
+        var gi = document.getElementById("goal");
+        goalVal = gi ? (typeof parseNumber === "function" ? parseNumber(gi.value || "0") : Number(gi.value) || 0) : 0;
+      } catch (e) { goalVal = 0; }
+      if (goalVal <= 0) {
+        if (typeof showToast === "function") showToast(t("cs.toast.noGoal"), "info");
+        // Всё равно закрываем — запись уже создана.
+        closeCustomScheduleSheet();
+        if (typeof recalcPlan === "function") recalcPlan();
+        return;
+      }
+      // Текущая запись (только что созданная на шаге form).
+      var entry = _entries().filter(function (e) { return e.id === ctx.editId; })[0];
+      if (entry) {
+        _commitDeposit(entry, ctx.pendingDeposit);
+      }
+      if (typeof showToast === "function") {
+        showToast(t("cs.toast.deposited", { amount: _amount(ctx.pendingDeposit) }), "success");
+      }
+      closeCustomScheduleSheet();
+      if (typeof recalcPlan === "function") recalcPlan();
+    });
+  }
+
+  if (skipDepositBtn) {
+    skipDepositBtn.addEventListener("click", function () {
+      if (typeof haptic === "function") haptic("light");
+      if (typeof showToast === "function") showToast(t("cs.toast.added.income"), "success");
+      closeCustomScheduleSheet();
+      if (typeof recalcPlan === "function") recalcPlan();
+    });
+  }
+
+  if (overlay) {
+    overlay.addEventListener("click", function () { closeCustomScheduleSheet(); });
+  }
+
+  if (typeof ProtoSheet !== "undefined" && ProtoSheet.initSwipe) {
+    ProtoSheet.initSwipe(sheet, closeCustomScheduleSheet);
+  }
+
+  // Numeric formatting на amount input.
+  if (amountInput) {
+    amountInput.addEventListener("input", function (e) {
+      if (typeof formatNumericInput === "function") formatNumericInput(e.target);
+      else e.target.value = (typeof formatNumber === "function") ? formatNumber(e.target.value) : e.target.value;
+    });
+  }
+
+  // ── Wire up «+ Записать ...» buttons + history actions (event delegation) ──
+
+  document.addEventListener("click", function (e) {
+    var addBtn = e.target.closest(".cs-add-record-btn");
+    if (addBtn) {
+      var side = addBtn.getAttribute("data-side") || "income";
+      if (typeof haptic === "function") haptic("light");
+      openCustomScheduleSheet(side);
+      return;
+    }
+
+    var actionBtn = e.target.closest("[data-cs-action]");
+    if (actionBtn) {
+      var action = actionBtn.getAttribute("data-cs-action");
+      var id = actionBtn.getAttribute("data-cs-id");
+      if (!id) return;
+
+      if (action === "edit") {
+        var ent = _entries().filter(function (x) { return x.id === id; })[0];
+        if (!ent) return;
+        if (typeof haptic === "function") haptic("light");
+        openCustomScheduleSheet(ent.side, { editId: id });
+        return;
+      }
+      if (action === "delete") {
+        if (typeof window.confirm === "function" && !window.confirm(t("cs.history.confirmDelete"))) return;
+        if (typeof haptic === "function") haptic("light");
+        _deleteEntry(id);
+        if (typeof showToast === "function") showToast(t("cs.toast.deleted"), "info");
+        if (typeof recalcPlan === "function") recalcPlan();
+        return;
+      }
+      if (action === "deposit") {
+        var entD = _entries().filter(function (x) { return x.id === id; })[0];
+        if (!entD || entD.side !== "income") return;
+        var goalVal2 = 0;
+        try {
+          var gi2 = document.getElementById("goal");
+          goalVal2 = gi2 ? (typeof parseNumber === "function" ? parseNumber(gi2.value || "0") : Number(gi2.value) || 0) : 0;
+        } catch (er) { goalVal2 = 0; }
+        if (goalVal2 <= 0) {
+          if (typeof showToast === "function") showToast(t("cs.toast.noGoal"), "info");
+          return;
+        }
+        var dep = Math.round((Number(entD.amount) || 0) * _paceFraction());
+        if (dep <= 0) return;
+        if (typeof haptic === "function") haptic("success");
+        _commitDeposit(entD, dep);
+        if (typeof showToast === "function") {
+          showToast(t("cs.toast.deposited", { amount: _amount(dep) }), "success");
+        }
+        if (typeof recalcPlan === "function") recalcPlan();
+        return;
+      }
+    }
+  });
+
+  // ── Expense reminder buttons ──────────────────────────────────────────────
+
+  var reminderCta = document.getElementById("csExpenseReminderCta");
+  var reminderDismiss = document.getElementById("csExpenseReminderDismiss");
+  if (reminderCta) {
+    reminderCta.addEventListener("click", function () {
+      if (typeof haptic === "function") haptic("light");
+      _setExpensePrompt(false);
+      openCustomScheduleSheet("expense");
+    });
+  }
+  if (reminderDismiss) {
+    reminderDismiss.addEventListener("click", function () {
+      if (typeof haptic === "function") haptic("light");
+      _setExpensePrompt(false);
+    });
+  }
+
+  // ── Public API ────────────────────────────────────────────────────────────
+
+  window.renderCustomSchedule = renderCustomSchedule;
+  window.openCustomScheduleSheet = openCustomScheduleSheet;
+  window.closeCustomScheduleSheet = closeCustomScheduleSheet;
+
+  // CUSTOM SCHEDULE LOGIC — первичный рендер на момент загрузки страницы.
+  // syncFlexibleUI() мог отработать ДО парсинга этой IIFE, тогда блоки
+  // оказались бы видимыми, но пустыми. Рендерим явно один раз.
+  try { renderCustomSchedule(); } catch (e) { /* swallow */ }
+})();
 
 /* ===== ACCOUNT STATS SYSTEM ===== */
 
