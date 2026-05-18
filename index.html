@@ -119,18 +119,19 @@ viewport-fit=cover" />
 </div>
 
 <div class="plan-actions">
-<!-- PREMIUM SYSTEM — кнопки с lock-баджем; при isPremium=false перехватываются в app.js -->
-<button id="changePaceBtn" class="plan-action-btn premium-gate-btn" type="button" data-i18n="plan.changePace">Изменить темп накоплений<span class="premium-lock-badge" id="lockChangePace"><div class="premium-lock-lottie" id="lottieChangePace"></div></span></button>
-<button id="addDebtsBtn" class="plan-action-btn premium-gate-btn" type="button" data-i18n="plan.addDebts">Добавить кредиты и долги<span class="premium-lock-badge" id="lockAddDebts"><div class="premium-lock-lottie" id="lottieAddDebts"></div></span></button>
+<!-- PREMIUM SYSTEM — кнопки с lock-баджем; при isPremium=false перехватываются в app.js
+     data-premium-gate помечает кнопку для body-level capture-делегатора. -->
+<button id="changePaceBtn" class="plan-action-btn premium-gate-btn" type="button" data-premium-gate="pace" data-i18n="plan.changePace">Изменить темп накоплений<span class="premium-lock-badge" id="lockChangePace"><span class="premium-lock-lottie" id="lottieChangePace"></span></span></button>
+<button id="addDebtsBtn" class="plan-action-btn premium-gate-btn" type="button" data-premium-gate="debts" data-i18n="plan.addDebts">Добавить кредиты и долги<span class="premium-lock-badge" id="lockAddDebts"><span class="premium-lock-lottie" id="lottieAddDebts"></span></span></button>
 </div>
 
 <!-- ===== FLEXIBLE MODEL ===== -->
 <section id="cashflowSettings" class="cashflow-settings">
 
   <!-- PREMIUM SYSTEM — flex toggle с lock-баджем -->
-  <button type="button" id="flexibleToggle" class="flexible-toggle premium-gate-btn">
+  <button type="button" id="flexibleToggle" class="flexible-toggle premium-gate-btn" data-premium-gate="flexible">
     <span data-i18n="flex.toggle">Гибкая финансовая модель</span>
-    <span class="premium-lock-badge" id="lockFlexible"><div class="premium-lock-lottie" id="lottieFlexible"></div></span>
+    <span class="premium-lock-badge" id="lockFlexible"><span class="premium-lock-lottie" id="lottieFlexible"></span></span>
     <span class="chevron">&#9656;</span>
   </button>
 
@@ -450,7 +451,7 @@ Protocol анализирует данные…
   <!-- PREMIUM SYSTEM — обратная сторона счёта открывает статистику (премиум) -->
   <div class="account-back-card">
     <div class="account-back-premium-hint" id="accountBackPremiumHint">
-      <div class="premium-lock-lottie" id="lottieAccountStats"></div>
+      <div class="premium-lock-lottie premium-lock-lottie--lg" id="lottieAccountStats" style="width:40px;height:40px"></div>
       <span data-i18n="premium.statsLocked">Статистика — премиум-функция</span>
     </div>
   </div>
@@ -1339,9 +1340,9 @@ Protocol анализирует цель…
 
 <!-- ===== ADVANCED BUTTON ===== -->
 <!-- PREMIUM SYSTEM — расширенные настройки тоже под замком -->
-<button id="advancedBtn" class="advanced-btn premium-gate-btn">
+<button id="advancedBtn" class="advanced-btn premium-gate-btn" data-premium-gate="advanced">
   <span>+</span>
-  <span class="premium-lock-badge premium-lock-badge--fab" id="lockAdvanced"><div class="premium-lock-lottie" id="lottieAdvanced"></div></span>
+  <span class="premium-lock-badge premium-lock-badge--fab" id="lockAdvanced"><span class="premium-lock-lottie" id="lottieAdvanced"></span></span>
 </button>
 
 <div class="screen" id="screen-advanced">
@@ -2050,7 +2051,7 @@ z-index: 999999;
 
   <!-- Заголовок -->
   <div class="premium-header">
-    <div class="premium-crown-lottie" id="lottiePremiumCrown"></div>
+    <div class="premium-crown-lottie" id="lottiePremiumCrown" style="width:64px;height:64px"></div>
     <div class="premium-title" data-i18n="premium.title">Protocol Premium</div>
     <div class="premium-subtitle" data-i18n="premium.subtitle">Полный контроль над своими финансами</div>
   </div>

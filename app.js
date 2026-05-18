@@ -10891,20 +10891,38 @@ function goalSwipeToIndex(idx, goLeft) {
   }
 
   /**
-   * PREMIUM SYSTEM — перехватчик события клика.
-   * Оборачивает обработчик btn.onclick/addEventListener так, что
-   * при isPremium=false открывает модалку, при true — вызывает original.
-   * @param {HTMLElement} btn     — кнопка, на которую вешаем перехват
-   * @param {Function}    feature — идентификатор функции для слайда модалки
+   * PREMIUM SYSTEM — единый перехватчик кликов через body-level capture-делегацию.
+   * Это надёжнее, чем привязка к каждой кнопке отдельно, потому что:
+   *   - срабатывает на ЛЮБОЙ элемент с [data-premium-gate], даже если он создан
+   *     динамически (например, "+Добавить статистику" в перевёрнутой карточке);
+   *   - capture phase + stopImmediatePropagation блокируют:
+   *       • bubble-listeners (addEventListener),
+   *       • onclick property,
+   *       • document-level delegated listeners (как у data-action='add-stats');
+   *   - не зависит от порядка инициализации других IIFE.
    */
-  function wrapPremiumGate(btn, feature) {
-    if (!btn) return;
-    btn.addEventListener("click", function (e) {
-      if (isPremium()) return; // пускаем дальше по стеку — оригинальный обработчик сработает
-      e.stopImmediatePropagation(); // блокируем все остальные обработчики этой кнопки
-      if (typeof haptic === "function") haptic("light");
-      openPremiumModal(feature);
-    }, true); // capture = true, чтобы перехватить до других listeners
+  function globalGateHandler(e) {
+    if (isPremium()) return;
+    var target = e.target;
+    if (!target || !target.closest) return;
+
+    // 1. Прямые премиум-кнопки с data-premium-gate
+    var gateBtn = target.closest("[data-premium-gate]");
+    // 2. Динамическая кнопка "Добавить статистику" (внутри перевёрнутой карточки)
+    var statsBtn = target.closest("[data-action='add-stats']");
+
+    var feature = null;
+    if (gateBtn) feature = gateBtn.getAttribute("data-premium-gate");
+    else if (statsBtn) feature = "stats";
+    else return;
+
+    // Блокируем ВСЁ — оригинальные хендлеры (onclick, addEventListener bubble,
+    // document delegation) не должны сработать.
+    e.preventDefault();
+    e.stopPropagation();
+    if (typeof e.stopImmediatePropagation === "function") e.stopImmediatePropagation();
+    if (typeof haptic === "function") haptic("light");
+    openPremiumModal(feature);
   }
 
   // Обновляем визуальное состояние (класс premium-locked) всех gate-кнопок.
@@ -10919,23 +10937,45 @@ function goalSwipeToIndex(idx, goLeft) {
   }
 
   // ── Lottie Locks ───────────────────────────────────────────────────────
+  //
+  // Грузим JSON-анимацию ОДИН раз через fetch и кэшируем в _lockAnimData.
+  // Затем для каждого контейнера создаём loadAnimation с `animationData`
+  // (не `path`) — это надёжнее, чем 5 параллельных XHR через lottie-web,
+  // и решает баг "анимация только на одной кнопке".
 
   var _lottieInstances = {};
   var LOCK_ANIM_PATH = "./assets/animation/Lock-2.json";
+  var _lockAnimData = null;     // загруженный JSON
+  var _lockAnimPromise = null;  // pending fetch
+
+  function loadLockAnimData() {
+    if (_lockAnimData) return Promise.resolve(_lockAnimData);
+    if (_lockAnimPromise) return _lockAnimPromise;
+    _lockAnimPromise = fetch(LOCK_ANIM_PATH)
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (json) { _lockAnimData = json; return json; })
+      .catch(function () { return null; });
+    return _lockAnimPromise;
+  }
 
   function initLockLottie(containerId, loop) {
     var el = document.getElementById(containerId);
     if (!el || typeof lottie === "undefined") return;
     if (_lottieInstances[containerId]) return; // уже инициализирован
-    try {
-      _lottieInstances[containerId] = lottie.loadAnimation({
-        container: el,
-        renderer: "svg",
-        loop: loop !== false,
-        autoplay: true,
-        path: LOCK_ANIM_PATH
-      });
-    } catch (e) { /* Lottie не смог загрузить — graceful degradation */ }
+
+    loadLockAnimData().then(function (data) {
+      if (!data) return; // graceful — файл не найден
+      if (_lottieInstances[containerId]) return; // защита от race
+      try {
+        _lottieInstances[containerId] = lottie.loadAnimation({
+          container: el,
+          renderer: "svg",
+          loop: loop !== false,
+          autoplay: true,
+          animationData: data
+        });
+      } catch (e) { /* noop */ }
+    });
   }
 
   function initAllLockLotties() {
@@ -10985,19 +11025,22 @@ function goalSwipeToIndex(idx, goLeft) {
     sheet.classList.add("sheet-entering");
     setTimeout(function () { sheet.classList.remove("sheet-entering"); }, 450);
 
-    // Инициализируем crown-анимацию один раз
+    // Инициализируем crown-анимацию один раз — через тот же кэш animationData.
     if (typeof lottie !== "undefined" && !_lottieInstances["__crown"]) {
       var crownEl = document.getElementById("lottiePremiumCrown");
       if (crownEl) {
-        try {
-          _lottieInstances["__crown"] = lottie.loadAnimation({
-            container: crownEl,
-            renderer: "svg",
-            loop: true,
-            autoplay: true,
-            path: LOCK_ANIM_PATH
-          });
-        } catch (e) { /* noop */ }
+        loadLockAnimData().then(function (data) {
+          if (!data || _lottieInstances["__crown"]) return;
+          try {
+            _lottieInstances["__crown"] = lottie.loadAnimation({
+              container: crownEl,
+              renderer: "svg",
+              loop: true,
+              autoplay: true,
+              animationData: data
+            });
+          } catch (e) { /* noop */ }
+        });
       }
     }
   }
@@ -11078,34 +11121,28 @@ function goalSwipeToIndex(idx, goLeft) {
     });
   });
 
-  // ── Перехват 5 премиум-точек ──────────────────────────────────────────
-
-  // 1. Изменить темп накоплений
-  wrapPremiumGate(document.getElementById("changePaceBtn"), "pace");
-  // 2. Кредиты и долги
-  wrapPremiumGate(document.getElementById("addDebtsBtn"),   "debts");
-  // 3. Гибкая финансовая модель
-  wrapPremiumGate(document.getElementById("flexibleToggle"), "flexible");
-  // 4. Расширенные настройки
-  wrapPremiumGate(document.getElementById("advancedBtn"),   "advanced");
-
-  // 5. Обратная сторона счёта (статистика) — перехватываем flip через capture
-  var mainFlipWrapper = document.querySelector(".account-block.main .flip-wrapper, .account-block.main[class*='flip']");
-  // Ищем конкретно элемент-обёртку переворота основного счёта
-  var mainBlock = document.querySelector(".account-block[data-account='main']");
-  if (mainBlock) {
-    mainBlock.addEventListener("click", function (e) {
-      // Срабатываем только при клике по самой карточке, а не по внутренним кнопкам
-      if (isPremium()) return;
-      // Проверяем: была ли карточка уже перевёрнута (flip)
-      var flipInner = mainBlock.querySelector(".flip-inner");
-      if (!flipInner || !flipInner.classList.contains("flipped")) return;
-      // Уже перевёрнута на обратную сторону — блокируем и открываем модалку
-      e.stopImmediatePropagation();
-      if (typeof haptic === "function") haptic("light");
-      openPremiumModal("stats");
-    }, true);
-  }
+  // ── Перехват 5 премиум-точек через ЕДИНЫЙ body-capture listener ──────
+  //
+  // Перехватываются:
+  //   1. [data-premium-gate="pace"]     — кнопка changePaceBtn
+  //   2. [data-premium-gate="debts"]    — кнопка addDebtsBtn
+  //   3. [data-premium-gate="flexible"] — flexibleToggle
+  //   4. [data-premium-gate="advanced"] — advancedBtn (FAB)
+  //   5. [data-action="add-stats"]       — динамическая кнопка статистики
+  //
+  // Capture phase на document.body гарантирует, что мы получаем событие
+  // ДО любых других обработчиков (включая onclick=, addEventListener bubble
+  // и document.addEventListener delegation для [data-action='add-stats']).
+  document.body.addEventListener("click", globalGateHandler, true);
+  // На всякий случай — touchend (некоторые WebView в Telegram могут не
+  // диспатчить click консистентно при tap'е по кнопке с overflow).
+  document.body.addEventListener("touchend", function (e) {
+    // Только если это потенциальная премиум-цель — иначе пропускаем.
+    var t = e.target;
+    if (!t || !t.closest) return;
+    if (!t.closest("[data-premium-gate],[data-action='add-stats']")) return;
+    globalGateHandler(e);
+  }, true);
 
   // ── Инициализация при старте ───────────────────────────────────────────
 
