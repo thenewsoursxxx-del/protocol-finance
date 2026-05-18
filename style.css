@@ -9820,6 +9820,14 @@ body.reduce-motion .settings-seg-btn {
   pointer-events: auto !important;
 }
 
+/* PREMIUM SYSTEM — глобальный .premium-locked (строка ~3942) задаёт
+   position: relative и валит fixed-кнопку «Расширенные настройки»
+   из её слота внизу экрана. Возвращаем fixed принудительно. */
+.advanced-settings-btn.premium-locked,
+.advanced-settings-btn.premium-gate-btn {
+  position: fixed !important;
+}
+
 /* Обратная сторона счёта — hint про статистику */
 .account-back-premium-hint {
   display: flex;
@@ -9950,7 +9958,10 @@ body.reduce-motion .settings-seg-btn {
   display: flex;
   overflow: hidden;
   width: 100%;
-  touch-action: pan-y;
+  /* PREMIUM SYSTEM — pan-y запрещал JS перехватывать горизонтальный свайп.
+     none — JS полностью контролирует touch внутри слайдов, вертикальный
+     скролл sheet работает на header/dots/CTA-областях. */
+  touch-action: none;
   user-select: none;
 }
 .premium-slide {
