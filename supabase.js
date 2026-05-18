@@ -539,39 +539,45 @@ window.loadInflationRates = loadInflationRates;
  * создана и UPDATE сработал.
  * ============================================================================ */
 
-// STATISTICS: track user visit — максимально защищённая версия.
-// Все возможные точки падения обёрнуты в try/catch + ранние return'ы.
-// Источник telegram_id: appState.telegramId → fallback на Telegram WebApp identity.
+// STATISTICS: track user visit — устойчивая версия с ожиданием appState.
+// Помимо 300мс retry — fallback на Telegram WebApp identity и подсев
+// appState.telegramId если он не был выставлен state-manager'ом.
 window.trackUserVisit = async () => {
   try {
-    // Защита от раннего вызова (до загрузки state-manager.js)
-    if (!window.appState) {
-      console.log("[Statistics] appState ещё не инициализирован — пропускаем");
-      return;
-    }
-
-    // Валидация telegram_id: число > 0. Fallback на WebApp identity, если
-    // в state поле не выставлено (state-manager.js его не хранит).
-    let telegramId = window.appState.telegramId;
-    if (!telegramId || typeof telegramId !== "number" || telegramId <= 0) {
+    // Helper: попробовать заполнить appState.telegramId из Telegram WebApp,
+    // если state-manager.js этого не сделал.
+    async function _populateTelegramIdIfMissing() {
+      if (!window.appState || window.appState.telegramId) return;
       try {
         const identity = await getVerifiedUserIdentity();
         if (identity && typeof identity.telegram_id === "number" && identity.telegram_id > 0) {
-          telegramId = identity.telegram_id;
+          window.appState.telegramId = identity.telegram_id;
         }
       } catch (_e) { /* noop */ }
     }
-    if (!telegramId || typeof telegramId !== "number" || telegramId <= 0) {
-      console.log("[Statistics] Нет валидного telegram_id — пропускаем");
-      return;
+
+    // Первая попытка
+    await _populateTelegramIdIfMissing();
+    if (!window.appState || !window.appState.telegramId) {
+      console.log("[Statistics] appState ещё не инициализирован — ждём 300мс");
+      await new Promise(resolve => setTimeout(resolve, 300));
+
+      // Вторая попытка — после паузы
+      await _populateTelegramIdIfMissing();
+      if (!window.appState || !window.appState.telegramId) {
+        console.log("[Statistics] appState так и не инициализирован — пропускаем");
+        return;
+      }
     }
 
+    const telegramId = window.appState.telegramId;
     const isPremium = !!window.appState.isPremium;
-    console.log("[Statistics] trackUserVisit запущен для telegram_id:", telegramId);
+
+    console.log(`[Statistics] trackUserVisit → telegram_id: ${telegramId}, premium: ${isPremium}`);
 
     // SUPABASE_URL и SUPABASE_ANON_KEY уже объявлены вверху этого файла —
     // используем их вместо хардкода/window.supabase?.supabaseKey (последний
-    // — это CDN-namespace, у него нет ключа).
+    // — это CDN-namespace, у него нет supabaseKey, был бы пустой Bearer → 401).
     const url = SUPABASE_URL.replace(/\/$/, "") + "/functions/v1/track-user";
 
     const response = await fetch(url, {
@@ -590,8 +596,7 @@ window.trackUserVisit = async () => {
     if (response.ok) {
       console.log("[Statistics] trackUserVisit успешно");
     } else {
-      const errorText = await response.text().catch(() => "");
-      console.error("[Statistics] trackUserVisit failed: " + response.status + " " + errorText);
+      console.error(`[Statistics] trackUserVisit failed: ${response.status}`);
     }
   } catch (e) {
     console.error("[Statistics] trackUserVisit ошибка:", e);
