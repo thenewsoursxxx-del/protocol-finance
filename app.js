@@ -2190,6 +2190,8 @@ function repairAdviceScreenIfStuck() {
   const card = document.getElementById("adviceCard");
   if (!card || !card.querySelector("#fakeScreen")) return;
   if (loader) loader.classList.add("hidden");
+  // SPLASH VIDEO BACKGROUND — на случай зависшего сплеша при возврате на экран.
+  if (typeof hideSplashVideo === "function") hideSplashVideo();
   try {
     renderProtocolAdviceGraph();
     if (factHistory.length) runBrain();
@@ -2422,6 +2424,8 @@ if (advancedBtn) {
 if (name === "advice" && isInitialized && chosenPlan && lastCalc?.ok && adviceCard && adviceCard.querySelector("#fakeScreen")) {
   try {
     if (loader) loader.classList.add("hidden");
+    // SPLASH VIDEO BACKGROUND — гарантированно скрываем сплеш при ручном возврате.
+    if (typeof hideSplashVideo === "function") hideSplashVideo();
     renderProtocolAdviceGraph();
     if (factHistory.length) runBrain();
   } catch (e) {
@@ -3017,6 +3021,51 @@ style="width:52px;height:52px;border-radius:50%">
   syncFlexibleUI();
 }
 
+// ─── SPLASH VIDEO BACKGROUND ───────────────────────────────────
+// Хелперы для управления полноэкранным видео-сплешем во время
+// фейк-загрузки protocolFlow(). Видео — `./assets/videos/snakePloop.mp4`,
+// autoplay/loop/muted (обязательное условие для автозапуска в браузерах).
+// При сбое загрузки видео остаётся чёрный фон, текст статуса виден.
+function showSplashVideo(initialText) {
+  var overlay = document.getElementById("splashVideoOverlay");
+  if (!overlay) return;
+  var videoEl = document.getElementById("splashVideoEl");
+  setSplashVideoText(initialText || "");
+  overlay.classList.remove("hidden", "fading");
+  if (videoEl) {
+    try {
+      videoEl.currentTime = 0;
+      videoEl.muted = true; // дублируем для надёжного autoplay
+      var p = videoEl.play();
+      if (p && typeof p.then === "function") {
+        p.catch(function () { /* autoplay блокирован — фон останется чёрным */ });
+      }
+    } catch (e) { /* noop */ }
+  }
+}
+function setSplashVideoText(text) {
+  var textEl = document.getElementById("splashVideoText");
+  if (!textEl) return;
+  textEl.textContent = text || "";
+  // Перезапускаем fade-in анимацию при смене текста.
+  textEl.style.animation = "none";
+  void textEl.offsetWidth; // force reflow
+  textEl.style.animation = "";
+}
+function hideSplashVideo() {
+  var overlay = document.getElementById("splashVideoOverlay");
+  if (!overlay) return;
+  overlay.classList.add("fading");
+  setTimeout(function () {
+    overlay.classList.add("hidden");
+    overlay.classList.remove("fading");
+    var videoEl = document.getElementById("splashVideoEl");
+    if (videoEl) {
+      try { videoEl.pause(); } catch (e) { /* noop */ }
+    }
+  }, 450);
+}
+
 /* ===== STAGED FLOW ===== */
 function protocolFlow(mode) {
 chosenPlan = mode;
@@ -3051,6 +3100,11 @@ hideBottomNav();
 adviceCard.innerHTML = "";
 loader.classList.remove("hidden");
 
+// SPLASH VIDEO BACKGROUND — полноэкранный видео-сплеш поверх фейк-загрузки.
+// adviceCard.innerText продолжаем обновлять (он будет под overlay и сразу
+// проявится при fade-out), а текст также дублируем в .splash-video__overlay-text.
+showSplashVideo(t("flow.analyzing"));
+
 var actionsContainer = document.getElementById("protocolActionsContainer");
 var graphIndicator = document.getElementById("graphGoalIndicator");
 if (actionsContainer) { actionsContainer.innerHTML = ""; actionsContainer.style.display = "none"; }
@@ -3063,18 +3117,22 @@ if (mode === "buffer") plannedMonthly = Math.round(plannedMonthly * 0.9);
 adviceCard.innerText = t("flow.analyzing");
 
 setTimeout(() => {
-adviceCard.innerText =
-mode === "buffer"
-? t("flow.bufferChosen")
-: t("flow.directChosen");
+var phase2 = mode === "buffer" ? t("flow.bufferChosen") : t("flow.directChosen");
+adviceCard.innerText = phase2;
+// SPLASH VIDEO BACKGROUND
+setSplashVideoText(phase2);
 }, 2000);
 
 setTimeout(() => {
 adviceCard.innerText = t("flow.done");
+// SPLASH VIDEO BACKGROUND
+setSplashVideoText(t("flow.done"));
 }, 4000);
 
 setTimeout(() => {
 loader.classList.add("hidden");
+// SPLASH VIDEO BACKGROUND — плавно скрываем сплеш и одновременно рендерим график.
+hideSplashVideo();
 renderProtocolAdviceGraph();
 saveFullState();
 }, 6000);

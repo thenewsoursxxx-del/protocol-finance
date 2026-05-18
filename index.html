@@ -2020,6 +2020,18 @@ z-index: 999999;
   <button type="button" id="goalHistoryDetailCloseBtn" class="goal-history-detail-close-btn" data-i18n="goalHistory.detail.close">Закрыть</button>
 </div>
 
+<!-- SPLASH VIDEO BACKGROUND — полноэкранный видео-overlay для фейк-загрузки.
+     Показывается при запуске protocolFlow() и скрывается после рендера графика.
+     Видео без звука (muted, обязательно для autoplay в браузерах), зацикленное,
+     с object-fit:cover. Текст статуса ("анализирует данные…", "сохраняю буфер…",
+     "готово") отображается поверх видео. -->
+<div id="splashVideoOverlay" class="splash-video-overlay hidden" aria-hidden="true">
+  <video id="splashVideoEl" class="splash-video" muted autoplay loop playsinline preload="auto" disablepictureinpicture>
+    <source src="./assets/videos/snakePloop.mp4" type="video/mp4" />
+  </video>
+  <div class="splash-video__overlay-text" id="splashVideoText"></div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 <script src="state-manager.js"></script>
 <script src="i18n.js"></script>
