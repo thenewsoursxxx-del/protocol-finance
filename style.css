@@ -315,17 +315,16 @@ margin: 20px auto;
 .splash-video-overlay {
   position: fixed;
   inset: 0;
-  z-index: 9999;
+  /* SPLASH VIDEO BACKGROUND — слой ПОД блоком фейк-загрузки.
+     body имеет z-index стек по умолчанию (0), `.screen` создаёт свой контекст
+     с z-index:1 поверх — поэтому overlay с z-index:0 виден как фон сквозь
+     прозрачные экраны, а карточка/спиннер остаются на своих местах сверху. */
+  z-index: 0;
   background: #000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: block;
   overflow: hidden;
   opacity: 1;
   transition: opacity 0.45s ease;
-  /* Безопасные отступы для устройств с челкой / нижней системной полосой. */
-  padding-bottom: env(safe-area-inset-bottom);
-  padding-top: env(safe-area-inset-top);
 }
 .splash-video-overlay.fading {
   opacity: 0;
