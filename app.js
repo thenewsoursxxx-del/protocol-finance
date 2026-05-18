@@ -5033,6 +5033,8 @@ goalEditHint.classList.add("show");
 
 if (advancedBtn) {
   advancedBtn.onclick = () => {
+    // PREMIUM SYSTEM — inline-гейт
+    if (window._premiumGate && window._premiumGate("advanced")) return;
 
     haptic("light");
     
@@ -5831,6 +5833,8 @@ function initCashflowSettings() {
   setupMonthDaysDateInput("expenseMonthDaysDate", "expenseMonthDaysList", "expenseMonthDays");
 
   flexToggle.addEventListener("click", function () {
+    // PREMIUM SYSTEM — inline-гейт (флекс-модель только для премиум-пользователей)
+    if (window._premiumGate && window._premiumGate("flexible")) return;
     haptic("light");
 
     if (flexContent.classList.contains("open")) {
@@ -8852,6 +8856,11 @@ function allocBackMeta(item) {
 })();
 
 function openAccountStatsScreen(accountKey) {
+  // PREMIUM SYSTEM — гейт на уровне самой функции (последняя линия защиты).
+  // Сюда может вести несколько путей (back-card-button, future direct calls);
+  // если не премиум — открываем premium-модалку и отменяем переход.
+  if (window._premiumGate && window._premiumGate("stats")) return;
+
   _statsTargetAccount = accountKey || "main";
 
   var s = getState();
@@ -9103,9 +9112,28 @@ function renderAccountBackCards() {
     var stats = allStats[accountKey] || null;
 
     if (!stats || !stats.type) {
+      // PREMIUM SYSTEM — для не-премиум-пользователей добавляем lock-бадж
+      // прямо внутрь кнопки «+ Добавить статистику». Уникальный id Lottie
+      // (lottieAccountStats_<accountKey>) нужен чтобы инициализировать оба
+      // (main + reserve) бэк-card'а независимо.
+      var locked = !(getState().isPremium === true);
+      var lottieId = "lottieAccountStats_" + accountKey;
+      var lockHtml = locked
+        ? '<span class="premium-lock-badge" id="lockStats_' + accountKey + '">' +
+            '<span class="premium-lock-lottie" id="' + lottieId + '"></span>' +
+          '</span>'
+        : '';
       backCard.innerHTML = '<div class="account-back-content stats-empty">' +
-        '<button type="button" class="stats-add-btn" data-action="add-stats" data-account="' + accountKey + '">' + t("stats.addBtn") + '</button>' +
+        '<button type="button" class="stats-add-btn' + (locked ? ' premium-gate-btn' : '') +
+        '" data-action="add-stats" data-account="' + accountKey + '"' +
+        (locked ? ' data-premium-gate="stats"' : '') + '>' +
+        t("stats.addBtn") + lockHtml +
+        '</button>' +
         '</div>';
+      // PREMIUM SYSTEM — инициализируем Lottie замок сразу после рендера
+      if (locked && typeof window._initLockLottieDynamic === "function") {
+        window._initLockLottieDynamic(lottieId);
+      }
       return;
     }
 
@@ -9308,6 +9336,8 @@ function renderAccountBackCards() {
 document.addEventListener("click", function (e) {
   var btn = e.target.closest("[data-action='add-stats']");
   if (btn) {
+    // PREMIUM SYSTEM — inline-гейт для динамической кнопки «+ Добавить статистику»
+    if (window._premiumGate && window._premiumGate("stats")) return;
     var acc = btn.getAttribute("data-account") || "main";
     openAccountStatsScreen(acc);
   }
@@ -11157,6 +11187,25 @@ function goalSwipeToIndex(idx, goLeft) {
     syncLockBadgesVisibility();
     if (!isPremium()) initAllLockLotties();
   };
+
+  // PREMIUM SYSTEM — экспорт inline-гейта для прямого вызова в обработчиках.
+  // Если возвращает true — оригинальный обработчик должен немедленно выйти.
+  // Это «belt and suspenders» дополнение к body capture: если capture phase
+  // по какой-то причине не блокирует (WebView quirks) — inline-check всё равно
+  // не даст функции выполниться.
+  window._premiumGate = function (feature) {
+    if (isPremium()) return false;
+    if (typeof haptic === "function") haptic("light");
+    openPremiumModal(feature);
+    return true;
+  };
+
+  // PREMIUM SYSTEM — экспорт для инициализации Lottie на ДИНАМИЧЕСКИ
+  // создаваемых элементах (например, кнопка «+ Добавить статистику»,
+  // которую рендерит renderAccountBackCards).
+  window._initLockLottieDynamic = function (containerId) {
+    initLockLottie(containerId, true);
+  };
 })();
 
 /* ===== PACE CHANGE SCREEN ===== */
@@ -11266,6 +11315,8 @@ function goalSwipeToIndex(idx, goLeft) {
 
   if (changePaceBtn) {
     changePaceBtn.addEventListener("click", function () {
+      // PREMIUM SYSTEM — inline-гейт (защита если body capture не сработал)
+      if (window._premiumGate && window._premiumGate("pace")) return;
       if (typeof haptic === "function") haptic("light");
       openPaceScreen();
     });
@@ -11821,6 +11872,8 @@ function goalSwipeToIndex(idx, goLeft) {
 
   if (addDebtsBtn) {
     addDebtsBtn.addEventListener("click", function () {
+      // PREMIUM SYSTEM — inline-гейт
+      if (window._premiumGate && window._premiumGate("debts")) return;
       if (typeof haptic === "function") haptic("light");
       openDebtsScreen();
     });

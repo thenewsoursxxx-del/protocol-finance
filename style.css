@@ -9764,8 +9764,9 @@ body.reduce-motion .settings-seg-btn {
 
 /* Lottie-контейнер для замка. inline-block — корректно работает и как
    потомок <span>, и как потомок <div>; фиксированные размеры обязательны
-   (Lottie без них рендерится 0×0). Изумрудный оттенок задаём через filter
-   на SVG, который генерирует lottie-web. */
+   (Lottie без них рендерится 0×0). Внутренний SVG из Lock-2.json
+   нарисован ЧЁРНЫМ stroke — поэтому на тёмных кнопках он невидим.
+   Перекрашиваем чёрный → emerald через CSS-filter chain. */
 .premium-lock-lottie {
   width: 22px;
   height: 22px;
@@ -9773,13 +9774,16 @@ body.reduce-motion .settings-seg-btn {
   flex-shrink: 0;
   vertical-align: middle;
   line-height: 0;
+  /* invert + sepia + hue-rotate → превращает чёрный в emerald (#10b981)
+     drop-shadow добавляет лёгкое emerald-сияние вокруг иконки */
+  filter:
+    invert(58%) sepia(86%) saturate(420%) hue-rotate(110deg) brightness(95%) contrast(85%)
+    drop-shadow(0 0 4px rgba(16, 185, 129, 0.45));
 }
 .premium-lock-lottie svg {
   width: 100%;
   height: 100%;
   display: block;
-  /* Лёгкий emerald-оттенок поверх замка */
-  filter: drop-shadow(0 0 4px rgba(16, 185, 129, 0.5));
 }
 .premium-lock-lottie--lg {
   width: 40px;
