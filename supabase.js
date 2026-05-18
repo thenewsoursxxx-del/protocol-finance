@@ -539,22 +539,31 @@ window.loadInflationRates = loadInflationRates;
  * создана и UPDATE сработал.
  * ============================================================================ */
 
-async function trackUserVisit() {
-  try {
-    var identity = await getVerifiedUserIdentity();
-    if (!identity) return;
-
-    // STATISTICS COLLECTION — берём is_premium из текущего state приложения.
-    // appState (window.appState) объявлен в state-manager.js. Защитный фолбэк
-    // на false если state ещё не загружен.
-    var isPremium = false;
+// STATISTICS: track user visit — прямой fetch (стабильно работает в Telegram Mini App).
+// XHR-fallback _iosSafeFetch падал в WKWebView с «XHR network error» на cross-origin
+// POST к Edge Function — нативный fetch с обычным режимом CORS работает надёжно.
+window.trackUserVisit = async () => {
+  // Источник telegram_id: сначала state, потом WebApp identity как fallback.
+  // appState.telegramId может быть не выставлен — выкручиваемся.
+  let telegramId = window.appState && window.appState.telegramId;
+  if (!telegramId) {
     try {
-      var st = (typeof window.appState === "object" && window.appState) || {};
-      isPremium = st.isPremium === true;
-    } catch (_e) {}
+      const identity = await getVerifiedUserIdentity();
+      if (identity) telegramId = identity.telegram_id;
+    } catch (_e) { /* noop */ }
+  }
+  if (!telegramId) {
+    console.log("[Statistics] Нет telegramId — пропускаем");
+    return;
+  }
 
-    var url = SUPABASE_URL.replace(/\/$/, "") + "/functions/v1/track-user";
-    var res = await _iosSafeFetch(url, {
+  const isPremium = !!(window.appState && window.appState.isPremium);
+
+  try {
+    // Реальный URL проекта (cztfcseyzezincbwotvt) — берём из общей константы.
+    const url = "https://cztfcseyzezincbwotvt.supabase.co/functions/v1/track-user";
+
+    const response = await fetch(url, {
       method: "POST",
       headers: {
         "Content-Type":  "application/json",
@@ -562,23 +571,21 @@ async function trackUserVisit() {
         "apikey":        SUPABASE_ANON_KEY,
       },
       body: JSON.stringify({
-        telegram_id: identity.telegram_id,
+        telegram_id: telegramId,
         is_premium:  isPremium,
       }),
     });
 
-    if (!res.ok) {
-      console.warn("[Statistics] track-user HTTP", res.status);
-      return;
-    }
-    var data = await res.json().catch(function () { return null; });
-    if (data && data.ok) {
-      console.log("[Statistics] трекинг успешен:", data.country || "?", data.city || "?");
+    if (response.ok) {
+      console.log("[Statistics] trackUserVisit успешно выполнен");
+    } else {
+      const errorText = await response.text().catch(() => "no response body");
+      console.error("[Statistics] trackUserVisit failed: " + response.status + " " + errorText);
     }
   } catch (e) {
-    console.warn("[Statistics] trackUserVisit ошибка:", e && e.message);
+    console.error("[Statistics] trackUserVisit ошибка:", e);
   }
-}
+};
 
 /**
  * STATISTICS COLLECTION — публичная статистика премиум/не-премиум пользователей.
@@ -615,7 +622,7 @@ async function getPremiumStats() {
   }
 }
 
-window.trackUserVisit = trackUserVisit;
+// window.trackUserVisit уже присвоен выше (стрелочная функция).
 window.getPremiumStats = getPremiumStats;
 
 window.addEventListener("load", function () {
@@ -626,7 +633,7 @@ window.addEventListener("load", function () {
       .then(function () {
         // STATISTICS COLLECTION — после успешного saveCurrentUser строка
         // в users точно есть → можно UPDATE'ить геолокацию.
-        return trackUserVisit();
+        return window.trackUserVisit();
       })
       .catch(function (err) {
         console.error("[Supabase] saveCurrentUser/trackUserVisit ошибка:", err);
