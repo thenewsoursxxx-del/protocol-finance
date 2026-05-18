@@ -11121,13 +11121,12 @@ function goalSwipeToIndex(idx, goLeft) {
     });
   }
 
-  // ── Свайп слайдов на pointer events ────────────────────────────────────
+  // ── Свайп слайдов: touch events (надёжнее всего в iOS WebView Telegram) ─
   //
-  // PREMIUM MODAL — touchstart/touchend было ненадёжно в iOS WebView Telegram:
-  // touchend иногда приходил без значимого dx, а pan-y / pan-x в touch-action
-  // мешали JS перехватить горизонтальное движение. Pointer events с
-  // setPointerCapture и preventDefault на pointermove работают одинаково
-  // на iOS, Android и desktop. Логика та же, что в initGoalSwipe.
+  // PREMIUM MODAL — реализуем через touchstart/touchmove/touchend с
+  // passive:false на touchmove. Это даёт preventDefault, что блокирует
+  // native scroll sheet'а и заставляет браузер отдать событие нашему JS.
+  // Параллельно pointerdown/pointerup как fallback для desktop.
   (function initSlideSwipe() {
     var slides = document.getElementById("premiumSlides");
     if (!slides) return;
@@ -11135,40 +11134,26 @@ function goalSwipeToIndex(idx, goLeft) {
     var startX = 0, startY = 0, dx = 0;
     var active = false, locked = false;
 
-    slides.addEventListener("pointerdown", function (e) {
-      startX = e.clientX;
-      startY = e.clientY;
-      dx = 0;
-      active = true;
-      locked = false;
-    });
-
-    slides.addEventListener("pointermove", function (e) {
-      if (!active) return;
-      var rawDx = e.clientX - startX;
-      var rawDy = e.clientY - startY;
-
-      // До lock'а определяем направление. Если очевидно вертикальное —
-      // отдаём событие sheet'у для возможного скролла.
+    function onStart(x, y) {
+      startX = x; startY = y; dx = 0;
+      active = true; locked = false;
+    }
+    function onMove(x, y) {
+      if (!active) return false;
+      var rawDx = x - startX;
+      var rawDy = y - startY;
       if (!locked) {
-        if (Math.abs(rawDx) < 8 && Math.abs(rawDy) < 8) return;
-        if (Math.abs(rawDy) > Math.abs(rawDx)) {
-          active = false;
-          return;
-        }
+        if (Math.abs(rawDx) < 8 && Math.abs(rawDy) < 8) return false;
+        if (Math.abs(rawDy) > Math.abs(rawDx)) { active = false; return false; }
         locked = true;
-        try { slides.setPointerCapture(e.pointerId); } catch (err) { /* noop */ }
       }
-
-      e.preventDefault();
       dx = rawDx;
-    });
-
-    function finish() {
+      return true; // надо вызвать preventDefault на вызывающей стороне
+    }
+    function onEnd() {
       if (!active && !locked) return;
       var wasLocked = locked;
-      active = false;
-      locked = false;
+      active = false; locked = false;
       if (!wasLocked) return;
       if (Math.abs(dx) > 50) {
         if (dx < 0 && _currentSlide < _totalSlides - 1) goToSlide(_currentSlide + 1, true);
@@ -11176,9 +11161,33 @@ function goalSwipeToIndex(idx, goLeft) {
       }
     }
 
-    slides.addEventListener("pointerup",     finish);
-    slides.addEventListener("pointercancel", finish);
-    slides.addEventListener("pointerleave",  finish);
+    // ── Touch events (iOS / Android) ───────────────────────────────────
+    slides.addEventListener("touchstart", function (e) {
+      if (!e.touches || !e.touches[0]) return;
+      onStart(e.touches[0].clientX, e.touches[0].clientY);
+    }, { passive: true });
+
+    slides.addEventListener("touchmove", function (e) {
+      if (!e.touches || !e.touches[0]) return;
+      var shouldPrevent = onMove(e.touches[0].clientX, e.touches[0].clientY);
+      if (shouldPrevent && e.cancelable) e.preventDefault();
+    }, { passive: false });
+
+    slides.addEventListener("touchend",    onEnd, { passive: true });
+    slides.addEventListener("touchcancel", onEnd, { passive: true });
+
+    // ── Pointer events (desktop + fallback) ────────────────────────────
+    slides.addEventListener("pointerdown", function (e) {
+      if (e.pointerType === "touch") return; // touch уже обработан выше
+      onStart(e.clientX, e.clientY);
+    });
+    slides.addEventListener("pointermove", function (e) {
+      if (e.pointerType === "touch") return;
+      if (onMove(e.clientX, e.clientY)) e.preventDefault();
+    });
+    slides.addEventListener("pointerup",     onEnd);
+    slides.addEventListener("pointercancel", onEnd);
+    slides.addEventListener("pointerleave",  onEnd);
   })();
 
   // ── Event listeners для модалки ────────────────────────────────────────

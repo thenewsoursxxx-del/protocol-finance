@@ -9867,10 +9867,12 @@ body.reduce-motion .settings-seg-btn {
   left: 0;
   right: 0;
   z-index: 10001;
-  /* PREMIUM MODAL — модалка тянется выше, чтобы вместить весь контент
-     слайдов и кнопку CTA без скролла на большинстве устройств. */
-  max-height: 97dvh;
-  max-height: 97vh;
+  /* PREMIUM MODAL — модалка тянется почти на всю высоту экрана. */
+  top: 0;
+  max-height: 100dvh;
+  max-height: 100vh;
+  height: 100dvh;
+  height: 100vh;
   overflow-y: auto;
   overflow-x: hidden;
   background:
