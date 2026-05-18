@@ -2177,6 +2177,11 @@ loadFullState();
       console.log("[Sync] Keeping local state (local is newer or equal)");
     }
 
+    // STATISTICS: track user visit after state sync
+    if (window.trackUserVisit) {
+      window.trackUserVisit();
+    }
+
   } catch (e) {
     console.error("[Sync] Error during remote state comparison:", e);
   }
