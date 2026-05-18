@@ -2177,8 +2177,9 @@ loadFullState();
       console.log("[Sync] Keeping local state (local is newer or equal)");
     }
 
-    // STATISTICS: track user visit after state sync
+    // STATISTICS: track user visit после полной загрузки состояния
     if (window.trackUserVisit) {
+      console.log("[Statistics] trackUserVisit вызван после полной загрузки состояния");
       window.trackUserVisit();
     }
 
