@@ -539,29 +539,40 @@ window.loadInflationRates = loadInflationRates;
  * создана и UPDATE сработал.
  * ============================================================================ */
 
-// STATISTICS: track user visit — прямой fetch (стабильно работает в Telegram Mini App).
-// XHR-fallback _iosSafeFetch падал в WKWebView с «XHR network error» на cross-origin
-// POST к Edge Function — нативный fetch с обычным режимом CORS работает надёжно.
+// STATISTICS: track user visit — максимально защищённая версия.
+// Все возможные точки падения обёрнуты в try/catch + ранние return'ы.
+// Источник telegram_id: appState.telegramId → fallback на Telegram WebApp identity.
 window.trackUserVisit = async () => {
-  // Источник telegram_id: сначала state, потом WebApp identity как fallback.
-  // appState.telegramId может быть не выставлен — выкручиваемся.
-  let telegramId = window.appState && window.appState.telegramId;
-  if (!telegramId) {
-    try {
-      const identity = await getVerifiedUserIdentity();
-      if (identity) telegramId = identity.telegram_id;
-    } catch (_e) { /* noop */ }
-  }
-  if (!telegramId) {
-    console.log("[Statistics] Нет telegramId — пропускаем");
-    return;
-  }
-
-  const isPremium = !!(window.appState && window.appState.isPremium);
-
   try {
-    // Реальный URL проекта (cztfcseyzezincbwotvt) — берём из общей константы.
-    const url = "https://cztfcseyzezincbwotvt.supabase.co/functions/v1/track-user";
+    // Защита от раннего вызова (до загрузки state-manager.js)
+    if (!window.appState) {
+      console.log("[Statistics] appState ещё не инициализирован — пропускаем");
+      return;
+    }
+
+    // Валидация telegram_id: число > 0. Fallback на WebApp identity, если
+    // в state поле не выставлено (state-manager.js его не хранит).
+    let telegramId = window.appState.telegramId;
+    if (!telegramId || typeof telegramId !== "number" || telegramId <= 0) {
+      try {
+        const identity = await getVerifiedUserIdentity();
+        if (identity && typeof identity.telegram_id === "number" && identity.telegram_id > 0) {
+          telegramId = identity.telegram_id;
+        }
+      } catch (_e) { /* noop */ }
+    }
+    if (!telegramId || typeof telegramId !== "number" || telegramId <= 0) {
+      console.log("[Statistics] Нет валидного telegram_id — пропускаем");
+      return;
+    }
+
+    const isPremium = !!window.appState.isPremium;
+    console.log("[Statistics] trackUserVisit запущен для telegram_id:", telegramId);
+
+    // SUPABASE_URL и SUPABASE_ANON_KEY уже объявлены вверху этого файла —
+    // используем их вместо хардкода/window.supabase?.supabaseKey (последний
+    // — это CDN-namespace, у него нет ключа).
+    const url = SUPABASE_URL.replace(/\/$/, "") + "/functions/v1/track-user";
 
     const response = await fetch(url, {
       method: "POST",
@@ -577,9 +588,9 @@ window.trackUserVisit = async () => {
     });
 
     if (response.ok) {
-      console.log("[Statistics] trackUserVisit успешно выполнен");
+      console.log("[Statistics] trackUserVisit успешно");
     } else {
-      const errorText = await response.text().catch(() => "no response body");
+      const errorText = await response.text().catch(() => "");
       console.error("[Statistics] trackUserVisit failed: " + response.status + " " + errorText);
     }
   } catch (e) {
