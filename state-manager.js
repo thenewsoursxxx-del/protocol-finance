@@ -9,7 +9,7 @@
  * Загружается ДО app.js.
  */
 
-const STATE_VERSION = 12;
+const STATE_VERSION = 13;
 const STORAGE_KEY = "protocol_app_state";
 
 // ─── Default State ────────────────────────────────────────────
@@ -357,6 +357,45 @@ function migrateState(saved) {
     if (!Array.isArray(saved.customScheduleEntries)) saved.customScheduleEntries = [];
     if (typeof saved.customScheduleExpensePrompt !== "boolean") {
       saved.customScheduleExpensePrompt = false;
+    }
+  }
+
+  // REALISTIC DEBT LOGIC - Russian banks — v12 → v13: расширение схемы долгов.
+  // Добавлены поля для реалистичной банковской логики:
+  //   • loanAmount       — первоначальная сумма кредита (используется в формуле
+  //                        аннуитета и для расчёта общей переплаты).
+  //   • interestRate     — годовая ставка % (например, 18.5).
+  //   • termMonths       — срок кредита в месяцах.
+  //   • startDate        — дата выдачи кредита (YYYY-MM-DD).
+  //   • gracePeriodDays  — длина льготного периода карты в днях (50-120 у РФ-банков).
+  //   • minPaymentPercent — минимальный платёж по карте, % от долга (5-10).
+  //   • lastFullPayDate  — дата последнего полного погашения карты (для расчёта
+  //                        окончания текущего grace-периода).
+  // Все поля опциональные с разумными default'ами, чтобы существующие долги
+  // продолжали работать без изменения поведения.
+  if (version < 13) {
+    saved.stateVersion = 13;
+    if (Array.isArray(saved.debts)) {
+      saved.debts.forEach(function (d) {
+        // Общие поля кредитной логики (для credit / installment).
+        if (typeof d.loanAmount !== "number") d.loanAmount = Number(d.totalAmount) || 0;
+        if (typeof d.interestRate !== "number") d.interestRate = 0;
+        if (typeof d.termMonths !== "number") d.termMonths = 0;
+        if (typeof d.startDate !== "string") d.startDate = "";
+
+        // Поля кредитной карты: applied только если type=card.
+        if (d.type === "card") {
+          if (typeof d.gracePeriodDays !== "number") d.gracePeriodDays = 55;
+          if (typeof d.minPaymentPercent !== "number") d.minPaymentPercent = 5;
+          if (typeof d.lastFullPayDate !== "string") d.lastFullPayDate = "";
+        } else {
+          // Для не-card записей нормализуем эти поля к 0/"" — это упростит
+          // расчётные функции (не нужно делать optional-chaining).
+          if (typeof d.gracePeriodDays !== "number") d.gracePeriodDays = 0;
+          if (typeof d.minPaymentPercent !== "number") d.minPaymentPercent = 0;
+          if (typeof d.lastFullPayDate !== "string") d.lastFullPayDate = "";
+        }
+      });
     }
   }
 

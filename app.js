@@ -1282,13 +1282,221 @@ function computeGraphState() {
  * При активном плане использует CashflowEngine для пересчёта балансов,
  * месяцев и derivedState. Маппит результат в legacy-глобалы для UI.
  */
+// ════════════════════════════════════════════════════════════════════════════
+// REALISTIC DEBT LOGIC - Russian banks
+// ────────────────────────────────────────────────────────────────────────────
+// Блок helper-функций для реалистичной модели кредитов / рассрочек / карт
+// российских банков (Сбер, Тинькофф, Альфа, ВТБ).
+//
+// Поддерживаемые расчёты:
+//   • calculateAnnuityPayment(P, R, N)         — аннуитетный платёж
+//   • calculateRemainingTerm(balance, P, R)    — пересчёт срока при досрочке
+//   • calculateTotalInterest(P, payment, N)    — суммарная переплата
+//   • calculateCardGraceInfo(debt)             — статус льготного периода карты
+//   • getDebtStats(debt)                       — агрегированные UI-показатели
+// ════════════════════════════════════════════════════════════════════════════
+
+/**
+ * REALISTIC DEBT LOGIC - Russian banks
+ * Формула аннуитетного платежа (самая распространённая в РФ):
+ *   monthly = P × [i × (1 + i)^n] / [(1 + i)^n - 1]
+ * где P — сумма кредита, i — месячная ставка (годовая ÷ 12 ÷ 100), n — срок в месяцах.
+ * При ставке 0 (беспроцентная рассрочка) возвращаем P / N.
+ */
+function calculateAnnuityPayment(loanAmount, annualRatePct, termMonths) {
+  var P = Number(loanAmount) || 0;
+  var Rpct = Number(annualRatePct) || 0;
+  var N = Number(termMonths) || 0;
+  if (P <= 0 || N <= 0) return 0;
+  if (Rpct <= 0) return Math.round(P / N); // беспроцентная рассрочка
+  var i = Rpct / 12 / 100;
+  var pow = Math.pow(1 + i, N);
+  var monthly = P * (i * pow) / (pow - 1);
+  return Math.round(monthly);
+}
+
+/**
+ * REALISTIC DEBT LOGIC - Russian banks
+ * Пересчёт оставшегося срока кредита после досрочного частичного погашения:
+ *   n = -log(1 - i × balance / payment) / log(1 + i)
+ * Возвращает число месяцев (округлённое вверх). Если payment <= balance × i —
+ * банк не даст погасить (платёж меньше начисляемых процентов), возвращаем Infinity.
+ */
+function calculateRemainingTerm(remainingBalance, monthlyPayment, annualRatePct) {
+  var B = Number(remainingBalance) || 0;
+  var P = Number(monthlyPayment) || 0;
+  var Rpct = Number(annualRatePct) || 0;
+  if (B <= 0) return 0;
+  if (P <= 0) return Infinity;
+  if (Rpct <= 0) return Math.ceil(B / P);
+  var i = Rpct / 12 / 100;
+  var ratio = 1 - (i * B) / P;
+  if (ratio <= 0) return Infinity; // платёж покрывает только проценты
+  var n = -Math.log(ratio) / Math.log(1 + i);
+  return Math.ceil(n);
+}
+
+/**
+ * REALISTIC DEBT LOGIC - Russian banks
+ * Суммарная переплата = полный поток платежей − исходный кредит.
+ * Используется в UI для строки «осталось переплатить X ₽».
+ */
+function calculateTotalInterest(loanAmount, monthlyPayment, termMonths) {
+  var P = Number(loanAmount) || 0;
+  var pay = Number(monthlyPayment) || 0;
+  var N = Number(termMonths) || 0;
+  if (P <= 0 || pay <= 0 || N <= 0) return 0;
+  return Math.max(0, Math.round(pay * N - P));
+}
+
+/**
+ * REALISTIC DEBT LOGIC - Russian banks
+ * Статус льготного периода для кредитной карты.
+ *
+ * Логика РФ-банков:
+ *   • Период считается от lastFullPayDate (последнее полное закрытие долга);
+ *     если карта новая (нет lastFullPayDate) — от startDate; иначе — от сегодня.
+ *   • В течение gracePeriodDays процент не начисляется.
+ *   • После окончания grace — минимальный платёж = minPaymentPercent от долга
+ *     плюс начисленные проценты (annualRate / 12 от остатка).
+ *
+ * Возвращает: {
+ *   inGrace,            // true пока внутри льготного периода
+ *   daysLeft,           // дней до окончания grace (0 если уже вышли)
+ *   minPayment,         // минимальный платёж (после grace = % от долга + проценты)
+ *   accruedInterest,    // начисленные проценты за прошедший месяц (после grace)
+ *   graceEndDate        // ISO date окончания текущего grace-периода
+ * }
+ */
+function calculateCardGraceInfo(debt) {
+  var remaining = Number(debt.remainingAmount) || 0;
+  var graceDays = Number(debt.gracePeriodDays) || 0;
+  var minPct = Number(debt.minPaymentPercent) || 0;
+  var annualRate = Number(debt.interestRate) || 0;
+
+  if (remaining <= 0) {
+    return { inGrace: false, daysLeft: 0, minPayment: 0, accruedInterest: 0, graceEndDate: "" };
+  }
+
+  // Точка отсчёта льготного периода.
+  var startStr = debt.lastFullPayDate || debt.startDate || "";
+  var graceStart = startStr ? new Date(startStr) : new Date();
+  if (isNaN(graceStart.getTime())) graceStart = new Date();
+  graceStart.setHours(0, 0, 0, 0);
+
+  var graceEnd = new Date(graceStart);
+  graceEnd.setDate(graceEnd.getDate() + graceDays);
+
+  var today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  var msPerDay = 24 * 60 * 60 * 1000;
+  var daysLeft = Math.max(0, Math.ceil((graceEnd.getTime() - today.getTime()) / msPerDay));
+  var inGrace = today.getTime() <= graceEnd.getTime() && graceDays > 0;
+
+  var monthlyInterest = inGrace ? 0 : Math.round(remaining * annualRate / 12 / 100);
+  var pctPart = Math.round(remaining * minPct / 100);
+  var minPayment = inGrace ? 0 : (pctPart + monthlyInterest);
+
+  return {
+    inGrace: inGrace,
+    daysLeft: daysLeft,
+    minPayment: minPayment,
+    accruedInterest: monthlyInterest,
+    graceEndDate: graceEnd.toISOString().slice(0, 10)
+  };
+}
+
+/**
+ * REALISTIC DEBT LOGIC - Russian banks
+ * Агрегированные UI-показатели по одному долгу.
+ *
+ * Возвращает: {
+ *   alreadyPaid,            // сколько уже выплачено (loanAmount − remaining)
+ *   alreadyPaidPercent,     // процент выплаченности (0..100)
+ *   totalInterest,          // общая переплата за весь срок (приблизительно)
+ *   interestRemaining,      // сколько процентов осталось переплатить
+ *   estimatedPayoffMonths,  // прогнозный срок полного погашения с текущим платежом
+ *   estimatedPayoffDate,    // ISO date предполагаемого финального платежа
+ *   isCard, grace           // только для type=card — расширенная инфа по grace
+ * }
+ */
+function getDebtStats(debt) {
+  if (!debt) return null;
+  var isCard = debt.type === "card";
+  var loanAmount = Number(debt.loanAmount) || Number(debt.totalAmount) || 0;
+  var remaining = Number(debt.remainingAmount) || 0;
+  var monthly = Number(debt.monthlyPayment) || 0;
+  var rate = Number(debt.interestRate) || 0;
+  var term = Number(debt.termMonths) || 0;
+
+  var alreadyPaid = Math.max(0, loanAmount - remaining);
+  var alreadyPaidPercent = loanAmount > 0 ? Math.min(100, Math.round((alreadyPaid / loanAmount) * 100)) : 0;
+
+  var totalInterest = calculateTotalInterest(loanAmount, monthly, term);
+
+  // Доля процентов в остатке: пропорционально остатку основного долга.
+  // Это приближённая оценка — точный расчёт требует знания графика погашения.
+  var interestRemaining = loanAmount > 0
+    ? Math.round(totalInterest * (remaining / loanAmount))
+    : 0;
+
+  // Прогнозный срок: для кредитов — пересчёт по формуле, для остального — деление.
+  var estimatedMonths;
+  if (isCard) {
+    // Для карты используем минимальный платёж, если ежемесячный не задан.
+    var grace = calculateCardGraceInfo(debt);
+    var effectiveMonthly = monthly > 0 ? monthly : grace.minPayment;
+    estimatedMonths = effectiveMonthly > 0
+      ? calculateRemainingTerm(remaining, effectiveMonthly, rate)
+      : Infinity;
+  } else {
+    estimatedMonths = calculateRemainingTerm(remaining, monthly, rate);
+  }
+
+  var estimatedPayoffDate = "";
+  if (estimatedMonths !== Infinity && estimatedMonths > 0) {
+    var d = new Date();
+    d.setMonth(d.getMonth() + estimatedMonths);
+    estimatedPayoffDate = d.toISOString().slice(0, 10);
+  }
+
+  var stats = {
+    alreadyPaid: alreadyPaid,
+    alreadyPaidPercent: alreadyPaidPercent,
+    totalInterest: totalInterest,
+    interestRemaining: interestRemaining,
+    estimatedPayoffMonths: estimatedMonths,
+    estimatedPayoffDate: estimatedPayoffDate,
+    isCard: isCard
+  };
+  if (isCard) {
+    stats.grace = calculateCardGraceInfo(debt);
+  }
+  return stats;
+}
+
 function getDebtMonthlyTotal() {
   var s = getState();
   if (!s.debtPlanningMode) return 0;
   var debts = s.debts || [];
   var total = 0;
   debts.forEach(function (d) {
-    if (d.isActive !== false) total += (Number(d.monthlyPayment) || 0);
+    if (d.isActive === false) return;
+    // REALISTIC DEBT LOGIC - Russian banks — для кредитных карт в льготном
+    // периоде ежемесячный платёж = 0 (банк не требует выплат, проценты не
+    // начисляются). После окончания grace — минимальный платёж.
+    if (d.type === "card") {
+      var grace = calculateCardGraceInfo(d);
+      if (grace.inGrace) return; // в льготном периоде — не учитываем
+      // Если monthlyPayment задан вручную — используем его, иначе минимальный.
+      var cardPay = (Number(d.monthlyPayment) || 0) > 0
+        ? Number(d.monthlyPayment)
+        : grace.minPayment;
+      total += cardPay;
+      return;
+    }
+    total += (Number(d.monthlyPayment) || 0);
   });
   return total;
 }
@@ -1340,6 +1548,12 @@ function applyDebtRepayment(amount) {
     if (debt.remainingAmount <= 0) {
       debt.remainingAmount = 0;
       debt.isActive = false;
+      // REALISTIC DEBT LOGIC - Russian banks — при полном погашении карты
+      // фиксируем дату закрытия как точку отсчёта нового grace-периода
+      // (если пользователь снова воспользуется лимитом).
+      if (debt.type === "card") {
+        debt.lastFullPayDate = new Date().toISOString().slice(0, 10);
+      }
     } else if (debt.nextPaymentDate) {
       var nd = new Date(debt.nextPaymentDate);
       nd.setMonth(nd.getMonth() + 1);
@@ -1480,7 +1694,19 @@ function getCurrentDebtObligations() {
     if (d.isActive === false) return;
     var remaining = Number(d.remainingAmount) || 0;
     if (remaining <= 0) return;
-    var monthly = Number(d.monthlyPayment) || 0;
+
+    // REALISTIC DEBT LOGIC - Russian banks — для карт в льготном периоде
+    // обязательств нет; после grace берём minPayment, если monthlyPayment не задан.
+    var monthly;
+    if (d.type === "card") {
+      var grace = calculateCardGraceInfo(d);
+      if (grace.inGrace) return; // в льготном периоде нет обязательств
+      monthly = (Number(d.monthlyPayment) || 0) > 0
+        ? Number(d.monthlyPayment)
+        : grace.minPayment;
+    } else {
+      monthly = Number(d.monthlyPayment) || 0;
+    }
     if (monthly <= 0) return;
 
     var dueForPeriod = Math.min(monthly, remaining);
@@ -1539,6 +1765,11 @@ function applyAutoDebtRepayment(amount) {
     if (ob.debt.remainingAmount <= 0) {
       ob.debt.remainingAmount = 0;
       ob.debt.isActive = false;
+      // REALISTIC DEBT LOGIC - Russian banks — отметка полного закрытия карты
+      // для перерасчёта grace-периода при последующих покупках.
+      if (ob.debt.type === "card") {
+        ob.debt.lastFullPayDate = new Date().toISOString().slice(0, 10);
+      }
     }
   });
 
@@ -10864,21 +11095,76 @@ function goalSwipeToIndex(idx, goLeft) {
     var endStr = d.endDate ? new Date(d.endDate).toLocaleDateString(_locale, { month: "short", year: "numeric" }) : "—";
     var nextStr = d.nextPaymentDate ? new Date(d.nextPaymentDate).toLocaleDateString(_locale, { day: "numeric", month: "short" }) : "—";
 
+    // REALISTIC DEBT LOGIC - Russian banks — агрегированные показатели.
+    var stats = getDebtStats(d);
+    var isCard = d.type === "card";
+
     var html = '<div class="debt-item-card" data-debt-id="' + d.id + '">'
       + '<div class="debt-item-header">'
       + '<div class="debt-item-title">' + (d.title || t("misc.noTitle")) + '</div>'
       + '<span class="debt-item-type-badge">' + typeLabel + '</span>'
-      + '</div>'
-      + '<div class="debt-item-rows">'
+      + '</div>';
+
+    // REALISTIC DEBT LOGIC - Russian banks — grace-period badge для карт.
+    if (isCard && stats && stats.grace) {
+      if (stats.grace.inGrace) {
+        html += '<div class="debt-grace-badge debt-grace-badge--active">'
+          + '<span class="debt-grace-dot"></span>'
+          + t("debts.graceActive", { days: stats.grace.daysLeft })
+          + '</div>';
+      } else if ((Number(d.remainingAmount) || 0) > 0) {
+        html += '<div class="debt-grace-badge debt-grace-badge--expired">'
+          + '<span class="debt-grace-dot"></span>'
+          + t("debts.graceExpired")
+          + '</div>';
+      }
+    }
+
+    // REALISTIC DEBT LOGIC - Russian banks — прогресс-бар выплат.
+    if (stats && stats.alreadyPaidPercent >= 0 && (Number(d.totalAmount) || Number(d.loanAmount) || 0) > 0) {
+      html += '<div class="debt-progress-block">'
+        + '<div class="debt-progress-label">'
+        + '<span>' + t("debts.alreadyPaid") + '</span>'
+        + '<span>' + fmtConverted(stats.alreadyPaid) + ' ' + getCurrencySymbol() + ' • ' + stats.alreadyPaidPercent + '%</span>'
+        + '</div>'
+        + '<div class="debt-progress-track"><div class="debt-progress-fill" style="width:' + stats.alreadyPaidPercent + '%"></div></div>'
+        + '</div>';
+    }
+
+    html += '<div class="debt-item-rows">'
       + '<div class="debt-item-row"><span>' + t("debts.totalAmount") + '</span><span>' + fmtConverted(Number(d.totalAmount) || 0) + ' ' + getCurrencySymbol() + '</span></div>'
       + '<div class="debt-item-row"><span>' + t("debts.remaining") + '</span><span>' + fmtConverted(Number(d.remainingAmount) || 0) + ' ' + getCurrencySymbol() + '</span></div>'
-      + '<div class="debt-item-row"><span>' + t("debts.monthlyPayment") + '</span><span>' + fmtConverted(Number(d.monthlyPayment) || 0) + ' ' + getCurrencySymbol() + '</span></div>'
-      + '<div class="debt-item-row"><span>' + t("debts.nextPayment") + '</span><span>' + nextStr + '</span></div>'
+      + '<div class="debt-item-row"><span>' + t("debts.monthlyPayment") + '</span><span>' + fmtConverted(Number(d.monthlyPayment) || 0) + ' ' + getCurrencySymbol() + '</span></div>';
+
+    // REALISTIC DEBT LOGIC - Russian banks — ставка и срок для кредитов.
+    if (!isCard && Number(d.interestRate) > 0) {
+      html += '<div class="debt-item-row"><span>' + t("debts.interestRate") + '</span><span>' + d.interestRate + '%</span></div>';
+    }
+    if (!isCard && Number(d.termMonths) > 0) {
+      html += '<div class="debt-item-row"><span>' + t("debts.termMonths") + '</span><span>' + d.termMonths + ' ' + t("debts.monthsShort") + '</span></div>';
+    }
+
+    html += '<div class="debt-item-row"><span>' + t("debts.nextPayment") + '</span><span>' + nextStr + '</span></div>'
       + '<div class="debt-item-row"><span>' + t("debts.endDate") + '</span><span>' + endStr + '</span></div>';
 
-    if (d.type === "card" && d.creditLimit) {
+    // REALISTIC DEBT LOGIC - Russian banks — поля кредитной карты.
+    if (isCard && d.creditLimit) {
       html += '<div class="debt-item-row"><span>' + t("debts.creditLimit") + '</span><span>' + fmtConverted(Number(d.creditLimit) || 0) + ' ' + getCurrencySymbol() + '</span></div>';
       html += '<div class="debt-item-row"><span>' + t("debts.freeLimit") + '</span><span>' + fmtConverted(Number(d.freeLimit) || 0) + ' ' + getCurrencySymbol() + '</span></div>';
+    }
+    if (isCard && Number(d.interestRate) > 0) {
+      html += '<div class="debt-item-row"><span>' + t("debts.interestRate") + '</span><span>' + d.interestRate + '%</span></div>';
+    }
+    if (isCard && stats && stats.grace && !stats.grace.inGrace && stats.grace.minPayment > 0) {
+      html += '<div class="debt-item-row"><span>' + t("debts.minPayment") + '</span><span>' + fmtConverted(stats.grace.minPayment) + ' ' + getCurrencySymbol() + '</span></div>';
+    }
+
+    // REALISTIC DEBT LOGIC - Russian banks — переплата и прогноз срока.
+    if (stats && stats.interestRemaining > 0) {
+      html += '<div class="debt-item-row"><span>' + t("debts.interestRemaining") + '</span><span>' + fmtConverted(stats.interestRemaining) + ' ' + getCurrencySymbol() + '</span></div>';
+    }
+    if (stats && stats.estimatedPayoffMonths !== Infinity && stats.estimatedPayoffMonths > 0) {
+      html += '<div class="debt-item-row"><span>' + t("debts.estimatedPayoff") + '</span><span>' + stats.estimatedPayoffMonths + ' ' + t("debts.monthsShort") + '</span></div>';
     }
 
     if (d.note) {
@@ -11124,6 +11410,13 @@ function goalSwipeToIndex(idx, goLeft) {
     var freeLim = document.getElementById("debtFreeLimit");
     var note = document.getElementById("debtNote");
 
+    // REALISTIC DEBT LOGIC - Russian banks — новые поля формы.
+    var interestRate = document.getElementById("debtInterestRate");
+    var termMonths = document.getElementById("debtTermMonths");
+    var graceDays = document.getElementById("debtGracePeriodDays");
+    var minPct = document.getElementById("debtMinPaymentPercent");
+    var creditFields = document.getElementById("debtCreditFields");
+
     if (existingDebt) {
       if (title) title.value = existingDebt.title || "";
       if (totalAmt) totalAmt.value = existingDebt.totalAmount ? formatNumber(String(existingDebt.totalAmount)) : "";
@@ -11135,17 +11428,30 @@ function goalSwipeToIndex(idx, goLeft) {
       if (freeLim) freeLim.value = existingDebt.freeLimit ? formatNumber(String(existingDebt.freeLimit)) : "";
       if (note) note.value = existingDebt.note || "";
 
+      // REALISTIC DEBT LOGIC - Russian banks
+      if (interestRate) interestRate.value = existingDebt.interestRate ? String(existingDebt.interestRate) : "";
+      if (termMonths) termMonths.value = existingDebt.termMonths ? String(existingDebt.termMonths) : "";
+      if (graceDays) graceDays.value = existingDebt.gracePeriodDays ? String(existingDebt.gracePeriodDays) : "";
+      if (minPct) minPct.value = existingDebt.minPaymentPercent ? String(existingDebt.minPaymentPercent) : "";
+
       var debtType = existingDebt.type || "credit";
       debtTypeToggle.forEach(function (b) {
         b.classList.toggle("active", b.dataset.value === debtType);
       });
       if (debtCardFields) debtCardFields.style.display = debtType === "card" ? "" : "none";
+      // REALISTIC DEBT LOGIC - Russian banks — блок параметров кредита скрыт
+      // только для записей типа "debt" (просто долг знакомому без процентов).
+      if (creditFields) creditFields.style.display = (debtType === "debt" || debtType === "card") ? "none" : "";
     } else {
-      [title, totalAmt, remainAmt, monthlyPay, nextDate, endDate, creditLim, freeLim, note].forEach(function (el) {
+      [title, totalAmt, remainAmt, monthlyPay, nextDate, endDate, creditLim, freeLim, note,
+       interestRate, termMonths, graceDays, minPct].forEach(function (el) {
         if (el) el.value = "";
       });
       debtTypeToggle.forEach(function (b, i) { b.classList.toggle("active", i === 0); });
       if (debtCardFields) debtCardFields.style.display = "none";
+      // REALISTIC DEBT LOGIC - Russian banks — по умолчанию активен тип "credit",
+      // поэтому показываем блок процентной ставки/срока.
+      if (creditFields) creditFields.style.display = "";
     }
 
     ProtoSheet.open(addDebtSheet, addDebtOverlay);
@@ -11214,7 +11520,13 @@ function goalSwipeToIndex(idx, goLeft) {
       if (typeof haptic === "function") haptic("light");
       debtTypeToggle.forEach(function (b) { b.classList.remove("active"); });
       btn.classList.add("active");
-      if (debtCardFields) debtCardFields.style.display = btn.dataset.value === "card" ? "" : "none";
+      var typeVal = btn.dataset.value;
+      if (debtCardFields) debtCardFields.style.display = typeVal === "card" ? "" : "none";
+      // REALISTIC DEBT LOGIC - Russian banks — блок «процентная ставка + срок»
+      // нужен только для типов credit / installment. Для "debt" (личный долг
+      // знакомому) и "card" (своя логика grace-периода) — скрываем.
+      var creditFieldsEl = document.getElementById("debtCreditFields");
+      if (creditFieldsEl) creditFieldsEl.style.display = (typeVal === "debt" || typeVal === "card") ? "none" : "";
     });
   });
 
@@ -11230,6 +11542,29 @@ function goalSwipeToIndex(idx, goLeft) {
     }
   });
 
+  // REALISTIC DEBT LOGIC - Russian banks — отдельный форматтер для
+  // процентных/числовых полей: разрешаем точку как десятичный разделитель.
+  function formatRateInput(el) {
+    if (!el) return;
+    el.addEventListener("input", function () {
+      var v = el.value.replace(",", ".").replace(/[^\d.]/g, "");
+      var parts = v.split(".");
+      if (parts.length > 2) v = parts[0] + "." + parts.slice(1).join("");
+      el.value = v;
+    });
+  }
+  formatRateInput(document.getElementById("debtInterestRate"));
+  formatRateInput(document.getElementById("debtMinPaymentPercent"));
+  // termMonths и gracePeriodDays — целочисленные.
+  [document.getElementById("debtTermMonths"),
+   document.getElementById("debtGracePeriodDays")].forEach(function (el) {
+    if (el) {
+      el.addEventListener("input", function () {
+        el.value = el.value.replace(/[^\d]/g, "");
+      });
+    }
+  });
+
   if (debtSaveBtn) {
     debtSaveBtn.addEventListener("click", function () {
       if (typeof haptic === "function") haptic("medium");
@@ -11237,16 +11572,46 @@ function goalSwipeToIndex(idx, goLeft) {
       var titleEl = document.getElementById("debtTitle");
       var monthlyPayEl = document.getElementById("debtMonthlyPayment");
       if (!titleEl || !titleEl.value.trim()) { showToast(t("debts.noTitle"), "error"); return; }
-      if (!monthlyPayEl || !parseNumber(monthlyPayEl.value)) { showToast(t("debts.noPayment"), "error"); return; }
 
       var type = getSelectedDebtType();
+
+      // REALISTIC DEBT LOGIC - Russian banks — извлекаем новые параметры.
+      var interestRate = parseFloat((document.getElementById("debtInterestRate") || {}).value || "0") || 0;
+      var termMonths = parseInt((document.getElementById("debtTermMonths") || {}).value || "0", 10) || 0;
+      var gracePeriodDays = type === "card"
+        ? (parseInt((document.getElementById("debtGracePeriodDays") || {}).value || "55", 10) || 55)
+        : 0;
+      var minPaymentPercent = type === "card"
+        ? (parseFloat((document.getElementById("debtMinPaymentPercent") || {}).value || "5") || 5)
+        : 0;
+
+      var totalAmt = parseNumber(document.getElementById("debtTotalAmount").value || "0");
+      var remainAmt = parseNumber(document.getElementById("debtRemainingAmount").value || "0");
+      var monthlyPayRaw = parseNumber(monthlyPayEl.value || "0");
+
+      // REALISTIC DEBT LOGIC - Russian banks — для credit / installment, если
+      // пользователь не указал ежемесячный платёж, но указал ставку и срок —
+      // рассчитываем аннуитет автоматически по формуле РФ-банков.
+      var monthlyPay = monthlyPayRaw;
+      if ((type === "credit" || type === "installment") && monthlyPay <= 0
+          && totalAmt > 0 && termMonths > 0) {
+        monthlyPay = calculateAnnuityPayment(totalAmt, interestRate, termMonths);
+      }
+
+      // Карты могут не иметь monthlyPayment (выплачивается минимальный по grace).
+      // Для всех остальных типов платёж обязателен.
+      if (type !== "card" && (!monthlyPay || monthlyPay <= 0)) {
+        showToast(t("debts.noPayment"), "error");
+        return;
+      }
+
       var entry = {
         id: editingDebtId || ("debt_" + Date.now() + "_" + Math.floor(Math.random() * 1000)),
         type: type,
         title: titleEl.value.trim(),
-        totalAmount: parseNumber(document.getElementById("debtTotalAmount").value || "0"),
-        remainingAmount: parseNumber(document.getElementById("debtRemainingAmount").value || "0"),
-        monthlyPayment: parseNumber(monthlyPayEl.value || "0"),
+        totalAmount: totalAmt,
+        remainingAmount: remainAmt,
+        monthlyPayment: monthlyPay,
         nextPaymentDate: document.getElementById("debtNextDate").value || "",
         endDate: document.getElementById("debtEndDate").value || "",
         creditLimit: type === "card" ? parseNumber(document.getElementById("debtCreditLimit").value || "0") : 0,
@@ -11254,7 +11619,15 @@ function goalSwipeToIndex(idx, goLeft) {
         note: (document.getElementById("debtNote").value || "").trim(),
         isActive: true,
         paidInCurrentPeriod: 0,
-        currentPeriodKey: ""
+        currentPeriodKey: "",
+        // REALISTIC DEBT LOGIC - Russian banks
+        loanAmount: totalAmt,
+        interestRate: interestRate,
+        termMonths: termMonths,
+        startDate: "",
+        gracePeriodDays: gracePeriodDays,
+        minPaymentPercent: minPaymentPercent,
+        lastFullPayDate: ""
       };
 
       var nextDateVal = document.getElementById("debtNextDate").value || "";
@@ -11275,11 +11648,23 @@ function goalSwipeToIndex(idx, goLeft) {
         if (existingDebtForEdit) {
           entry.paidInCurrentPeriod = existingDebtForEdit.paidInCurrentPeriod || 0;
           entry.currentPeriodKey = existingDebtForEdit.currentPeriodKey || entry.currentPeriodKey;
+          // REALISTIC DEBT LOGIC - Russian banks — сохраняем историю карты:
+          // startDate (дата выдачи) и lastFullPayDate (последнее закрытие).
+          entry.startDate = existingDebtForEdit.startDate || "";
+          entry.lastFullPayDate = existingDebtForEdit.lastFullPayDate || "";
+          // loanAmount берём исходный, если он был задан — иначе из формы.
+          if (existingDebtForEdit.loanAmount > 0) {
+            entry.loanAmount = existingDebtForEdit.loanAmount;
+          }
         }
         for (var i = 0; i < debts.length; i++) {
           if (debts[i].id === editingDebtId) { debts[i] = entry; break; }
         }
       } else {
+        // REALISTIC DEBT LOGIC - Russian banks — для нового долга фиксируем
+        // дату создания как startDate (используется для карт как точка отсчёта
+        // первого grace-периода, если lastFullPayDate ещё не задан).
+        entry.startDate = new Date().toISOString().slice(0, 10);
         debts.push(entry);
       }
       persistDebts(debts);

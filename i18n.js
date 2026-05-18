@@ -859,6 +859,20 @@
       "debts.repaid": "Погашение долга зафиксировано",
       "debts.historyAutoDesc": "Из {total} → {amount} в этот долг",
       "debts.historyManualDesc": "Ручное погашение",
+      // REALISTIC DEBT LOGIC - Russian banks
+      "debts.interestRate": "Процентная ставка, % годовых",
+      "debts.termMonths": "Срок, месяцев",
+      "debts.monthsShort": "мес.",
+      "debts.gracePeriodDays": "Льготный период, дней",
+      "debts.minPaymentPercent": "Минимальный платёж, %",
+      "debts.minPayment": "Минимальный платёж",
+      "debts.annuityHint": "Аннуитетный платёж рассчитывается автоматически по формуле РФ-банков, если поле «Ежемесячный платёж» оставить пустым.",
+      "debts.cardHint": "Льготный период обычно 50–120 дней (Сбер, Тинькофф, Альфа). В этот период проценты не начисляются. Минимальный платёж — 5–10% от долга.",
+      "debts.graceActive": "До конца льготного периода: {days} дн.",
+      "debts.graceExpired": "Льготный период истёк — начисляются проценты",
+      "debts.alreadyPaid": "Уже выплачено",
+      "debts.interestRemaining": "Осталось переплатить",
+      "debts.estimatedPayoff": "Примерный срок полного погашения",
 
       // ── Expenses extra ──
       "expenses.noLimit": "Лимит не задан",
@@ -1842,6 +1856,20 @@
       "debts.repaid": "Debt repayment recorded",
       "debts.historyAutoDesc": "From {total} → {amount} to this debt",
       "debts.historyManualDesc": "Manual repayment",
+      // REALISTIC DEBT LOGIC - Russian banks
+      "debts.interestRate": "Interest rate, % p.a.",
+      "debts.termMonths": "Term, months",
+      "debts.monthsShort": "mo.",
+      "debts.gracePeriodDays": "Grace period, days",
+      "debts.minPaymentPercent": "Minimum payment, %",
+      "debts.minPayment": "Minimum payment",
+      "debts.annuityHint": "Annuity payment is calculated automatically (Russian-bank formula) if the monthly payment field is left empty.",
+      "debts.cardHint": "Grace period is typically 50–120 days (Sber, Tinkoff, Alfa). No interest accrues during this period. Minimum payment is 5–10% of the balance.",
+      "debts.graceActive": "Grace period ends in: {days} d.",
+      "debts.graceExpired": "Grace period expired — interest is being charged",
+      "debts.alreadyPaid": "Already paid",
+      "debts.interestRemaining": "Interest remaining",
+      "debts.estimatedPayoff": "Estimated full payoff",
 
       // ── Expenses extra ──
       "expenses.noLimit": "No limit set",

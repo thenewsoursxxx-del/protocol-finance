@@ -7024,6 +7024,85 @@ body.app-locked .account-block * {
   transition: border-color 0.25s;
 }
 
+/* ─── REALISTIC DEBT LOGIC - Russian banks ─────────────────── */
+
+/* Подсказки в форме добавления долга — компактный info-блок. */
+.debt-form-hint {
+  margin-top: 8px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(96, 165, 250, 0.08);
+  border: 1px solid rgba(96, 165, 250, 0.18);
+  color: rgba(191, 219, 254, 0.92);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+/* Бейдж льготного периода карты. */
+.debt-grace-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  margin-bottom: 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.debt-grace-badge .debt-grace-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.debt-grace-badge--active {
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.32);
+  color: #34d399;
+}
+.debt-grace-badge--active .debt-grace-dot {
+  background: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.18);
+}
+.debt-grace-badge--expired {
+  background: rgba(239, 68, 68, 0.10);
+  border: 1px solid rgba(239, 68, 68, 0.30);
+  color: #f87171;
+}
+.debt-grace-badge--expired .debt-grace-dot {
+  background: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.16);
+}
+
+/* Прогресс-бар выплаты долга. */
+.debt-progress-block {
+  margin-bottom: 12px;
+}
+.debt-progress-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 6px;
+}
+.debt-progress-label span:last-child {
+  color: rgba(255, 255, 255, 0.88);
+  font-weight: 600;
+}
+.debt-progress-track {
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+.debt-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #10b981, #34d399);
+  border-radius: 999px;
+  transition: width 0.4s cubic-bezier(.4,0,.2,1);
+}
+
 .debt-item-header {
   display: flex;
   justify-content: space-between;

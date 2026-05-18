@@ -1613,6 +1613,22 @@ Protocol анализирует цель…
       <label data-i18n="debts.remainingAmount">Осталось выплатить</label>
       <input id="debtRemainingAmount" inputmode="numeric" placeholder="800.000" />
     </div>
+
+    <!-- REALISTIC DEBT LOGIC - Russian banks: блок параметров кредита (credit / installment) -->
+    <div class="debt-credit-fields" id="debtCreditFields">
+      <div class="input-wrap">
+        <label data-i18n="debts.interestRate">Процентная ставка, % годовых</label>
+        <input id="debtInterestRate" inputmode="decimal" placeholder="18.5" />
+      </div>
+      <div class="input-wrap">
+        <label data-i18n="debts.termMonths">Срок, месяцев</label>
+        <input id="debtTermMonths" inputmode="numeric" placeholder="60" />
+      </div>
+      <div class="debt-form-hint" data-i18n="debts.annuityHint">
+        Аннуитетный платёж рассчитывается автоматически по формуле РФ-банков, если поле ниже оставить пустым.
+      </div>
+    </div>
+
     <div class="input-wrap">
       <label data-i18n="debts.monthlyPayment">Ежемесячный платёж</label>
       <input id="debtMonthlyPayment" inputmode="numeric" placeholder="25.000" />
@@ -1625,6 +1641,8 @@ Protocol анализирует цель…
       <label data-i18n="debts.endDate">Дата окончания</label>
       <input id="debtEndDate" type="date" />
     </div>
+
+    <!-- REALISTIC DEBT LOGIC - Russian banks: блок параметров кредитной карты -->
     <div class="debt-card-fields" id="debtCardFields" style="display:none">
       <div class="input-wrap">
         <label data-i18n="debts.creditLimit">Кредитный лимит</label>
@@ -1633,6 +1651,17 @@ Protocol анализирует цель…
       <div class="input-wrap">
         <label data-i18n="debts.freeLimit">Свободный лимит</label>
         <input id="debtFreeLimit" inputmode="numeric" placeholder="200.000" />
+      </div>
+      <div class="input-wrap">
+        <label data-i18n="debts.gracePeriodDays">Льготный период, дней</label>
+        <input id="debtGracePeriodDays" inputmode="numeric" placeholder="55" />
+      </div>
+      <div class="input-wrap">
+        <label data-i18n="debts.minPaymentPercent">Минимальный платёж, % от долга</label>
+        <input id="debtMinPaymentPercent" inputmode="decimal" placeholder="5" />
+      </div>
+      <div class="debt-form-hint" data-i18n="debts.cardHint">
+        Льготный период обычно 50–120 дней (Сбер, Тинькофф, Альфа). В этот период проценты не начисляются. Минимальный платёж — 5–10% от долга.
       </div>
     </div>
     <div class="input-wrap">
