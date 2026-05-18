@@ -9867,8 +9867,10 @@ body.reduce-motion .settings-seg-btn {
   left: 0;
   right: 0;
   z-index: 10001;
-  max-height: 92dvh;
-  max-height: 92vh;
+  /* PREMIUM MODAL — модалка тянется выше, чтобы вместить весь контент
+     слайдов и кнопку CTA без скролла на большинстве устройств. */
+  max-height: 97dvh;
+  max-height: 97vh;
   overflow-y: auto;
   overflow-x: hidden;
   background:
@@ -10019,16 +10021,20 @@ body.reduce-motion .settings-seg-btn {
   padding: 0 4px;
 }
 .premium-buy-btn {
-  width: 100%;
+  /* PREMIUM MODAL — компактная CTA: меньше высота, меньше шрифт,
+     уже по бокам через max-width + margin auto. */
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3px;
-  padding: 16px 20px;
-  border-radius: 16px;
+  gap: 2px;
+  width: auto;
+  max-width: 280px;
+  margin: 0 auto;
+  padding: 11px 24px;
+  border-radius: 14px;
   background: linear-gradient(135deg, #059669, #10b981, #34d399);
   color: #fff;
-  font-size: 17px;
+  font-size: 14px;
   font-weight: 700;
   letter-spacing: -0.01em;
   border: none;
@@ -10042,7 +10048,7 @@ body.reduce-motion .settings-seg-btn {
   box-shadow: 0 4px 16px rgba(16, 185, 129, 0.35);
 }
 .premium-buy-price {
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 500;
   opacity: 0.82;
   letter-spacing: 0;

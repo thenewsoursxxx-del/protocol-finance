@@ -11121,25 +11121,64 @@ function goalSwipeToIndex(idx, goLeft) {
     });
   }
 
-  // ── Touch swipe для слайдов ────────────────────────────────────────────
-
+  // ── Свайп слайдов на pointer events ────────────────────────────────────
+  //
+  // PREMIUM MODAL — touchstart/touchend было ненадёжно в iOS WebView Telegram:
+  // touchend иногда приходил без значимого dx, а pan-y / pan-x в touch-action
+  // мешали JS перехватить горизонтальное движение. Pointer events с
+  // setPointerCapture и preventDefault на pointermove работают одинаково
+  // на iOS, Android и desktop. Логика та же, что в initGoalSwipe.
   (function initSlideSwipe() {
     var slides = document.getElementById("premiumSlides");
     if (!slides) return;
-    var startX = 0, isDragging = false;
-    slides.addEventListener("touchstart", function (e) {
-      startX = e.touches[0].clientX;
-      isDragging = true;
-    }, { passive: true });
-    slides.addEventListener("touchend", function (e) {
-      if (!isDragging) return;
-      isDragging = false;
-      var dx = e.changedTouches[0].clientX - startX;
+
+    var startX = 0, startY = 0, dx = 0;
+    var active = false, locked = false;
+
+    slides.addEventListener("pointerdown", function (e) {
+      startX = e.clientX;
+      startY = e.clientY;
+      dx = 0;
+      active = true;
+      locked = false;
+    });
+
+    slides.addEventListener("pointermove", function (e) {
+      if (!active) return;
+      var rawDx = e.clientX - startX;
+      var rawDy = e.clientY - startY;
+
+      // До lock'а определяем направление. Если очевидно вертикальное —
+      // отдаём событие sheet'у для возможного скролла.
+      if (!locked) {
+        if (Math.abs(rawDx) < 8 && Math.abs(rawDy) < 8) return;
+        if (Math.abs(rawDy) > Math.abs(rawDx)) {
+          active = false;
+          return;
+        }
+        locked = true;
+        try { slides.setPointerCapture(e.pointerId); } catch (err) { /* noop */ }
+      }
+
+      e.preventDefault();
+      dx = rawDx;
+    });
+
+    function finish() {
+      if (!active && !locked) return;
+      var wasLocked = locked;
+      active = false;
+      locked = false;
+      if (!wasLocked) return;
       if (Math.abs(dx) > 50) {
         if (dx < 0 && _currentSlide < _totalSlides - 1) goToSlide(_currentSlide + 1, true);
         else if (dx > 0 && _currentSlide > 0)           goToSlide(_currentSlide - 1, true);
       }
-    }, { passive: true });
+    }
+
+    slides.addEventListener("pointerup",     finish);
+    slides.addEventListener("pointercancel", finish);
+    slides.addEventListener("pointerleave",  finish);
   })();
 
   // ── Event listeners для модалки ────────────────────────────────────────
