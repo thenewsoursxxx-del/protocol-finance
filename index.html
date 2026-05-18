@@ -327,6 +327,15 @@ viewport-fit=cover" />
 <!-- ===== ADVICE ===== -->
 <div class="screen" id="screen-advice">
 
+<!-- SPLASH VIDEO BACKGROUND — видео-фон фейк-загрузки, лежит за всем контентом экрана.
+     position:absolute внутри position:relative #screen-advice → z-index:0 гарантированно
+     ниже шапки, спиннера и карточки (все они z-index:auto/1/2 выше нуля). -->
+<div id="splashVideoOverlay" class="splash-video-overlay hidden" aria-hidden="true">
+  <video id="splashVideoEl" class="splash-video" muted loop playsinline preload="metadata" disablepictureinpicture>
+    <source src="./assets/videos/snakePloop.mp4" type="video/mp4" />
+  </video>
+</div>
+
 <div class="app-header">
 
 <div class="header-left">
@@ -2018,17 +2027,6 @@ z-index: 999999;
   </div>
 
   <button type="button" id="goalHistoryDetailCloseBtn" class="goal-history-detail-close-btn" data-i18n="goalHistory.detail.close">Закрыть</button>
-</div>
-
-<!-- SPLASH VIDEO BACKGROUND — полноэкранный видео-overlay для фейк-загрузки.
-     Показывается при запуске protocolFlow() и скрывается после рендера графика.
-     Видео без звука (muted, обязательно для autoplay в браузерах), зацикленное,
-     с object-fit:cover. Текст статуса ("анализирует данные…", "сохраняю буфер…",
-     "готово") отображается поверх видео. -->
-<div id="splashVideoOverlay" class="splash-video-overlay hidden" aria-hidden="true">
-  <video id="splashVideoEl" class="splash-video" muted loop playsinline preload="metadata" disablepictureinpicture>
-    <source src="./assets/videos/snakePloop.mp4" type="video/mp4" />
-  </video>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>

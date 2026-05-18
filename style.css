@@ -312,27 +312,25 @@ margin: 20px auto;
    соотношении сторон. Текст статуса (analyzing/done) лежит поверх
    видео с лёгкой текстовой тенью для читаемости.
 ─────────────────────────────────────────────────────────────── */
+/* SPLASH VIDEO BACKGROUND — видео-фон лежит ВНУТРИ #screen-advice как первый
+   дочерний элемент с position:absolute. #screen-advice уже имеет position:relative,
+   поэтому inset:0 = вся площадь экрана. z-index:0 гарантирует, что шапка,
+   спиннер и карточка фейк-загрузки (все имеют z-index ≥ 1 или auto > 0) будут
+   поверх видео — никакого конфликта с глобальным stacking context. */
 .splash-video-overlay {
-  position: fixed;
+  position: absolute;
   inset: 0;
-  /* SPLASH VIDEO BACKGROUND — слой ПОД блоком фейк-загрузки.
-     body имеет z-index стек по умолчанию (0), `.screen` создаёт свой контекст
-     с z-index:1 поверх — поэтому overlay с z-index:0 виден как фон сквозь
-     прозрачные экраны, а карточка/спиннер остаются на своих местах сверху. */
   z-index: 0;
   background: #000;
   display: block;
   overflow: hidden;
   opacity: 1;
+  pointer-events: none;
   transition: opacity 0.45s ease;
 }
 .splash-video-overlay.fading {
   opacity: 0;
-  pointer-events: none;
 }
-/* Явный override для .hidden — без этого общий `.hidden { display:none }`
-   (определён ВЫШЕ в файле) проигрывает по source-order правилу
-   `.splash-video-overlay { display:flex }` и overlay показывается при загрузке. */
 .splash-video-overlay.hidden {
   display: none;
 }
@@ -2136,6 +2134,9 @@ z-index: 5;
 #screen-advice {
   position: relative;
   z-index: 1;
+  /* SPLASH VIDEO BACKGROUND — clip абсолютно позиционированного видео-overlay
+     по границам экрана, чтобы не вылезало под nav-bar. */
+  overflow: hidden;
 }
 
 #screen-advice .card {
