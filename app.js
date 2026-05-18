@@ -3241,7 +3241,45 @@ if (profileBtn) {
     bottomNav.style.pointerEvents = "none";
     if (advancedBtn) advancedBtn.style.display = "none";
     moveProfileToActiveHeader();
+    // STATISTICS COLLECTION — обновляем счётчики premium/free каждый раз
+    // при заходе в профиль (с кэшем на 60 секунд внутри функции).
+    if (typeof refreshProfileStats === "function") refreshProfileStats();
   };
+}
+
+// STATISTICS COLLECTION — рендер цифр в блок #profileStats.
+// Кэш на 60с — не дёргаем БД на каждый заход в профиль.
+var _profileStatsCache = { ts: 0, data: null };
+
+function refreshProfileStats() {
+  var elPremium = document.getElementById("profileStatsPremium");
+  var elFree    = document.getElementById("profileStatsFree");
+  var elTotal   = document.getElementById("profileStatsTotal");
+  if (!elPremium || !elFree || !elTotal) return;
+
+  function paint(stats) {
+    if (!stats) return;
+    elPremium.textContent = String(stats.premiumCount);
+    elFree.textContent    = String(stats.freeCount);
+    elTotal.textContent   = String(stats.total);
+  }
+
+  // Сразу показываем кэш если он есть и свежий — UI не мигает «—».
+  var now = Date.now();
+  if (_profileStatsCache.data && (now - _profileStatsCache.ts < 60000)) {
+    paint(_profileStatsCache.data);
+    return;
+  }
+
+  if (typeof window.getPremiumStats !== "function") return;
+
+  window.getPremiumStats().then(function (stats) {
+    if (!stats) return;
+    _profileStatsCache = { ts: Date.now(), data: stats };
+    paint(stats);
+  }).catch(function (err) {
+    console.warn("[Statistics] refreshProfileStats:", err && err.message);
+  });
 }
 
 const profileResetPlanBtn = document.getElementById("profileResetPlan");
@@ -11250,6 +11288,11 @@ function goalSwipeToIndex(idx, goLeft) {
     syncPremiumGateUI();
     syncLockBadgesVisibility();
     if (!isPremium()) initAllLockLotties();
+    // STATISTICS COLLECTION — переотправляем трекинг с актуальным is_premium
+    // (тихо, без блокировок UI; невалидные ответы просто игнорируются).
+    if (typeof window.trackUserVisit === "function") {
+      window.trackUserVisit().catch(function () { /* noop */ });
+    }
   };
 
   // PREMIUM SYSTEM — экспорт inline-гейта для прямого вызова в обработчиках.

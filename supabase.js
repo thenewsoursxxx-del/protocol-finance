@@ -530,13 +530,111 @@ async function loadInflationRates(opts) {
 window.getInflationRate = getInflationRate;
 window.loadInflationRates = loadInflationRates;
 
+/* ============================================================================
+ * STATISTICS COLLECTION — трекинг геолокации, премиума и времени визита.
+ * ----------------------------------------------------------------------------
+ * trackUserVisit() вызывает Edge Function `track-user`, которая:
+ *   1. Берёт реальный IP из заголовков запроса (server-side, не подделать)
+ *   2. Геолоцирует через ipapi.co (free)
+ *   3. UPSERT'ит users.country/city/last_ip/last_visit/is_premium через
+ *      service_role-ключ (защищено от client-side подделок)
+ *
+ * Запускается после saveCurrentUser() чтобы строка пользователя уже была
+ * создана и UPDATE сработал.
+ * ============================================================================ */
+
+async function trackUserVisit() {
+  try {
+    var identity = await getVerifiedUserIdentity();
+    if (!identity) return;
+
+    // STATISTICS COLLECTION — берём is_premium из текущего state приложения.
+    // appState (window.appState) объявлен в state-manager.js. Защитный фолбэк
+    // на false если state ещё не загружен.
+    var isPremium = false;
+    try {
+      var st = (typeof window.appState === "object" && window.appState) || {};
+      isPremium = st.isPremium === true;
+    } catch (_e) {}
+
+    var url = SUPABASE_URL.replace(/\/$/, "") + "/functions/v1/track-user";
+    var res = await _iosSafeFetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type":  "application/json",
+        "Authorization": "Bearer " + SUPABASE_ANON_KEY,
+        "apikey":        SUPABASE_ANON_KEY,
+      },
+      body: JSON.stringify({
+        telegram_id: identity.telegram_id,
+        is_premium:  isPremium,
+      }),
+    });
+
+    if (!res.ok) {
+      console.warn("[Statistics] track-user HTTP", res.status);
+      return;
+    }
+    var data = await res.json().catch(function () { return null; });
+    if (data && data.ok) {
+      console.log("[Statistics] трекинг успешен:", data.country || "?", data.city || "?");
+    }
+  } catch (e) {
+    console.warn("[Statistics] trackUserVisit ошибка:", e && e.message);
+  }
+}
+
+/**
+ * STATISTICS COLLECTION — публичная статистика премиум/не-премиум пользователей.
+ * Возвращает { premiumCount, freeCount, total }.
+ * Использует COUNT через head:true + count:'exact' — пустые строки данных не везём.
+ */
+async function getPremiumStats() {
+  try {
+    if (!initSupabaseClient()) return null;
+
+    var pRes = await supabaseClient
+      .from("users")
+      .select("telegram_id", { count: "exact", head: true })
+      .eq("is_premium", true);
+
+    var fRes = await supabaseClient
+      .from("users")
+      .select("telegram_id", { count: "exact", head: true })
+      .or("is_premium.eq.false,is_premium.is.null");
+
+    if (pRes.error || fRes.error) {
+      console.warn("[Statistics] getPremiumStats ошибка:",
+        pRes.error && pRes.error.message,
+        fRes.error && fRes.error.message);
+      return null;
+    }
+
+    var premium = pRes.count || 0;
+    var free    = fRes.count || 0;
+    return { premiumCount: premium, freeCount: free, total: premium + free };
+  } catch (e) {
+    console.warn("[Statistics] getPremiumStats exception:", e && e.message);
+    return null;
+  }
+}
+
+window.trackUserVisit = trackUserVisit;
+window.getPremiumStats = getPremiumStats;
+
 window.addEventListener("load", function () {
   console.log("[Supabase] window.load — запускаем saveCurrentUser через 500 мс");
 
   setTimeout(function () {
-    saveCurrentUser().catch(function (err) {
-      console.error("[Supabase] saveCurrentUser финальная ошибка:", err);
-    });
+    saveCurrentUser()
+      .then(function () {
+        // STATISTICS COLLECTION — после успешного saveCurrentUser строка
+        // в users точно есть → можно UPDATE'ить геолокацию.
+        return trackUserVisit();
+      })
+      .catch(function (err) {
+        console.error("[Supabase] saveCurrentUser/trackUserVisit ошибка:", err);
+      });
   }, 500);
 });
 

@@ -717,6 +717,24 @@ Protocol анализирует цель…
      приложение возвращается в начальное состояние (как при первом запуске). -->
 <button id="profileResetPlan" class="profile-btn danger" data-i18n="profile.fullReset">🆕 Начать сначала</button>
 
+<!-- STATISTICS COLLECTION — публичная статистика пользователей: premium / free / total.
+     Подтягивается из таблицы users через getPremiumStats() в app.js. -->
+<div class="profile-stats" id="profileStats" aria-live="polite">
+  <div class="profile-stats-title" data-i18n="profile.stats.title">Статистика сообщества</div>
+  <div class="profile-stats-row">
+    <span class="profile-stats-label" data-i18n="profile.stats.premium">Пользователей с премиум</span>
+    <span class="profile-stats-value" id="profileStatsPremium">—</span>
+  </div>
+  <div class="profile-stats-row">
+    <span class="profile-stats-label" data-i18n="profile.stats.free">Пользователей без премиум</span>
+    <span class="profile-stats-value" id="profileStatsFree">—</span>
+  </div>
+  <div class="profile-stats-row profile-stats-row--total">
+    <span class="profile-stats-label" data-i18n="profile.stats.total">Всего</span>
+    <span class="profile-stats-value" id="profileStatsTotal">—</span>
+  </div>
+</div>
+
 <!-- SOCIAL LINKS IN PROFILE — круглые иконки соцсетей в едином премиум-стиле.
      Кликабельны: Telegram, X, Instagram. Gmail — статичная иконка (пока без ссылки). -->
 <div class="profile-socials" role="navigation" aria-label="Social links">

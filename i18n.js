@@ -338,6 +338,11 @@
       "profile.resetPlan": "🔄 Сбросить план",
       // NEW: Full reset button in Profile — финальный текст кнопки "Начать сначала".
       "profile.fullReset": "🆕 Начать сначала",
+      // STATISTICS COLLECTION — заголовки блока статистики сообщества
+      "profile.stats.title":   "Статистика сообщества",
+      "profile.stats.premium": "Пользователей с премиум",
+      "profile.stats.free":    "Пользователей без премиум",
+      "profile.stats.total":   "Всего",
       // NEW: Report problem feature
       "profile.reportProblem": "🐞 Сообщить о проблеме",
       "report.modal.title": "Сообщить о проблеме",
@@ -1356,6 +1361,11 @@
       "profile.resetPlan": "🔄 Reset Plan",
       // NEW: Full reset button in Profile
       "profile.fullReset": "🆕 Start Over",
+      // STATISTICS COLLECTION — community stats block headings
+      "profile.stats.title":   "Community Stats",
+      "profile.stats.premium": "Premium users",
+      "profile.stats.free":    "Free users",
+      "profile.stats.total":   "Total",
       // NEW: Report problem feature
       "profile.reportProblem": "🐞 Report a problem",
       "report.modal.title": "Report a problem",
