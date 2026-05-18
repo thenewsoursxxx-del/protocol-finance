@@ -135,7 +135,10 @@ viewport-fit=cover" />
     <div class="flexible-content-inner">
 
     <!-- Step 1: Income -->
-    <div class="cf-card cf-card--configured" id="cfCardIncome">
+    <!-- VISUAL DISTINCTION: expenses red border — оставляем изумрудную обводку
+         (cf-card--configured + cf-card--income), чтобы доходы визуально выделялись
+         премиум-зелёным акцентом. -->
+    <div class="cf-card cf-card--configured cf-card--income" id="cfCardIncome">
       <div class="cf-card-header">
         <div class="cf-step-num">1</div>
         <div class="cf-card-header-text">
@@ -203,7 +206,10 @@ viewport-fit=cover" />
     </div>
 
     <!-- Step 2: Expenses -->
-    <div class="cf-card cf-card--configured" id="cfCardExpense">
+    <!-- VISUAL DISTINCTION: expenses red border — добавляем модификатор cf-card--expense,
+         который в style.css переопределяет emerald-обводку на accent-red, чтобы блок
+         расходов сразу визуально отличался от блока доходов. -->
+    <div class="cf-card cf-card--configured cf-card--expense" id="cfCardExpense">
       <div class="cf-card-header">
         <div class="cf-step-num">2</div>
         <div class="cf-card-header-text">
@@ -1798,7 +1804,25 @@ z-index: 999999;
       <input id="csDateInput" type="date" />
     </div>
 
-    <button type="button" id="csContinueBtn" class="cs-primary-btn" data-i18n="cs.modal.continue">Продолжить</button>
+    <!-- UNIFIED CUSTOM SCHEDULE FLOW — live-preview: показывает, сколько будет отложено
+         на цель из введённой суммы. Обновляется в реальном времени при изменении
+         поля «Сумма поступления». Виден только для side="income"; для расходов
+         блок скрыт (расход не отлагается на цель). -->
+    <div class="cs-live-preview" id="csLivePreview" style="display:none">
+      <div class="cs-live-preview-row">
+        <span class="cs-live-preview-label" data-i18n="cs.preview.willDeposit">Будет отложено на цель</span>
+        <strong class="cs-live-preview-amount" id="csLivePreviewAmount">0 ₽</strong>
+      </div>
+      <div class="cs-live-preview-mode" id="csLivePreviewMode">—</div>
+    </div>
+
+    <!-- UNIFIED CUSTOM SCHEDULE FLOW — следующая периодичность (бэдж под live-preview).
+         Текст вида «Дальше — каждую неделю» / «… каждые две недели» / «… каждый месяц» /
+         «Каждый ввод вручную». Помогает понять, как именно будут учитываться будущие
+         события после этого ввода. -->
+    <div class="cs-next-occurrence" id="csNextOccurrence" style="display:none">—</div>
+
+    <button type="button" id="csContinueBtn" class="cs-primary-btn" data-i18n="cs.alloc.depositBtn">Отложить на цель</button>
   </div>
 
   <!-- Step 2: Allocation preview — показывается только для income (не для expense и не при редактировании) -->

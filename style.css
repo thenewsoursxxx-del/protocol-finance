@@ -3308,6 +3308,27 @@ body.flip-fix-pending .flip-wrapper {
   border-color: rgba(16, 185, 129, 0.18);
 }
 
+/* VISUAL DISTINCTION: expenses red border —
+   Блок «Доходы» сохраняет изумрудную обводку (cf-card--income).
+   Блок «Расходы» получает accent-red обводку, чтобы пользователь сразу
+   визуально различал два блока в премиум-стиле. Используем тот же 0.18 alpha,
+   что и у emerald-варианта — это сохраняет ровную «приглушённую» интенсивность,
+   совпадающую с остальным премиум UI приложения. */
+.cf-card--income {
+  border-color: rgba(16, 185, 129, 0.22);
+}
+
+.cf-card--expense {
+  border-color: rgba(239, 68, 68, 0.28);
+  background: rgba(239, 68, 68, 0.025);
+}
+
+.cf-card--expense .cf-step-num {
+  background: rgba(239, 68, 68, 0.16);
+  color: #fca5a5;
+  border-color: rgba(239, 68, 68, 0.28);
+}
+
 .cf-card-header {
   display: flex;
   align-items: flex-start;
@@ -9136,6 +9157,57 @@ body.reduce-motion .settings-seg-btn {
   font-size: 12px;
   color: rgba(255, 255, 255, 0.55);
   line-height: 1.45;
+}
+
+/* UNIFIED CUSTOM SCHEDULE FLOW — live-preview блок: показывает «будет отложено: X ₽».
+   Премиум-стилистика: emerald-градиент с лёгким glow, ровно вписывается между
+   полем даты и кнопкой «Отложить на цель». */
+.cs-live-preview {
+  margin-top: 18px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(16, 185, 129, 0.10), rgba(16, 185, 129, 0.04));
+  border: 1px solid rgba(16, 185, 129, 0.22);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cs-live-preview-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.cs-live-preview-label {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
+}
+
+.cs-live-preview-amount {
+  font-size: 20px;
+  font-weight: 700;
+  color: #6ee7b7;
+  letter-spacing: -0.2px;
+  text-shadow: 0 0 24px rgba(16, 185, 129, 0.18);
+}
+
+.cs-live-preview-mode {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.45);
+  font-weight: 500;
+}
+
+/* UNIFIED CUSTOM SCHEDULE FLOW — бейдж «следующая периодичность» под live-preview. */
+.cs-next-occurrence {
+  margin-top: 10px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.55);
+  text-align: center;
+  font-weight: 500;
+  letter-spacing: 0.2px;
 }
 
 .cs-primary-btn {

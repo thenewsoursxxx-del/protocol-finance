@@ -5625,6 +5625,7 @@ function initCashflowSettings() {
     haptic("light");
     var freq = btn.dataset.freq;
     var forIncome = block && block.getAttribute("data-for") === "income";
+    var sideLabel = forIncome ? "income" : "expense";
     if (forIncome) {
       incomeFrequency = freq;
       updateState({ incomeFrequency: freq });
@@ -5639,6 +5640,20 @@ function initCashflowSettings() {
     // NEW: логика fixed vs variable 11.05.2026 — refresh card summary + cashflow events.
     recalcPlan();
     saveFullState();
+
+    // UNIFIED CUSTOM SCHEDULE FLOW — после смены частоты сразу открываем единую
+    // модалку «Записать поступление / расход». Это даёт пользователю общий flow
+    // для всех периодичностей: weekly / biweekly / monthly / custom — одно и то
+    // же окно с динамической подсказкой и кнопкой «Отложить на цель».
+    if (typeof window.openCustomScheduleSheet === "function") {
+      // Открываем модалку только если type=variable (для variable-side ввод имеет
+      // смысл; для fixed-side частота меняется через свои элементы UI).
+      var sNow = (typeof getState === "function") ? getState() : {};
+      var sideType = forIncome ? (sNow.incomeType || "fixed") : (sNow.expenseType || "fixed");
+      if (sideType === "variable") {
+        window.openCustomScheduleSheet(sideLabel, { frequency: freq });
+      }
+    }
   }
 
   if (incomeFreqBlock) incomeFreqBlock.addEventListener("click", function (e) { onFreqClick(incomeFreqBlock, e); });
@@ -5673,7 +5688,12 @@ function initCashflowSettings() {
     var sideType = type === "income"
       ? (getState().incomeType || "fixed")
       : (getState().expenseType || "fixed");
-    var shouldShow = (freq === "custom" && sideType === "variable");
+    // UNIFIED CUSTOM SCHEDULE FLOW — блок ручного ввода `.custom-schedule-block`
+    // теперь виден для ВСЕХ variable-периодичностей (weekly / biweekly / monthly
+    // / custom), потому что единая модалка «Записать поступление» создаёт запись
+    // в customScheduleEntries при любой частоте. Так пользователь видит полную
+    // историю вводов и reminder'ы независимо от выбранного freq.
+    var shouldShow = (sideType === "variable");
     // CUSTOM SCHEDULE LOGIC — старый picker дней месяца полностью заменён
     // блоком ручного ввода `.custom-schedule-block`. Прежний wrap скрыт всегда,
     // чтобы не путать пользователя двумя UI одновременно. Сам элемент оставлен
@@ -5964,10 +5984,24 @@ initCashflowSettings();
   var allocBaseEl = document.getElementById("csAllocBase");
   var depositBtn = document.getElementById("csDepositBtn");
   var skipDepositBtn = document.getElementById("csSkipDepositBtn");
+  // UNIFIED CUSTOM SCHEDULE FLOW — DOM-узлы для live-preview и бейджа периодичности.
+  var livePreviewEl = document.getElementById("csLivePreview");
+  var livePreviewAmountEl = document.getElementById("csLivePreviewAmount");
+  var livePreviewModeEl = document.getElementById("csLivePreviewMode");
+  var nextOccurrenceEl = document.getElementById("csNextOccurrence");
 
   // CUSTOM SCHEDULE LOGIC — текущий контекст модалки (закрыта по умолчанию).
   // editId !== null → режим редактирования существующей записи; шаг alloc пропускаем.
-  var ctx = { side: "income", editId: null, pendingDeposit: 0, baseAmount: 0, entryDate: "" };
+  // UNIFIED CUSTOM SCHEDULE FLOW — добавлено поле `frequency` (weekly / biweekly /
+  // monthly / custom) — определяется по кнопке периодичности, открывшей модалку.
+  var ctx = {
+    side: "income",
+    editId: null,
+    pendingDeposit: 0,
+    baseAmount: 0,
+    entryDate: "",
+    frequency: "custom"
+  };
 
   // ── Helpers ───────────────────────────────────────────────────────────────
 
@@ -6069,8 +6103,39 @@ initCashflowSettings();
   //     free:              max(0, totalIncome − totalExpense)
   //     counterpart:       { amount, kind } — для UI-текста «учтено …»
   //   }
-  function _computeDepositForEntry(/* side, amount — игнорируются */) {
+  function _computeDepositForEntry(side, entryAmount) {
     var s = (typeof getState === "function") ? getState() : {};
+
+    // UNIFIED CUSTOM SCHEDULE FLOW — per-entry расчёт для non-custom freq.
+    // Когда пользователь записывает поступление через единую модалку с частотой
+    // weekly / biweekly / monthly, каждое поступление — самостоятельное событие,
+    // и его deposit должен считаться независимо: deposit = amount × pace.
+    // Аккумулировать его с фикс. monthly counterpart'ом некорректно (дало бы
+    // deposit=0 при первой weekly-записи на фоне monthly expense).
+    // Для freq=custom оставляем прежнюю v3-логику accumulated-расчёта ниже.
+    if (entryAmount != null) {
+      var sideKey0 = (side === "expense") ? "expense" : "income";
+      var sideFreq0 = s[sideKey0 + "Frequency"] || "monthly";
+      if (sideFreq0 !== "custom") {
+        var amt0 = Number(entryAmount) || 0;
+        // pay-yourself-first: фиксированный % от каждого поступления идёт на цель,
+        // вне зависимости от counterpart (расходов). Cash-flow engine учитывает
+        // counterpart отдельно при построении прогноза.
+        var depPerEntry = Math.max(0, Math.round(amt0 * _paceFraction()));
+        return {
+          deposit: depPerEntry,
+          targetDeposit: depPerEntry,
+          alreadyDeposited: 0,
+          totalIncome: sideKey0 === "income" ? amt0 : 0,
+          totalExpense: sideKey0 === "expense" ? amt0 : 0,
+          free: sideKey0 === "income" ? amt0 : 0,
+          counterpart: { amount: 0, kind: "none" },
+          __mode: "perEntry",
+          __frequency: sideFreq0
+        };
+      }
+    }
+
     var incomeIsCustom = (s.incomeType === "variable") && ((s.incomeFrequency || "monthly") === "custom");
     var expenseIsCustom = (s.expenseType === "variable") && ((s.expenseFrequency || "monthly") === "custom");
 
@@ -6361,24 +6426,116 @@ initCashflowSettings();
     if (stepAlloc) stepAlloc.style.display = step === "alloc" ? "" : "none";
   }
 
-  function _applySheetTextsForSide(side, isEdit) {
+  // UNIFIED CUSTOM SCHEDULE FLOW — applySheetTextsForSide(side, isEdit, freq).
+  // freq влияет на заголовок модалки, подсказку под полем суммы и бейдж
+  // «дальше — каждую неделю / две недели / месяц / вручную». Кнопка primary
+  // унифицирована: для income всегда «Отложить на цель», для expense — «Сохранить
+  // запись»; для редактирования — «Сохранить».
+  function _applySheetTextsForSide(side, isEdit, freq) {
+    var freqKey = freq || "custom";
+
     if (titleEl) {
-      titleEl.textContent = t(isEdit
-        ? "cs.modal.title.edit." + side
-        : "cs.modal.title." + side);
+      if (isEdit) {
+        titleEl.textContent = t("cs.modal.title.edit." + side);
+      } else {
+        // Сначала пробуем freq-aware ключ, потом фолбэк на общий.
+        var tFreq = t("cs.modal.title." + side + "." + freqKey);
+        var tFallback = t("cs.modal.title." + side);
+        var hasFreqTitle = tFreq && tFreq !== ("cs.modal.title." + side + "." + freqKey);
+        titleEl.textContent = hasFreqTitle ? tFreq : tFallback;
+      }
     }
     if (amountLabelEl) amountLabelEl.textContent = t("cs.field.amount." + side);
-    if (amountHintEl) amountHintEl.textContent = t("cs.field.amountHint." + side);
+    if (amountHintEl) {
+      // Динамическая подсказка — главное визуальное отличие при разных freq.
+      var hintKey = "cs.field.amountHint." + side + "." + freqKey;
+      var hintTr = t(hintKey);
+      var hintFallback = t("cs.field.amountHint." + side);
+      amountHintEl.textContent = (hintTr && hintTr !== hintKey) ? hintTr : hintFallback;
+    }
     if (modeBadgeEl) {
       modeBadgeEl.textContent = _modeLabel();
       modeBadgeEl.style.display = side === "income" ? "" : "none";
     }
+    if (nextOccurrenceEl) {
+      // Скрываем бейдж в режиме редактирования (это не первая настройка).
+      if (isEdit) {
+        nextOccurrenceEl.style.display = "none";
+      } else {
+        var nextKey = "cs.modal.nextOccurrence." + freqKey;
+        var nextTr = t(nextKey);
+        nextOccurrenceEl.textContent = (nextTr && nextTr !== nextKey) ? nextTr : "";
+        nextOccurrenceEl.style.display = nextOccurrenceEl.textContent ? "" : "none";
+      }
+    }
     if (continueBtn) {
-      // Income → "Продолжить" (откроет шаг alloc); expense / edit → "Сохранить".
-      continueBtn.textContent = (side === "income" && !isEdit) ? t("cs.modal.continue") : t("cs.modal.save");
+      if (isEdit) {
+        continueBtn.textContent = t("cs.modal.save");
+      } else if (side === "income") {
+        // Single-step flow — главная кнопка сразу «Отложить на цель».
+        continueBtn.textContent = t("cs.alloc.depositBtn");
+      } else {
+        // Расход не отлагается — просто фиксируем запись.
+        continueBtn.textContent = t("cs.modal.save");
+      }
     }
   }
 
+  // UNIFIED CUSTOM SCHEDULE FLOW — live-preview расчёт «сколько уйдёт на цель».
+  // Обновляется на каждый input в поле «Сумма поступления». Для side="income"
+  // показывает блок с deposit-суммой; для expense — скрывает блок (расход не идёт
+  // на цель напрямую).
+  function _updateLivePreview() {
+    if (!livePreviewEl) return;
+    var isExpense = ctx.side === "expense";
+    var isEdit = !!ctx.editId;
+
+    // Для expense и режима редактирования прячем preview.
+    if (isExpense || isEdit) {
+      livePreviewEl.style.display = "none";
+      return;
+    }
+
+    var raw = (typeof parseNumber === "function")
+      ? parseNumber(amountInput ? amountInput.value : "0")
+      : Number(amountInput && amountInput.value || 0);
+    if (!raw || raw <= 0) {
+      livePreviewEl.style.display = "none";
+      return;
+    }
+
+    // Вычисляем deposit ОТ ВВЕДЁННОЙ суммы. Для freq!=custom — per-entry режим
+    // (deposit = amount × pace). Для freq=custom — accumulated режим (с учётом
+    // уже накопленных entries; live-preview показывает «что будет после этого ввода»).
+    var calc;
+    if (ctx.frequency === "custom") {
+      // Имитация: что станет с pending, если добавим эту запись. Для упрощения
+      // показываем «было бы accumulated pending + amount × pace», но это путаница.
+      // Просто берём текущий pending + amount × pace потенциально нового.
+      // Проще: показать amount × pace как ориентир (даже в custom режиме это honest).
+      var dep = Math.max(0, Math.round(raw * _paceFraction()));
+      calc = { deposit: dep, targetDeposit: dep };
+    } else {
+      calc = _computeDepositForEntry("income", raw);
+    }
+
+    if (livePreviewAmountEl) {
+      livePreviewAmountEl.textContent = (typeof fmtAmount === "function")
+        ? fmtAmount(calc.deposit)
+        : String(calc.deposit);
+    }
+    if (livePreviewModeEl) {
+      var modeName = t("cs.mode." + _currentSaveMode())
+        .replace(/^Режим:\s*/i, "")
+        .replace(/^Mode:\s*/i, "");
+      livePreviewModeEl.textContent = t("cs.preview.modeHint", { mode: modeName });
+    }
+    livePreviewEl.style.display = "";
+  }
+
+  // UNIFIED CUSTOM SCHEDULE FLOW — openCustomScheduleSheet(side, opts) теперь
+  // принимает opts.frequency для динамической подсказки и заголовка. Если freq
+  // не передан явно, берём из state (incomeFrequency / expenseFrequency).
   function openCustomScheduleSheet(side, opts) {
     if (!sheet) return;
     opts = opts || {};
@@ -6389,7 +6546,14 @@ initCashflowSettings();
     ctx.baseAmount = 0;
     ctx.entryDate = "";
 
-    _applySheetTextsForSide(ctx.side, isEdit);
+    // Определяем frequency: явный opts.frequency > текущий state > "custom" как safe default.
+    var _s = (typeof getState === "function") ? getState() : {};
+    var stateFreq = ctx.side === "income"
+      ? (_s.incomeFrequency || "monthly")
+      : (_s.expenseFrequency || "monthly");
+    ctx.frequency = opts.frequency || stateFreq || "custom";
+
+    _applySheetTextsForSide(ctx.side, isEdit, ctx.frequency);
     _showStep("form");
 
     // Заполняем поля. Для редактирования — текущие значения, иначе чистая форма.
@@ -6405,6 +6569,10 @@ initCashflowSettings();
       if (amountInput) amountInput.value = "";
       if (dateInput) dateInput.value = _todayIso();
     }
+
+    // UNIFIED CUSTOM SCHEDULE FLOW — обновляем live-preview по начальному значению
+    // (для edit-режима покажет amount × pace; для нового ввода — скрыт до ввода суммы).
+    _updateLivePreview();
 
     if (typeof ProtoSheet !== "undefined") ProtoSheet.open(sheet, overlay);
   }
@@ -6493,21 +6661,20 @@ initCashflowSettings();
     }
     updateState({ customScheduleEntries: arr });
 
-    // CUSTOM SCHEDULE v2 - fix main plan display — Sticky-reminder ставим
-    // только если ПРОТИВОПОЛОЖНАЯ сторона тоже в custom-режиме (иначе фикс.
-    // counterpart уже учтён в расчёте и предлагать дополнительные ручные
-    // записи бессмысленно).
+    // UNIFIED CUSTOM SCHEDULE FLOW — после отложения поднимаем reminder
+    // противоположной стороны, если она в variable-режиме (любая freq, не
+    // только custom). Это даёт пользователю единое поведение для всех freq.
     var sNow = (typeof getState === "function") ? getState() : {};
-    var incomeIsCustom = (sNow.incomeType === "variable") && ((sNow.incomeFrequency || "monthly") === "custom");
-    var expenseIsCustom = (sNow.expenseType === "variable") && ((sNow.expenseFrequency || "monthly") === "custom");
+    var incomeIsVariable = (sNow.incomeType || "fixed") === "variable";
+    var expenseIsVariable = (sNow.expenseType || "fixed") === "variable";
     if (entry.side === "income") {
       updateState({
-        customScheduleExpensePrompt: !!expenseIsCustom,
+        customScheduleExpensePrompt: !!expenseIsVariable,
         customScheduleIncomePrompt: false
       });
     } else {
       updateState({
-        customScheduleIncomePrompt: !!incomeIsCustom,
+        customScheduleIncomePrompt: !!incomeIsVariable,
         customScheduleExpensePrompt: false
       });
     }
@@ -6541,45 +6708,99 @@ initCashflowSettings();
         return;
       }
 
-      // FIX: custom schedule accumulation + counters update — alloc-step
-      // показываем, если есть что отложить (pendingDeposit > 0). При нулевом
-      // pending (всё уже отложено или counterpart покрывает доход) сразу
-      // закрываем модалку с подходящим toast'ом и reminder'ом.
+      // UNIFIED CUSTOM SCHEDULE FLOW — single-step flow. После клика «Отложить
+      // на цель» (или «Сохранить запись» для расхода) приложение:
+      //   1. Фиксирует периодичность (incomeFrequency / expenseFrequency).
+      //   2. Для non-custom freq: сохраняет fixedIncomeAmount/fixedExpenseAmount
+      //      + startDate, чтобы engine начал генерировать будущие periodic-события
+      //      автоматически.
+      //   3. Добавляет запись в customScheduleEntries (история ручных вводов).
+      //   4. Для income: считает deposit и сразу делает commit (откладывает).
+      //   5. Показывает toast + поднимает reminder противоположной стороны.
+      //   6. Закрывает модалку.
+      var sBefore = (typeof getState === "function") ? getState() : {};
+      var freqNow = ctx.frequency || "custom";
 
+      // ── 1+2. Сохраняем периодичность и фиксированную сумму для non-custom freq.
+      var patch = {};
+      if (ctx.side === "income") {
+        patch.incomeFrequency = freqNow;
+        if (freqNow !== "custom") {
+          patch.fixedIncomeAmount = rawAmount;
+          patch.incomeStartDate = dateVal;
+        }
+      } else {
+        patch.expenseFrequency = freqNow;
+        if (freqNow !== "custom") {
+          patch.fixedExpenseAmount = rawAmount;
+          patch.expenseStartDate = dateVal;
+        }
+      }
+      if (Object.keys(patch).length > 0 && typeof updateState === "function") {
+        updateState(patch);
+      }
+
+      // ── 3. Добавляем запись в журнал.
       var entry = _addEntry(ctx.side, rawAmount, dateVal);
       ctx.baseAmount = rawAmount;
       ctx.entryDate = dateVal;
       ctx.editId = entry.id;
 
-      // ВАЖНО: _computeDepositForEntry читает state ПОСЛЕ _addEntry,
-      // поэтому totalIncome/totalExpense уже включают только что добавленную
-      // запись — это и даёт накопительный эффект.
+      // ── 4. Считаем deposit. Для freq!=custom — per-entry режим; для custom —
+      //      accumulated (включает только что добавленную запись).
       var calc = _computeDepositForEntry(ctx.side, rawAmount);
       ctx.pendingDeposit = calc.deposit;
 
-      var _sNow = (typeof getState === "function") ? getState() : {};
-      var _incIsCustom = (_sNow.incomeType === "variable") && ((_sNow.incomeFrequency || "monthly") === "custom");
-      var _expIsCustom = (_sNow.expenseType === "variable") && ((_sNow.expenseFrequency || "monthly") === "custom");
-
-      // Если откладывать нечего — пропускаем alloc-step.
-      if (calc.deposit <= 0) {
-        if (ctx.side === "income") {
-          _setExpensePrompt(!!_expIsCustom);
-          if (typeof showToast === "function") showToast(t("cs.toast.added.income"), "success");
+      // ── 5. Для INCOME с положительным deposit — сразу делаем commit.
+      //      Для EXPENSE — просто записываем (расход не идёт на цель напрямую).
+      if (ctx.side === "income" && calc.deposit > 0) {
+        // Проверяем, что есть цель — иначе откладывать не на что.
+        var goalVal = 0;
+        try {
+          var gi = document.getElementById("goal");
+          goalVal = gi ? (typeof parseNumber === "function" ? parseNumber(gi.value || "0") : Number(gi.value) || 0) : 0;
+        } catch (er) { goalVal = 0; }
+        if (goalVal > 0) {
+          if (typeof haptic === "function") haptic("success");
+          _commitDeposit(entry, calc.deposit);
+          if (typeof showToast === "function") {
+            showToast(t("cs.toast.deposited", { amount: _amount(calc.deposit) }), "success");
+          }
         } else {
-          _setExpensePrompt(false);
-          _setIncomePrompt(!!_incIsCustom);
-          if (typeof showToast === "function") showToast(t("cs.toast.added.expense"), "success");
+          if (typeof showToast === "function") showToast(t("cs.toast.added.income"), "success");
         }
-        closeCustomScheduleSheet();
-        if (typeof recalcPlan === "function") recalcPlan();
-        return;
+      } else if (ctx.side === "income") {
+        // Доход добавлен, но откладывать нечего (deposit=0).
+        if (typeof showToast === "function") showToast(t("cs.toast.added.income"), "success");
+      } else {
+        // Расход.
+        if (typeof showToast === "function") showToast(t("cs.toast.added.expense"), "success");
       }
 
-      // Заполняем alloc-step.
-      _renderAllocStep(ctx.side, rawAmount, calc);
-      _showStep("alloc");
+      // UNIFIED CUSTOM SCHEDULE FLOW — финальный источник правды для reminder'ов.
+      // Вызываем ПОСЛЕ всех updateState (в т.ч. внутри _commitDeposit), чтобы
+      // ничего нас не перетёрло. Reminder поднимаем только если противоположная
+      // сторона в variable-режиме (иначе он бесполезен).
+      var _sAfter = (typeof getState === "function") ? getState() : sBefore;
+      var _incomeIsVariable = (_sAfter.incomeType || "fixed") === "variable";
+      var _expenseIsVariable = (_sAfter.expenseType || "fixed") === "variable";
+      if (ctx.side === "income") {
+        _setIncomePrompt(false);
+        _setExpensePrompt(!!_expenseIsVariable);
+      } else {
+        _setExpensePrompt(false);
+        _setIncomePrompt(!!_incomeIsVariable);
+      }
+
+      closeCustomScheduleSheet();
       if (typeof recalcPlan === "function") recalcPlan();
+      // UNIFIED CUSTOM SCHEDULE FLOW — force-render обоих блоков и main-plan,
+      // чтобы счётчики и история сразу обновились.
+      if (typeof window.renderCustomSchedule === "function") {
+        window.renderCustomSchedule("income");
+        window.renderCustomSchedule("expense");
+      }
+      if (typeof updatePlanHeader === "function") updatePlanHeader();
     });
   }
 
@@ -6711,11 +6932,14 @@ initCashflowSettings();
     ProtoSheet.initSwipe(sheet, closeCustomScheduleSheet);
   }
 
-  // Numeric formatting на amount input.
+  // Numeric formatting на amount input + UNIFIED CUSTOM SCHEDULE FLOW: live-preview.
   if (amountInput) {
     amountInput.addEventListener("input", function (e) {
       if (typeof formatNumericInput === "function") formatNumericInput(e.target);
       else e.target.value = (typeof formatNumber === "function") ? formatNumber(e.target.value) : e.target.value;
+      // UNIFIED CUSTOM SCHEDULE FLOW — синхронно обновляем live-preview, чтобы
+      // пользователь сразу видел рассчитанную сумму отложения.
+      _updateLivePreview();
     });
   }
 
@@ -6767,12 +6991,23 @@ initCashflowSettings();
           if (typeof showToast === "function") showToast(t("cs.toast.noGoal"), "info");
           return;
         }
-        // FIX: custom schedule accumulation + counters update — inline-кнопка
-        // докидывает оставшийся pending от АККУМУЛИРОВАННЫХ сумм (а не от одной
-        // записи). Это значит, что одно нажатие закрывает весь period-debt;
-        // если pending=0 — показываем info-toast и ничего не делаем.
-        var calcD = _computeDepositForEntry("income");
-        var dep = calcD.deposit;
+        // UNIFIED CUSTOM SCHEDULE FLOW — inline-кнопка ↑ работает в двух режимах
+        // в зависимости от freq:
+        //   • freq=custom — аккумулированный pending (закрывает весь period-debt).
+        //   • freq!=custom — per-entry pending (только эта запись: amount×pace − deposited).
+        // Это устраняет несоответствие после смены freq и сохраняет premium UX:
+        // пользователь докидывает ровно то, что не отлажено по конкретному поступлению.
+        var sInline = (typeof getState === "function") ? getState() : {};
+        var freqInline = sInline.incomeFrequency || "monthly";
+        var calcD, dep;
+        if (freqInline === "custom") {
+          calcD = _computeDepositForEntry("income");
+          dep = calcD.deposit;
+        } else {
+          var perTarget = Math.max(0, Math.round((entD.amount || 0) * _paceFraction()));
+          dep = Math.max(0, perTarget - (entD.deposited || 0));
+          calcD = { deposit: dep };
+        }
         if (dep <= 0) {
           if (typeof showToast === "function") showToast(t("cs.toast.alreadyDeposited"), "info");
           return;
