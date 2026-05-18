@@ -86,8 +86,11 @@
       // не пытался добавить расход через этот раздел (для расходов есть
       // отдельная кнопка «Непредвиденный расход» на экране с графиком).
       "flex.events.title": "Разовые доходы",
-      "flex.events.subtitle": "Премия, подарок, возврат долга, продажа",
-      "flex.events.hint": "Для разовых непредсказуемых доходов (премия, подарок, возврат долга, продажа вещей и т.д.). Регулярные доходы настраиваются в блоках выше.",
+      // FINANCIAL EVENTS - INCOME ONLY — subtitle теперь directive (куда идти за
+      // регулярными доходами), а не повтор примеров. Примеры остались только
+      // в одном месте — в блоке cf-event-examples.
+      "flex.events.subtitle": "Регулярные доходы настраиваются в блоках выше",
+      "flex.events.hint": "Регулярные доходы настраиваются в блоках выше",
       "flex.events.examples": "Примеры: премия, подарок, возврат долга, продажа вещей, фриланс-подработка",
       "flex.events.add": "+ Добавить доход",
       "flex.incomeAmount.placeholder": "Сумма дохода",
@@ -1071,8 +1074,10 @@
       // unpredictable income (bonus, gift, debt repayment, sales, etc.). Expenses
       // are handled by a separate «Unexpected expense» button on the graph screen.
       "flex.events.title": "One-off income",
-      "flex.events.subtitle": "Bonus, gift, debt repayment, sale",
-      "flex.events.hint": "For one-off unpredictable income (bonus, gift, debt repayment, sale of items, etc.). Recurring income is configured in the blocks above.",
+      // FINANCIAL EVENTS - INCOME ONLY — subtitle is now a directive, not a
+      // repetition of the examples. Examples live only in cf-event-examples.
+      "flex.events.subtitle": "Recurring income is configured in the blocks above",
+      "flex.events.hint": "Recurring income is configured in the blocks above",
       "flex.events.examples": "Examples: bonus, gift, debt repayment, sale of items, freelance gig",
       "flex.events.add": "+ Add income",
       "flex.incomeAmount.placeholder": "Income amount",
