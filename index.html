@@ -561,9 +561,10 @@ Protocol анализирует данные…
 Protocol анализирует цель…
 </div>
 
-<button id="advancedSettingsGoals" class="advanced-settings-btn" type="button" data-i18n="goals.advancedSettings">
-Расширенные настройки
-</button>
+<!-- PREMIUM SYSTEM — добавлен lock-бадж, premium-gate-btn и data-premium-gate.
+     data-i18n перенесён на внутренний <span>, иначе applyLanguageToDOM()
+     стирал бы lock-бадж через textContent. -->
+<button id="advancedSettingsGoals" class="advanced-settings-btn premium-gate-btn" type="button" data-premium-gate="advanced"><span data-i18n="goals.advancedSettings">Расширенные настройки</span><span class="premium-lock-badge" id="lockAdvancedGoals"><span class="premium-lock-lottie" id="lottieAdvancedGoals"></span></span></button>
 </div>
 
 <div class="screen" id="screen-ai">

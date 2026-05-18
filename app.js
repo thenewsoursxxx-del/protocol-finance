@@ -11010,17 +11010,23 @@ function goalSwipeToIndex(idx, goLeft) {
 
   function initAllLockLotties() {
     if (isPremium()) return; // замки не нужны если уже премиум
-    initLockLottie("lottieChangePace", true);
-    initLockLottie("lottieAddDebts",   true);
-    initLockLottie("lottieFlexible",   true);
-    initLockLottie("lottieAdvanced",   true);
-    initLockLottie("lottieAccountStats", true);
+    initLockLottie("lottieChangePace",     true);
+    initLockLottie("lottieAddDebts",       true);
+    initLockLottie("lottieFlexible",       true);
+    initLockLottie("lottieAdvanced",       true);
+    initLockLottie("lottieAdvancedGoals",  true); // PREMIUM SYSTEM — видимая кнопка «Расширенные настройки»
+    initLockLottie("lottieAccountStats",   true);
+    // PREMIUM SYSTEM — динамические stats-кнопки (renderAccountBackCards рендерит их
+    // ДО того, как IIFE экспортирует _initLockLottieDynamic, поэтому делаем повторную
+    // попытку здесь, после старта IIFE).
+    initLockLottie("lottieAccountStats_main",    true);
+    initLockLottie("lottieAccountStats_reserve", true);
   }
 
   // Показываем/скрываем сами badge-элементы
   function syncLockBadgesVisibility() {
     var locked = !isPremium();
-    ["lockChangePace","lockAddDebts","lockFlexible","lockAdvanced"].forEach(function (id) {
+    ["lockChangePace","lockAddDebts","lockFlexible","lockAdvanced","lockAdvancedGoals"].forEach(function (id) {
       var el = document.getElementById(id);
       if (el) el.style.display = locked ? "" : "none";
     });

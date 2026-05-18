@@ -9808,9 +9808,13 @@ body.reduce-motion .settings-seg-btn {
 }
 
 /* PREMIUM SYSTEM — кнопка под замком выглядит АКТИВНОЙ (без затемнения),
-   чтобы пользователь мог по ней кликнуть и попасть в премиум-модалку. */
+   чтобы пользователь мог по ней кликнуть и попасть в премиум-модалку.
+   ВАЖНО: глобальный .premium-locked (строка ~3942) задаёт
+   opacity: 0.35 !important и pointer-events: none — это перебивало
+   нашу кнопку и клики проходили сквозь неё. Override через !important. */
 .premium-gate-btn.premium-locked {
-  opacity: 1;
+  opacity: 1 !important;
+  pointer-events: auto !important;
 }
 
 /* Обратная сторона счёта — hint про статистику */
