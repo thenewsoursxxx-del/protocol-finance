@@ -866,7 +866,8 @@
       "debts.gracePeriodDays": "Льготный период, дней",
       "debts.minPaymentPercent": "Минимальный платёж, %",
       "debts.minPayment": "Минимальный платёж",
-      "debts.annuityHint": "Аннуитетный платёж рассчитывается автоматически по формуле РФ-банков, если поле «Ежемесячный платёж» оставить пустым.",
+      // FRIENDLY ANNUITY TEXT — заменили банковский термин на дружелюбную формулировку
+      "debts.annuityHint": "Платёж равными частями (как в большинстве российских банков). Если не указать свой платёж — приложение рассчитает его автоматически.",
       "debts.cardHint": "Льготный период обычно 50–120 дней (Сбер, Тинькофф, Альфа). В этот период проценты не начисляются. Минимальный платёж — 5–10% от долга.",
       "debts.graceActive": "До конца льготного периода: {days} дн.",
       "debts.graceExpired": "Льготный период истёк — начисляются проценты",
@@ -1863,7 +1864,8 @@
       "debts.gracePeriodDays": "Grace period, days",
       "debts.minPaymentPercent": "Minimum payment, %",
       "debts.minPayment": "Minimum payment",
-      "debts.annuityHint": "Annuity payment is calculated automatically (Russian-bank formula) if the monthly payment field is left empty.",
+      // FRIENDLY ANNUITY TEXT
+      "debts.annuityHint": "Equal-installment payment (as in most Russian banks). If you don't enter your own payment — the app will calculate it for you.",
       "debts.cardHint": "Grace period is typically 50–120 days (Sber, Tinkoff, Alfa). No interest accrues during this period. Minimum payment is 5–10% of the balance.",
       "debts.graceActive": "Grace period ends in: {days} d.",
       "debts.graceExpired": "Grace period expired — interest is being charged",

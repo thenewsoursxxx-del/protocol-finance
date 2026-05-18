@@ -611,6 +611,76 @@ color: #f55;
   border-color: rgba(16, 185, 129, 0.55);
 }
 
+/* ─── SOCIAL LINKS IN PROFILE ──────────────────────────────────
+   Круглые иконки соцсетей в самом низу профиля. Премиум-стиль:
+   стеклянный фон, тонкая обводка, emerald-подсветка при hover/active.
+─────────────────────────────────────────────────────────────── */
+.profile-socials {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 14px;
+  margin-top: 28px;
+  padding: 4px 0 8px;
+}
+
+.profile-social-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.72);
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background 0.25s ease,
+    border-color 0.25s ease,
+    color 0.25s ease,
+    transform 0.18s ease,
+    box-shadow 0.25s ease;
+}
+
+.profile-social-btn svg {
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
+  display: block;
+}
+
+.profile-social-btn:hover,
+.profile-social-btn:focus-visible {
+  background: rgba(16, 185, 129, 0.10);
+  border-color: rgba(16, 185, 129, 0.40);
+  color: #6ee7b7;
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.08);
+}
+
+.profile-social-btn:active {
+  transform: scale(0.94);
+  background: rgba(16, 185, 129, 0.16);
+  border-color: rgba(16, 185, 129, 0.55);
+}
+
+/* Статичная иконка Gmail — без интерактива, чуть приглушённый цвет. */
+.profile-social-btn--static {
+  cursor: default;
+  color: rgba(255, 255, 255, 0.55);
+}
+.profile-social-btn--static:hover,
+.profile-social-btn--static:active {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.55);
+  transform: none;
+  box-shadow: none;
+}
+
 /* NEW: Report problem feature — модалка обратной связи */
 .report-sheet {
   min-height: auto;
