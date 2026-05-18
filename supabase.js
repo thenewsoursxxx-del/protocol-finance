@@ -526,87 +526,9 @@ async function loadInflationRates(opts) {
 window.getInflationRate = getInflationRate;
 window.loadInflationRates = loadInflationRates;
 
-/* ============================================================================
- * STATISTICS COLLECTION — трекинг геолокации, премиума и времени визита.
- * ----------------------------------------------------------------------------
- * trackUserVisit() вызывает Edge Function `track-user`, которая:
- *   1. Берёт реальный IP из заголовков запроса (server-side, не подделать)
- *   2. Геолоцирует через ipapi.co (free)
- *   3. UPSERT'ит users.country/city/last_ip/last_visit/is_premium через
- *      service_role-ключ (защищено от client-side подделок)
- *
- * Запускается после saveCurrentUser() чтобы строка пользователя уже была
- * создана и UPDATE сработал.
- * ============================================================================ */
-
-// STATISTICS: track user visit — устойчивая версия с ожиданием appState.
-// Помимо 300мс retry — fallback на Telegram WebApp identity и подсев
-// appState.telegramId если он не был выставлен state-manager'ом.
-window.trackUserVisit = async () => {
-  try {
-    // Helper: попробовать заполнить appState.telegramId из Telegram WebApp,
-    // если state-manager.js этого не сделал.
-    async function _populateTelegramIdIfMissing() {
-      if (!window.appState || window.appState.telegramId) return;
-      try {
-        const identity = await getVerifiedUserIdentity();
-        if (identity && typeof identity.telegram_id === "number" && identity.telegram_id > 0) {
-          window.appState.telegramId = identity.telegram_id;
-        }
-      } catch (_e) { /* noop */ }
-    }
-
-    // Первая попытка
-    await _populateTelegramIdIfMissing();
-    if (!window.appState || !window.appState.telegramId) {
-      console.log("[Statistics] appState ещё не инициализирован — ждём 300мс");
-      await new Promise(resolve => setTimeout(resolve, 300));
-
-      // Вторая попытка — после паузы
-      await _populateTelegramIdIfMissing();
-      if (!window.appState || !window.appState.telegramId) {
-        console.log("[Statistics] appState так и не инициализирован — пропускаем");
-        return;
-      }
-    }
-
-    const telegramId = window.appState.telegramId;
-    const isPremium = !!window.appState.isPremium;
-
-    console.log(`[Statistics] trackUserVisit → telegram_id: ${telegramId}, premium: ${isPremium}`);
-
-    // SUPABASE_URL и SUPABASE_ANON_KEY уже объявлены вверху этого файла —
-    // используем их вместо хардкода/window.supabase?.supabaseKey (последний
-    // — это CDN-namespace, у него нет supabaseKey, был бы пустой Bearer → 401).
-    const url = SUPABASE_URL.replace(/\/$/, "") + "/functions/v1/track-user";
-
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type":  "application/json",
-        "Authorization": "Bearer " + SUPABASE_ANON_KEY,
-        "apikey":        SUPABASE_ANON_KEY,
-      },
-      body: JSON.stringify({
-        telegram_id: telegramId,
-        is_premium:  isPremium,
-      }),
-    });
-
-    if (response.ok) {
-      console.log("[Statistics] trackUserVisit успешно");
-    } else {
-      console.error(`[Statistics] trackUserVisit failed: ${response.status}`);
-    }
-  } catch (e) {
-    console.error("[Statistics] trackUserVisit ошибка:", e);
-  }
-};
-
 /**
- * STATISTICS COLLECTION — публичная статистика премиум/не-премиум пользователей.
- * Возвращает { premiumCount, freeCount, total }.
- * Использует COUNT через head:true + count:'exact' — пустые строки данных не везём.
+ * Счётчик пользователей с премиум / без премиум (поле users.is_premium).
+ * COUNT через head:true — без выборки строк.
  */
 async function getPremiumStats() {
   try {
@@ -623,7 +545,7 @@ async function getPremiumStats() {
       .or("is_premium.eq.false,is_premium.is.null");
 
     if (pRes.error || fRes.error) {
-      console.warn("[Statistics] getPremiumStats ошибка:",
+      console.warn("[PremiumStats] getPremiumStats ошибка:",
         pRes.error && pRes.error.message,
         fRes.error && fRes.error.message);
       return null;
@@ -633,27 +555,20 @@ async function getPremiumStats() {
     var free    = fRes.count || 0;
     return { premiumCount: premium, freeCount: free, total: premium + free };
   } catch (e) {
-    console.warn("[Statistics] getPremiumStats exception:", e && e.message);
+    console.warn("[PremiumStats] getPremiumStats exception:", e && e.message);
     return null;
   }
 }
 
-// window.trackUserVisit уже присвоен выше (стрелочная функция).
 window.getPremiumStats = getPremiumStats;
 
 window.addEventListener("load", function () {
   console.log("[Supabase] window.load — запускаем saveCurrentUser через 500 мс");
 
   setTimeout(function () {
-    saveCurrentUser()
-      .then(function () {
-        // STATISTICS COLLECTION — после успешного saveCurrentUser строка
-        // в users точно есть → можно UPDATE'ить геолокацию.
-        return window.trackUserVisit();
-      })
-      .catch(function (err) {
-        console.error("[Supabase] saveCurrentUser/trackUserVisit ошибка:", err);
-      });
+    saveCurrentUser().catch(function (err) {
+      console.error("[Supabase] saveCurrentUser финальная ошибка:", err);
+    });
   }, 500);
 });
 

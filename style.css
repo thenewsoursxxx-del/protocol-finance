@@ -671,8 +671,7 @@ color: #f55;
   border-color: rgba(16, 185, 129, 0.55);
 }
 
-/* STATISTICS COLLECTION — блок публичной статистики в профиле.
-   Цифры premium/free/total. Премиум-стиль: dark glass + emerald accents. */
+/* Блок счётчиков premium / free / total на экране профиля. */
 .profile-stats {
   margin-top: 24px;
   padding: 16px 18px;
