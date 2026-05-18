@@ -331,6 +331,12 @@ margin: 20px auto;
   opacity: 0;
   pointer-events: none;
 }
+/* Явный override для .hidden — без этого общий `.hidden { display:none }`
+   (определён ВЫШЕ в файле) проигрывает по source-order правилу
+   `.splash-video-overlay { display:flex }` и overlay показывается при загрузке. */
+.splash-video-overlay.hidden {
+  display: none;
+}
 .splash-video {
   position: absolute;
   inset: 0;
