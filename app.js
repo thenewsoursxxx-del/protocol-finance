@@ -4966,9 +4966,41 @@ document.querySelectorAll(".unexpected-option").forEach(opt => {
         amountInput.value = "";
         amountInput.focus();
       }
+      // FINANCIAL EVENTS - INCOME ONLY (mirror UX for expense) — после выбора
+      // источника сразу показываем «Доступно: X ₽» (накопления или резерв),
+      // и live-валидация ниже подсветит превышение во время ввода.
+      _renderUnexpectedAvailable();
     }
   });
 });
+
+// FINANCIAL EVENTS - INCOME ONLY (mirror UX for expense) — helper для индикатора
+// доступного остатка под input'ом «Сумма расхода». Вызывается:
+//   • при выборе варианта (goal/reserve) — показывает «Доступно: X ₽»;
+//   • из input-listener'a #unexpectedAmount — переключает .over-limit подсветку.
+function _renderUnexpectedAvailable() {
+  var hintEl = document.getElementById("unexpectedAvailable");
+  if (!hintEl) return;
+  if (!selectedExpenseSource || selectedExpenseSource === "skip") {
+    hintEl.style.display = "none";
+    return;
+  }
+  var available = selectedExpenseSource === "reserve"
+    ? (Number(accounts && accounts.reserve) || 0)
+    : (Number(accounts && accounts.main) || 0);
+  var amountInput = document.getElementById("unexpectedAmount");
+  var typed = amountInput ? (parseNumber(amountInput.value || "0") || 0) : 0;
+  var availableFmt = (typeof fmtAmount === "function") ? fmtAmount(available) : String(available);
+
+  if (typed > available && typed > 0) {
+    hintEl.textContent = t("unexpected.overLimit", { amount: availableFmt });
+    hintEl.classList.add("over-limit");
+  } else {
+    hintEl.textContent = t("unexpected.available", { amount: availableFmt });
+    hintEl.classList.remove("over-limit");
+  }
+  hintEl.style.display = "";
+}
 
 // Форматирование ввода суммы
 const unexpectedAmountInput = document.getElementById("unexpectedAmount");
@@ -4979,6 +5011,9 @@ if (unexpectedAmountInput) {
     e.target.value = formatNumber(e.target.value);
     const a = e.target.value.length;
     e.target.selectionEnd = p + (a - b);
+    // FINANCIAL EVENTS - INCOME ONLY (mirror UX for expense) — live-валидация:
+    // обновляем индикатор «доступно / превышено» на каждый ввод цифры.
+    _renderUnexpectedAvailable();
   });
 }
 
@@ -5752,49 +5787,41 @@ function getFixedSides() {
   };
 }
 
-// NEW: sync the editor's type-toggle disabled state to the side configuration.
+// FINANCIAL EVENTS - INCOME ONLY — функция оставлена для обратной совместимости
+// со сторонними вызовами, но больше не блокирует ничего: блок принимает только
+// разовый доход, поэтому previousий механизм disabled-toggle (по фиксированности
+// сторон) перестал быть актуальным. Toggle типа скрыт через display:none в HTML.
 function syncEventEditorTypeAvailability() {
-  if (!eventTypeToggle) return;
-  var fixed = getFixedSides();
-  var btns = eventTypeToggle.querySelectorAll(".mode-btn");
-  for (var i = 0; i < btns.length; i++) {
-    var v = btns[i].dataset.value;
-    var isLocked = (v === "income" && fixed.income) || (v === "expense" && fixed.expense);
-    btns[i].classList.toggle("mode-btn--locked", !!isLocked);
-    btns[i].disabled = !!isLocked;
-    btns[i].setAttribute("aria-disabled", isLocked ? "true" : "false");
-    if (isLocked) {
-      btns[i].setAttribute("title", t("flex.events.disabledTypeShort"));
-    } else {
-      btns[i].removeAttribute("title");
-    }
-  }
-  // Hint row inside the editor
+  if (eventTypeToggle) eventTypeToggle.style.display = "none";
   var hintEl = document.getElementById("eventEditorLockedHint");
-  var bothLocked = fixed.income && fixed.expense;
-  var anyLocked = fixed.income || fixed.expense;
-  if (hintEl) {
-    hintEl.textContent = t("flex.events.disabledHint");
-    hintEl.style.display = anyLocked ? "" : "none";
-  }
-  // Submit + amount disabled when both sides are locked.
-  if (eventSubmitBtn) eventSubmitBtn.disabled = !!bothLocked;
-  if (eventAmountInput) eventAmountInput.disabled = !!bothLocked;
+  if (hintEl) hintEl.style.display = "none";
+  if (eventSubmitBtn) eventSubmitBtn.disabled = false;
+  if (eventAmountInput) eventAmountInput.disabled = false;
 }
 
 function openEventEditor() {
-  // NEW: pick the first side that is currently NOT fixed as default.
-  var fixed = getFixedSides();
-  var defaultType = !fixed.income ? "income"
-                   : (!fixed.expense ? "expense" : "income"); // both locked → still "income" (submit disabled)
-  selectedEventType = defaultType;
-  if (eventTypeToggle) syncEventTypeUI(defaultType);
-  if (eventAmountInput) eventAmountInput.value = "";
+  // FINANCIAL EVENTS - INCOME ONLY — модалка всегда фиксирована на типе "income".
+  // Прежний выбор default-стороны (income/expense) убран: блок «+ Добавить доход»
+  // создаёт только разовые непредсказуемые доходы. Расходы пишутся через
+  // отдельный «Непредвиденный расход» на экране с графиком.
+  selectedEventType = "income";
+  if (eventTypeToggle) syncEventTypeUI("income");
+  if (eventAmountInput) {
+    eventAmountInput.value = "";
+    eventAmountInput.disabled = false;
+  }
   if (eventDateInput) {
     var today = new Date();
     eventDateInput.value = today.toISOString().slice(0, 10);
   }
   syncEventEditorTypeAvailability();
+  // FINANCIAL EVENTS - INCOME ONLY — submit-кнопка активна, если income сторона
+  // в variable-режиме. Если income в fixed — это означает «доход настраивается
+  // централизованно фиксированной суммой», но разовый непредсказуемый доход
+  // мы всё равно разрешаем добавить (это не дублирует периодическое поступление).
+  // Поэтому submit включен ВСЕГДА в новом INCOME-ONLY режиме.
+  if (eventSubmitBtn) eventSubmitBtn.disabled = false;
+  if (eventAmountInput) eventAmountInput.disabled = false;
   ProtoSheet.open(eventEditorSheet, eventEditorOverlay);
 }
 
@@ -5842,17 +5869,10 @@ if (typeof window !== "undefined" && window.visualViewport) {
 
 if (eventSubmitBtn) {
   eventSubmitBtn.addEventListener("click", function () {
-    // NEW: defensive check — block submit if the chosen side is in periodic mode.
-    var fixedSides = getFixedSides();
-    if ((selectedEventType === "income"  && fixedSides.income) ||
-        (selectedEventType === "expense" && fixedSides.expense)) {
-      haptic("error");
-      if (typeof showToast === "function") {
-        showToast(t("flex.events.disabledHint"), "info");
-      }
-      return;
-    }
-
+    // FINANCIAL EVENTS - INCOME ONLY — submit-обработчик упрощён до одного
+    // сценария: разовый непредсказуемый доход. Все expense-ветви удалены,
+    // selectedEventType жёстко = "income". Если в будущем понадобится снова
+    // разрешить расход через этот блок — достаточно вернуть toggle в HTML.
     var rawAmount = parseNumber(eventAmountInput?.value || "0");
     if (!rawAmount) {
       haptic("error");
@@ -5868,53 +5888,53 @@ if (eventSubmitBtn) {
     if (isNaN(eventDate.getTime())) eventDate = new Date();
 
     var H = CashflowEngineHelpers;
-    var isIncome = selectedEventType === "income";
     var s = getState();
 
-    if (isIncome) {
-      var incFreq = s.incomeFrequency || "monthly";
-      var meta = { userCreated: true };
-      if (incFreq === "custom" && Array.isArray(s.incomeMonthDays) && s.incomeMonthDays.length) {
-        meta.monthDays = s.incomeMonthDays;
-      }
-      var normalized = H.normalizeEvent({
-        type: H.EVENT_TYPE.INCOME,
-        amount: rawAmount,
-        frequency: incFreq,
-        startDate: eventDate,
-        meta: meta
-      });
-      var evts = s.cashflowEvents || [];
-      evts.push(normalized);
-      updateState({ cashflowEvents: evts });
-    } else {
-      var expFreq = s.expenseFrequency || "monthly";
-      var expMeta = { to: "main", source: "goal", userCreated: true };
-      if (expFreq === "custom" && Array.isArray(s.expenseMonthDays) && s.expenseMonthDays.length) {
-        expMeta.monthDays = s.expenseMonthDays;
-      }
-      var normalizedExp = H.normalizeEvent({
-        type: H.EVENT_TYPE.EXPENSE,
-        amount: rawAmount,
-        frequency: expFreq,
-        startDate: eventDate,
-        meta: expMeta
-      });
-      var evtsExp = s.cashflowEvents || [];
-      evtsExp.push(normalizedExp);
-      updateState({ cashflowEvents: evtsExp });
+    // FINANCIAL EVENTS - INCOME ONLY — пишем разовый INCOME-event.
+    //   • frequency: ONCE — один раз, без авто-повторения. Это ключевое отличие
+    //     от регулярных доходов (weekly / biweekly / monthly), которые задаются
+    //     в блоках Income/Expenses выше через единую модалку «Записать
+    //     поступление» (UNIFIED PERIODIC FLOW).
+    //   • meta.userCreated = true — engine отличит «ручной разовый» от
+    //     сгенерированного периодического и не задвоит его в прогнозе.
+    //   • meta.kind = "unpredictable-income" — семантический маркер для будущих
+    //     фильтров истории и аналитики (например, статистики «премий за год»).
+    var meta = { userCreated: true, kind: "unpredictable-income" };
+    var normalized = H.normalizeEvent({
+      type: H.EVENT_TYPE.INCOME,
+      amount: rawAmount,
+      frequency: H.FREQUENCY ? H.FREQUENCY.ONCE : "once",
+      startDate: eventDate,
+      meta: meta
+    });
+    var evts = s.cashflowEvents || [];
+    evts.push(normalized);
+    updateState({ cashflowEvents: evts });
 
-      var now = new Date(eventDate);
-      var realTimestamp = new Date().toISOString();
-      now.setDate(1);
-      now.setHours(0, 0, 0, 0);
-      factHistory.push({ value: -rawAmount, date: now, to: "main", timestamp: realTimestamp });
+    // FINANCIAL EVENTS - INCOME ONLY — фиксируем доход в factHistory, чтобы он
+    // сразу отразился в графике баланса / accounts.main (положительное
+    // движение). Это поведение симметрично «Непредвиденному расходу», который
+    // пишет отрицательное движение в ту же факт-историю.
+    var realTimestamp = new Date().toISOString();
+    var periodDate = new Date(eventDate);
+    periodDate.setDate(1);
+    periodDate.setHours(0, 0, 0, 0);
+    if (typeof factHistory !== "undefined" && Array.isArray(factHistory)) {
+      factHistory.push({
+        value: rawAmount,
+        date: periodDate,
+        to: "main",
+        timestamp: realTimestamp
+      });
+    }
+    if (typeof accounts !== "undefined" && accounts) {
+      accounts.main = (Number(accounts.main) || 0) + rawAmount;
     }
 
     haptic("success");
     closeEventEditor();
     recalcPlan();
-    showToast(isIncome ? t("event.incomeAdded") : t("event.expenseAdded"), "success");
+    showToast(t("event.incomeAdded"), "success");
   });
 }
 
@@ -12469,34 +12489,17 @@ function renderFlexModelSummary() {
   }
 
   // ── 6) +Add Event button state ──
-  // NEW: логика fixed vs variable 11.05.2026 — when BOTH sides are fixed the engine
-  // runs in simple mode and ignores cashflow events, so adding events does nothing
-  // useful. Block the button + toast hint when the user clicks it.
-  // OPTIMIZATION: DOM cache.
+  // FINANCIAL EVENTS - INCOME ONLY — кнопка «+ Добавить доход» теперь добавляет
+  // ТОЛЬКО разовый непредсказуемый доход (премия, подарок, возврат долга,
+  // продажа). Это полезно при любой конфигурации сторон: даже если регулярный
+  // доход настроен в fixed-режиме, разовый непредсказуемый доход ему не
+  // противоречит — это отдельная категория. Поэтому previousнее блокирование
+  // по принципу «обе стороны fixed» больше не нужно: снимаем блок всегда.
   var addEventBtn = getEl("addFinancialEvent");
   if (addEventBtn) {
-    var bothFixed = (s.incomeType || "fixed") === "fixed"
-                 && (s.expenseType || "fixed") === "fixed";
-    addEventBtn.classList.toggle("add-event-btn--blocked", !!bothFixed);
-    addEventBtn.setAttribute("aria-disabled", bothFixed ? "true" : "false");
-    if (bothFixed) {
-      addEventBtn.setAttribute("title", t("flex.events.disabledShort"));
-      if (!addEventBtn.dataset.lockHandlerBound) {
-        addEventBtn.addEventListener("click", function (ev) {
-          if (this.classList.contains("add-event-btn--blocked")) {
-            ev.stopPropagation();
-            ev.preventDefault();
-            haptic("error");
-            if (typeof showToast === "function") {
-              showToast(t("flex.events.disabledHint"), "info");
-            }
-          }
-        }, true);
-        addEventBtn.dataset.lockHandlerBound = "1";
-      }
-    } else {
-      addEventBtn.removeAttribute("title");
-    }
+    addEventBtn.classList.remove("add-event-btn--blocked");
+    addEventBtn.setAttribute("aria-disabled", "false");
+    addEventBtn.removeAttribute("title");
   }
 
   // ── 7) Keep the open event editor in sync (e.g. user toggled type while sheet open). ──

@@ -81,10 +81,15 @@
       "flex.customDays.income": "Выберите дни месяца, когда приходит доход",
       "flex.customDays.expense": "Выберите дни месяца, когда происходят расходы",
       "flex.model.title": "Ваша модель",
-      "flex.events.title": "Финансовые события",
-      "flex.events.subtitle": "Добавляйте реальные поступления и расходы",
-      "flex.events.hint": "Отслеживайте каждое финансовое событие для точного прогноза",
-      "flex.events.add": "+ Добавить событие",
+      // FINANCIAL EVENTS - INCOME ONLY — блок переведён исключительно на учёт
+      // разовых непредсказуемых доходов. Все тексты обновлены, чтобы пользователь
+      // не пытался добавить расход через этот раздел (для расходов есть
+      // отдельная кнопка «Непредвиденный расход» на экране с графиком).
+      "flex.events.title": "Разовые доходы",
+      "flex.events.subtitle": "Премия, подарок, возврат долга, продажа",
+      "flex.events.hint": "Для разовых непредсказуемых доходов (премия, подарок, возврат долга, продажа вещей и т.д.). Регулярные доходы настраиваются в блоках выше.",
+      "flex.events.examples": "Примеры: премия, подарок, возврат долга, продажа вещей, фриланс-подработка",
+      "flex.events.add": "+ Добавить доход",
       "flex.incomeAmount.placeholder": "Сумма дохода",
       "flex.expenseAmount.placeholder": "Сумма расхода",
 
@@ -361,6 +366,10 @@
 
       // ── Unexpected expense ──
       "unexpected.title": "Непредвиденный расход",
+      // FINANCIAL EVENTS - INCOME ONLY (mirror UX for expense) — индикатор
+      // доступного к списанию остатка под input'ом «Сумма расхода».
+      "unexpected.available": "Доступно: {amount}",
+      "unexpected.overLimit": "Превышает доступный остаток ({amount})",
       "unexpected.desc": "Этот механизм фиксирует внеплановые расходы. После подтверждения Protocol пересчитает финансовый план, скорректирует срок цели и обновит аналитику.",
       "unexpected.fromGoal": "Потратил из накоплений",
       "unexpected.fromGoalDesc": "Сумма будет вычтена из основного счёта",
@@ -429,13 +438,17 @@
       "debts.breakdown.toSavings": "→ в накопления",
 
       // ── Event editor ──
-      "event.title": "Новое событие",
+      // FINANCIAL EVENTS - INCOME ONLY — модалка теперь имеет фиксированный
+      // заголовок «Непредсказуемый доход» + поясняющий subtitle и examples-блок.
+      "event.title": "Непредсказуемый доход",
+      "event.subtitle": "Премия, подарок, возврат долга, продажа вещей и т.п.",
+      "event.examples": "💡 Например: премия 50 000, подарок 5 000, возврат долга, продажа техники",
       "event.type": "Тип",
       "event.income": "Доход",
       "event.expense": "Расход",
-      "event.amount": "Сумма",
+      "event.amount": "Сумма поступления",
       "event.date": "Дата",
-      "event.add": "Добавить",
+      "event.add": "Добавить доход",
 
       // ── Mode names ──
       "mode.calm": "Спокойный",
@@ -1054,10 +1067,14 @@
       "flex.customDays.income": "Select the days you receive income",
       "flex.customDays.expense": "Select the days expenses occur",
       "flex.model.title": "Your model",
-      "flex.events.title": "Financial events",
-      "flex.events.subtitle": "Add real income and expense events",
-      "flex.events.hint": "Track every financial event for accurate forecasting",
-      "flex.events.add": "+ Add event",
+      // FINANCIAL EVENTS - INCOME ONLY — section is now exclusively for one-off
+      // unpredictable income (bonus, gift, debt repayment, sales, etc.). Expenses
+      // are handled by a separate «Unexpected expense» button on the graph screen.
+      "flex.events.title": "One-off income",
+      "flex.events.subtitle": "Bonus, gift, debt repayment, sale",
+      "flex.events.hint": "For one-off unpredictable income (bonus, gift, debt repayment, sale of items, etc.). Recurring income is configured in the blocks above.",
+      "flex.events.examples": "Examples: bonus, gift, debt repayment, sale of items, freelance gig",
+      "flex.events.add": "+ Add income",
       "flex.incomeAmount.placeholder": "Income amount",
       "flex.expenseAmount.placeholder": "Expense amount",
 
@@ -1332,6 +1349,9 @@
 
       // ── Unexpected expense ──
       "unexpected.title": "Unexpected Expense",
+      // FINANCIAL EVENTS - INCOME ONLY (mirror UX for expense) — available-balance hint.
+      "unexpected.available": "Available: {amount}",
+      "unexpected.overLimit": "Exceeds available balance ({amount})",
       "unexpected.desc": "This records unplanned expenses. After confirmation, Protocol will recalculate your financial plan, adjust the goal timeline, and update analytics.",
       "unexpected.fromGoal": "Spent from savings",
       "unexpected.fromGoalDesc": "The amount will be deducted from the main account",
@@ -1400,13 +1420,16 @@
       "debts.breakdown.toSavings": "→ to savings",
 
       // ── Event editor ──
-      "event.title": "New Event",
+      // FINANCIAL EVENTS - INCOME ONLY — fixed «Unexpected income» modal title.
+      "event.title": "Unexpected income",
+      "event.subtitle": "Bonus, gift, debt repayment, sale of items, etc.",
+      "event.examples": "💡 E.g.: bonus $500, gift $50, debt repayment, gear sale",
       "event.type": "Type",
       "event.income": "Income",
       "event.expense": "Expense",
-      "event.amount": "Amount",
+      "event.amount": "Amount received",
       "event.date": "Date",
-      "event.add": "Add",
+      "event.add": "Add income",
 
       // ── Mode names ──
       "mode.calm": "Relaxed",

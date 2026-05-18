@@ -3472,6 +3472,62 @@ body.flip-fix-pending .flip-wrapper {
   margin-top: 0;
 }
 
+/* FINANCIAL EVENTS - INCOME ONLY — список примеров под подсказкой в карточке
+   «Разовые доходы». Подсвечен accent-blue (тот же оттенок, что у самой карточки),
+   чтобы визуально подсказать пользователю «это вспомогательный пояснительный
+   блок». Расположен между cf-micro-hint и кнопкой «+ Добавить доход». */
+.cf-event-examples {
+  font-size: 12px;
+  line-height: 1.5;
+  color: rgba(147, 180, 253, 0.78);
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(58, 123, 253, 0.06);
+  border: 1px solid rgba(58, 123, 253, 0.14);
+  margin: 4px 0 14px;
+  font-weight: 500;
+}
+
+/* FINANCIAL EVENTS - INCOME ONLY (mirror UX for expense) — индикатор «доступно
+   к списанию» под input'ом «Сумма расхода» на экране «Непредвиденный расход».
+   Помогает пользователю сразу понимать предельную сумму. Подсветка amber
+   (warning) — это не критическая ошибка, а полезная подсказка. */
+.unexpected-available {
+  margin-top: 8px;
+  margin-bottom: 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(245, 158, 11, 0.85);
+  letter-spacing: 0.1px;
+}
+
+.unexpected-available.over-limit {
+  color: #fca5a5;
+}
+
+/* FINANCIAL EVENTS - INCOME ONLY — поясняющий subtitle под заголовком модалки
+   «Непредсказуемый доход» + список примеров под полями. Унифицированы по стилю
+   с .cf-event-examples (тот же accent-blue tint). */
+.event-editor-subtitle {
+  font-size: 13px;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.55);
+  margin: 0 0 16px;
+  font-weight: 500;
+}
+
+.event-editor-examples {
+  font-size: 12px;
+  line-height: 1.5;
+  color: rgba(147, 180, 253, 0.78);
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(58, 123, 253, 0.06);
+  border: 1px solid rgba(58, 123, 253, 0.14);
+  margin-top: 14px;
+  font-weight: 500;
+}
+
 /* ── Legacy compat ── */
 
 .cf-group {

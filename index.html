@@ -288,16 +288,24 @@ viewport-fit=cover" />
     </div>
 
     <!-- Step 4: Events -->
+    <!-- FINANCIAL EVENTS - INCOME ONLY — блок теперь только для добавления
+         разовых непредсказуемых доходов (премия, подарок, возврат долга, продажа
+         вещей и т.д.). Для расходов есть отдельная кнопка «Непредвиденный
+         расход» на экране с графиком (action area внизу). -->
     <div class="cf-card cf-card--events">
       <div class="cf-card-header">
         <div class="cf-step-num">3</div>
         <div class="cf-card-header-text">
-          <div class="cf-card-title" data-i18n="flex.events.title">Финансовые события</div>
-          <div class="cf-card-subtitle" data-i18n="flex.events.subtitle">Добавляйте реальные поступления и расходы</div>
+          <div class="cf-card-title" data-i18n="flex.events.title">Разовые доходы</div>
+          <div class="cf-card-subtitle" data-i18n="flex.events.subtitle">Премия, подарок, возврат долга, продажа</div>
         </div>
       </div>
-      <div class="cf-micro-hint" data-i18n="flex.events.hint">Отслеживайте каждое финансовое событие для точного прогноза</div>
-      <button id="addFinancialEvent" class="add-event-btn" data-i18n="flex.events.add">+ Добавить событие</button>
+      <div class="cf-micro-hint" data-i18n="flex.events.hint">Добавляйте только непредсказуемые поступления — регулярные доходы настраиваются в блоках выше</div>
+      <!-- FINANCIAL EVENTS - INCOME ONLY — наглядный список примеров. -->
+      <div class="cf-event-examples" data-i18n="flex.events.examples">
+        Примеры: премия, подарок, возврат долга, продажа вещей, фриланс-подработка
+      </div>
+      <button id="addFinancialEvent" class="add-event-btn" data-i18n="flex.events.add">+ Добавить доход</button>
     </div>
 
     </div>
@@ -1439,6 +1447,11 @@ Protocol анализирует цель…
     <div class="input-wrap">
       <input id="unexpectedAmount" inputmode="numeric" placeholder="10.000">
     </div>
+    <!-- FINANCIAL EVENTS - INCOME ONLY (mirror UX for expense) — показываем доступный
+         остаток на выбранном счёте (накопления / резерв). Заполняется JS-ом при
+         выборе варианта. Это устраняет ситуацию «ввёл больше, чем есть → shake без
+         объяснения причины». -->
+    <div id="unexpectedAvailable" class="unexpected-available" style="display:none"></div>
     <button id="unexpectedConfirm" class="unexpected-confirm-btn" data-i18n="unexpected.confirm">Подтвердить</button>
   </div>
 
@@ -1755,13 +1768,23 @@ z-index: 999999;
 </div>
 
 <!-- ===== EVENT EDITOR SHEET ===== -->
+<!-- FINANCIAL EVENTS - INCOME ONLY — модалка теперь фиксирована на «доход».
+     Toggle типа скрыт (display:none) для обратной совместимости со скриптами;
+     selectedEventType всегда = "income". Добавлен поясняющий блок с примерами
+     непредсказуемых доходов и enclosing label «Непредсказуемый доход». -->
 <div id="eventEditorOverlay" class="proto-sheet-overlay"></div>
 <div id="eventEditorSheet" class="proto-sheet proto-sheet--form">
 
-  <h2 style="margin-bottom:18px" data-i18n="event.title">Новое событие</h2>
+  <h2 style="margin-bottom:6px" data-i18n="event.title">Непредсказуемый доход</h2>
+  <!-- FINANCIAL EVENTS - INCOME ONLY — короткое описание под заголовком. -->
+  <div class="event-editor-subtitle" data-i18n="event.subtitle">
+    Премия, подарок, возврат долга, продажа вещей и т.п.
+  </div>
 
-  <div class="cf-label" style="margin-bottom:8px" data-i18n="event.type">Тип</div>
-  <div class="toggle-group" id="eventTypeToggle">
+  <!-- Toggle скрыт через display:none, чтобы существующие скрипты
+       (syncEventEditorTypeAvailability, eventTypeToggle event listener)
+       не падали; visually его нет. -->
+  <div class="toggle-group" id="eventTypeToggle" style="display:none">
     <button class="mode-btn active" data-value="income" data-i18n="event.income">Доход</button>
     <button class="mode-btn" data-value="expense" data-i18n="event.expense">Расход</button>
   </div>
@@ -1771,7 +1794,7 @@ z-index: 999999;
 
   <div class="event-editor-fields">
     <div class="input-wrap" style="margin-top:16px">
-      <label data-i18n="event.amount">Сумма</label>
+      <label data-i18n="event.amount">Сумма поступления</label>
       <input id="eventAmount" inputmode="numeric" placeholder="10.000" />
     </div>
     <div class="input-wrap event-date-wrap" style="margin-top:12px">
@@ -1780,7 +1803,12 @@ z-index: 999999;
     </div>
   </div>
 
-  <button id="eventSubmit" class="unexpected-confirm-btn" style="margin-top:20px" data-i18n="event.add">Добавить</button>
+  <!-- FINANCIAL EVENTS - INCOME ONLY — список примеров под полями. -->
+  <div class="event-editor-examples" data-i18n="event.examples">
+    💡 Например: премия 50 000, подарок 5 000, возврат долга, продажа техники
+  </div>
+
+  <button id="eventSubmit" class="unexpected-confirm-btn" style="margin-top:20px" data-i18n="event.add">Добавить доход</button>
 </div>
 
 <!-- ===== CUSTOM SCHEDULE LOGIC — ручной ввод «Свой график» (форма + предпросмотр отложения) ===== -->
