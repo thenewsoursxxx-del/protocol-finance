@@ -9130,9 +9130,19 @@ function renderAccountBackCards() {
         t("stats.addBtn") + lockHtml +
         '</button>' +
         '</div>';
-      // PREMIUM SYSTEM — инициализируем Lottie замок сразу после рендера
-      if (locked && typeof window._initLockLottieDynamic === "function") {
-        window._initLockLottieDynamic(lottieId);
+      // PREMIUM SYSTEM — инициализируем Lottie замок сразу после рендера.
+      // renderAccountBackCards вызывается ДО запуска IIFE initPremiumSystem
+      // (строка 9422 vs 10896), поэтому _initLockLottieDynamic может быть
+      // ещё не экспортирован. Делаем retry-loop с интервалом 100мс пока
+      // функция не появится в window.
+      if (locked) {
+        (function tryInitLock(attempts) {
+          if (typeof window._initLockLottieDynamic === "function") {
+            window._initLockLottieDynamic(lottieId);
+          } else if (attempts > 0) {
+            setTimeout(function () { tryInitLock(attempts - 1); }, 100);
+          }
+        })(30); // ~3 секунды максимум
       }
       return;
     }
@@ -11209,7 +11219,16 @@ function goalSwipeToIndex(idx, goLeft) {
   // PREMIUM SYSTEM — экспорт для инициализации Lottie на ДИНАМИЧЕСКИ
   // создаваемых элементах (например, кнопка «+ Добавить статистику»,
   // которую рендерит renderAccountBackCards).
+  //
+  // Каждый раз renderAccountBackCards делает backCard.innerHTML = "..." —
+  // старый DOM-узел убивается, но _lottieInstances хранит ссылку на него
+  // и initLockLottie возвращается раньше времени с пометкой «уже создан».
+  // Поэтому здесь явно убиваем стэйл-инстанс и повторно инициализируем.
   window._initLockLottieDynamic = function (containerId) {
+    if (_lottieInstances[containerId]) {
+      try { _lottieInstances[containerId].destroy(); } catch (e) {}
+      delete _lottieInstances[containerId];
+    }
     initLockLottie(containerId, true);
   };
 })();

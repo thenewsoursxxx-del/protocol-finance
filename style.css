@@ -9748,8 +9748,11 @@ body.reduce-motion .settings-seg-btn {
    ═══════════════════════════════════════════════════════════════ */
 
 /* ── Lock badge на кнопках ─────────────────────────────────── */
+/* PREMIUM SYSTEM — не задаём position здесь чтобы не сломать кнопки
+   с собственным position: fixed (например, .advanced-settings-btn).
+   FAB-замок (.premium-lock-badge--fab) anchored к .advanced-btn,
+   у которого position: fixed — этого достаточно для absolute-child'а. */
 .premium-gate-btn {
-  position: relative;
   overflow: visible;
 }
 
