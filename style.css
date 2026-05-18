@@ -9742,3 +9742,275 @@ body.reduce-motion .settings-seg-btn {
 .cs-skip-btn:active {
   background: rgba(255, 255, 255, 0.05);
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   PREMIUM SYSTEM — lock badges + premium modal
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Lock badge на кнопках ─────────────────────────────────── */
+.premium-gate-btn {
+  position: relative;
+  overflow: visible;
+}
+
+.premium-lock-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 6px;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
+/* Lottie-контейнер для замка */
+.premium-lock-lottie {
+  width: 22px;
+  height: 22px;
+  display: block;
+  flex-shrink: 0;
+}
+
+/* FAB (advancedBtn) — замок в правом верхнем углу */
+.premium-lock-badge--fab {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  margin: 0;
+  background: rgba(0,0,0,0.7);
+  border-radius: 50%;
+  padding: 2px;
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+}
+.premium-lock-badge--fab .premium-lock-lottie {
+  width: 18px;
+  height: 18px;
+}
+
+/* Когда функция заблокирована — слегка приглушаем кнопку */
+.premium-gate-btn.premium-locked {
+  opacity: 0.72;
+}
+
+/* Обратная сторона счёта — hint про статистику */
+.account-back-premium-hint {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  height: 100%;
+  min-height: 80px;
+  color: rgba(255,255,255,0.6);
+  font-size: 13px;
+  text-align: center;
+  padding: 16px;
+}
+.account-back-premium-hint .premium-lock-lottie {
+  width: 36px;
+  height: 36px;
+}
+
+/* ── Premium Overlay ───────────────────────────────────────── */
+.premium-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: opacity 0.3s ease;
+  opacity: 1;
+}
+.premium-overlay.hidden { display: none; }
+
+/* ── Premium Sheet ─────────────────────────────────────────── */
+.premium-sheet {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 10001;
+  max-height: 92dvh;
+  max-height: 92vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(16, 185, 129, 0.12) 0%, transparent 60%),
+    linear-gradient(180deg, #0d1a14 0%, #0a0f0c 100%);
+  border-top: 1px solid rgba(16, 185, 129, 0.22);
+  border-radius: 24px 24px 0 0;
+  padding: 8px 20px 40px;
+  transform: translateY(0);
+  transition: transform 0.4s cubic-bezier(.4,0,.2,1), opacity 0.3s ease;
+  /* Безопасная зона снизу для iPhone X+ */
+  padding-bottom: calc(36px + env(safe-area-inset-bottom));
+}
+.premium-sheet.hidden { display: none; }
+.premium-sheet.sheet-entering {
+  animation: premiumSheetIn 0.42s cubic-bezier(.4,0,.2,1) forwards;
+}
+@keyframes premiumSheetIn {
+  from { transform: translateY(100%); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+.premium-sheet.sheet-leaving {
+  animation: premiumSheetOut 0.32s cubic-bezier(.4,0,.2,1) forwards;
+}
+@keyframes premiumSheetOut {
+  from { transform: translateY(0);    opacity: 1; }
+  to   { transform: translateY(100%); opacity: 0; }
+}
+
+/* ── Close button ──────────────────────────────────────────── */
+.premium-close-btn {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.10);
+  color: rgba(255,255,255,0.5);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.2s, color 0.2s;
+}
+.premium-close-btn:active {
+  background: rgba(255,255,255,0.14);
+  color: #fff;
+}
+
+/* ── Header ────────────────────────────────────────────────── */
+.premium-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 0 20px;
+  text-align: center;
+}
+.premium-crown-lottie {
+  width: 64px;
+  height: 64px;
+  margin-bottom: 12px;
+}
+.premium-title {
+  font-size: 24px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #6ee7b7, #10b981, #34d399);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.02em;
+  margin-bottom: 6px;
+}
+.premium-subtitle {
+  font-size: 14px;
+  color: rgba(255,255,255,0.56);
+  max-width: 260px;
+  line-height: 1.45;
+}
+
+/* ── Slides ────────────────────────────────────────────────── */
+.premium-slides {
+  display: flex;
+  overflow: hidden;
+  width: 100%;
+  touch-action: pan-y;
+  user-select: none;
+}
+.premium-slide {
+  flex: 0 0 100%;
+  min-width: 100%;
+  padding: 4px 6px 20px;
+  text-align: center;
+  transition: opacity 0.3s ease;
+}
+.premium-slide-icon {
+  font-size: 48px;
+  margin-bottom: 14px;
+  line-height: 1;
+  filter: drop-shadow(0 0 16px rgba(16,185,129,0.35));
+}
+.premium-slide-title {
+  font-size: 19px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 10px;
+  letter-spacing: -0.01em;
+}
+.premium-slide-text {
+  font-size: 14px;
+  color: rgba(255,255,255,0.62);
+  line-height: 1.6;
+  max-width: 320px;
+  margin: 0 auto;
+}
+
+/* ── Dots ──────────────────────────────────────────────────── */
+.premium-dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin: 4px 0 20px;
+}
+.premium-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.18);
+  transition: background 0.25s ease, width 0.25s ease;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.premium-dot.active {
+  background: #10b981;
+  width: 18px;
+  border-radius: 4px;
+}
+
+/* ── CTA ───────────────────────────────────────────────────── */
+.premium-cta-block {
+  padding: 0 4px;
+}
+.premium-buy-btn {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 16px 20px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #059669, #10b981, #34d399);
+  color: #fff;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 8px 28px rgba(16, 185, 129, 0.40);
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.17s ease, box-shadow 0.17s ease;
+}
+.premium-buy-btn:active {
+  transform: scale(0.97);
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.35);
+}
+.premium-buy-price {
+  font-size: 13px;
+  font-weight: 500;
+  opacity: 0.82;
+  letter-spacing: 0;
+}
+.premium-cta-hint {
+  margin-top: 10px;
+  text-align: center;
+  font-size: 12px;
+  color: rgba(255,255,255,0.36);
+}

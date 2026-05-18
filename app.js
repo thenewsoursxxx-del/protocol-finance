@@ -10865,6 +10865,263 @@ function goalSwipeToIndex(idx, goLeft) {
   }, 350);
 }
 
+// ════════════════════════════════════════════════════════════════════════════
+// PREMIUM SYSTEM
+// ────────────────────────────────────────────────────────────────────────────
+// Централизованная система проверки премиум-статуса и управления модалкой.
+//
+// Точки входа (5 штук):
+//   1. changePaceBtn  — Изменить темп накоплений
+//   2. addDebtsBtn    — Добавить кредиты и долги
+//   3. flexibleToggle — Гибкая финансовая модель
+//   4. advancedBtn    — Расширенные настройки
+//   5. account flip (обратная сторона) — Статистика счёта
+//
+// Паттерн: каждая кнопка оборачивается через wrapPremiumGate(btn, original).
+// При isPremium=false — открывается модалка. При true — выполняется original.
+// Lock-анимации Lottie инициализируются один раз после DOM-ready.
+// ════════════════════════════════════════════════════════════════════════════
+
+(function initPremiumSystem() {
+  // ── Helpers ────────────────────────────────────────────────────────────
+
+  /** Возвращает true, если у пользователя есть премиум-подписка. */
+  function isPremium() {
+    return getState().isPremium === true;
+  }
+
+  /**
+   * PREMIUM SYSTEM — перехватчик события клика.
+   * Оборачивает обработчик btn.onclick/addEventListener так, что
+   * при isPremium=false открывает модалку, при true — вызывает original.
+   * @param {HTMLElement} btn     — кнопка, на которую вешаем перехват
+   * @param {Function}    feature — идентификатор функции для слайда модалки
+   */
+  function wrapPremiumGate(btn, feature) {
+    if (!btn) return;
+    btn.addEventListener("click", function (e) {
+      if (isPremium()) return; // пускаем дальше по стеку — оригинальный обработчик сработает
+      e.stopImmediatePropagation(); // блокируем все остальные обработчики этой кнопки
+      if (typeof haptic === "function") haptic("light");
+      openPremiumModal(feature);
+    }, true); // capture = true, чтобы перехватить до других listeners
+  }
+
+  // Обновляем визуальное состояние (класс premium-locked) всех gate-кнопок.
+  function syncPremiumGateUI() {
+    var locked = !isPremium();
+    document.querySelectorAll(".premium-gate-btn").forEach(function (btn) {
+      btn.classList.toggle("premium-locked", locked);
+    });
+    // Обратная сторона счёта — показываем/скрываем premium-hint
+    var hint = document.getElementById("accountBackPremiumHint");
+    if (hint) hint.style.display = locked ? "" : "none";
+  }
+
+  // ── Lottie Locks ───────────────────────────────────────────────────────
+
+  var _lottieInstances = {};
+  var LOCK_ANIM_PATH = "./assets/animation/Lock-2.json";
+
+  function initLockLottie(containerId, loop) {
+    var el = document.getElementById(containerId);
+    if (!el || typeof lottie === "undefined") return;
+    if (_lottieInstances[containerId]) return; // уже инициализирован
+    try {
+      _lottieInstances[containerId] = lottie.loadAnimation({
+        container: el,
+        renderer: "svg",
+        loop: loop !== false,
+        autoplay: true,
+        path: LOCK_ANIM_PATH
+      });
+    } catch (e) { /* Lottie не смог загрузить — graceful degradation */ }
+  }
+
+  function initAllLockLotties() {
+    if (isPremium()) return; // замки не нужны если уже премиум
+    initLockLottie("lottieChangePace", true);
+    initLockLottie("lottieAddDebts",   true);
+    initLockLottie("lottieFlexible",   true);
+    initLockLottie("lottieAdvanced",   true);
+    initLockLottie("lottieAccountStats", true);
+  }
+
+  // Показываем/скрываем сами badge-элементы
+  function syncLockBadgesVisibility() {
+    var locked = !isPremium();
+    ["lockChangePace","lockAddDebts","lockFlexible","lockAdvanced"].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) el.style.display = locked ? "" : "none";
+    });
+  }
+
+  // ── Premium Modal ──────────────────────────────────────────────────────
+
+  // PREMIUM MODAL — индекс текущего слайда
+  var _currentSlide = 0;
+  var _totalSlides = 5;
+  // Таблица: feature → индекс слайда (показываем сразу нужный)
+  var FEATURE_SLIDE = {
+    "pace":     0,
+    "debts":    1,
+    "flexible": 2,
+    "advanced": 3,
+    "stats":    4
+  };
+
+  function openPremiumModal(feature) {
+    var overlay = document.getElementById("premiumOverlay");
+    var sheet   = document.getElementById("premiumSheet");
+    if (!overlay || !sheet) return;
+
+    // Определяем, какой слайд показывать первым
+    var slideIdx = (feature && FEATURE_SLIDE[feature] !== undefined) ? FEATURE_SLIDE[feature] : 0;
+    goToSlide(slideIdx, false);
+
+    overlay.classList.remove("hidden");
+    sheet.classList.remove("hidden", "sheet-leaving");
+    void sheet.offsetWidth; // reflow для анимации
+    sheet.classList.add("sheet-entering");
+    setTimeout(function () { sheet.classList.remove("sheet-entering"); }, 450);
+
+    // Инициализируем crown-анимацию один раз
+    if (typeof lottie !== "undefined" && !_lottieInstances["__crown"]) {
+      var crownEl = document.getElementById("lottiePremiumCrown");
+      if (crownEl) {
+        try {
+          _lottieInstances["__crown"] = lottie.loadAnimation({
+            container: crownEl,
+            renderer: "svg",
+            loop: true,
+            autoplay: true,
+            path: LOCK_ANIM_PATH
+          });
+        } catch (e) { /* noop */ }
+      }
+    }
+  }
+
+  function closePremiumModal() {
+    var overlay = document.getElementById("premiumOverlay");
+    var sheet   = document.getElementById("premiumSheet");
+    if (!sheet) return;
+    sheet.classList.remove("sheet-entering");
+    sheet.classList.add("sheet-leaving");
+    setTimeout(function () {
+      sheet.classList.add("hidden");
+      sheet.classList.remove("sheet-leaving");
+      if (overlay) overlay.classList.add("hidden");
+    }, 320);
+  }
+
+  function goToSlide(idx, animate) {
+    _currentSlide = Math.max(0, Math.min(idx, _totalSlides - 1));
+    var slides = document.getElementById("premiumSlides");
+    if (slides) {
+      if (animate === false) {
+        slides.style.transition = "none";
+      } else {
+        slides.style.transition = "transform 0.35s cubic-bezier(.4,0,.2,1)";
+      }
+      slides.style.transform = "translateX(-" + (_currentSlide * 100) + "%)";
+    }
+    // Dots
+    document.querySelectorAll(".premium-dot").forEach(function (dot, i) {
+      dot.classList.toggle("active", i === _currentSlide);
+    });
+  }
+
+  // ── Touch swipe для слайдов ────────────────────────────────────────────
+
+  (function initSlideSwipe() {
+    var slides = document.getElementById("premiumSlides");
+    if (!slides) return;
+    var startX = 0, isDragging = false;
+    slides.addEventListener("touchstart", function (e) {
+      startX = e.touches[0].clientX;
+      isDragging = true;
+    }, { passive: true });
+    slides.addEventListener("touchend", function (e) {
+      if (!isDragging) return;
+      isDragging = false;
+      var dx = e.changedTouches[0].clientX - startX;
+      if (Math.abs(dx) > 50) {
+        if (dx < 0 && _currentSlide < _totalSlides - 1) goToSlide(_currentSlide + 1, true);
+        else if (dx > 0 && _currentSlide > 0)           goToSlide(_currentSlide - 1, true);
+      }
+    }, { passive: true });
+  })();
+
+  // ── Event listeners для модалки ────────────────────────────────────────
+
+  var closeBtn   = document.getElementById("premiumCloseBtn");
+  var overlay    = document.getElementById("premiumOverlay");
+  var buyBtn     = document.getElementById("premiumBuyBtn");
+
+  if (closeBtn)  closeBtn.addEventListener("click",  closePremiumModal);
+  if (overlay)   overlay.addEventListener("click",   closePremiumModal);
+  if (buyBtn) {
+    buyBtn.addEventListener("click", function () {
+      if (typeof haptic === "function") haptic("medium");
+      // PREMIUM MODAL — здесь будет логика оплаты (Telegram Payments / ЮKassa).
+      // Пока показываем toast-заглушку.
+      showToast(t("premium.buyBtn"), "success");
+    });
+  }
+
+  // Dots-навигация
+  document.querySelectorAll(".premium-dot").forEach(function (dot) {
+    dot.addEventListener("click", function () {
+      var idx = parseInt(dot.getAttribute("data-dot"), 10);
+      if (!isNaN(idx)) goToSlide(idx, true);
+    });
+  });
+
+  // ── Перехват 5 премиум-точек ──────────────────────────────────────────
+
+  // 1. Изменить темп накоплений
+  wrapPremiumGate(document.getElementById("changePaceBtn"), "pace");
+  // 2. Кредиты и долги
+  wrapPremiumGate(document.getElementById("addDebtsBtn"),   "debts");
+  // 3. Гибкая финансовая модель
+  wrapPremiumGate(document.getElementById("flexibleToggle"), "flexible");
+  // 4. Расширенные настройки
+  wrapPremiumGate(document.getElementById("advancedBtn"),   "advanced");
+
+  // 5. Обратная сторона счёта (статистика) — перехватываем flip через capture
+  var mainFlipWrapper = document.querySelector(".account-block.main .flip-wrapper, .account-block.main[class*='flip']");
+  // Ищем конкретно элемент-обёртку переворота основного счёта
+  var mainBlock = document.querySelector(".account-block[data-account='main']");
+  if (mainBlock) {
+    mainBlock.addEventListener("click", function (e) {
+      // Срабатываем только при клике по самой карточке, а не по внутренним кнопкам
+      if (isPremium()) return;
+      // Проверяем: была ли карточка уже перевёрнута (flip)
+      var flipInner = mainBlock.querySelector(".flip-inner");
+      if (!flipInner || !flipInner.classList.contains("flipped")) return;
+      // Уже перевёрнута на обратную сторону — блокируем и открываем модалку
+      e.stopImmediatePropagation();
+      if (typeof haptic === "function") haptic("light");
+      openPremiumModal("stats");
+    }, true);
+  }
+
+  // ── Инициализация при старте ───────────────────────────────────────────
+
+  syncPremiumGateUI();
+  syncLockBadgesVisibility();
+  // Lottie грузим чуть отложенно, чтобы не блокировать первый рендер
+  setTimeout(initAllLockLotties, 800);
+
+  // Экспортируем для возможного вызова извне (после смены isPremium)
+  window._syncPremiumUI = function () {
+    syncPremiumGateUI();
+    syncLockBadgesVisibility();
+    if (!isPremium()) initAllLockLotties();
+  };
+})();
+
 /* ===== PACE CHANGE SCREEN ===== */
 (function initPaceChangeScreen() {
   var changePaceBtn = document.getElementById("changePaceBtn");

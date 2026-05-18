@@ -119,15 +119,18 @@ viewport-fit=cover" />
 </div>
 
 <div class="plan-actions">
-<button id="changePaceBtn" class="plan-action-btn" type="button" data-i18n="plan.changePace">Изменить темп накоплений</button>
-<button id="addDebtsBtn" class="plan-action-btn" type="button" data-i18n="plan.addDebts">Добавить кредиты и долги</button>
+<!-- PREMIUM SYSTEM — кнопки с lock-баджем; при isPremium=false перехватываются в app.js -->
+<button id="changePaceBtn" class="plan-action-btn premium-gate-btn" type="button" data-i18n="plan.changePace">Изменить темп накоплений<span class="premium-lock-badge" id="lockChangePace"><div class="premium-lock-lottie" id="lottieChangePace"></div></span></button>
+<button id="addDebtsBtn" class="plan-action-btn premium-gate-btn" type="button" data-i18n="plan.addDebts">Добавить кредиты и долги<span class="premium-lock-badge" id="lockAddDebts"><div class="premium-lock-lottie" id="lottieAddDebts"></div></span></button>
 </div>
 
 <!-- ===== FLEXIBLE MODEL ===== -->
 <section id="cashflowSettings" class="cashflow-settings">
 
-  <button type="button" id="flexibleToggle" class="flexible-toggle">
+  <!-- PREMIUM SYSTEM — flex toggle с lock-баджем -->
+  <button type="button" id="flexibleToggle" class="flexible-toggle premium-gate-btn">
     <span data-i18n="flex.toggle">Гибкая финансовая модель</span>
+    <span class="premium-lock-badge" id="lockFlexible"><div class="premium-lock-lottie" id="lottieFlexible"></div></span>
     <span class="chevron">&#9656;</span>
   </button>
 
@@ -444,7 +447,13 @@ Protocol анализирует данные…
 </div>
 </div>
 <div class="flip-back account-flip-back account-flip-back--main">
-  <div class="account-back-card"></div>
+  <!-- PREMIUM SYSTEM — обратная сторона счёта открывает статистику (премиум) -->
+  <div class="account-back-card">
+    <div class="account-back-premium-hint" id="accountBackPremiumHint">
+      <div class="premium-lock-lottie" id="lottieAccountStats"></div>
+      <span data-i18n="premium.statsLocked">Статистика — премиум-функция</span>
+    </div>
+  </div>
 </div>
 </div>
 </div>
@@ -1329,8 +1338,10 @@ Protocol анализирует цель…
 </div>
 
 <!-- ===== ADVANCED BUTTON ===== -->
-<button id="advancedBtn" class="advanced-btn">
+<!-- PREMIUM SYSTEM — расширенные настройки тоже под замком -->
+<button id="advancedBtn" class="advanced-btn premium-gate-btn">
   <span>+</span>
+  <span class="premium-lock-badge premium-lock-badge--fab" id="lockAdvanced"><div class="premium-lock-lottie" id="lottieAdvanced"></div></span>
 </button>
 
 <div class="screen" id="screen-advanced">
@@ -2027,6 +2038,76 @@ z-index: 999999;
   </div>
 
   <button type="button" id="goalHistoryDetailCloseBtn" class="goal-history-detail-close-btn" data-i18n="goalHistory.detail.close">Закрыть</button>
+</div>
+
+<!-- PREMIUM MODAL — полноэкранный слайдер премиум-преимуществ.
+     Открывается при нажатии на любую premium-gate-btn при isPremium=false.
+     Структура: оверлей → sheet снизу → слайды → кнопка покупки. -->
+<div id="premiumOverlay" class="premium-overlay hidden"></div>
+<div id="premiumSheet" class="premium-sheet hidden">
+
+  <button class="premium-close-btn" id="premiumCloseBtn" aria-label="Закрыть">&#10005;</button>
+
+  <!-- Заголовок -->
+  <div class="premium-header">
+    <div class="premium-crown-lottie" id="lottiePremiumCrown"></div>
+    <div class="premium-title" data-i18n="premium.title">Protocol Premium</div>
+    <div class="premium-subtitle" data-i18n="premium.subtitle">Полный контроль над своими финансами</div>
+  </div>
+
+  <!-- Слайды с фичами -->
+  <div class="premium-slides" id="premiumSlides">
+
+    <div class="premium-slide" data-slide="0">
+      <div class="premium-slide-icon">📈</div>
+      <div class="premium-slide-title" data-i18n="premium.f1.title">Управляй темпом</div>
+      <div class="premium-slide-text" data-i18n="premium.f1.text">Выбирай между спокойным, умеренным и агрессивным режимом. Настраивай скорость накоплений под свой ритм жизни — и приходи к цели именно тогда, когда нужно тебе, а не когда позволит план по умолчанию.</div>
+    </div>
+
+    <div class="premium-slide" data-slide="1">
+      <div class="premium-slide-icon">💳</div>
+      <div class="premium-slide-title" data-i18n="premium.f2.title">Долги под контролем</div>
+      <div class="premium-slide-text" data-i18n="premium.f2.text">Ипотека, кредит, рассрочка, кредитная карта — всё учитывается автоматически. Аннуитетный расчёт, льготный период карт, прогноз переплаты. Перестань терять деньги на процентах — начни гасить долги правильно.</div>
+    </div>
+
+    <div class="premium-slide" data-slide="2">
+      <div class="premium-slide-icon">⚡</div>
+      <div class="premium-slide-title" data-i18n="premium.f3.title">Гибкая модель</div>
+      <div class="premium-slide-text" data-i18n="premium.f3.text">Нерегулярные доходы, сезонные расходы, фриланс, подработки — базовый план не справится. Гибкая модель учитывает реальную жизнь: фиксирует каждую сумму вручную и мгновенно пересчитывает, сколько нужно отложить.</div>
+    </div>
+
+    <div class="premium-slide" data-slide="3">
+      <div class="premium-slide-icon">🔬</div>
+      <div class="premium-slide-title" data-i18n="premium.f4.title">Расширенные настройки</div>
+      <div class="premium-slide-text" data-i18n="premium.f4.text">Распределяй накопления по инструментам: акции, облигации, депозиты, наличные. Видь точный состав портфеля, следи за динамикой счёта и принимай решения на основе данных — а не интуиции.</div>
+    </div>
+
+    <div class="premium-slide" data-slide="4">
+      <div class="premium-slide-icon">📊</div>
+      <div class="premium-slide-title" data-i18n="premium.f5.title">Статистика счёта</div>
+      <div class="premium-slide-text" data-i18n="premium.f5.text">Переверни карточку счёта — и увидишь полную картину: сколько уже отложено, динамика пополнений, прогноз на следующий месяц. Знать свои цифры — это и есть контроль над деньгами.</div>
+    </div>
+
+  </div>
+
+  <!-- Индикатор слайдов -->
+  <div class="premium-dots" id="premiumDots">
+    <span class="premium-dot active" data-dot="0"></span>
+    <span class="premium-dot" data-dot="1"></span>
+    <span class="premium-dot" data-dot="2"></span>
+    <span class="premium-dot" data-dot="3"></span>
+    <span class="premium-dot" data-dot="4"></span>
+  </div>
+
+  <!-- CTA -->
+  <div class="premium-cta-block">
+    <button class="premium-buy-btn" id="premiumBuyBtn">
+      <span data-i18n="premium.buyBtn">Оформить Premium</span>
+      <span class="premium-buy-price" data-i18n="premium.price">299 ₽ / месяц</span>
+    </button>
+    <div class="premium-cta-hint" data-i18n="premium.ctaHint">Отмена в любой момент · Без скрытых платежей</div>
+  </div>
+
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>

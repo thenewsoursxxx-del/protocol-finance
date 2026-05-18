@@ -385,6 +385,24 @@
       "unexpected.skipConfirm": "Подтвердить пропуск",
       "unexpected.skipInfo": "Месяц будет пропущен. Срок цели увеличится на 1 месяц.",
 
+      // PREMIUM SYSTEM — тексты премиум-модалки
+      "premium.title": "Protocol Premium",
+      "premium.subtitle": "Полный контроль над своими финансами",
+      "premium.statsLocked": "Статистика — только в Premium",
+      "premium.f1.title": "Управляй темпом",
+      "premium.f1.text": "Выбирай между спокойным, умеренным и агрессивным режимом. Настраивай скорость накоплений под свой ритм жизни — и приходи к цели именно тогда, когда нужно тебе.",
+      "premium.f2.title": "Долги под контролем",
+      "premium.f2.text": "Ипотека, кредит, рассрочка, кредитная карта — всё учитывается автоматически. Аннуитетный расчёт, льготный период карт, прогноз переплаты. Перестань терять деньги на процентах.",
+      "premium.f3.title": "Гибкая модель",
+      "premium.f3.text": "Нерегулярные доходы, сезонные расходы, фриланс — базовый план не справится. Гибкая модель учитывает реальную жизнь и мгновенно пересчитывает, сколько нужно отложить.",
+      "premium.f4.title": "Расширенные настройки",
+      "premium.f4.text": "Распределяй накопления по инструментам: акции, облигации, депозиты, наличные. Видь точный состав портфеля и принимай решения на основе данных.",
+      "premium.f5.title": "Статистика счёта",
+      "premium.f5.text": "Переверни карточку счёта — и увидишь полную картину: сколько уже отложено, динамика пополнений, прогноз на следующий месяц.",
+      "premium.buyBtn": "Оформить Premium",
+      "premium.price": "299 ₽ / месяц",
+      "premium.ctaHint": "Отмена в любой момент · Без скрытых платежей",
+
       // ── Pace ──
       "pace.title": "Темп накоплений",
       "pace.current": "Текущий темп",
@@ -1383,6 +1401,24 @@
       "unexpected.confirm": "Confirm",
       "unexpected.skipConfirm": "Confirm skip",
       "unexpected.skipInfo": "This month will be skipped. Goal timeline extends by 1 month.",
+
+      // PREMIUM SYSTEM — premium modal texts (EN)
+      "premium.title": "Protocol Premium",
+      "premium.subtitle": "Full control over your finances",
+      "premium.statsLocked": "Statistics — Premium only",
+      "premium.f1.title": "Control your pace",
+      "premium.f1.text": "Choose between calm, moderate, and aggressive saving modes. Set the speed that fits your lifestyle — and reach your goal exactly when you want.",
+      "premium.f2.title": "Debts under control",
+      "premium.f2.text": "Mortgage, loan, installment, credit card — all accounted for automatically. Annuity calculation, grace periods, overpayment forecast. Stop losing money on interest.",
+      "premium.f3.title": "Flexible model",
+      "premium.f3.text": "Irregular income, seasonal expenses, freelance — a basic plan won't cut it. The flexible model adapts to real life and instantly recalculates how much you need to save.",
+      "premium.f4.title": "Advanced settings",
+      "premium.f4.text": "Allocate savings across instruments: stocks, bonds, deposits, cash. See your exact portfolio composition and make data-driven decisions.",
+      "premium.f5.title": "Account statistics",
+      "premium.f5.text": "Flip the account card to see the full picture: how much you've saved, deposit dynamics, and next-month forecast.",
+      "premium.buyBtn": "Get Premium",
+      "premium.price": "₽299 / month",
+      "premium.ctaHint": "Cancel anytime · No hidden fees",
 
       // ── Pace ──
       "pace.title": "Saving Pace",
