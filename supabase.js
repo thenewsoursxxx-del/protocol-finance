@@ -1,13 +1,16 @@
-// === Eruda — консоль для iOS и Android ===
-(function() {
-  var script = document.createElement('script');
-  script.src = 'https://cdn.jsdelivr.net/npm/eruda';
-  script.onload = function() {
-    eruda.init();
-    console.log('[Eruda] Загружена.');
-  };
-  document.head.appendChild(script);
-})();
+// === Eruda — консоль для iOS и Android (ОТКЛЮЧЕНА) ===
+// Скрыта по запросу: пользователь не должен видеть dev-консоль в production-сборке.
+// Чтобы временно включить для отладки — раскомментируй блок ниже.
+//
+// (function() {
+//   var script = document.createElement('script');
+//   script.src = 'https://cdn.jsdelivr.net/npm/eruda';
+//   script.onload = function() {
+//     eruda.init();
+//     console.log('[Eruda] Загружена.');
+//   };
+//   document.head.appendChild(script);
+// })();
 
 /**
  * Supabase для Protocol Mini App (vanilla JS + CDN, без npm).

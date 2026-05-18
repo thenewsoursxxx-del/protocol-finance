@@ -121,8 +121,10 @@ viewport-fit=cover" />
 <div class="plan-actions">
 <!-- PREMIUM SYSTEM — кнопки с lock-баджем; при isPremium=false перехватываются в app.js
      data-premium-gate помечает кнопку для body-level capture-делегатора. -->
-<button id="changePaceBtn" class="plan-action-btn premium-gate-btn" type="button" data-premium-gate="pace" data-i18n="plan.changePace">Изменить темп накоплений<span class="premium-lock-badge" id="lockChangePace"><span class="premium-lock-lottie" id="lottieChangePace"></span></span></button>
-<button id="addDebtsBtn" class="plan-action-btn premium-gate-btn" type="button" data-premium-gate="debts" data-i18n="plan.addDebts">Добавить кредиты и долги<span class="premium-lock-badge" id="lockAddDebts"><span class="premium-lock-lottie" id="lottieAddDebts"></span></span></button>
+<!-- PREMIUM SYSTEM — data-i18n переехал на внутренний <span>, иначе applyLanguageToDOM()
+     через el.textContent = text стирал вложенный lock-бадж и Lottie не рендерился. -->
+<button id="changePaceBtn" class="plan-action-btn premium-gate-btn" type="button" data-premium-gate="pace"><span data-i18n="plan.changePace">Изменить темп накоплений</span><span class="premium-lock-badge" id="lockChangePace"><span class="premium-lock-lottie" id="lottieChangePace"></span></span></button>
+<button id="addDebtsBtn" class="plan-action-btn premium-gate-btn" type="button" data-premium-gate="debts"><span data-i18n="plan.addDebts">Добавить кредиты и долги</span><span class="premium-lock-badge" id="lockAddDebts"><span class="premium-lock-lottie" id="lottieAddDebts"></span></span></button>
 </div>
 
 <!-- ===== FLEXIBLE MODEL ===== -->
