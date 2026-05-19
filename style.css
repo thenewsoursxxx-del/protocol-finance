@@ -340,6 +340,10 @@ margin: 20px auto;
   width: 100%;
   height: 100%;
   object-fit: cover;
+  /* Визуально сдвигаем видео ВНИЗ на ~15% — оригинал кадрируется так,
+     что smysловой центр оказывался выше центра экрана. object-position
+     не меняет лейаут, только outline. */
+  object-position: center 65%;
   /* Защита от появления управления / picture-in-picture на iOS. */
   pointer-events: none;
   background: #000;
@@ -635,9 +639,81 @@ fill: none;
 stroke-width: 2;
 }
 
+/* Контейнер для имени и status (правее аватара). flex:1 — занимает
+   всё оставшееся пространство, чтобы plate-badge мог встать справа,
+   но при этом имя могло переноситься на новую строку при overflow. */
+.profile-card-info {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Строка «Имя [Premium-badge]» — flex с зазором между именем и плашкой. */
+.profile-name-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
 .profile-name {
 font-size: 18px;
 font-weight: 600;
+min-width: 0;
+}
+
+/* PREMIUM PROFILE BADGE — изумрудная овальная плашка с лёгким glow.
+   Изначально скрыта (display:none) — JS включает через .is-visible.
+   Дизайн: emerald gradient + золотистая тень на акценте, тонкая
+   полупрозрачная белая обводка для contrast'а на любом фоне.
+   Лёгкая pop-in анимация при первом появлении. */
+.profile-premium-badge {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 11px 5px 9px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #10b981 0%, #34d399 55%, #10b981 100%);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  line-height: 1;
+  text-transform: uppercase;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow:
+    0 0 0 1px rgba(16, 185, 129, 0.28),
+    0 2px 6px rgba(0, 0, 0, 0.28),
+    0 6px 16px rgba(16, 185, 129, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.18);
+  user-select: none;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transform: translateY(2px) scale(0.92);
+  opacity: 0;
+  transition:
+    transform 0.32s cubic-bezier(.18,.7,.36,1),
+    opacity 0.22s ease;
+}
+.profile-premium-badge.is-visible {
+  display: inline-flex;
+  transform: translateY(0) scale(1);
+  opacity: 1;
+}
+.profile-premium-badge__icon {
+  width: 13px;
+  height: 13px;
+  stroke-width: 2.4;
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 4px rgba(255, 215, 0, 0.4));
+}
+.profile-premium-badge__label {
+  letter-spacing: 0.4px;
+}
+/* Reduce-motion — отключаем анимацию появления. */
+body.reduce-motion .profile-premium-badge {
+  transition: none;
 }
 
 .profile-status {

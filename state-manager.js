@@ -143,7 +143,12 @@ function getDefaultState() {
       reminderTime: "12:00",
       animationsEnabled: true,
       numberFormat: "spaces",
-      language: "ru"
+      language: "ru",
+      // LOADING VIDEO TOGGLE — настройка «Отключить видео при загрузке»
+      // (Настройки → Интерфейс). По умолчанию false — видео показывается.
+      // true означает «отключено» (только чёрный фон). Читается в
+      // showSplashVideo() из app.js.
+      disableLoadingVideo: false
     },
 
     uiState: {

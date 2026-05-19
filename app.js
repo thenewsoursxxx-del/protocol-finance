@@ -3206,7 +3206,25 @@ function showSplashVideo(initialText) {
   var videoEl = document.getElementById("splashVideoEl");
   setSplashVideoText(initialText || "");
   overlay.classList.remove("hidden", "fading");
+
+  // SETTINGS — пользователь может отключить видео при загрузке
+  // (Настройки → Интерфейс → «Отключить видео при загрузке»).
+  // В этом случае показываем только чёрный overlay без воспроизведения.
+  // Сам overlay остаётся виден — он даёт нужный «полноэкранный» эффект
+  // фейк-загрузки, просто без видео-фона.
+  var s = (typeof getState === "function") ? (getState().settings || {})
+        : ((window.appState && window.appState.settings) || {});
+  var disableVideo = s.disableLoadingVideo === true;
+
   if (videoEl) {
+    if (disableVideo) {
+      // Скрываем сам <video>, останавливаем воспроизведение — экономим CPU/батарею.
+      try { videoEl.pause(); } catch (_e) { /* noop */ }
+      videoEl.style.display = "none";
+      return;
+    }
+    // Возвращаем видимость (на случай, если ранее было отключено).
+    videoEl.style.display = "";
     try {
       videoEl.currentTime = 0;
       videoEl.muted = true; // дублируем для надёжного autoplay
@@ -3418,6 +3436,12 @@ if (profileBtn) {
     // STATISTICS COLLECTION — обновляем счётчики premium/free каждый раз
     // при заходе в профиль (с кэшем на 60 секунд внутри функции).
     if (typeof refreshProfileStats === "function") refreshProfileStats();
+    // PREMIUM PROFILE BADGE — обновляем видимость изумрудной плашки
+    // «Premium» рядом с именем при каждом открытии профиля. Это страхует
+    // от случая, когда DB-синк ещё не отработал к моменту первого захода.
+    if (typeof window._refreshProfilePremiumBadge === "function") {
+      window._refreshProfilePremiumBadge();
+    }
   };
 }
 
@@ -3694,6 +3718,10 @@ if (goalHistoryBack) {
   toggles.depositReminder = initToggle("settingsDepositReminder", "depositReminderEnabled");
   toggles.debtReminder = initToggle("settingsDebtReminder", "debtReminderEnabled");
   toggles.displayCurrencyEnabled = initToggle("settingsDisplayCurrencyEnabled", "displayCurrencyEnabled");
+  // LOADING VIDEO TOGGLE — пользователь может выключить видео-фон на
+  // экране фейк-загрузки (читается в showSplashVideo() из state.settings).
+  // initToggle сам подвяжет change handler и saveFullState() при изменении.
+  toggles.disableLoadingVideo = initToggle("settingsDisableLoadingVideo", "disableLoadingVideo");
 
   function syncAllControls() {
     Object.keys(segments).forEach(function (k) { if (segments[k]) segments[k].sync(); });
@@ -11416,6 +11444,28 @@ function goalSwipeToIndex(idx, goLeft) {
   // Экспортируем для DB-sync кода (он лежит в другом IIFE).
   window._refreshPremiumStatusBlock = refreshPremiumStatusBlock;
 
+  // PREMIUM PROFILE BADGE — управляет видимостью изумрудной плашки «Premium»
+  // справа от имени пользователя на экране профиля. Видимость завязана на
+  // isPremiumActive() — то есть на ОДНОВРЕМЕННО:
+  //   • appState.isPremium === true (флаг в БД)
+  //   • premium_until > now() (либо null — legacy lifetime)
+  // Если подписка истекла, плашка автоматически исчезнет на следующем тике
+  // DB-синка (syncUserAccessFlagsFromDB → setUserPremium(false) → applyPremiumUI).
+  function refreshProfilePremiumBadge() {
+    var badge = document.getElementById("profilePremiumBadge");
+    if (!badge) return;
+    var active = (typeof isPremiumActive === "function") ? isPremiumActive()
+                  : !!(window.appState && window.appState.isPremium);
+    if (active) {
+      badge.classList.add("is-visible");
+      badge.setAttribute("aria-hidden", "false");
+    } else {
+      badge.classList.remove("is-visible");
+      badge.setAttribute("aria-hidden", "true");
+    }
+  }
+  window._refreshProfilePremiumBadge = refreshProfilePremiumBadge;
+
   function closePremiumModal() {
     var overlay = document.getElementById("premiumOverlay");
     var sheet   = document.getElementById("premiumSheet");
@@ -11901,6 +11951,11 @@ function goalSwipeToIndex(idx, goLeft) {
     syncPremiumGateUI();
     syncLockBadgesVisibility();
     if (!isPremium()) initAllLockLotties();
+    // PREMIUM PROFILE BADGE — изумрудная плашка «Premium» рядом с именем
+    // в профиле. Обновляется вместе с остальным premium-UI.
+    if (typeof window._refreshProfilePremiumBadge === "function") {
+      window._refreshProfilePremiumBadge();
+    }
   };
 
   // PREMIUM SYSTEM — экспорт inline-гейта для прямого вызова в обработчиках.
