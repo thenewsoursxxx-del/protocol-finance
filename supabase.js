@@ -573,6 +573,93 @@ async function fetchUserAccessFlags() {
 
 window.fetchUserAccessFlags = fetchUserAccessFlags;
 
+/* ============================================================================
+ * TELEGRAM STARS — клиентские помощники для Premium-оплаты
+ * ----------------------------------------------------------------------------
+ * Две функции:
+ *   1. createStarsInvoice() — дёргает Edge Function create-stars-invoice
+ *      и возвращает { invoice_url, payload, amount } или null при ошибке.
+ *      Передаёт init_data (raw initData строка Telegram WebApp) для
+ *      серверной верификации HMAC.
+ *
+ *   2. setUserPremium(value) — оптимистично проставляет users.is_premium=true
+ *      ПОСЛЕ успешной оплаты (на случай, если bot webhook задерживается
+ *      или не настроен). Серверная истина — за webhook'ом, но клиент тоже
+ *      пишет в БД для немедленного UI-feedback.
+ * ============================================================================ */
+async function createStarsInvoice() {
+  try {
+    var identity = await getVerifiedUserIdentity();
+    if (!identity || !identity.telegram_id) {
+      console.warn("[Stars] createStarsInvoice: нет identity");
+      return null;
+    }
+
+    var initData = "";
+    try {
+      var w = window.Telegram && window.Telegram.WebApp;
+      initData = (w && w.initData) || "";
+    } catch (_e) { /* ignore */ }
+
+    var url = SUPABASE_URL.replace(/\/$/, "") + "/functions/v1/create-stars-invoice";
+    var res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": SUPABASE_ANON_KEY,
+        "Authorization": "Bearer " + SUPABASE_ANON_KEY
+      },
+      body: JSON.stringify({
+        telegram_id: identity.telegram_id,
+        init_data: initData
+      })
+    });
+
+    if (!res.ok) {
+      var errText = await res.text().catch(function () { return ""; });
+      console.error("[Stars] createStarsInvoice HTTP " + res.status + ":", errText);
+      return null;
+    }
+
+    var data = await res.json();
+    if (!data || !data.invoice_url) {
+      console.error("[Stars] createStarsInvoice: пустой invoice_url", data);
+      return null;
+    }
+    return data;
+  } catch (e) {
+    console.error("[Stars] createStarsInvoice exception:", e && e.message);
+    return null;
+  }
+}
+
+async function setUserPremium(value) {
+  try {
+    if (!initSupabaseClient()) return false;
+    var identity = await getVerifiedUserIdentity();
+    if (!identity) return false;
+
+    var res = await supabaseClient
+      .from("users")
+      .update({ is_premium: !!value })
+      .eq("telegram_id", identity.telegram_id);
+
+    if (res.error) {
+      console.error("[Stars] setUserPremium ошибка:",
+        res.error.message, res.error.code || "");
+      return false;
+    }
+    console.log("[Stars] users.is_premium=" + !!value + " установлено клиентом");
+    return true;
+  } catch (e) {
+    console.error("[Stars] setUserPremium exception:", e && e.message);
+    return false;
+  }
+}
+
+window.createStarsInvoice = createStarsInvoice;
+window.setUserPremium = setUserPremium;
+
 /**
  * STATISTICS COLLECTION — публичная статистика премиум/не-премиум пользователей.
  * Возвращает { premiumCount, freeCount, total }.

@@ -1931,6 +1931,14 @@ function saveFullState() {
       }
     }, SUPABASE_SAVE_DELAY);
   }
+
+  // CLOUD STORAGE SYNC — debounced push в Telegram CloudStorage.
+  // Кросс-устройственный sync без бэкенда: те же данные становятся
+  // доступны на другом устройстве пользователя через Telegram.
+  // scheduleSync сам обрабатывает available()-check и debounce.
+  if (window.CloudSync && typeof window.CloudSync.scheduleSync === "function") {
+    try { window.CloudSync.scheduleSync(); } catch (e) { /* graceful */ }
+  }
 }
 
 /**
@@ -2179,6 +2187,40 @@ loadFullState();
 
   } catch (e) {
     console.error("[Sync] Error during remote state comparison:", e);
+  }
+})();
+
+// CLOUD STORAGE SYNC — старт-pull из Telegram CloudStorage.
+// ─────────────────────────────────────────────────────────────────────────────
+// На старте сравниваем cloud.lastSavedAt с local.lastSavedAt. Если cloud
+// новее (пользователь работал с другого устройства) — применяем cloud,
+// перезаписываем localStorage и UI. Если local новее или равен — оставляем
+// local и push'им local в cloud в фоне (чтобы синхронизировать обратное
+// направление). Конфликтов нет — побеждает более свежий timestamp.
+//
+// pull инициализируется ПОСЛЕ Telegram WebApp.ready (когда CloudStorage
+// гарантированно доступен) и ПОСЛЕ loadFullState (когда appState уже
+// загружен из localStorage).
+(function bootCloudSync() {
+  function tryPull() {
+    if (!window.CloudSync) return;
+    if (!window.CloudSync.available()) {
+      console.log("[CloudSync] CloudStorage недоступен — пропускаем pull");
+      return;
+    }
+    window.CloudSync.pullFromCloud().then(function (applied) {
+      if (!applied) {
+        // local победил → отправляем local в cloud (если ещё не отправляли).
+        window.CloudSync.scheduleSync();
+      }
+    }).catch(function (e) {
+      console.warn("[CloudSync] pullFromCloud failed:", e && e.message);
+    });
+  }
+  if (document.readyState === "complete") {
+    setTimeout(tryPull, 600);
+  } else {
+    window.addEventListener("load", function () { setTimeout(tryPull, 600); });
   }
 })();
 
@@ -11369,12 +11411,135 @@ function goalSwipeToIndex(idx, goLeft) {
   if (closeBtn)  closeBtn.addEventListener("click",  closePremiumModal);
   if (overlay)   overlay.addEventListener("click",   closePremiumModal);
   if (buyBtn) {
-    buyBtn.addEventListener("click", function () {
-      if (typeof haptic === "function") haptic("medium");
-      // PREMIUM MODAL — здесь будет логика оплаты (Telegram Payments / ЮKassa).
-      // Пока показываем toast-заглушку.
-      showToast(t("premium.buyBtn"), "success");
-    });
+    buyBtn.addEventListener("click", handleBuyPremium);
+  }
+
+  // TELEGRAM STARS — обработчик нажатия на «Оформить Premium».
+  // ─────────────────────────────────────────────────────────────────────────
+  // Flow:
+  //   1. createStarsInvoice() (supabase.js) → POST /functions/v1/create-stars-invoice
+  //      → бэкенд (Edge Function) дёргает Bot API createInvoiceLink (XTR, 450⭐)
+  //      → возвращает invoice_url.
+  //   2. tg.openInvoice(invoice_url, callback).
+  //   3. callback("paid") → optimistic isPremium=true в appState + setUserPremium
+  //      в Supabase (страховка на случай задержки bot webhook'а), success-toast,
+  //      закрытие модалки, перерисовка UI.
+  //   4. callback("cancelled"|"failed") → toast с пояснением, модалка остаётся.
+  //   5. Параллельно — bot webhook (stars-payment-webhook) поставит is_premium
+  //      серверно из обработчика successful_payment. syncUserAccessFlagsFromDB
+  //      подтвердит флаг на следующем тике (~через 1.5с).
+  var _paymentInFlight = false;
+  async function handleBuyPremium() {
+    if (_paymentInFlight) return;
+    if (typeof haptic === "function") haptic("medium");
+
+    var tgApi = window.Telegram && window.Telegram.WebApp;
+    if (!tgApi || typeof tgApi.openInvoice !== "function") {
+      showToast(t("payment.unavailable"), "error");
+      return;
+    }
+    if (typeof window.createStarsInvoice !== "function") {
+      showToast(t("payment.unavailable"), "error");
+      return;
+    }
+
+    _paymentInFlight = true;
+    try {
+      // Дисейблим кнопку на время запроса, чтобы не было двойных кликов.
+      if (buyBtn) {
+        buyBtn.disabled = true;
+        buyBtn.style.opacity = "0.65";
+      }
+      showToast(t("payment.processing"), "info", { duration: 1800 });
+
+      var invoice = await window.createStarsInvoice();
+      if (!invoice || !invoice.invoice_url) {
+        showToast(t("payment.failed"), "error");
+        return;
+      }
+
+      tgApi.openInvoice(invoice.invoice_url, function (status) {
+        // status: "paid" | "cancelled" | "failed" | "pending"
+        if (status === "paid") {
+          onStarsPaymentSucceeded();
+        } else if (status === "cancelled") {
+          showToast(t("payment.cancelled"), "info");
+        } else if (status === "failed") {
+          showToast(t("payment.failed"), "error");
+        }
+        // "pending" — Telegram сообщит позже через invoiceClosed, ничего не делаем.
+      });
+    } catch (e) {
+      console.error("[Stars] handleBuyPremium exception:", e);
+      showToast(t("payment.failed"), "error");
+    } finally {
+      _paymentInFlight = false;
+      if (buyBtn) {
+        buyBtn.disabled = false;
+        buyBtn.style.opacity = "";
+      }
+    }
+  }
+
+  // TELEGRAM STARS — действия после успешной оплаты.
+  // Оптимистично включаем premium локально + пишем в БД клиентом (страховка),
+  // показываем success-UI и закрываем модалку. Background sync через ~1.5с
+  // подтвердит флаг из БД (если bot webhook сработал — там уже true).
+  async function onStarsPaymentSucceeded() {
+    try {
+      if (typeof haptic === "function") haptic("success");
+
+      // 1. Локальный state — мгновенно.
+      if (typeof updateState === "function") {
+        updateState({ isPremium: true });
+      } else if (window.appState) {
+        window.appState.isPremium = true;
+      }
+      if (typeof saveFullState === "function") {
+        try { saveFullState(); } catch (e) { console.warn("[Stars] saveFullState:", e); }
+      }
+
+      // 2. Перерисовываем premium-UI.
+      if (typeof window._syncPremiumUI === "function") window._syncPremiumUI();
+      if (typeof renderAccountBackCards === "function") renderAccountBackCards();
+      if (typeof refreshProfileStats === "function") refreshProfileStats();
+
+      // 3. Cloud push — premium-флаг должен немедленно улететь на другие устройства.
+      if (window.CloudSync && typeof window.CloudSync.pushToCloud === "function") {
+        try { window.CloudSync.pushToCloud(); } catch (e) { console.warn("[Stars] cloud push:", e); }
+      }
+
+      // 4. Success UX.
+      showToast(t("payment.success.title") + " · " + t("payment.success.text"), "success", { duration: 3500 });
+      closePremiumModal();
+
+      // 5. Подстраховка серверная — клиент сам пишет is_premium=true в БД
+      //    (на случай, если webhook не настроен или задерживается).
+      if (typeof window.setUserPremium === "function") {
+        window.setUserPremium(true).catch(function (err) {
+          console.warn("[Stars] setUserPremium (fallback) failed:", err);
+        });
+      }
+    } catch (e) {
+      console.error("[Stars] onStarsPaymentSucceeded exception:", e);
+    }
+  }
+
+  // TELEGRAM STARS — подписка на invoiceClosed (бекап-канал, если callback
+  // openInvoice по какой-то причине не вызвался). Telegram emit'ит это
+  // событие при закрытии нативного оплатного UI с тем же status'ом.
+  if (window.Telegram && window.Telegram.WebApp && typeof window.Telegram.WebApp.onEvent === "function") {
+    try {
+      window.Telegram.WebApp.onEvent("invoiceClosed", function (e) {
+        if (!e || e.status !== "paid") return;
+        // Если onStarsPaymentSucceeded уже отработал из callback — повторный
+        // вызов идемпотентен (isPremium уже true, UI уже перерисован).
+        if (typeof getState === "function" && getState().isPremium === true) return;
+        onStarsPaymentSucceeded();
+      });
+    } catch (e) {
+      console.warn("[Stars] onEvent invoiceClosed не поддерживается:", e && e.message);
+    }
   }
 
   // Dots-навигация

@@ -405,8 +405,16 @@
       "premium.f5.title": "Статистика счёта",
       "premium.f5.text": "Переверни карточку счёта — и увидишь полную картину: сколько уже отложено, динамика пополнений, прогноз на следующий месяц.",
       "premium.buyBtn": "Оформить Premium",
-      "premium.price": "299 ₽ / месяц",
-      "premium.ctaHint": "Отмена в любой момент · Без скрытых платежей",
+      "premium.price": "450 ⭐ навсегда",
+      "premium.ctaHint": "Один платёж · Без подписок · Премиум навсегда",
+
+      // TELEGRAM STARS — экраны оплаты
+      "payment.processing": "Открываем оплату Telegram Stars…",
+      "payment.success.title": "Premium активирован!",
+      "payment.success.text": "Все премиум-функции теперь доступны",
+      "payment.cancelled": "Оплата отменена",
+      "payment.failed": "Оплата не прошла. Попробуйте ещё раз",
+      "payment.unavailable": "Оплата временно недоступна",
 
       // ── Pace ──
       "pace.title": "Темп накоплений",
@@ -1427,8 +1435,16 @@
       "premium.f5.title": "Account statistics",
       "premium.f5.text": "Flip the account card to see the full picture: how much you've saved, deposit dynamics, and next-month forecast.",
       "premium.buyBtn": "Get Premium",
-      "premium.price": "₽299 / month",
-      "premium.ctaHint": "Cancel anytime · No hidden fees",
+      "premium.price": "450 ⭐ forever",
+      "premium.ctaHint": "One-time payment · No subscription · Premium forever",
+
+      // TELEGRAM STARS — payment screens
+      "payment.processing": "Opening Telegram Stars payment…",
+      "payment.success.title": "Premium activated!",
+      "payment.success.text": "All premium features are now unlocked",
+      "payment.cancelled": "Payment cancelled",
+      "payment.failed": "Payment failed. Please try again",
+      "payment.unavailable": "Payment is temporarily unavailable",
 
       // ── Pace ──
       "pace.title": "Saving Pace",
