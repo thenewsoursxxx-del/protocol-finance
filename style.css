@@ -10061,12 +10061,7 @@ body.reduce-motion .settings-seg-btn {
   overflow-x: auto;
   overflow-y: hidden;
   scroll-snap-type: x mandatory;
-  /* PREMIUM MODAL: fixed swipe stability + layout
-     НЕ ставим scroll-behavior: smooth на контейнер — iOS применяет его
-     и к нативному touch-scroll, из-за чего после отпускания пальца
-     smooth-аниматор конфликтует со snap'ом и иногда гасит инерцию
-     («свайп через раз»). Плавный scrollTo программный — через JS
-     (см. goToSlide → scrollTo({ behavior: "smooth" })). */
+  scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
   /* Скрываем горизонтальный скроллбар (карусель без полосы прокрутки). */
   scrollbar-width: none;
@@ -10081,12 +10076,7 @@ body.reduce-motion .settings-seg-btn {
   flex: 0 0 100%;
   min-width: 100%;
   scroll-snap-align: start;
-  /* PREMIUM MODAL: fixed swipe stability + layout
-     УБРАЛИ scroll-snap-stop: always — он ЗАСТАВЛЯЛ браузер останавливаться
-     на каждом слайде, и если скорость свайпа была чуть ниже порога, скролл
-     откатывался на исходный слайд (визуально «не сработало»). Дефолтное
-     поведение normal даёт естественную инерцию: слабый свайп — snap-back
-     к текущему, нормальный — переход к следующему. */
+  scroll-snap-stop: always;
   /* Содержимое слайда — большое, центрированное, с воздухом. */
   display: flex;
   flex-direction: column;
@@ -10094,13 +10084,8 @@ body.reduce-motion .settings-seg-btn {
   justify-content: center;
   text-align: center;
   padding: 28px 16px 32px;
-  /* PREMIUM MODAL: fixed swipe stability + layout
-     УБРАЛИ overflow-y: auto на .premium-slide — iOS вынужден был на каждом
-     touchstart решать: вертикальный скролл внутри слайда или горизонтальный
-     по карусели. Гадание о доминирующей оси и давало «через раз». Слайды
-     теперь жёстко без вертикального скролла, ось всегда одна — горизонталь. */
-  overflow: hidden;
-  touch-action: pan-x;
+  /* Если контент не помещается (короткий экран) — скроллим внутри слайда. */
+  overflow-y: auto;
 }
 .premium-slide-icon {
   font-size: 64px;

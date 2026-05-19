@@ -11265,12 +11265,16 @@ function goalSwipeToIndex(idx, goLeft) {
 
   // PREMIUM MODAL: fixed swipe stability + layout
   // ─────────────────────────────────────────────────────────────────────────
-  // Трекер активного слайда через scroll-event на .premium-slides.
-  // Сам свайп обрабатывает БРАУЗЕР через CSS scroll-snap-type: x mandatory,
-  // мы только наблюдаем за scrollLeft и обновляем dots.
+  // 1) Трекер активного слайда через scroll-event на .premium-slides.
+  //    Сам свайп обрабатывает БРАУЗЕР через CSS scroll-snap-type: x mandatory.
   //
-  // Это полностью устраняет все прошлые проблемы с touch-state'ом, ghost-
-  // transition'ами и «зависшими» жестами после первого свайпа.
+  // 2) JS-ассист на touchend — фиксит баг «свайп срабатывает через раз».
+  //    Корневая причина: native scroll-snap решает «лететь вперёд или откатить»
+  //    по СКОРОСТИ свайпа. Если палец двигался медленно — снап откатывается
+  //    к исходному слайду, и пользователь видит «не сработало». Решение:
+  //    на touchend смотрим НАПРАВЛЕНИЕ и ДИСТАНЦИЮ движения пальца. Если
+  //    палец прошёл > 12% ширины — гарантированно переходим к соседнему
+  //    слайду через scrollTo, перекрывая native snap. Скорость уже не важна.
   (function initSlideScrollTracking() {
     var slides = document.getElementById("premiumSlides");
     if (!slides) return;
@@ -11298,6 +11302,61 @@ function goalSwipeToIndex(idx, goLeft) {
         rafPending = false;
         syncCurrentSlideFromScroll();
       });
+    }, { passive: true });
+
+    // ── JS-ассист: гарантированный snap по направлению свайпа ──
+    var touchStartX = 0;
+    var touchStartScrollLeft = 0;
+    var hasActiveTouch = false;
+
+    slides.addEventListener("touchstart", function (e) {
+      if (!e.touches || e.touches.length !== 1) {
+        hasActiveTouch = false;
+        return;
+      }
+      touchStartX = e.touches[0].clientX;
+      touchStartScrollLeft = slides.scrollLeft;
+      hasActiveTouch = true;
+    }, { passive: true });
+
+    slides.addEventListener("touchend", function (e) {
+      if (!hasActiveTouch) return;
+      hasActiveTouch = false;
+      if (!e.changedTouches || e.changedTouches.length === 0) return;
+
+      var endX = e.changedTouches[0].clientX;
+      var deltaX = endX - touchStartX;
+      var w = slides.clientWidth || 1;
+      // 12% от ширины — низкий порог, делает свайп очень отзывчивым,
+      // но защищает от случайных микро-движений (тапы / scroll-init).
+      var threshold = w * 0.12;
+
+      var startSlideIdx = Math.round(touchStartScrollLeft / w);
+      var intendedSlide = startSlideIdx;
+
+      if (deltaX < -threshold && startSlideIdx < _totalSlides - 1) {
+        intendedSlide = startSlideIdx + 1;
+      } else if (deltaX > threshold && startSlideIdx > 0) {
+        intendedSlide = startSlideIdx - 1;
+      }
+
+      var targetScrollLeft = intendedSlide * w;
+      // rAF — даём native snap чуть-чуть стартануть, потом перехватываем
+      // через scrollTo. Если native уже идёт в нужную точку — scrollTo
+      // просто подтверждает её и snap завершается плавно.
+      requestAnimationFrame(function () {
+        if (Math.abs(slides.scrollLeft - targetScrollLeft) > 1) {
+          try {
+            slides.scrollTo({ left: targetScrollLeft, behavior: "smooth" });
+          } catch (_e) {
+            slides.scrollLeft = targetScrollLeft;
+          }
+        }
+      });
+    }, { passive: true });
+
+    slides.addEventListener("touchcancel", function () {
+      hasActiveTouch = false;
     }, { passive: true });
   })();
 
