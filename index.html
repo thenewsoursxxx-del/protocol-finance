@@ -16,7 +16,7 @@ viewport-fit=cover" />
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
 
-<link rel="stylesheet" href="style.css?v=20016">
+<link rel="stylesheet" href="style.css?v=20017">
 
 <!-- Базовая инициализация Telegram Mini App (ранний вызов ready — рекомендация Telegram) -->
 <script>
@@ -738,17 +738,62 @@ Protocol анализирует цель…
      скрыто, чтобы у обычных пользователей блок не вспыхивал прочерками. -->
 <div class="profile-stats" id="profileStats" aria-live="polite" style="display:none">
   <div class="profile-stats-title" data-i18n="profile.stats.title">Статистика сообщества</div>
+
+  <!-- ── Группа 1: Пользователи ─────────────────────────────────────────── -->
   <div class="profile-stats-row">
-    <span class="profile-stats-label" data-i18n="profile.stats.premium">Пользователей с премиум</span>
+    <span class="profile-stats-label">
+      <span class="profile-stats-icon">👤</span>
+      <span data-i18n="profile.stats.premium">Пользователей с премиум</span>
+    </span>
     <span class="profile-stats-value" id="profileStatsPremium">—</span>
   </div>
   <div class="profile-stats-row">
-    <span class="profile-stats-label" data-i18n="profile.stats.free">Пользователей без премиум</span>
+    <span class="profile-stats-label">
+      <span class="profile-stats-icon">🌿</span>
+      <span data-i18n="profile.stats.free">Пользователей без премиум</span>
+    </span>
     <span class="profile-stats-value" id="profileStatsFree">—</span>
   </div>
   <div class="profile-stats-row profile-stats-row--total">
     <span class="profile-stats-label" data-i18n="profile.stats.total">Всего</span>
     <span class="profile-stats-value" id="profileStatsTotal">—</span>
+  </div>
+
+  <!-- ── Группа 2: Доходы Stars ──────────────────────────────────────────
+       Sub-section divider — изумрудная линия с подписью. Визуально отделяет
+       финансовый блок от пользовательского. Значения подсвечены золотом
+       в тон ⭐ Telegram Stars (см. .profile-stats-value--stars в style.css). -->
+  <div class="profile-stats-subtitle" data-i18n="profile.stats.subtitle.revenue">Доходы Stars</div>
+  <div class="profile-stats-row">
+    <span class="profile-stats-label">
+      <span class="profile-stats-icon">⭐</span>
+      <span data-i18n="profile.stats.starsTotal">Заработано Stars всего</span>
+    </span>
+    <span class="profile-stats-value profile-stats-value--stars" id="profileStatsStarsTotal">—</span>
+  </div>
+  <div class="profile-stats-row">
+    <span class="profile-stats-label">
+      <span class="profile-stats-icon">📅</span>
+      <span data-i18n="profile.stats.starsMonth">За последний месяц</span>
+    </span>
+    <span class="profile-stats-value profile-stats-value--stars" id="profileStatsStarsMonth">—</span>
+  </div>
+
+  <!-- ── Группа 3: Активность ──────────────────────────────────────────── -->
+  <div class="profile-stats-subtitle" data-i18n="profile.stats.subtitle.activity">Активность</div>
+  <div class="profile-stats-row">
+    <span class="profile-stats-label">
+      <span class="profile-stats-icon">💳</span>
+      <span data-i18n="profile.stats.purchases">Покупок Premium</span>
+    </span>
+    <span class="profile-stats-value" id="profileStatsPurchases">—</span>
+  </div>
+  <div class="profile-stats-row">
+    <span class="profile-stats-label">
+      <span class="profile-stats-icon">✨</span>
+      <span data-i18n="profile.stats.newUsers30d">Новых пользователей за 30 дней</span>
+    </span>
+    <span class="profile-stats-value" id="profileStatsNewUsers30d">—</span>
   </div>
 </div>
 
@@ -2205,18 +2250,18 @@ z-index: 999999;
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-<script src="state-manager.js?v=20016"></script>
-<script src="i18n.js?v=20016"></script>
-<script src="financial-events.js?v=20016"></script>
-<script src="cashflow-engine.js?v=20016"></script>
-<script src="graph-engine-svg.js?v=20016"></script>
+<script src="state-manager.js?v=20017"></script>
+<script src="i18n.js?v=20017"></script>
+<script src="financial-events.js?v=20017"></script>
+<script src="cashflow-engine.js?v=20017"></script>
+<script src="graph-engine-svg.js?v=20017"></script>
 <!-- Supabase: после CDN в <head>; замените anon-ключ внутри файла -->
-<script src="supabase.js?v=20016"></script>
+<script src="supabase.js?v=20017"></script>
 <!-- CLOUD STORAGE SYNC — кросс-устройственная синхронизация через Telegram CloudStorage.
      Загружаем ПОСЛЕ state-manager (нужен applyState/saveState) и Supabase
      (для согласованности с серверным sync), но ДО app.js — чтобы хуки
      CloudSync.scheduleSync() в saveFullState() были доступны на момент init. -->
-<script src="cloud-storage.js?v=20016"></script>
-<script src="app.js?v=20016"></script>
+<script src="cloud-storage.js?v=20017"></script>
+<script src="app.js?v=20017"></script>
 </body>
 </html>

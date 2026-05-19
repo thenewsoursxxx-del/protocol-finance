@@ -795,16 +795,61 @@ color: #f55;
 .profile-stats-label {
   font-size: 14px;
   color: rgba(255,255,255,0.72);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+/* COMMUNITY STATS — иконка слева от подписи строки. Emoji-glyph, лёгкий
+   полупрозрачный фон-«чип» для аккуратности. */
+.profile-stats-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  font-size: 13px;
+  border-radius: 8px;
+  background: rgba(16, 185, 129, 0.10);
+  border: 1px solid rgba(16, 185, 129, 0.18);
+  line-height: 1;
+  flex-shrink: 0;
 }
 .profile-stats-value {
   font-size: 16px;
   font-weight: 700;
   color: #fff;
   letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums; /* выровненные цифры в столбце */
 }
 .profile-stats-row--total .profile-stats-value {
   color: #6ee7b7;
   font-size: 17px;
+}
+
+/* COMMUNITY STATS — подзаголовок секции внутри блока (например, «Доходы Stars»
+   или «Активность»). Изумрудный uppercase-стиль в тон главному заголовку,
+   но мельче. Снизу — emerald-glow divider, отделяющий блоки. */
+.profile-stats-subtitle {
+  margin-top: 16px;
+  margin-bottom: 4px;
+  padding-top: 12px;
+  padding-bottom: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(110, 231, 183, 0.75);
+  border-top: 1px solid rgba(16, 185, 129, 0.22);
+  /* Лёгкое emerald-glow свечение под линией — премиальный акцент. */
+  background:
+    linear-gradient(180deg, rgba(16, 185, 129, 0.08), transparent 80%);
+}
+
+/* COMMUNITY STATS — значения для Stars-блока подсвечиваем тёплым золотом
+   (#FFD700), чтобы цифры визуально перекликались с ⭐ иконкой Telegram. */
+.profile-stats-value--stars {
+  color: #FFD700;
+  text-shadow: 0 0 8px rgba(255, 215, 0, 0.22);
 }
 
 /* ─── SOCIAL LINKS IN PROFILE ──────────────────────────────────

@@ -346,6 +346,13 @@
       "profile.stats.premium": "Пользователей с премиум",
       "profile.stats.free":    "Пользователей без премиум",
       "profile.stats.total":   "Всего",
+      // COMMUNITY STATS — extended admin metrics (Stars + growth)
+      "profile.stats.subtitle.revenue":  "Доходы Stars",
+      "profile.stats.subtitle.activity": "Активность",
+      "profile.stats.starsTotal":   "Заработано Stars всего",
+      "profile.stats.starsMonth":   "За последний месяц",
+      "profile.stats.purchases":    "Покупок Premium",
+      "profile.stats.newUsers30d":  "Новых пользователей за 30 дней",
       // NEW: Report problem feature
       "profile.reportProblem": "🐞 Сообщить о проблеме",
       "report.modal.title": "Сообщить о проблеме",
@@ -1391,6 +1398,13 @@
       "profile.stats.premium": "Premium users",
       "profile.stats.free":    "Free users",
       "profile.stats.total":   "Total",
+      // COMMUNITY STATS — extended admin metrics (Stars + growth)
+      "profile.stats.subtitle.revenue":  "Stars revenue",
+      "profile.stats.subtitle.activity": "Activity",
+      "profile.stats.starsTotal":   "Total Stars earned",
+      "profile.stats.starsMonth":   "Last 30 days",
+      "profile.stats.purchases":    "Premium purchases",
+      "profile.stats.newUsers30d":  "New users in 30 days",
       // NEW: Report problem feature
       "profile.reportProblem": "🐞 Report a problem",
       "report.modal.title": "Report a problem",

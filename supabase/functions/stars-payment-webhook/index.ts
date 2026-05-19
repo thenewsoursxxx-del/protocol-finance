@@ -54,6 +54,42 @@ const supabase = SUPABASE_URL && SERVICE_ROLE
 const PREMIUM_DAYS = 30;
 const PREMIUM_MS = PREMIUM_DAYS * 24 * 60 * 60 * 1000;
 
+// COMMUNITY STATS — логирование каждого успешного платежа в stars_payments.
+// Идемпотентность гарантируется UNIQUE индексом по telegram_charge_id;
+// если тот же платёж придёт повторно, INSERT упадёт с conflict — мы это
+// тихо проглатываем (платёж УЖЕ записан, всё ок).
+async function logStarsPayment(args: {
+  telegramId: number;
+  amount: number;
+  isRecurring: boolean;
+  telegramChargeId: string | null;
+  invoicePayload: string;
+}): Promise<void> {
+  if (!supabase) return;
+  try {
+    const { error } = await supabase.from("stars_payments").insert({
+      telegram_id: args.telegramId,
+      amount: args.amount,
+      is_recurring: args.isRecurring,
+      telegram_charge_id: args.telegramChargeId,
+      invoice_payload: args.invoicePayload,
+    });
+    if (error) {
+      // 23505 = unique_violation. Это означает «уже логировали этот платёж» —
+      // штатная ситуация при retry от Telegram, не считаем за ошибку.
+      if ((error as { code?: string }).code === "23505") {
+        console.log(`[stars-webhook] payment already logged (idempotent), charge_id=${args.telegramChargeId}`);
+        return;
+      }
+      console.warn("[stars-webhook] logStarsPayment failed:", error);
+    } else {
+      console.log(`[stars-webhook] payment logged: tg=${args.telegramId}, amount=${args.amount}, recurring=${args.isRecurring}`);
+    }
+  } catch (e) {
+    console.warn("[stars-webhook] logStarsPayment exception:", e);
+  }
+}
+
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 async function answerPreCheckoutQuery(
@@ -400,6 +436,26 @@ Deno.serve(async (req: Request) => {
         tgIsRecurring,
       );
       if (!result.ok) return new Response("db_error", { status: 500 });
+
+      // COMMUNITY STATS — логируем платёж в stars_payments для аналитики
+      // (заработано Stars / количество покупок / новые покупки за месяц).
+      // Идемпотентно: на duplicate charge_id INSERT молча игнорируется.
+      // Поле amount берём из самой записи Telegram (sp.total_amount),
+      // а не из захардкоженного STARS_PRICE — чтобы статистика выдержала
+      // будущие изменения цены.
+      const paymentAmount = (typeof sp.total_amount === "number") ? sp.total_amount : 0;
+      const chargeId = (typeof sp.telegram_payment_charge_id === "string")
+        ? sp.telegram_payment_charge_id
+        : null;
+      // fire-and-forget: не блокируем ответ Telegram'у — он ждёт быстрый OK.
+      // Логирование в фоне; если упадёт — увидим только в логах функции.
+      logStarsPayment({
+        telegramId: fromId,
+        amount: paymentAmount,
+        isRecurring: result.isRenewal,
+        telegramChargeId: chargeId,
+        invoicePayload: payload,
+      }).catch(() => { /* graceful */ });
 
       // ── DM ──────────────────────────────────────────────────────────
       const lang = pickLang(from.language_code);

@@ -795,6 +795,124 @@ async function getPremiumStats() {
 
 window.getPremiumStats = getPremiumStats;
 
+/**
+ * COMMUNITY STATS — расширенная админская статистика для блока «Статистика
+ * сообщества» в профиле. Объединяет:
+ *   • premiumCount / freeCount / total  (как в getPremiumStats — для back-compat)
+ *   • starsEarnedTotal      — SUM(amount) FROM stars_payments
+ *   • starsEarnedLastMonth  — SUM(amount) WHERE created_at > now()-30d
+ *   • premiumPurchases      — COUNT(*) FROM stars_payments
+ *   • newUsers30d           — COUNT(*) FROM users WHERE created_at > now()-30d
+ *
+ * Защита от частичных сбоев: каждый запрос обёрнут в try/catch, при ошибке
+ * соответствующее поле возвращается как null (а не undefined) — клиент
+ * рисует «—» вместо цифры. Если таблица stars_payments ещё не создана
+ * (миграция не накатана), вернутся null'ы только для stars-метрик,
+ * пользовательские счётчики продолжат работать.
+ */
+async function getCommunityStats() {
+  if (!initSupabaseClient()) return null;
+
+  var THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+  var since30d = new Date(Date.now() - THIRTY_DAYS_MS).toISOString();
+
+  // ── Параллельные запросы ────────────────────────────────────────────────
+  async function safe(promise, tag) {
+    try {
+      var res = await promise;
+      if (res.error) {
+        console.warn("[CommunityStats] " + tag + ":", res.error.message,
+          res.error.code || "");
+        return null;
+      }
+      return res;
+    } catch (e) {
+      console.warn("[CommunityStats] " + tag + " exception:", e && e.message);
+      return null;
+    }
+  }
+
+  // 1. Premium / free / total (как в getPremiumStats).
+  var pPromise = safe(
+    supabaseClient.from("users")
+      .select("telegram_id", { count: "exact", head: true })
+      .eq("is_premium", true),
+    "premium count"
+  );
+  var fPromise = safe(
+    supabaseClient.from("users")
+      .select("telegram_id", { count: "exact", head: true })
+      .or("is_premium.eq.false,is_premium.is.null"),
+    "free count"
+  );
+
+  // 2. Новые пользователи за 30 дней.
+  var newPromise = safe(
+    supabaseClient.from("users")
+      .select("telegram_id", { count: "exact", head: true })
+      .gte("created_at", since30d),
+    "new_users_30d"
+  );
+
+  // 3. Stars: общая сумма + кол-во покупок. SUM считаем сами после SELECT'а
+  //    столбца amount (Supabase JS не имеет нативного агрегата, и edge case
+  //    в 5-10k записей это норм — таблица оплат маленькая). Для покупок
+  //    используем count:'exact' head:true.
+  var starsAllRowsPromise = safe(
+    supabaseClient.from("stars_payments").select("amount"),
+    "stars_all_rows"
+  );
+  var purchasesCountPromise = safe(
+    supabaseClient.from("stars_payments")
+      .select("id", { count: "exact", head: true }),
+    "purchases_count"
+  );
+
+  // 4. Stars за последний месяц.
+  var starsMonthPromise = safe(
+    supabaseClient.from("stars_payments")
+      .select("amount")
+      .gte("created_at", since30d),
+    "stars_last_month"
+  );
+
+  var results = await Promise.all([
+    pPromise, fPromise, newPromise,
+    starsAllRowsPromise, purchasesCountPromise, starsMonthPromise
+  ]);
+  var pRes = results[0], fRes = results[1], newRes = results[2];
+  var starsAll = results[3], purchases = results[4], starsMonth = results[5];
+
+  function sumAmount(rows) {
+    if (!Array.isArray(rows)) return null;
+    return rows.reduce(function (acc, r) {
+      var v = Number(r && r.amount);
+      return acc + (isNaN(v) ? 0 : v);
+    }, 0);
+  }
+
+  var premiumCount = (pRes && typeof pRes.count === "number") ? pRes.count : null;
+  var freeCount    = (fRes && typeof fRes.count === "number") ? fRes.count : null;
+  var total = (premiumCount != null && freeCount != null) ? premiumCount + freeCount : null;
+  var newUsers30d  = (newRes && typeof newRes.count === "number") ? newRes.count : null;
+
+  var starsTotal   = (starsAll && Array.isArray(starsAll.data)) ? sumAmount(starsAll.data) : null;
+  var starsMonthV  = (starsMonth && Array.isArray(starsMonth.data)) ? sumAmount(starsMonth.data) : null;
+  var purchasesC   = (purchases && typeof purchases.count === "number") ? purchases.count : null;
+
+  return {
+    premiumCount: premiumCount,
+    freeCount: freeCount,
+    total: total,
+    starsEarnedTotal: starsTotal,
+    starsEarnedLastMonth: starsMonthV,
+    premiumPurchases: purchasesC,
+    newUsers30d: newUsers30d
+  };
+}
+
+window.getCommunityStats = getCommunityStats;
+
 window.addEventListener("load", function () {
   console.log("[Supabase] window.load — запускаем saveCurrentUser через 500 мс");
 

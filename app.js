@@ -3449,11 +3449,28 @@ if (profileBtn) {
 // Кэш на 60с — не дёргаем БД на каждый заход в профиль.
 var _profileStatsCache = { ts: 0, data: null };
 
+// COMMUNITY STATS — форматирует число с разделителями тысяч в соответствии
+// с пользовательской настройкой (settings.numberFormat: "spaces" | "dots").
+// null/undefined → «—» (значение не загружено или БД-таблица не создана).
+function _formatStatsNumber(n) {
+  if (n == null || isNaN(n)) return "—";
+  var s = String(Math.round(n));
+  var sep = (window._protocolNumberFormat === "dots") ? "." : " ";
+  // Регулярка вставляет разделитель между каждыми 3-мя цифрами справа.
+  return s.replace(/\B(?=(\d{3})+(?!\d))/g, sep);
+}
+
 function refreshProfileStats() {
-  var elStats   = document.getElementById("profileStats");
-  var elPremium = document.getElementById("profileStatsPremium");
-  var elFree    = document.getElementById("profileStatsFree");
-  var elTotal   = document.getElementById("profileStatsTotal");
+  var elStats           = document.getElementById("profileStats");
+  var elPremium         = document.getElementById("profileStatsPremium");
+  var elFree            = document.getElementById("profileStatsFree");
+  var elTotal           = document.getElementById("profileStatsTotal");
+  // COMMUNITY STATS — новые поля.
+  var elStarsTotal      = document.getElementById("profileStatsStarsTotal");
+  var elStarsMonth      = document.getElementById("profileStatsStarsMonth");
+  var elPurchases       = document.getElementById("profileStatsPurchases");
+  var elNewUsers30d     = document.getElementById("profileStatsNewUsers30d");
+
   if (!elPremium || !elFree || !elTotal) return;
 
   // ADMIN ONLY: community stats block — блок «Статистика сообщества» виден
@@ -3466,9 +3483,16 @@ function refreshProfileStats() {
 
   function paint(stats) {
     if (!stats) return;
-    elPremium.textContent = String(stats.premiumCount);
-    elFree.textContent    = String(stats.freeCount);
-    elTotal.textContent   = String(stats.total);
+    elPremium.textContent = _formatStatsNumber(stats.premiumCount);
+    elFree.textContent    = _formatStatsNumber(stats.freeCount);
+    elTotal.textContent   = _formatStatsNumber(stats.total);
+    // COMMUNITY STATS — дорисовываем новые метрики (значения могут быть null,
+    // если соответствующая БД-таблица ещё не создана; _formatStatsNumber
+    // в этом случае рисует «—»).
+    if (elStarsTotal)  elStarsTotal.textContent  = _formatStatsNumber(stats.starsEarnedTotal);
+    if (elStarsMonth)  elStarsMonth.textContent  = _formatStatsNumber(stats.starsEarnedLastMonth);
+    if (elPurchases)   elPurchases.textContent   = _formatStatsNumber(stats.premiumPurchases);
+    if (elNewUsers30d) elNewUsers30d.textContent = _formatStatsNumber(stats.newUsers30d);
   }
 
   // Сразу показываем кэш если он есть и свежий — UI не мигает «—».
@@ -3478,9 +3502,16 @@ function refreshProfileStats() {
     return;
   }
 
-  if (typeof window.getPremiumStats !== "function") return;
+  // COMMUNITY STATS — основной getter, объединяет пользователей и Stars.
+  // Fallback на legacy getPremiumStats() если новой функции нет (на случай
+  // частичного деплоя). Legacy возвращает только {premiumCount, freeCount,
+  // total} → новые поля останутся «—», что нормально для graceful degradation.
+  var fetcher = (typeof window.getCommunityStats === "function")
+    ? window.getCommunityStats
+    : window.getPremiumStats;
+  if (typeof fetcher !== "function") return;
 
-  window.getPremiumStats().then(function (stats) {
+  fetcher().then(function (stats) {
     if (!stats) return;
     _profileStatsCache = { ts: Date.now(), data: stats };
     paint(stats);
