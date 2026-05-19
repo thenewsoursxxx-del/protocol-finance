@@ -11444,13 +11444,52 @@ function goalSwipeToIndex(idx, goLeft) {
   // Экспортируем для DB-sync кода (он лежит в другом IIFE).
   window._refreshPremiumStatusBlock = refreshPremiumStatusBlock;
 
+  // PREMIUM PROFILE BADGE — анимированная корона (Lottie king1.json).
+  // ──────────────────────────────────────────────────────────────────────────
+  // Загружаем JSON один раз, кешируем в _kingAnimData; loadKingAnimData()
+  // возвращает существующий промис при параллельных вызовах. Если файл
+  // недоступен — graceful fallback: badge остаётся видимой, но иконка пуста
+  // (нет визуального бага).
+  var KING_ANIM_PATH = "./assets/animation/king1.json";
+  var _kingAnimData = null;
+  var _kingAnimPromise = null;
+  var _kingLottieInstance = null;
+
+  function loadKingAnimData() {
+    if (_kingAnimData) return Promise.resolve(_kingAnimData);
+    if (_kingAnimPromise) return _kingAnimPromise;
+    _kingAnimPromise = fetch(KING_ANIM_PATH)
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (json) { _kingAnimData = json; return json; })
+      .catch(function () { return null; });
+    return _kingAnimPromise;
+  }
+
+  // Lazy-init Lottie-инстанса в #profilePremiumBadgeIcon. Вызывается из
+  // refreshProfilePremiumBadge() ТОЛЬКО когда badge становится видимой —
+  // экономим ресурсы у пользователей без премиума.
+  function ensureKingLottie() {
+    if (_kingLottieInstance) return;
+    var el = document.getElementById("profilePremiumBadgeIcon");
+    if (!el || typeof lottie === "undefined") return;
+    loadKingAnimData().then(function (data) {
+      if (!data || _kingLottieInstance) return;
+      try {
+        _kingLottieInstance = lottie.loadAnimation({
+          container: el,
+          renderer: "svg",
+          loop: true,
+          autoplay: true,
+          animationData: data
+        });
+      } catch (e) { /* graceful */ }
+    });
+  }
+
   // PREMIUM PROFILE BADGE — управляет видимостью изумрудной плашки «Premium»
-  // справа от имени пользователя на экране профиля. Видимость завязана на
-  // isPremiumActive() — то есть на ОДНОВРЕМЕННО:
-  //   • appState.isPremium === true (флаг в БД)
-  //   • premium_until > now() (либо null — legacy lifetime)
-  // Если подписка истекла, плашка автоматически исчезнет на следующем тике
-  // DB-синка (syncUserAccessFlagsFromDB → setUserPremium(false) → applyPremiumUI).
+  // на экране профиля. Видимость завязана на isPremiumActive() — то есть
+  // одновременно appState.isPremium === true И premium_until > now().
+  // При первой активации lazy-init'ит Lottie-корону.
   function refreshProfilePremiumBadge() {
     var badge = document.getElementById("profilePremiumBadge");
     if (!badge) return;
@@ -11459,6 +11498,7 @@ function goalSwipeToIndex(idx, goLeft) {
     if (active) {
       badge.classList.add("is-visible");
       badge.setAttribute("aria-hidden", "false");
+      ensureKingLottie();
     } else {
       badge.classList.remove("is-visible");
       badge.setAttribute("aria-hidden", "true");

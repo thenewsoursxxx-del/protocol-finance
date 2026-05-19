@@ -16,7 +16,7 @@ viewport-fit=cover" />
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
 
-<link rel="stylesheet" href="style.css?v=20015">
+<link rel="stylesheet" href="style.css?v=20016">
 
 <!-- Базовая инициализация Telegram Mini App (ранний вызов ready — рекомендация Telegram) -->
 <script>
@@ -701,22 +701,21 @@ Protocol анализирует цель…
 </div>
 
 <div class="profile-card-info">
-<div class="profile-name-row">
-  <div class="profile-name" data-i18n="profile.user">Пользователь</div>
-  <!-- PREMIUM PROFILE BADGE — изумрудная плашка справа от имени.
-       Показывается только если isPremiumActive()=true. Управляется
-       JS-функцией refreshProfilePremiumBadge() — она ставит класс
-       .is-visible на этот span. По умолчанию display:none. -->
-  <span class="profile-premium-badge" id="profilePremiumBadge" aria-hidden="true">
-    <svg class="profile-premium-badge__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M5 4l2 4 5-3 5 3 2-4v12H5z"/>
-    </svg>
-    <span class="profile-premium-badge__label" data-i18n="profile.premiumBadge">Premium</span>
-  </span>
-</div>
+<div class="profile-name" data-i18n="profile.user">Пользователь</div>
 <div class="profile-status">Protocol Finance</div>
 </div>
+
+<!-- PREMIUM PROFILE BADGE — изумрудная плашка с анимированной короной (Lottie).
+     Размещена как прямой ребёнок .profile-card → align-items:center на родителе
+     гарантирует вертикальное центрирование с аватаром и текстом, и плашка
+     никогда не выходит за обводку карточки. По умолчанию display:none;
+     refreshProfilePremiumBadge() в app.js ставит класс .is-visible, если
+     isPremiumActive()=true. Lottie-анимация (king1.json) подгружается лениво
+     при первом появлении и переиспользует кеш через loadKingAnimData(). -->
+<span class="profile-premium-badge" id="profilePremiumBadge" aria-hidden="true">
+  <span class="profile-premium-badge__icon" id="profilePremiumBadgeIcon" aria-hidden="true"></span>
+  <span class="profile-premium-badge__label" data-i18n="profile.premiumBadge">Premium</span>
+</span>
 </div>
 
 <button id="settingsBtn" class="profile-btn" data-i18n="profile.settings">⚙️ Настройки</button>
@@ -2206,18 +2205,18 @@ z-index: 999999;
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-<script src="state-manager.js?v=20015"></script>
-<script src="i18n.js?v=20015"></script>
-<script src="financial-events.js?v=20015"></script>
-<script src="cashflow-engine.js?v=20015"></script>
-<script src="graph-engine-svg.js?v=20015"></script>
+<script src="state-manager.js?v=20016"></script>
+<script src="i18n.js?v=20016"></script>
+<script src="financial-events.js?v=20016"></script>
+<script src="cashflow-engine.js?v=20016"></script>
+<script src="graph-engine-svg.js?v=20016"></script>
 <!-- Supabase: после CDN в <head>; замените anon-ключ внутри файла -->
-<script src="supabase.js?v=20015"></script>
+<script src="supabase.js?v=20016"></script>
 <!-- CLOUD STORAGE SYNC — кросс-устройственная синхронизация через Telegram CloudStorage.
      Загружаем ПОСЛЕ state-manager (нужен applyState/saveState) и Supabase
      (для согласованности с серверным sync), но ДО app.js — чтобы хуки
      CloudSync.scheduleSync() в saveFullState() были доступны на момент init. -->
-<script src="cloud-storage.js?v=20015"></script>
-<script src="app.js?v=20015"></script>
+<script src="cloud-storage.js?v=20016"></script>
+<script src="app.js?v=20016"></script>
 </body>
 </html>

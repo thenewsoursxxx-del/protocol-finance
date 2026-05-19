@@ -639,20 +639,11 @@ fill: none;
 stroke-width: 2;
 }
 
-/* Контейнер для имени и status (правее аватара). flex:1 — занимает
-   всё оставшееся пространство, чтобы plate-badge мог встать справа,
-   но при этом имя могло переноситься на новую строку при overflow. */
+/* Контейнер для имени и status (правее аватара). flex:1 — занимает всё
+   оставшееся пространство; min-width:0 разрешает текстам переноситься /
+   обрезаться вместо того, чтобы выталкивать badge за пределы карточки. */
 .profile-card-info {
   flex: 1;
-  min-width: 0;
-}
-
-/* Строка «Имя [Premium-badge]» — flex с зазором между именем и плашкой. */
-.profile-name-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
   min-width: 0;
 }
 
@@ -662,34 +653,39 @@ font-weight: 600;
 min-width: 0;
 }
 
-/* PREMIUM PROFILE BADGE — изумрудная овальная плашка с лёгким glow.
-   Изначально скрыта (display:none) — JS включает через .is-visible.
-   Дизайн: emerald gradient + золотистая тень на акценте, тонкая
-   полупрозрачная белая обводка для contrast'а на любом фоне.
-   Лёгкая pop-in анимация при первом появлении. */
+/* PREMIUM PROFILE BADGE — изумрудная овальная плашка с анимированной короной.
+   Размещена как прямой ребёнок .profile-card (display:flex, align-items:center)
+   → автоматически вертикально центрирована между аватаром и текстом,
+   гарантированно НЕ выходит за обводку карточки (padding:16px у .profile-card
+   создаёт нужный отступ от border'а).
+   Дизайн: emerald gradient + многослойная тень + полупрозрачная обводка.
+   Скрыта по умолчанию (display:none); JS ставит .is-visible. */
 .profile-premium-badge {
   display: none;
   align-items: center;
-  gap: 6px;
-  padding: 5px 11px 5px 9px;
+  gap: 7px;
+  padding: 8px 14px 8px 11px;
   border-radius: 999px;
   background: linear-gradient(135deg, #10b981 0%, #34d399 55%, #10b981 100%);
   color: #ffffff;
-  font-size: 12px;
+  font-size: 13.5px;
   font-weight: 700;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.4px;
   line-height: 1;
   text-transform: uppercase;
   border: 1px solid rgba(255, 255, 255, 0.22);
   box-shadow:
     0 0 0 1px rgba(16, 185, 129, 0.28),
     0 2px 6px rgba(0, 0, 0, 0.28),
-    0 6px 16px rgba(16, 185, 129, 0.28),
-    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    0 6px 18px rgba(16, 185, 129, 0.32),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28);
   text-shadow: 0 1px 1px rgba(0, 0, 0, 0.18);
   user-select: none;
   white-space: nowrap;
+  /* Не сжимаемся при нехватке места — текст в .profile-card-info ужмётся
+     первым (там min-width:0). */
   flex-shrink: 0;
+  /* Pop-in анимация появления. */
   transform: translateY(2px) scale(0.92);
   opacity: 0;
   transition:
@@ -701,17 +697,29 @@ min-width: 0;
   transform: translateY(0) scale(1);
   opacity: 1;
 }
+/* Контейнер под Lottie-анимацию короны (king1.json). Lottie рендерит SVG,
+   который автоматически вписывается в эти размеры через viewBox. Лёгкий
+   золотистый glow подчёркивает «королевский» характер иконки. */
 .profile-premium-badge__icon {
-  width: 13px;
-  height: 13px;
-  stroke-width: 2.4;
+  display: inline-block;
+  width: 22px;
+  height: 22px;
   flex-shrink: 0;
-  filter: drop-shadow(0 0 4px rgba(255, 215, 0, 0.4));
+  pointer-events: none;
+  filter: drop-shadow(0 0 4px rgba(255, 215, 0, 0.45));
+}
+.profile-premium-badge__icon svg {
+  /* Lottie вставляет inline <svg width="..." height="..."> — переопределяем
+     эти атрибуты CSS-правилами, чтобы svg точно занимал весь контейнер. */
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
 }
 .profile-premium-badge__label {
-  letter-spacing: 0.4px;
+  letter-spacing: 0.5px;
 }
-/* Reduce-motion — отключаем анимацию появления. */
+/* Reduce-motion — отключаем анимацию появления (саму lottie-корону
+   глобально приостанавливает onSettingChanged("animationsEnabled")). */
 body.reduce-motion .profile-premium-badge {
   transition: none;
 }
