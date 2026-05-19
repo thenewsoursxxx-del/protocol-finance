@@ -9927,9 +9927,9 @@ body.reduce-motion .settings-seg-btn {
   height: 100vh;
   overflow-y: auto;
   overflow-x: hidden;
-  /* PREMIUM MODAL — flex column, чтобы CTA-блок прилипал к низу через
-     margin-top:auto. Если содержимое выше переполняется — sheet
-     прокручивается; если меньше — между dots и CTA остаётся spacer. */
+  /* PREMIUM MODAL: fixed swipe stability + layout
+     flex column, чтобы .premium-slides (с flex: 1) поглощали всю свободную
+     вертикальную область, а CTA-блок естественно прижимался к низу. */
   display: flex;
   flex-direction: column;
   background:
@@ -10021,61 +10021,14 @@ body.reduce-motion .settings-seg-btn {
   line-height: 1.45;
 }
 
-/* ── Slides ────────────────────────────────────────────────── */
-.premium-slides {
-  display: flex;
-  overflow: hidden;
-  width: 100%;
-  /* PREMIUM SYSTEM — pan-y запрещал JS перехватывать горизонтальный свайп.
-     none — JS полностью контролирует touch внутри слайдов, вертикальный
-     скролл sheet работает на header/dots/CTA-областях. */
-  touch-action: none;
-  user-select: none;
-  -webkit-user-select: none;
-  /* Слайды НЕ растягиваются — фиксированная высота по содержимому. */
-  flex-shrink: 0;
-}
-.premium-slide {
-  flex: 0 0 100%;
-  min-width: 100%;
-  padding: 6px 8px 22px;
-  text-align: center;
-  transition: opacity 0.3s ease;
-}
-.premium-slide-icon {
-  font-size: 54px;
-  margin-bottom: 16px;
-  line-height: 1;
-  filter:
-    drop-shadow(0 0 24px rgba(16, 185, 129, 0.55))
-    drop-shadow(0 0 8px rgba(110, 231, 183, 0.35));
-  animation: premiumIconFloat 4.5s ease-in-out infinite;
-}
-@keyframes premiumIconFloat {
-  0%, 100% { transform: translateY(0); }
-  50%      { transform: translateY(-4px); }
-}
-.premium-slide-title {
-  font-size: 20px;
-  font-weight: 700;
-  color: #fff;
-  margin-bottom: 10px;
-  letter-spacing: -0.015em;
-}
-.premium-slide-text {
-  font-size: 14px;
-  color: rgba(255,255,255,0.64);
-  line-height: 1.6;
-  max-width: 320px;
-  margin: 0 auto;
-}
-
-/* ── Dots ──────────────────────────────────────────────────── */
+/* ── Dots (теперь СРАЗУ под header / subtitle) ─────────────── */
+/* PREMIUM MODAL: fixed swipe stability + layout — dots переехали выше,
+   между .premium-header и .premium-slides. */
 .premium-dots {
   display: flex;
   justify-content: center;
   gap: 8px;
-  margin: 6px 0 20px;
+  margin: 4px 0 14px;
   flex-shrink: 0;
 }
 .premium-dot {
@@ -10094,11 +10047,79 @@ body.reduce-motion .settings-seg-btn {
   box-shadow: 0 0 12px rgba(52, 211, 153, 0.55);
 }
 
+/* ── Slides (CSS scroll-snap карусель) ─────────────────────── */
+/* PREMIUM MODAL: fixed swipe stability + layout
+   Ручной touch handler заменён на нативный scroll-snap — iOS WebView сам
+   делает свайп/momentum/snap. Контейнер растягивается на всю свободную
+   вертикальную область (flex: 1), что даёт слайдам много места под текст
+   и изображения. */
+.premium-slides {
+  display: flex;
+  width: 100%;
+  flex: 1;
+  min-height: 0; /* нужно, чтобы flex: 1 ребёнок не вылезал за родителя */
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  /* Скрываем горизонтальный скроллбар (карусель без полосы прокрутки). */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  /* Только горизонтальные жесты идут в нативный pan-x; вертикальные
+     не блокируем — sheet снаружи может скроллиться. */
+  touch-action: pan-x;
+}
+.premium-slides::-webkit-scrollbar { display: none; width: 0; height: 0; }
+
+.premium-slide {
+  flex: 0 0 100%;
+  min-width: 100%;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  /* Содержимое слайда — большое, центрированное, с воздухом. */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 28px 16px 32px;
+  /* Если контент не помещается (короткий экран) — скроллим внутри слайда. */
+  overflow-y: auto;
+}
+.premium-slide-icon {
+  font-size: 64px;
+  margin-bottom: 18px;
+  line-height: 1;
+  filter:
+    drop-shadow(0 0 28px rgba(16, 185, 129, 0.58))
+    drop-shadow(0 0 10px rgba(110, 231, 183, 0.38));
+  animation: premiumIconFloat 4.5s ease-in-out infinite;
+}
+@keyframes premiumIconFloat {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-5px); }
+}
+.premium-slide-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 12px;
+  letter-spacing: -0.015em;
+}
+.premium-slide-text {
+  font-size: 14.5px;
+  color: rgba(255,255,255,0.66);
+  line-height: 1.6;
+  max-width: 340px;
+  margin: 0 auto;
+}
+
 /* ── CTA ───────────────────────────────────────────────────── */
 .premium-cta-block {
-  /* PREMIUM MODAL — CTA прибит к низу sheet'а через flex auto-margin.
-     Spacer возникает автоматически между .premium-dots и этим блоком. */
-  margin-top: auto;
+  /* PREMIUM MODAL: fixed swipe stability + layout — CTA больше не нуждается
+     в margin-top: auto, потому что .premium-slides с flex: 1 сам поглощает
+     всю свободную высоту и пушит CTA-блок вниз естественным образом. */
   padding: 16px 4px 0;
   flex-shrink: 0;
 }

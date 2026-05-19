@@ -16,7 +16,7 @@ viewport-fit=cover" />
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
 
-<link rel="stylesheet" href="style.css?v=20006">
+<link rel="stylesheet" href="style.css?v=20007">
 
 <!-- Базовая инициализация Telegram Mini App (ранний вызов ready — рекомендация Telegram) -->
 <script>
@@ -2082,6 +2082,17 @@ z-index: 999999;
     <div class="premium-subtitle" data-i18n="premium.subtitle">Полный контроль над своими финансами</div>
   </div>
 
+  <!-- PREMIUM MODAL: fixed swipe stability + layout
+       Индикатор слайдов поднят сюда, сразу под subtitle — раньше был
+       между slides и CTA. Скрипт обновления .active дотов остался прежним. -->
+  <div class="premium-dots" id="premiumDots">
+    <span class="premium-dot active" data-dot="0"></span>
+    <span class="premium-dot" data-dot="1"></span>
+    <span class="premium-dot" data-dot="2"></span>
+    <span class="premium-dot" data-dot="3"></span>
+    <span class="premium-dot" data-dot="4"></span>
+  </div>
+
   <!-- Слайды с фичами -->
   <div class="premium-slides" id="premiumSlides">
 
@@ -2117,15 +2128,6 @@ z-index: 999999;
 
   </div>
 
-  <!-- Индикатор слайдов -->
-  <div class="premium-dots" id="premiumDots">
-    <span class="premium-dot active" data-dot="0"></span>
-    <span class="premium-dot" data-dot="1"></span>
-    <span class="premium-dot" data-dot="2"></span>
-    <span class="premium-dot" data-dot="3"></span>
-    <span class="premium-dot" data-dot="4"></span>
-  </div>
-
   <!-- CTA -->
   <div class="premium-cta-block">
     <button class="premium-buy-btn" id="premiumBuyBtn">
@@ -2138,13 +2140,13 @@ z-index: 999999;
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-<script src="state-manager.js?v=20006"></script>
-<script src="i18n.js?v=20006"></script>
-<script src="financial-events.js?v=20006"></script>
-<script src="cashflow-engine.js?v=20006"></script>
-<script src="graph-engine-svg.js?v=20006"></script>
+<script src="state-manager.js?v=20007"></script>
+<script src="i18n.js?v=20007"></script>
+<script src="financial-events.js?v=20007"></script>
+<script src="cashflow-engine.js?v=20007"></script>
+<script src="graph-engine-svg.js?v=20007"></script>
 <!-- Supabase: после CDN в <head>; замените anon-ключ внутри файла -->
-<script src="supabase.js?v=20006"></script>
-<script src="app.js?v=20006"></script>
+<script src="supabase.js?v=20007"></script>
+<script src="app.js?v=20007"></script>
 </body>
 </html>
