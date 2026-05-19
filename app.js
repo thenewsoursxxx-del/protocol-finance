@@ -2177,12 +2177,6 @@ loadFullState();
       console.log("[Sync] Keeping local state (local is newer or equal)");
     }
 
-    // STATISTICS: track user visit после полной загрузки состояния
-    if (window.trackUserVisit) {
-      console.log("[Statistics] trackUserVisit вызван после полной загрузки состояния");
-      window.trackUserVisit();
-    }
-
   } catch (e) {
     console.error("[Sync] Error during remote state comparison:", e);
   }
@@ -11294,11 +11288,6 @@ function goalSwipeToIndex(idx, goLeft) {
     syncPremiumGateUI();
     syncLockBadgesVisibility();
     if (!isPremium()) initAllLockLotties();
-    // STATISTICS COLLECTION — переотправляем трекинг с актуальным is_premium
-    // (тихо, без блокировок UI; невалидные ответы просто игнорируются).
-    if (typeof window.trackUserVisit === "function") {
-      window.trackUserVisit().catch(function () { /* noop */ });
-    }
   };
 
   // PREMIUM SYSTEM — экспорт inline-гейта для прямого вызова в обработчиках.
@@ -14669,31 +14658,5 @@ function renderFlexModelSummary() {
     document.addEventListener("DOMContentLoaded", _initialSync);
   } else {
     setTimeout(_initialSync, 0);
-  }
-})();
-
-// STATISTICS: track user visit on app start
-//
-// Запускаем trackUserVisit() при инициализации приложения. Вызов:
-//   • асинхронный и неблокирующий — fire-and-forget через setTimeout(...,0);
-//   • устойчивый к раннему запуску — ждём 1.2с чтобы supabase.js успел
-//     инициализировать клиент и завершить saveCurrentUser (тот вызывает
-//     trackUserVisit сразу после, но дополнительный явный вызов даёт
-//     гарантию что мы зафиксируем визит даже если saveCurrentUser упал).
-//   • idempotent — Edge Function делает UPDATE по telegram_id, повторные
-//     вызовы безопасны (просто обновляют last_visit и геолокацию).
-(function statsTrackOnStart() {
-  function fire() {
-    if (typeof window.trackUserVisit !== "function") return;
-    try {
-      var p = window.trackUserVisit();
-      if (p && typeof p.catch === "function") p.catch(function () { /* noop */ });
-    } catch (_e) { /* noop */ }
-  }
-  // ждём DOM + Supabase-клиент
-  if (document.readyState === "complete") {
-    setTimeout(fire, 1200);
-  } else {
-    window.addEventListener("load", function () { setTimeout(fire, 1200); });
   }
 })();
