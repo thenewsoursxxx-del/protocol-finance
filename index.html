@@ -16,7 +16,7 @@ viewport-fit=cover" />
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
 
-<link rel="stylesheet" href="style.css?v=20003">
+<link rel="stylesheet" href="style.css?v=20004">
 
 <!-- Базовая инициализация Telegram Mini App (ранний вызов ready — рекомендация Telegram) -->
 <script>
@@ -718,8 +718,11 @@ Protocol анализирует цель…
 <button id="profileResetPlan" class="profile-btn danger" data-i18n="profile.fullReset">🆕 Начать сначала</button>
 
 <!-- STATISTICS COLLECTION — публичная статистика пользователей: premium / free / total.
-     Подтягивается из таблицы users через getPremiumStats() в app.js. -->
-<div class="profile-stats" id="profileStats" aria-live="polite">
+     Подтягивается из таблицы users через getPremiumStats() в app.js.
+     PREMIUM ACCESS CONTROL — видна только при is_premium=true (refreshProfileStats
+     переключает display). Стартовое состояние — скрыто, чтобы не было вспышки
+     блока с прочерками у не-премиум-пользователей. -->
+<div class="profile-stats" id="profileStats" aria-live="polite" style="display:none">
   <div class="profile-stats-title" data-i18n="profile.stats.title">Статистика сообщества</div>
   <div class="profile-stats-row">
     <span class="profile-stats-label" data-i18n="profile.stats.premium">Пользователей с премиум</span>
@@ -2133,13 +2136,13 @@ z-index: 999999;
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-<script src="state-manager.js?v=20003"></script>
-<script src="i18n.js?v=20003"></script>
-<script src="financial-events.js?v=20003"></script>
-<script src="cashflow-engine.js?v=20003"></script>
-<script src="graph-engine-svg.js?v=20003"></script>
+<script src="state-manager.js?v=20004"></script>
+<script src="i18n.js?v=20004"></script>
+<script src="financial-events.js?v=20004"></script>
+<script src="cashflow-engine.js?v=20004"></script>
+<script src="graph-engine-svg.js?v=20004"></script>
 <!-- Supabase: после CDN в <head>; замените anon-ключ внутри файла -->
-<script src="supabase.js?v=20003"></script>
-<script src="app.js?v=20003"></script>
+<script src="supabase.js?v=20004"></script>
+<script src="app.js?v=20004"></script>
 </body>
 </html>

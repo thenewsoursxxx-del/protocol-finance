@@ -526,6 +526,46 @@ async function loadInflationRates(opts) {
 window.getInflationRate = getInflationRate;
 window.loadInflationRates = loadInflationRates;
 
+/* ============================================================================
+ * PREMIUM ACCESS CONTROL — чтение users.is_premium из Supabase.
+ * ----------------------------------------------------------------------------
+ * Единственный источник истины премиум-статуса — колонка users.is_premium.
+ * Возвращает:
+ *   true   — у пользователя активен премиум
+ *   false  — премиум отсутствует
+ *   null   — не удалось прочитать (нет клиента / нет identity / ошибка / нет строки)
+ *
+ * Вызывается из app.js на старте, чтобы синхронизировать appState.isPremium
+ * с реальным состоянием в БД, после чего разблокировать все 5 премиум-функций
+ * (Изменить темп, Долги, Гибкая модель, Расширенные настройки, Статистика счёта).
+ * ============================================================================ */
+async function fetchIsPremiumStatus() {
+  try {
+    if (!initSupabaseClient()) return null;
+    var identity = await getVerifiedUserIdentity();
+    if (!identity) return null;
+
+    var res = await supabaseClient
+      .from("users")
+      .select("is_premium")
+      .eq("telegram_id", identity.telegram_id)
+      .maybeSingle();
+
+    if (res.error) {
+      console.warn("[Premium] fetchIsPremiumStatus ошибка:",
+        res.error.message, res.error.code || "");
+      return null;
+    }
+    if (!res.data) return null;
+    return res.data.is_premium === true;
+  } catch (e) {
+    console.warn("[Premium] fetchIsPremiumStatus exception:", e && e.message);
+    return null;
+  }
+}
+
+window.fetchIsPremiumStatus = fetchIsPremiumStatus;
+
 /**
  * STATISTICS COLLECTION — публичная статистика премиум/не-премиум пользователей.
  * Возвращает { premiumCount, freeCount, total }.

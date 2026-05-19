@@ -2182,6 +2182,54 @@ loadFullState();
   }
 })();
 
+// PREMIUM ACCESS CONTROL — синхронизация premium-статуса с таблицей users.
+// Источник истины — колонка users.is_premium в Supabase. По умолчанию у всех
+// пользователей is_premium = false. Если в БД проставлено true, разблокируем
+// все 5 премиум-функций (Изменить темп, Долги, Гибкая модель, Расширенные
+// настройки, Статистика счёта) и показываем блок «Статистика сообщества».
+//
+// Пробуем дважды: сразу и через ~1.5с, потому что строка users создаётся
+// в saveCurrentUser() через setTimeout(500мс) на window.load.
+(function syncPremiumFromDB() {
+  async function tick(attempt) {
+    try {
+      if (typeof window.fetchIsPremiumStatus !== "function") return;
+      var dbPremium = await window.fetchIsPremiumStatus();
+      if (dbPremium == null) {
+        if (attempt < 2) {
+          setTimeout(function () { tick(attempt + 1); }, 1500);
+        }
+        return;
+      }
+
+      var current = !!(typeof appState !== "undefined" && appState && appState.isPremium);
+      if (current === dbPremium) {
+        console.log("[Premium] статус из БД совпадает с локальным:", dbPremium);
+        return;
+      }
+
+      console.log("[Premium] users.is_premium из БД:", dbPremium, "— синхронизируем appState");
+      if (typeof updateState === "function") {
+        updateState({ isPremium: dbPremium });
+      } else if (typeof appState !== "undefined" && appState) {
+        appState.isPremium = dbPremium;
+      }
+      if (typeof saveFullState === "function") saveFullState();
+
+      if (typeof window._syncPremiumUI === "function") window._syncPremiumUI();
+      if (typeof renderAccountBackCards === "function") renderAccountBackCards();
+      if (typeof refreshProfileStats === "function") refreshProfileStats();
+    } catch (e) {
+      console.warn("[Premium] syncPremiumFromDB ошибка:", e && e.message);
+    }
+  }
+  if (document.readyState === "complete") {
+    setTimeout(function () { tick(1); }, 800);
+  } else {
+    window.addEventListener("load", function () { setTimeout(function () { tick(1); }, 800); });
+  }
+})();
+
 // Убираем зависший экран «Protocol анализирует данные…» (при повторном входе и при возврате без перезагрузки)
 function repairAdviceScreenIfStuck() {
   const adviceScreen = document.getElementById("screen-advice");
@@ -3252,10 +3300,17 @@ if (profileBtn) {
 var _profileStatsCache = { ts: 0, data: null };
 
 function refreshProfileStats() {
+  var elStats   = document.getElementById("profileStats");
   var elPremium = document.getElementById("profileStatsPremium");
   var elFree    = document.getElementById("profileStatsFree");
   var elTotal   = document.getElementById("profileStatsTotal");
   if (!elPremium || !elFree || !elTotal) return;
+
+  // PREMIUM ACCESS CONTROL — блок «Статистика сообщества» виден только
+  // пользователям с is_premium=true. По умолчанию у всех false → скрыт.
+  var isPremiumUser = (typeof getState === "function") && (getState().isPremium === true);
+  if (elStats) elStats.style.display = isPremiumUser ? "" : "none";
+  if (!isPremiumUser) return;
 
   function paint(stats) {
     if (!stats) return;
@@ -11149,7 +11204,7 @@ function goalSwipeToIndex(idx, goLeft) {
       if (animate === false) {
         slides.style.transition = "none";
       } else {
-        slides.style.transition = "transform 0.35s cubic-bezier(.4,0,.2,1)";
+        slides.style.transition = "transform 0.4s cubic-bezier(.22,.61,.36,1)";
       }
       slides.style.transform = "translateX(-" + (_currentSlide * 100) + "%)";
     }
@@ -11159,44 +11214,70 @@ function goalSwipeToIndex(idx, goLeft) {
     });
   }
 
-  // ── Свайп слайдов: touch events (надёжнее всего в iOS WebView Telegram) ─
+  // ── Свайп слайдов: live-tracking + touch/pointer events ─────────────────
   //
-  // PREMIUM MODAL — реализуем через touchstart/touchmove/touchend с
-  // passive:false на touchmove. Это даёт preventDefault, что блокирует
-  // native scroll sheet'а и заставляет браузер отдать событие нашему JS.
-  // Параллельно pointerdown/pointerup как fallback для desktop.
+  // PREMIUM MODAL — слайды следуют за пальцем в реальном времени (translateX
+  // обновляется каждый touchmove). При отпускании — либо снап к следующему
+  // слайду (если |dx| > 18% ширины), либо возврат к текущему. На краях
+  // движение замедляется через elastic resistance.
+  //
+  // touch-action: none на .premium-slides уже отключает нативные жесты;
+  // на touchmove всё равно ставим passive:false для preventDefault как
+  // подстраховку для iOS WebView, который иногда «крадёт» событие после
+  // первого move без preventDefault.
   (function initSlideSwipe() {
     var slides = document.getElementById("premiumSlides");
     if (!slides) return;
 
     var startX = 0, startY = 0, dx = 0;
     var active = false, locked = false;
+    var slideW = 0;
+    var baseOffsetPx = 0;
+
+    function applyLiveTransform(px) {
+      slides.style.transition = "none";
+      slides.style.transform = "translateX(" + px + "px)";
+    }
 
     function onStart(x, y) {
       startX = x; startY = y; dx = 0;
       active = true; locked = false;
+      slideW = slides.clientWidth || 1;
+      baseOffsetPx = -_currentSlide * slideW;
     }
     function onMove(x, y) {
       if (!active) return false;
       var rawDx = x - startX;
       var rawDy = y - startY;
       if (!locked) {
-        if (Math.abs(rawDx) < 8 && Math.abs(rawDy) < 8) return false;
-        if (Math.abs(rawDy) > Math.abs(rawDx)) { active = false; return false; }
+        if (Math.abs(rawDx) < 6 && Math.abs(rawDy) < 6) return false;
+        // Если вертикальный жест явно доминирует — отпускаем, не блокируем скролл sheet'а.
+        if (Math.abs(rawDy) > Math.abs(rawDx) * 1.2) { active = false; return false; }
         locked = true;
       }
       dx = rawDx;
-      return true; // надо вызвать preventDefault на вызывающей стороне
+      var nextX = baseOffsetPx + dx;
+      // Elastic resistance на краях: за пределами 0..-(N-1)*W движение в 3x медленнее.
+      var maxX = 0;
+      var minX = -(_totalSlides - 1) * slideW;
+      if (nextX > maxX) nextX = maxX + (nextX - maxX) * 0.32;
+      else if (nextX < minX) nextX = minX + (nextX - minX) * 0.32;
+      applyLiveTransform(nextX);
+      return true;
     }
     function onEnd() {
       if (!active && !locked) return;
       var wasLocked = locked;
-      active = false; locked = false;
+      var movedDx = dx;
+      active = false; locked = false; dx = 0;
       if (!wasLocked) return;
-      if (Math.abs(dx) > 50) {
-        if (dx < 0 && _currentSlide < _totalSlides - 1) goToSlide(_currentSlide + 1, true);
-        else if (dx > 0 && _currentSlide > 0)           goToSlide(_currentSlide - 1, true);
-      }
+
+      // Снап к следующему/предыдущему слайду при сдвиге > 18% ширины.
+      var threshold = (slideW || 1) * 0.18;
+      var nextIdx = _currentSlide;
+      if (movedDx < -threshold && _currentSlide < _totalSlides - 1) nextIdx = _currentSlide + 1;
+      else if (movedDx > threshold && _currentSlide > 0)            nextIdx = _currentSlide - 1;
+      goToSlide(nextIdx, true);
     }
 
     // ── Touch events (iOS / Android) ───────────────────────────────────

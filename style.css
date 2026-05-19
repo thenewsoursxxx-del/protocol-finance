@@ -9927,11 +9927,20 @@ body.reduce-motion .settings-seg-btn {
   height: 100vh;
   overflow-y: auto;
   overflow-x: hidden;
+  /* PREMIUM MODAL — flex column, чтобы CTA-блок прилипал к низу через
+     margin-top:auto. Если содержимое выше переполняется — sheet
+     прокручивается; если меньше — между dots и CTA остаётся spacer. */
+  display: flex;
+  flex-direction: column;
   background:
-    radial-gradient(ellipse at 50% 0%, rgba(16, 185, 129, 0.12) 0%, transparent 60%),
-    linear-gradient(180deg, #0d1a14 0%, #0a0f0c 100%);
-  border-top: 1px solid rgba(16, 185, 129, 0.22);
-  border-radius: 24px 24px 0 0;
+    radial-gradient(ellipse at 50% -8%, rgba(16, 185, 129, 0.22) 0%, transparent 55%),
+    radial-gradient(ellipse at 100% 100%, rgba(52, 211, 153, 0.07) 0%, transparent 50%),
+    linear-gradient(180deg, #0e1c16 0%, #08100c 100%);
+  border-top: 1px solid rgba(16, 185, 129, 0.32);
+  border-radius: 28px 28px 0 0;
+  box-shadow:
+    0 -20px 60px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(110, 231, 183, 0.18);
   padding: 8px 20px 40px;
   transform: translateY(0);
   transition: transform 0.4s cubic-bezier(.4,0,.2,1), opacity 0.3s ease;
@@ -9984,27 +9993,30 @@ body.reduce-motion .settings-seg-btn {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 24px 0 20px;
+  padding: 28px 0 22px;
   text-align: center;
+  flex-shrink: 0;
 }
 .premium-crown-lottie {
-  width: 64px;
-  height: 64px;
+  width: 68px;
+  height: 68px;
   margin-bottom: 12px;
+  filter: drop-shadow(0 4px 18px rgba(16, 185, 129, 0.45));
 }
 .premium-title {
-  font-size: 24px;
-  font-weight: 700;
-  background: linear-gradient(135deg, #6ee7b7, #10b981, #34d399);
+  font-size: 26px;
+  font-weight: 800;
+  background: linear-gradient(135deg, #a7f3d0 0%, #6ee7b7 35%, #34d399 70%, #10b981 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.025em;
   margin-bottom: 6px;
+  text-shadow: 0 0 24px rgba(52, 211, 153, 0.18);
 }
 .premium-subtitle {
   font-size: 14px;
-  color: rgba(255,255,255,0.56);
+  color: rgba(255,255,255,0.6);
   max-width: 260px;
   line-height: 1.45;
 }
@@ -10019,30 +10031,40 @@ body.reduce-motion .settings-seg-btn {
      скролл sheet работает на header/dots/CTA-областях. */
   touch-action: none;
   user-select: none;
+  -webkit-user-select: none;
+  /* Слайды НЕ растягиваются — фиксированная высота по содержимому. */
+  flex-shrink: 0;
 }
 .premium-slide {
   flex: 0 0 100%;
   min-width: 100%;
-  padding: 4px 6px 20px;
+  padding: 6px 8px 22px;
   text-align: center;
   transition: opacity 0.3s ease;
 }
 .premium-slide-icon {
-  font-size: 48px;
-  margin-bottom: 14px;
+  font-size: 54px;
+  margin-bottom: 16px;
   line-height: 1;
-  filter: drop-shadow(0 0 16px rgba(16,185,129,0.35));
+  filter:
+    drop-shadow(0 0 24px rgba(16, 185, 129, 0.55))
+    drop-shadow(0 0 8px rgba(110, 231, 183, 0.35));
+  animation: premiumIconFloat 4.5s ease-in-out infinite;
+}
+@keyframes premiumIconFloat {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-4px); }
 }
 .premium-slide-title {
-  font-size: 19px;
+  font-size: 20px;
   font-weight: 700;
   color: #fff;
   margin-bottom: 10px;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.015em;
 }
 .premium-slide-text {
   font-size: 14px;
-  color: rgba(255,255,255,0.62);
+  color: rgba(255,255,255,0.64);
   line-height: 1.6;
   max-width: 320px;
   margin: 0 auto;
@@ -10053,63 +10075,108 @@ body.reduce-motion .settings-seg-btn {
   display: flex;
   justify-content: center;
   gap: 8px;
-  margin: 4px 0 20px;
+  margin: 6px 0 20px;
+  flex-shrink: 0;
 }
 .premium-dot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
   background: rgba(255,255,255,0.18);
-  transition: background 0.25s ease, width 0.25s ease;
+  transition: background 0.28s ease, width 0.28s ease, box-shadow 0.28s ease;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 }
 .premium-dot.active {
-  background: #10b981;
-  width: 18px;
+  background: linear-gradient(90deg, #34d399, #10b981);
+  width: 22px;
   border-radius: 4px;
+  box-shadow: 0 0 12px rgba(52, 211, 153, 0.55);
 }
 
 /* ── CTA ───────────────────────────────────────────────────── */
 .premium-cta-block {
-  padding: 0 4px;
+  /* PREMIUM MODAL — CTA прибит к низу sheet'а через flex auto-margin.
+     Spacer возникает автоматически между .premium-dots и этим блоком. */
+  margin-top: auto;
+  padding: 16px 4px 0;
+  flex-shrink: 0;
 }
 .premium-buy-btn {
   /* PREMIUM MODAL — компактная CTA: меньше высота, меньше шрифт,
      уже по бокам через max-width + margin auto. */
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
+  gap: 3px;
   width: auto;
-  max-width: 280px;
+  max-width: 300px;
   margin: 0 auto;
-  padding: 11px 24px;
-  border-radius: 14px;
-  background: linear-gradient(135deg, #059669, #10b981, #34d399);
+  padding: 13px 28px;
+  border-radius: 16px;
+  background:
+    linear-gradient(135deg, #047857 0%, #059669 25%, #10b981 55%, #34d399 100%);
   color: #fff;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 700;
   letter-spacing: -0.01em;
-  border: none;
+  border: 1px solid rgba(110, 231, 183, 0.35);
   cursor: pointer;
-  box-shadow: 0 8px 28px rgba(16, 185, 129, 0.40);
+  box-shadow:
+    0 12px 32px rgba(16, 185, 129, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22);
   -webkit-tap-highlight-color: transparent;
-  transition: transform 0.17s ease, box-shadow 0.17s ease;
+  transition: transform 0.17s ease, box-shadow 0.17s ease, filter 0.2s ease;
+  overflow: hidden;
+}
+/* Премиум-шиммер: бегущий блик слева направо раз в 4.5s */
+.premium-buy-btn::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -120%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(
+    100deg,
+    transparent 20%,
+    rgba(255, 255, 255, 0.22) 50%,
+    transparent 80%
+  );
+  transform: skewX(-22deg);
+  animation: premiumShimmer 4.5s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes premiumShimmer {
+  0%, 35%  { left: -120%; }
+  60%      { left: 130%; }
+  100%     { left: 130%; }
 }
 .premium-buy-btn:active {
   transform: scale(0.97);
-  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.35);
+  box-shadow:
+    0 6px 18px rgba(16, 185, 129, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  filter: brightness(1.04);
+}
+/* Текст и подпись цены — над бегущим shimmer-бликом (::after). */
+.premium-buy-btn > span {
+  position: relative;
+  z-index: 1;
 }
 .premium-buy-price {
-  font-size: 11px;
+  position: relative;
+  font-size: 12px;
   font-weight: 500;
-  opacity: 0.82;
+  opacity: 0.88;
   letter-spacing: 0;
+  z-index: 1;
 }
 .premium-cta-hint {
-  margin-top: 10px;
+  margin-top: 12px;
   text-align: center;
   font-size: 12px;
-  color: rgba(255,255,255,0.36);
+  color: rgba(255,255,255,0.42);
+  letter-spacing: 0.01em;
 }
