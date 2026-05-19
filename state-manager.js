@@ -70,6 +70,12 @@ function getDefaultState() {
     // ── Premium (v4) ──
     isPremium: false,
 
+    // ADMIN ONLY: community stats block — флаг видимости блока
+    // «Статистика сообщества» в профиле. Управляется только владельцем
+    // приложения через колонку users.show_community_stats в Supabase
+    // (по умолчанию false у всех). Не связан с isPremium.
+    showCommunityStats: false,
+
     // ── Flexible onboarding (v5) — legacy, always true after redesign ──
     hasSeenFlexibleOnboarding: true,
     incomeMonthDays: [],
@@ -628,6 +634,12 @@ function applyState(saved) {
 
   // ── Premium (v4) ──
   appState.isPremium = typeof saved.isPremium === "boolean" ? saved.isPremium : defaults.isPremium;
+
+  // ADMIN ONLY: community stats block — восстанавливаем из сохранённого
+  // состояния; на старте приложения синхронизируется с users.show_community_stats.
+  appState.showCommunityStats = typeof saved.showCommunityStats === "boolean"
+    ? saved.showCommunityStats
+    : defaults.showCommunityStats;
 
   // ── Flexible onboarding (v5) ──
   appState.hasSeenFlexibleOnboarding = typeof saved.hasSeenFlexibleOnboarding === "boolean"

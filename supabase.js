@@ -527,19 +527,23 @@ window.getInflationRate = getInflationRate;
 window.loadInflationRates = loadInflationRates;
 
 /* ============================================================================
- * PREMIUM ACCESS CONTROL — чтение users.is_premium из Supabase.
+ * PREMIUM ACCESS CONTROL + ADMIN ONLY: community stats block
  * ----------------------------------------------------------------------------
- * Единственный источник истины премиум-статуса — колонка users.is_premium.
- * Возвращает:
- *   true   — у пользователя активен премиум
- *   false  — премиум отсутствует
- *   null   — не удалось прочитать (нет клиента / нет identity / ошибка / нет строки)
+ * Единый фетчер user-level access-флагов из таблицы users одним запросом:
+ *   - is_premium            — разблокирует 5 премиум-функций
+ *   - show_community_stats  — админский флаг: показ блока «Статистика
+ *                             сообщества» в профиле (включён вручную только
+ *                             для владельца / 1-2 администраторов)
  *
- * Вызывается из app.js на старте, чтобы синхронизировать appState.isPremium
- * с реальным состоянием в БД, после чего разблокировать все 5 премиум-функций
- * (Изменить темп, Долги, Гибкая модель, Расширенные настройки, Статистика счёта).
+ * Возвращает объект { isPremium: boolean, showCommunityStats: boolean }
+ * либо null, если не удалось прочитать (нет клиента / нет identity /
+ * ошибка SELECT / нет строки в users — например, до saveCurrentUser).
+ *
+ * Если колонка show_community_stats ещё не создана в БД (миграция не
+ * прокатана), запрос вернёт ошибку — в этом случае возвращаем null,
+ * клиент молча оставляет локальное значение.
  * ============================================================================ */
-async function fetchIsPremiumStatus() {
+async function fetchUserAccessFlags() {
   try {
     if (!initSupabaseClient()) return null;
     var identity = await getVerifiedUserIdentity();
@@ -547,24 +551,27 @@ async function fetchIsPremiumStatus() {
 
     var res = await supabaseClient
       .from("users")
-      .select("is_premium")
+      .select("is_premium, show_community_stats")
       .eq("telegram_id", identity.telegram_id)
       .maybeSingle();
 
     if (res.error) {
-      console.warn("[Premium] fetchIsPremiumStatus ошибка:",
+      console.warn("[AccessFlags] fetchUserAccessFlags ошибка:",
         res.error.message, res.error.code || "");
       return null;
     }
     if (!res.data) return null;
-    return res.data.is_premium === true;
+    return {
+      isPremium:          res.data.is_premium === true,
+      showCommunityStats: res.data.show_community_stats === true
+    };
   } catch (e) {
-    console.warn("[Premium] fetchIsPremiumStatus exception:", e && e.message);
+    console.warn("[AccessFlags] fetchUserAccessFlags exception:", e && e.message);
     return null;
   }
 }
 
-window.fetchIsPremiumStatus = fetchIsPremiumStatus;
+window.fetchUserAccessFlags = fetchUserAccessFlags;
 
 /**
  * STATISTICS COLLECTION — публичная статистика премиум/не-премиум пользователей.

@@ -2182,45 +2182,69 @@ loadFullState();
   }
 })();
 
-// PREMIUM ACCESS CONTROL — синхронизация premium-статуса с таблицей users.
-// Источник истины — колонка users.is_premium в Supabase. По умолчанию у всех
-// пользователей is_premium = false. Если в БД проставлено true, разблокируем
-// все 5 премиум-функций (Изменить темп, Долги, Гибкая модель, Расширенные
-// настройки, Статистика счёта) и показываем блок «Статистика сообщества».
+// PREMIUM ACCESS CONTROL + ADMIN ONLY: community stats block
+// ─────────────────────────────────────────────────────────────────────────────
+// Синхронизация user-level access-флагов с таблицей users в Supabase:
+//   • is_premium            — разблокирует 5 премиум-функций (Изменить темп,
+//                             Долги, Гибкая модель, Расширенные настройки,
+//                             Статистика счёта).
+//   • show_community_stats  — админский флаг показа блока «Статистика
+//                             сообщества» в профиле (default false; включается
+//                             вручную владельцем / администратором в БД).
 //
 // Пробуем дважды: сразу и через ~1.5с, потому что строка users создаётся
 // в saveCurrentUser() через setTimeout(500мс) на window.load.
-(function syncPremiumFromDB() {
+(function syncUserAccessFlagsFromDB() {
   async function tick(attempt) {
     try {
-      if (typeof window.fetchIsPremiumStatus !== "function") return;
-      var dbPremium = await window.fetchIsPremiumStatus();
-      if (dbPremium == null) {
+      if (typeof window.fetchUserAccessFlags !== "function") return;
+      var flags = await window.fetchUserAccessFlags();
+      if (!flags) {
         if (attempt < 2) {
           setTimeout(function () { tick(attempt + 1); }, 1500);
         }
         return;
       }
 
-      var current = !!(typeof appState !== "undefined" && appState && appState.isPremium);
-      if (current === dbPremium) {
-        console.log("[Premium] статус из БД совпадает с локальным:", dbPremium);
+      var hasState = (typeof appState !== "undefined") && appState;
+      var curPremium = !!(hasState && appState.isPremium);
+      var curStats   = !!(hasState && appState.showCommunityStats);
+
+      var premiumChanged = curPremium !== flags.isPremium;
+      var statsChanged   = curStats   !== flags.showCommunityStats;
+
+      if (!premiumChanged && !statsChanged) {
+        console.log("[AccessFlags] локальные флаги совпадают с БД:",
+          "isPremium=" + flags.isPremium, "showCommunityStats=" + flags.showCommunityStats);
         return;
       }
 
-      console.log("[Premium] users.is_premium из БД:", dbPremium, "— синхронизируем appState");
+      console.log("[AccessFlags] users-флаги из БД:",
+        "isPremium=" + flags.isPremium, "showCommunityStats=" + flags.showCommunityStats,
+        "— синхронизируем appState");
+
       if (typeof updateState === "function") {
-        updateState({ isPremium: dbPremium });
-      } else if (typeof appState !== "undefined" && appState) {
-        appState.isPremium = dbPremium;
+        updateState({
+          isPremium:          flags.isPremium,
+          showCommunityStats: flags.showCommunityStats
+        });
+      } else if (hasState) {
+        appState.isPremium          = flags.isPremium;
+        appState.showCommunityStats = flags.showCommunityStats;
       }
       if (typeof saveFullState === "function") saveFullState();
 
-      if (typeof window._syncPremiumUI === "function") window._syncPremiumUI();
-      if (typeof renderAccountBackCards === "function") renderAccountBackCards();
+      // Перерисовываем premium-зависимый UI только если поменялся именно
+      // premium-флаг — иначе обходимся без лишних DOM-операций.
+      if (premiumChanged) {
+        if (typeof window._syncPremiumUI === "function") window._syncPremiumUI();
+        if (typeof renderAccountBackCards === "function") renderAccountBackCards();
+      }
+      // Блок community stats обновляем всегда — он зависит от showCommunityStats,
+      // а refreshProfileStats внутри сам сверяется с актуальным флагом.
       if (typeof refreshProfileStats === "function") refreshProfileStats();
     } catch (e) {
-      console.warn("[Premium] syncPremiumFromDB ошибка:", e && e.message);
+      console.warn("[AccessFlags] syncUserAccessFlagsFromDB ошибка:", e && e.message);
     }
   }
   if (document.readyState === "complete") {
@@ -3306,11 +3330,13 @@ function refreshProfileStats() {
   var elTotal   = document.getElementById("profileStatsTotal");
   if (!elPremium || !elFree || !elTotal) return;
 
-  // PREMIUM ACCESS CONTROL — блок «Статистика сообщества» виден только
-  // пользователям с is_premium=true. По умолчанию у всех false → скрыт.
-  var isPremiumUser = (typeof getState === "function") && (getState().isPremium === true);
-  if (elStats) elStats.style.display = isPremiumUser ? "" : "none";
-  if (!isPremiumUser) return;
+  // ADMIN ONLY: community stats block — блок «Статистика сообщества» виден
+  // только пользователям с users.show_community_stats=true (default false).
+  // Этот флаг управляется вручную владельцем приложения и не связан
+  // с is_premium / премиум-подпиской.
+  var canSeeStats = (typeof getState === "function") && (getState().showCommunityStats === true);
+  if (elStats) elStats.style.display = canSeeStats ? "" : "none";
+  if (!canSeeStats) return;
 
   function paint(stats) {
     if (!stats) return;
@@ -11140,23 +11166,17 @@ function goalSwipeToIndex(idx, goLeft) {
   // PREMIUM MODAL — индекс текущего слайда
   var _currentSlide = 0;
   var _totalSlides = 5;
-  // Таблица: feature → индекс слайда (показываем сразу нужный)
-  var FEATURE_SLIDE = {
-    "pace":     0,
-    "debts":    1,
-    "flexible": 2,
-    "advanced": 3,
-    "stats":    4
-  };
 
   function openPremiumModal(feature) {
     var overlay = document.getElementById("premiumOverlay");
     var sheet   = document.getElementById("premiumSheet");
     if (!overlay || !sheet) return;
 
-    // Определяем, какой слайд показывать первым
-    var slideIdx = (feature && FEATURE_SLIDE[feature] !== undefined) ? FEATURE_SLIDE[feature] : 0;
-    goToSlide(slideIdx, false);
+    // PREMIUM MODAL — модалка всегда открывается с первого слайда,
+    // независимо от того, какую премиум-кнопку нажал пользователь.
+    // Параметр feature оставлен в сигнатуре для возможной аналитики.
+    void feature;
+    goToSlide(0, false);
 
     overlay.classList.remove("hidden");
     sheet.classList.remove("hidden", "sheet-leaving");
@@ -11214,17 +11234,19 @@ function goalSwipeToIndex(idx, goLeft) {
     });
   }
 
-  // ── Свайп слайдов: live-tracking + touch/pointer events ─────────────────
+  // ── Свайп слайдов: live-tracking, touch (mobile) + mouse (desktop) ──────
   //
-  // PREMIUM MODAL — слайды следуют за пальцем в реальном времени (translateX
-  // обновляется каждый touchmove). При отпускании — либо снап к следующему
-  // слайду (если |dx| > 18% ширины), либо возврат к текущему. На краях
-  // движение замедляется через elastic resistance.
+  // PREMIUM MODAL — слайды следуют за пальцем в реальном времени. При
+  // отпускании — либо снап к следующему слайду (|dx| > 18% ширины), либо
+  // возврат к текущему. На краях — elastic resistance.
   //
-  // touch-action: none на .premium-slides уже отключает нативные жесты;
-  // на touchmove всё равно ставим passive:false для preventDefault как
-  // подстраховку для iOS WebView, который иногда «крадёт» событие после
-  // первого move без preventDefault.
+  // ВАЖНО: используем только touch + mouse events, без pointer events.
+  // Раньше pointer-листенеры (особенно pointerleave) на iOS WKWebView
+  // дублировали touch-события и сбрасывали состояние свайпа после первого
+  // жеста — из-за чего второй и последующие свайпы переставали работать.
+  // Touch events имеют неявный pointer-capture на iOS, а mouse-листенеры
+  // для desktop вешаем на document, чтобы захватывать движение мыши
+  // за пределами .premium-slides.
   (function initSlideSwipe() {
     var slides = document.getElementById("premiumSlides");
     if (!slides) return;
@@ -11234,45 +11256,51 @@ function goalSwipeToIndex(idx, goLeft) {
     var slideW = 0;
     var baseOffsetPx = 0;
 
-    function applyLiveTransform(px) {
-      slides.style.transition = "none";
-      slides.style.transform = "translateX(" + px + "px)";
-    }
-
-    function onStart(x, y) {
+    function gestureStart(x, y) {
       startX = x; startY = y; dx = 0;
       active = true; locked = false;
       slideW = slides.clientWidth || 1;
       baseOffsetPx = -_currentSlide * slideW;
+      // Отменяем CSS-анимацию goToSlide, если она ещё идёт, чтобы не было
+      // конфликта между transition и live-transform.
+      slides.style.transition = "none";
     }
-    function onMove(x, y) {
+
+    function gestureMove(x, y) {
       if (!active) return false;
       var rawDx = x - startX;
       var rawDy = y - startY;
       if (!locked) {
-        if (Math.abs(rawDx) < 6 && Math.abs(rawDy) < 6) return false;
-        // Если вертикальный жест явно доминирует — отпускаем, не блокируем скролл sheet'а.
+        if (Math.abs(rawDx) < 5 && Math.abs(rawDy) < 5) return false;
+        // Вертикальный жест явно доминирует — не перехватываем, чтобы
+        // не блокировать вертикальный скролл .premium-sheet.
         if (Math.abs(rawDy) > Math.abs(rawDx) * 1.2) { active = false; return false; }
         locked = true;
       }
       dx = rawDx;
       var nextX = baseOffsetPx + dx;
-      // Elastic resistance на краях: за пределами 0..-(N-1)*W движение в 3x медленнее.
       var maxX = 0;
       var minX = -(_totalSlides - 1) * slideW;
-      if (nextX > maxX) nextX = maxX + (nextX - maxX) * 0.32;
+      if (nextX > maxX)      nextX = maxX + (nextX - maxX) * 0.32;
       else if (nextX < minX) nextX = minX + (nextX - minX) * 0.32;
-      applyLiveTransform(nextX);
+      slides.style.transform = "translateX(" + nextX + "px)";
       return true;
     }
-    function onEnd() {
-      if (!active && !locked) return;
+
+    function gestureEnd() {
+      if (!active && !locked) {
+        // Безопасный сброс состояния даже если жест не стартовал корректно.
+        active = false; locked = false; dx = 0;
+        return;
+      }
       var wasLocked = locked;
       var movedDx = dx;
       active = false; locked = false; dx = 0;
-      if (!wasLocked) return;
-
-      // Снап к следующему/предыдущему слайду при сдвиге > 18% ширины.
+      if (!wasLocked) {
+        // Жест не был захвачен (просто тап / вертикальный скролл) —
+        // визуальный transform не менялся, ничего не делаем.
+        return;
+      }
       var threshold = (slideW || 1) * 0.18;
       var nextIdx = _currentSlide;
       if (movedDx < -threshold && _currentSlide < _totalSlides - 1) nextIdx = _currentSlide + 1;
@@ -11282,31 +11310,43 @@ function goalSwipeToIndex(idx, goLeft) {
 
     // ── Touch events (iOS / Android) ───────────────────────────────────
     slides.addEventListener("touchstart", function (e) {
-      if (!e.touches || !e.touches[0]) return;
-      onStart(e.touches[0].clientX, e.touches[0].clientY);
+      if (!e.touches || e.touches.length !== 1) {
+        // Multi-touch — сбрасываем активный жест, чтобы не было рассинхрона.
+        if (active || locked) gestureEnd();
+        return;
+      }
+      gestureStart(e.touches[0].clientX, e.touches[0].clientY);
     }, { passive: true });
 
     slides.addEventListener("touchmove", function (e) {
-      if (!e.touches || !e.touches[0]) return;
-      var shouldPrevent = onMove(e.touches[0].clientX, e.touches[0].clientY);
-      if (shouldPrevent && e.cancelable) e.preventDefault();
+      if (!e.touches || e.touches.length !== 1) return;
+      if (gestureMove(e.touches[0].clientX, e.touches[0].clientY)) {
+        if (e.cancelable) e.preventDefault();
+      }
     }, { passive: false });
 
-    slides.addEventListener("touchend",    onEnd, { passive: true });
-    slides.addEventListener("touchcancel", onEnd, { passive: true });
+    slides.addEventListener("touchend",    function () { gestureEnd(); }, { passive: true });
+    slides.addEventListener("touchcancel", function () { gestureEnd(); }, { passive: true });
 
-    // ── Pointer events (desktop + fallback) ────────────────────────────
-    slides.addEventListener("pointerdown", function (e) {
-      if (e.pointerType === "touch") return; // touch уже обработан выше
-      onStart(e.clientX, e.clientY);
+    // ── Mouse events (desktop) ─────────────────────────────────────────
+    // Слушатели mousemove/mouseup вешаем на document, чтобы корректно
+    // обрабатывать выход курсора за пределы .premium-slides.
+    var mouseDragging = false;
+    slides.addEventListener("mousedown", function (e) {
+      if (e.button !== 0) return;
+      mouseDragging = true;
+      gestureStart(e.clientX, e.clientY);
+      e.preventDefault();
     });
-    slides.addEventListener("pointermove", function (e) {
-      if (e.pointerType === "touch") return;
-      if (onMove(e.clientX, e.clientY)) e.preventDefault();
+    document.addEventListener("mousemove", function (e) {
+      if (!mouseDragging) return;
+      if (gestureMove(e.clientX, e.clientY)) e.preventDefault();
     });
-    slides.addEventListener("pointerup",     onEnd);
-    slides.addEventListener("pointercancel", onEnd);
-    slides.addEventListener("pointerleave",  onEnd);
+    document.addEventListener("mouseup", function () {
+      if (!mouseDragging) return;
+      mouseDragging = false;
+      gestureEnd();
+    });
   })();
 
   // ── Event listeners для модалки ────────────────────────────────────────
