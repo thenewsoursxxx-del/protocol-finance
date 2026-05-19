@@ -2237,6 +2237,19 @@ loadFullState();
 // Пробуем дважды: сразу и через ~1.5с, потому что строка users создаётся
 // в saveCurrentUser() через setTimeout(500мс) на window.load.
 (function syncUserAccessFlagsFromDB() {
+  // SUBSCRIPTION MODEL: вычисляет эффективный isPremium как
+  // (server_is_premium && (premium_until === null || premium_until > now())).
+  // Если БД говорит is_premium=true, но premium_until прошёл —
+  // подписка считается истёкшей: локально ставим false и пишем false в БД
+  // (self-healing — БД сама приведёт себя в порядок при следующем открытии).
+  function computeEffectivePremium(flags) {
+    if (!flags || flags.isPremium !== true) return false;
+    if (!flags.premiumUntil) return true; // legacy
+    var until = new Date(flags.premiumUntil).getTime();
+    if (isNaN(until)) return true;
+    return until > Date.now();
+  }
+
   async function tick(attempt) {
     try {
       if (typeof window.fetchUserAccessFlags !== "function") return;
@@ -2252,26 +2265,38 @@ loadFullState();
       var curPremium = !!(hasState && appState.isPremium);
       var curStats   = !!(hasState && appState.showCommunityStats);
 
-      var premiumChanged = curPremium !== flags.isPremium;
-      var statsChanged   = curStats   !== flags.showCommunityStats;
+      var effectivePremium = computeEffectivePremium(flags);
 
-      if (!premiumChanged && !statsChanged) {
-        console.log("[AccessFlags] локальные флаги совпадают с БД:",
-          "isPremium=" + flags.isPremium, "showCommunityStats=" + flags.showCommunityStats);
-        return;
+      // Self-healing: если в БД is_premium=true, но premium_until прошёл —
+      // обновляем БД через setUserPremium(false) (fire-and-forget).
+      if (flags.isPremium === true && !effectivePremium && flags.premiumUntil) {
+        console.log("[AccessFlags] подписка истекла (premium_until=" + flags.premiumUntil
+          + "), обновляем users.is_premium=false");
+        if (typeof window.setUserPremium === "function") {
+          window.setUserPremium(false).catch(function () { /* graceful */ });
+        }
       }
 
+      var premiumChanged = curPremium !== effectivePremium;
+      var statsChanged   = curStats   !== flags.showCommunityStats;
+
       console.log("[AccessFlags] users-флаги из БД:",
-        "isPremium=" + flags.isPremium, "showCommunityStats=" + flags.showCommunityStats,
-        "— синхронизируем appState");
+        "is_premium=" + flags.isPremium,
+        "premium_until=" + flags.premiumUntil,
+        "auto_renew=" + flags.autoRenew,
+        "→ effectivePremium=" + effectivePremium);
 
       if (typeof updateState === "function") {
         updateState({
-          isPremium:          flags.isPremium,
+          isPremium:          effectivePremium,
+          premiumUntil:       flags.premiumUntil || null,
+          autoRenew:          flags.autoRenew === true,
           showCommunityStats: flags.showCommunityStats
         });
       } else if (hasState) {
-        appState.isPremium          = flags.isPremium;
+        appState.isPremium          = effectivePremium;
+        appState.premiumUntil       = flags.premiumUntil || null;
+        appState.autoRenew          = flags.autoRenew === true;
         appState.showCommunityStats = flags.showCommunityStats;
       }
       if (typeof saveFullState === "function") saveFullState();
@@ -2282,9 +2307,22 @@ loadFullState();
         if (typeof window._syncPremiumUI === "function") window._syncPremiumUI();
         if (typeof renderAccountBackCards === "function") renderAccountBackCards();
       }
-      // Блок community stats обновляем всегда — он зависит от showCommunityStats,
-      // а refreshProfileStats внутри сам сверяется с актуальным флагом.
+      // Блок community stats обновляем всегда — он зависит от showCommunityStats.
       if (typeof refreshProfileStats === "function") refreshProfileStats();
+      // Statschanged используется только для логирования — UI обновляется выше всегда.
+      void statsChanged;
+
+      // SUBSCRIPTION MODEL: триггер reminder за 3 дня до окончания.
+      // Все условия (дедуп, валидация, отправка) проверяются server-side.
+      if (effectivePremium && flags.premiumUntil) {
+        var msToExpiry = new Date(flags.premiumUntil).getTime() - Date.now();
+        var THREE_DAYS = 3 * 24 * 60 * 60 * 1000;
+        if (msToExpiry > 0 && msToExpiry <= THREE_DAYS) {
+          if (typeof window.triggerRenewalReminder === "function") {
+            window.triggerRenewalReminder().catch(function () { /* graceful */ });
+          }
+        }
+      }
     } catch (e) {
       console.warn("[AccessFlags] syncUserAccessFlagsFromDB ошибка:", e && e.message);
     }
@@ -11086,9 +11124,43 @@ function goalSwipeToIndex(idx, goLeft) {
 (function initPremiumSystem() {
   // ── Helpers ────────────────────────────────────────────────────────────
 
-  /** Возвращает true, если у пользователя есть премиум-подписка. */
+  /**
+   * SUBSCRIPTION MODEL — определяет, активна ли премиум-подписка СЕЙЧАС.
+   *
+   * Учитывает:
+   *   • appState.isPremium (boolean флаг покупки)
+   *   • appState.premiumUntil (дата окончания подписки, ISO-строка)
+   *
+   * Правила:
+   *   • isPremium=false → false (нет подписки).
+   *   • isPremium=true + premiumUntil=null → true (legacy lifetime).
+   *   • isPremium=true + premiumUntil > now() → true (активная подписка).
+   *   • isPremium=true + premiumUntil <= now() → false (подписка истекла).
+   *
+   * Серверная очистка (premium_until < now → is_premium = false) идёт
+   * через syncUserAccessFlagsFromDB: при обнаружении истёкшей подписки
+   * клиент сам вызывает setUserPremium(false) для согласования с БД.
+   *
+   * Экспортируется как window.isPremiumActive для использования из других
+   * IIFE и тестов из консоли разработчика.
+   */
+  function isPremiumActive() {
+    var s = (typeof getState === "function") ? getState() : (window.appState || {});
+    if (s.isPremium !== true) return false;
+    if (!s.premiumUntil) return true; // legacy: бессрочный премиум
+    var until = new Date(s.premiumUntil).getTime();
+    if (isNaN(until)) return true; // не парсится — считаем активным (graceful)
+    return until > Date.now();
+  }
+
+  /** Backward-compatible alias — все существующие call-site'ы используют isPremium(). */
   function isPremium() {
-    return getState().isPremium === true;
+    return isPremiumActive();
+  }
+
+  // Экспортируем оба для внешнего использования.
+  if (typeof window !== "undefined") {
+    window.isPremiumActive = isPremiumActive;
   }
 
   /**
@@ -11446,8 +11518,14 @@ function goalSwipeToIndex(idx, goLeft) {
       return;
     }
 
-    _paymentInFlight = true;
+      _paymentInFlight = true;
     try {
+      // SUBSCRIPTION MODEL: читаем выбор пользователя из чекбокса
+      // «Автопродление каждый месяц» в премиум-модалке. Дефолт false.
+      var autoRenewCb = document.getElementById("premiumAutoRenew");
+      var autoRenew = !!(autoRenewCb && autoRenewCb.checked);
+      console.log("[Stars] buyPremiumWithStars: auto_renew=" + autoRenew);
+
       // Дисейблим кнопку на время запроса, чтобы не было двойных кликов.
       if (buyBtn) {
         buyBtn.disabled = true;
@@ -11455,7 +11533,7 @@ function goalSwipeToIndex(idx, goLeft) {
       }
       showToast(t("payment.processing"), "info", { duration: 1800 });
 
-      var invoice = await window.createStarsInvoice();
+      var invoice = await window.createStarsInvoice(autoRenew);
       if (!invoice || !invoice.invoice_url) {
         showToast(t("payment.failed"), "error");
         return;
@@ -11493,10 +11571,23 @@ function goalSwipeToIndex(idx, goLeft) {
       if (typeof haptic === "function") haptic("success");
 
       // 1. Локальный state — мгновенно.
+      // SUBSCRIPTION MODEL: оптимистично проставляем premium_until = +30 дней
+      // и auto_renew из чекбокса. Webhook на бэкенде поставит canonical-значения
+      // через ~1-3 секунды, и syncUserAccessFlagsFromDB перепишет наши
+      // оптимистичные значения на серверные (что норм — даты одинаковые).
+      var autoRenewCb = document.getElementById("premiumAutoRenew");
+      var autoRenew = !!(autoRenewCb && autoRenewCb.checked);
+      var until30d = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
       if (typeof updateState === "function") {
-        updateState({ isPremium: true });
+        updateState({
+          isPremium: true,
+          premiumUntil: until30d,
+          autoRenew: autoRenew
+        });
       } else if (window.appState) {
         window.appState.isPremium = true;
+        window.appState.premiumUntil = until30d;
+        window.appState.autoRenew = autoRenew;
       }
       if (typeof saveFullState === "function") {
         try { saveFullState(); } catch (e) { console.warn("[Stars] saveFullState:", e); }

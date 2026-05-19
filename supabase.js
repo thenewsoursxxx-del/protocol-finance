@@ -549,9 +549,12 @@ async function fetchUserAccessFlags() {
     var identity = await getVerifiedUserIdentity();
     if (!identity) return null;
 
+    // SUBSCRIPTION MODEL: тянем premium_until + auto_renew одним запросом.
+    // Если колонок ещё нет в БД (миграция не применена), select упадёт —
+    // возвращаем null и клиент молча сохраняет локальное состояние.
     var res = await supabaseClient
       .from("users")
-      .select("is_premium, show_community_stats")
+      .select("is_premium, premium_until, auto_renew, show_community_stats")
       .eq("telegram_id", identity.telegram_id)
       .maybeSingle();
 
@@ -563,6 +566,8 @@ async function fetchUserAccessFlags() {
     if (!res.data) return null;
     return {
       isPremium:          res.data.is_premium === true,
+      premiumUntil:       res.data.premium_until || null,
+      autoRenew:          res.data.auto_renew === true,
       showCommunityStats: res.data.show_community_stats === true
     };
   } catch (e) {
@@ -587,7 +592,12 @@ window.fetchUserAccessFlags = fetchUserAccessFlags;
  *      или не настроен). Серверная истина — за webhook'ом, но клиент тоже
  *      пишет в БД для немедленного UI-feedback.
  * ============================================================================ */
-async function createStarsInvoice() {
+async function createStarsInvoice(autoRenew) {
+  // SUBSCRIPTION MODEL: пользователь может выбрать autoRenew чекбоксом.
+  // Дефолт false — без согласия не включаем. Параметр прокидывается
+  // в Edge Function и закодируется в payload, чтобы webhook знал, что
+  // ставить в users.auto_renew после successful_payment.
+  var ar = autoRenew === true;
   try {
     var identity = await getVerifiedUserIdentity();
     if (!identity || !identity.telegram_id) {
@@ -611,7 +621,8 @@ async function createStarsInvoice() {
       },
       body: JSON.stringify({
         telegram_id: identity.telegram_id,
-        init_data: initData
+        init_data: initData,
+        auto_renew: ar
       })
     });
 
@@ -629,6 +640,48 @@ async function createStarsInvoice() {
     return data;
   } catch (e) {
     console.error("[Stars] createStarsInvoice exception:", e && e.message);
+    return null;
+  }
+}
+
+// SUBSCRIPTION MODEL: триггер reminder'а за 3 дня до окончания подписки.
+// Вызывается клиентом на старте приложения, если premium_until - now() < 3d.
+// Все условия отправки (включая дедуп) проверяются на backend'е — здесь мы
+// только дёргаем endpoint и не доверяем ответу для UI-логики.
+async function triggerRenewalReminder() {
+  try {
+    var identity = await getVerifiedUserIdentity();
+    if (!identity || !identity.telegram_id) return null;
+
+    var initData = "";
+    try {
+      var w = window.Telegram && window.Telegram.WebApp;
+      initData = (w && w.initData) || "";
+    } catch (_e) { /* ignore */ }
+    if (!initData) {
+      console.warn("[Stars] triggerRenewalReminder: init_data отсутствует — пропускаем");
+      return null;
+    }
+
+    var url = SUPABASE_URL.replace(/\/$/, "") + "/functions/v1/send-renewal-reminder";
+    var res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": SUPABASE_ANON_KEY,
+        "Authorization": "Bearer " + SUPABASE_ANON_KEY
+      },
+      body: JSON.stringify({
+        telegram_id: identity.telegram_id,
+        init_data: initData
+      })
+    });
+
+    var data = await res.json().catch(function () { return null; });
+    console.log("[Stars] triggerRenewalReminder result:", data);
+    return data;
+  } catch (e) {
+    console.warn("[Stars] triggerRenewalReminder exception:", e && e.message);
     return null;
   }
 }
@@ -659,6 +712,7 @@ async function setUserPremium(value) {
 
 window.createStarsInvoice = createStarsInvoice;
 window.setUserPremium = setUserPremium;
+window.triggerRenewalReminder = triggerRenewalReminder;
 
 /**
  * STATISTICS COLLECTION — публичная статистика премиум/не-премиум пользователей.

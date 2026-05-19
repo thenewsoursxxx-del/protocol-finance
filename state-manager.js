@@ -9,7 +9,7 @@
  * Загружается ДО app.js.
  */
 
-const STATE_VERSION = 13;
+const STATE_VERSION = 14;
 const STORAGE_KEY = "protocol_app_state";
 
 // ─── Default State ────────────────────────────────────────────
@@ -67,8 +67,18 @@ function getDefaultState() {
     incomeStartDate: "",
     expenseStartDate: "",
 
-    // ── Premium (v4) ──
+    // ── Premium (v4 → v14: subscription model) ──
     isPremium: false,
+
+    // SUBSCRIPTION MODEL (v14): Telegram Stars subscription metadata.
+    //   premiumUntil — ISO-строка, дата окончания подписки.
+    //                  null = lifetime / нет подписки.
+    //   autoRenew    — выбранный пользователем флаг автопродления.
+    // Все три поля синхронизируются с users-таблицей в Supabase через
+    // fetchUserAccessFlags(). Effective premium считается как
+    // isPremium && (premiumUntil === null || premiumUntil > now()).
+    premiumUntil: null,
+    autoRenew: false,
 
     // ADMIN ONLY: community stats block — флаг видимости блока
     // «Статистика сообщества» в профиле. Управляется только владельцем
@@ -405,6 +415,15 @@ function migrateState(saved) {
     }
   }
 
+  // v13 → v14: SUBSCRIPTION MODEL — premiumUntil + autoRenew. Pre-v14 юзеры
+  // имели только boolean isPremium без срока. После апгрейда оставляем флаг
+  // как есть (legacy lifetime), но добавляем подписочные поля по умолчанию.
+  if (version < 14) {
+    saved.stateVersion = 14;
+    if (typeof saved.premiumUntil === "undefined") saved.premiumUntil = null;
+    if (typeof saved.autoRenew !== "boolean") saved.autoRenew = false;
+  }
+
   // Ensure settings has all expected keys
   if (saved.settings && typeof saved.settings === "object") {
     var ds = getDefaultState().settings;
@@ -632,8 +651,19 @@ function applyState(saved) {
   appState.expenseStartDate = typeof saved.expenseStartDate === "string"
     ? saved.expenseStartDate : defaults.expenseStartDate;
 
-  // ── Premium (v4) ──
+  // ── Premium (v4 / SUBSCRIPTION v14) ──
   appState.isPremium = typeof saved.isPremium === "boolean" ? saved.isPremium : defaults.isPremium;
+
+  // SUBSCRIPTION MODEL: восстанавливаем premiumUntil + autoRenew.
+  // На старте app.js пересчитывает effective premium через isPremiumActive()
+  // (см. syncUserAccessFlagsFromDB) — если premiumUntil просрочен, isPremium
+  // автоматически сбрасывается в false локально и обновляется в БД.
+  appState.premiumUntil = (typeof saved.premiumUntil === "string" && saved.premiumUntil)
+    ? saved.premiumUntil
+    : defaults.premiumUntil;
+  appState.autoRenew = typeof saved.autoRenew === "boolean"
+    ? saved.autoRenew
+    : defaults.autoRenew;
 
   // ADMIN ONLY: community stats block — восстанавливаем из сохранённого
   // состояния; на старте приложения синхронизируется с users.show_community_stats.

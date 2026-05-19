@@ -16,7 +16,7 @@ viewport-fit=cover" />
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
 
-<link rel="stylesheet" href="style.css?v=20011">
+<link rel="stylesheet" href="style.css?v=20012">
 
 <!-- Базовая инициализация Telegram Mini App (ранний вызов ready — рекомендация Telegram) -->
 <script>
@@ -2130,6 +2130,16 @@ z-index: 999999;
 
   <!-- CTA -->
   <div class="premium-cta-block">
+    <!-- SUBSCRIPTION MODEL — чекбокс автопродления.
+         Дефолт OFF (пользователь явно подтверждает согласие на recurring).
+         Значение читается в buyPremiumWithStars() и проброшено в Edge Function. -->
+    <label class="premium-auto-renew" for="premiumAutoRenew">
+      <input type="checkbox" id="premiumAutoRenew" class="premium-auto-renew__input">
+      <span class="premium-auto-renew__box" aria-hidden="true">
+        <svg viewBox="0 0 16 16" class="premium-auto-renew__check"><path d="M3 8.5l3 3 7-7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+      <span class="premium-auto-renew__label" data-i18n="premium.autoRenew.label">Автопродление каждый месяц</span>
+    </label>
     <button class="premium-buy-btn" id="premiumBuyBtn">
       <span data-i18n="premium.buyBtn">Оформить Premium</span>
       <span class="premium-buy-price" data-i18n="premium.price">150 ⭐ / 30 дней</span>
@@ -2140,18 +2150,18 @@ z-index: 999999;
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-<script src="state-manager.js?v=20011"></script>
-<script src="i18n.js?v=20011"></script>
-<script src="financial-events.js?v=20011"></script>
-<script src="cashflow-engine.js?v=20011"></script>
-<script src="graph-engine-svg.js?v=20011"></script>
+<script src="state-manager.js?v=20012"></script>
+<script src="i18n.js?v=20012"></script>
+<script src="financial-events.js?v=20012"></script>
+<script src="cashflow-engine.js?v=20012"></script>
+<script src="graph-engine-svg.js?v=20012"></script>
 <!-- Supabase: после CDN в <head>; замените anon-ключ внутри файла -->
-<script src="supabase.js?v=20011"></script>
+<script src="supabase.js?v=20012"></script>
 <!-- CLOUD STORAGE SYNC — кросс-устройственная синхронизация через Telegram CloudStorage.
      Загружаем ПОСЛЕ state-manager (нужен applyState/saveState) и Supabase
      (для согласованности с серверным sync), но ДО app.js — чтобы хуки
      CloudSync.scheduleSync() в saveFullState() были доступны на момент init. -->
-<script src="cloud-storage.js?v=20011"></script>
-<script src="app.js?v=20011"></script>
+<script src="cloud-storage.js?v=20012"></script>
+<script src="app.js?v=20012"></script>
 </body>
 </html>

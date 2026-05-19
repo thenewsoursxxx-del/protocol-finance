@@ -10123,6 +10123,79 @@ body.reduce-motion .settings-seg-btn {
   padding: 16px 4px 0;
   flex-shrink: 0;
 }
+
+/* SUBSCRIPTION MODEL — premium auto-renew checkbox.
+   Кастомный чекбокс с golden-emerald gradient'ом в активном состоянии,
+   соответствует общей премиум-палитре модалки. */
+.premium-auto-renew {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 4px 14px;
+  font-size: 13.5px;
+  color: rgba(255, 255, 255, 0.78);
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 0.2s ease;
+}
+.premium-auto-renew:hover {
+  color: rgba(255, 255, 255, 0.92);
+}
+.premium-auto-renew__input {
+  /* Скрываем нативный input — заменяем визуально на .premium-auto-renew__box. */
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+  width: 0;
+  height: 0;
+}
+.premium-auto-renew__box {
+  position: relative;
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  border: 1.5px solid rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.04);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    background 0.22s cubic-bezier(.18,.7,.36,1),
+    border-color 0.22s cubic-bezier(.18,.7,.36,1),
+    box-shadow 0.22s cubic-bezier(.18,.7,.36,1);
+}
+.premium-auto-renew__check {
+  width: 14px;
+  height: 14px;
+  color: #0a0f0d;
+  opacity: 0;
+  transform: scale(0.5);
+  transition:
+    opacity 0.18s ease,
+    transform 0.22s cubic-bezier(.18,.7,.36,1);
+}
+.premium-auto-renew__input:checked + .premium-auto-renew__box {
+  background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+  border-color: #10b981;
+  box-shadow:
+    0 0 0 3px rgba(16, 185, 129, 0.18),
+    0 4px 12px rgba(16, 185, 129, 0.35);
+}
+.premium-auto-renew__input:checked + .premium-auto-renew__box .premium-auto-renew__check {
+  opacity: 1;
+  transform: scale(1);
+}
+.premium-auto-renew__input:focus-visible + .premium-auto-renew__box {
+  box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.4);
+}
+.premium-auto-renew:active .premium-auto-renew__box {
+  transform: scale(0.94);
+}
+.premium-auto-renew__label {
+  line-height: 1.35;
+}
 .premium-buy-btn {
   /* PREMIUM MODAL — компактная CTA: меньше высота, меньше шрифт,
      уже по бокам через max-width + margin auto. */
