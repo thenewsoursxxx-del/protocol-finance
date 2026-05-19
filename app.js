@@ -11217,16 +11217,24 @@ function goalSwipeToIndex(idx, goLeft) {
     }, 320);
   }
 
+  // PREMIUM MODAL: fixed swipe handling
+  // goToSlide теперь использует ПИКСЕЛИ (через clientWidth), а не проценты.
+  // Раньше goToSlide ставил translateX(-100%), а live-swipe — translateX(-Xpx);
+  // на стыке этих единиц в iOS WKWebView оставался «висящий» transition,
+  // который ломал второй свайп. Сейчас и goToSlide, и live-swipe оперируют
+  // одной системой координат (пиксели от clientWidth) — никакой
+  // рассинхронизации, никаких ghost-transition'ов.
   function goToSlide(idx, animate) {
     _currentSlide = Math.max(0, Math.min(idx, _totalSlides - 1));
     var slides = document.getElementById("premiumSlides");
     if (slides) {
+      var w = slides.clientWidth || 0;
       if (animate === false) {
         slides.style.transition = "none";
       } else {
         slides.style.transition = "transform 0.4s cubic-bezier(.22,.61,.36,1)";
       }
-      slides.style.transform = "translateX(-" + (_currentSlide * 100) + "%)";
+      slides.style.transform = "translateX(" + (-_currentSlide * w) + "px)";
     }
     // Dots
     document.querySelectorAll(".premium-dot").forEach(function (dot, i) {
@@ -11234,19 +11242,29 @@ function goalSwipeToIndex(idx, goLeft) {
     });
   }
 
-  // ── Свайп слайдов: live-tracking, touch (mobile) + mouse (desktop) ──────
+  // PREMIUM MODAL: fixed swipe handling
+  // ─────────────────────────────────────────────────────────────────────────
+  // Свайп-карусель: пиксельный live-tracking + надёжная очистка состояния.
   //
-  // PREMIUM MODAL — слайды следуют за пальцем в реальном времени. При
-  // отпускании — либо снап к следующему слайду (|dx| > 18% ширины), либо
-  // возврат к текущему. На краях — elastic resistance.
+  // Корневая причина прошлых багов «второй свайп не работает»:
+  //   1. goToSlide использовал проценты, live-swipe — пиксели; на стыке
+  //      этих единиц в iOS WKWebView оставался «висящий» transition,
+  //      который ломал следующий жест. Решение: всё в пикселях (см. goToSlide).
+  //   2. touchmove/touchend были привязаны к .premium-slides, и если палец
+  //      во время свайпа уходил за пределы блока (вниз на dots или вверх на
+  //      header), события переставали приходить — состояние { active, locked }
+  //      зависало в true, новый touchstart не мог корректно его перезаписать.
+  //      Решение: touchmove/touchend слушаем на document.
+  //   3. Между `style.transition = "none"` и новым `style.transform` не было
+  //      force-reflow — браузер батчил мутации, и transition не сбрасывался.
+  //      Решение: void slides.offsetWidth для синхронного применения.
   //
-  // ВАЖНО: используем только touch + mouse events, без pointer events.
-  // Раньше pointer-листенеры (особенно pointerleave) на iOS WKWebView
-  // дублировали touch-события и сбрасывали состояние свайпа после первого
-  // жеста — из-за чего второй и последующие свайпы переставали работать.
-  // Touch events имеют неявный pointer-capture на iOS, а mouse-листенеры
-  // для desktop вешаем на document, чтобы захватывать движение мыши
-  // за пределами .premium-slides.
+  // Дополнительные гарантии:
+  //   • gestureStart АГРЕССИВНО сбрасывает старое состояние (active/locked/dx)
+  //     прежде чем инициализировать новый жест — если предыдущий gestureEnd
+  //     не сработал по какой-то причине, новый swipe всё равно стартует чисто.
+  //   • На touchstart с multi-touch ИЛИ при уже активном жесте — сначала
+  //     gestureEnd, потом старт нового. Никаких dangling состояний.
   (function initSlideSwipe() {
     var slides = document.getElementById("premiumSlides");
     if (!slides) return;
@@ -11257,13 +11275,23 @@ function goalSwipeToIndex(idx, goLeft) {
     var baseOffsetPx = 0;
 
     function gestureStart(x, y) {
-      startX = x; startY = y; dx = 0;
-      active = true; locked = false;
+      // АГРЕССИВНЫЙ сброс — даже если предыдущий жест не закрылся корректно
+      // (зависший active/locked), новый swipe стартует с чистого листа.
+      active = false; locked = false; dx = 0;
+
+      startX = x; startY = y;
       slideW = slides.clientWidth || 1;
       baseOffsetPx = -_currentSlide * slideW;
-      // Отменяем CSS-анимацию goToSlide, если она ещё идёт, чтобы не было
-      // конфликта между transition и live-transform.
+
+      // Отменяем in-progress goToSlide-анимацию: transition=none + force reflow
+      // через чтение offsetWidth → браузер синхронно применяет transition: none
+      // ДО следующей мутации style.transform в gestureMove. Без этого reflow
+      // браузер мог батчить обе мутации и оставлять transition активным,
+      // из-за чего второй свайп начинался с «ghost»-анимации.
       slides.style.transition = "none";
+      void slides.offsetWidth;
+
+      active = true;
     }
 
     function gestureMove(x, y) {
@@ -11272,8 +11300,8 @@ function goalSwipeToIndex(idx, goLeft) {
       var rawDy = y - startY;
       if (!locked) {
         if (Math.abs(rawDx) < 5 && Math.abs(rawDy) < 5) return false;
-        // Вертикальный жест явно доминирует — не перехватываем, чтобы
-        // не блокировать вертикальный скролл .premium-sheet.
+        // Вертикальный жест явно доминирует — отпускаем, чтобы не блокировать
+        // вертикальный скролл .premium-sheet.
         if (Math.abs(rawDy) > Math.abs(rawDx) * 1.2) { active = false; return false; }
         locked = true;
       }
@@ -11288,17 +11316,13 @@ function goalSwipeToIndex(idx, goLeft) {
     }
 
     function gestureEnd() {
-      if (!active && !locked) {
-        // Безопасный сброс состояния даже если жест не стартовал корректно.
-        active = false; locked = false; dx = 0;
-        return;
-      }
       var wasLocked = locked;
       var movedDx = dx;
+      // ВСЕГДА чистим состояние первым делом — даже если жест не был активен.
       active = false; locked = false; dx = 0;
       if (!wasLocked) {
-        // Жест не был захвачен (просто тап / вертикальный скролл) —
-        // визуальный transform не менялся, ничего не делаем.
+        // Жест не был захвачен (просто тап / отменённый вертикальный скролл) —
+        // НИЧЕГО не делаем. Visual transform не менялся, transition не менялся.
         return;
       }
       var threshold = (slideW || 1) * 0.18;
@@ -11308,29 +11332,38 @@ function goalSwipeToIndex(idx, goLeft) {
       goToSlide(nextIdx, true);
     }
 
-    // ── Touch events (iOS / Android) ───────────────────────────────────
+    // ── Touch events ───────────────────────────────────────────────────
+    // touchstart висит на slides (стартуем только когда палец ДЕЙСТВИТЕЛЬНО
+    // приземляется на карусель). touchmove/touchend/touchcancel — на document,
+    // чтобы не терять события, если палец во время свайпа уходит за пределы
+    // .premium-slides (вверх на header или вниз на dots/CTA). Это критично
+    // для надёжности: до этого фикса второй свайп ломался именно потому, что
+    // его touchend часто промахивался мимо .premium-slides и зависал
+    // в active=true.
     slides.addEventListener("touchstart", function (e) {
       if (!e.touches || e.touches.length !== 1) {
-        // Multi-touch — сбрасываем активный жест, чтобы не было рассинхрона.
+        // Multi-touch — отменяем активный жест и НЕ стартуем новый.
         if (active || locked) gestureEnd();
         return;
       }
       gestureStart(e.touches[0].clientX, e.touches[0].clientY);
     }, { passive: true });
 
-    slides.addEventListener("touchmove", function (e) {
+    document.addEventListener("touchmove", function (e) {
+      // Игнорируем, если у нас нет активного жеста по карусели.
+      if (!active) return;
       if (!e.touches || e.touches.length !== 1) return;
       if (gestureMove(e.touches[0].clientX, e.touches[0].clientY)) {
         if (e.cancelable) e.preventDefault();
       }
     }, { passive: false });
 
-    slides.addEventListener("touchend",    function () { gestureEnd(); }, { passive: true });
-    slides.addEventListener("touchcancel", function () { gestureEnd(); }, { passive: true });
+    document.addEventListener("touchend",    function () { gestureEnd(); }, { passive: true });
+    document.addEventListener("touchcancel", function () { gestureEnd(); }, { passive: true });
 
     // ── Mouse events (desktop) ─────────────────────────────────────────
-    // Слушатели mousemove/mouseup вешаем на document, чтобы корректно
-    // обрабатывать выход курсора за пределы .premium-slides.
+    // mousemove/mouseup на document — стандартный паттерн для desktop drag,
+    // чтобы курсор не «терялся» при выходе за пределы slides.
     var mouseDragging = false;
     slides.addEventListener("mousedown", function (e) {
       if (e.button !== 0) return;
