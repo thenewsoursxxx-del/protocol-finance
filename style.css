@@ -10124,10 +10124,137 @@ body.reduce-motion .settings-seg-btn {
   flex-shrink: 0;
 }
 
-/* SUBSCRIPTION MODEL — auto-renew checkbox styles удалены вместе с HTML
-   (Telegram Stars не поддерживают одноразовый invoice как recurring).
-   Если в будущем включится подписочная модель через subscription_period,
-   стили можно восстановить из git history. */
+/* SUBSCRIPTION MODEL — status-block с текущим состоянием подписки.
+   Показывается, только если у пользователя активный Premium
+   (см. refreshPremiumStatusBlock() в app.js). Две строки:
+     • «Premium активен до 18 июня» — главная информация
+     • «🔄 Автопродление включено» / «ℹ️ Без автопродления» — подпись.
+   Стиль — стеклянная подложка с лёгким золотистым свечением, чтобы
+   гармонировать с премиум-палитрой модалки. */
+.premium-status-block {
+  margin: 0 auto 14px;
+  max-width: 320px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background:
+    linear-gradient(135deg, rgba(16, 185, 129, 0.10) 0%, rgba(255, 215, 0, 0.05) 100%),
+    rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 215, 0, 0.18);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 4px 14px rgba(16, 185, 129, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: center;
+}
+.premium-status__row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.92);
+  line-height: 1.35;
+}
+.premium-status__icon {
+  font-size: 16px;
+  filter: drop-shadow(0 0 6px rgba(255, 215, 0, 0.5));
+}
+.premium-status__text strong {
+  color: #FFD700;
+  font-weight: 600;
+  margin-left: 4px;
+}
+.premium-status__autorenew {
+  font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: 0.1px;
+  padding-top: 2px;
+}
+.premium-status__autorenew.is-on {
+  color: #34d399;
+}
+.premium-status__autorenew.is-off {
+  color: rgba(255, 255, 255, 0.55);
+}
+
+/* SUBSCRIPTION MODEL — premium auto-renew checkbox.
+   Кастомный чекбокс с golden-emerald gradient'ом в активном состоянии,
+   соответствует общей премиум-палитре модалки. При checked=true юзер
+   соглашается на recurring billing через Telegram Stars. */
+.premium-auto-renew {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 auto;
+  max-width: 320px;
+  padding: 10px 4px 14px;
+  font-size: 13.5px;
+  color: rgba(255, 255, 255, 0.78);
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 0.2s ease;
+}
+.premium-auto-renew:hover {
+  color: rgba(255, 255, 255, 0.92);
+}
+.premium-auto-renew__input {
+  /* Скрываем нативный input — заменяем визуально на .premium-auto-renew__box. */
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+  width: 0;
+  height: 0;
+}
+.premium-auto-renew__box {
+  position: relative;
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  border: 1.5px solid rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.04);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    background 0.22s cubic-bezier(.18,.7,.36,1),
+    border-color 0.22s cubic-bezier(.18,.7,.36,1),
+    box-shadow 0.22s cubic-bezier(.18,.7,.36,1);
+}
+.premium-auto-renew__check {
+  width: 14px;
+  height: 14px;
+  color: #0a0f0d;
+  opacity: 0;
+  transform: scale(0.5);
+  transition:
+    opacity 0.18s ease,
+    transform 0.22s cubic-bezier(.18,.7,.36,1);
+}
+.premium-auto-renew__input:checked + .premium-auto-renew__box {
+  background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+  border-color: #10b981;
+  box-shadow:
+    0 0 0 3px rgba(16, 185, 129, 0.18),
+    0 4px 12px rgba(16, 185, 129, 0.35);
+}
+.premium-auto-renew__input:checked + .premium-auto-renew__box .premium-auto-renew__check {
+  opacity: 1;
+  transform: scale(1);
+}
+.premium-auto-renew__input:focus-visible + .premium-auto-renew__box {
+  box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.4);
+}
+.premium-auto-renew:active .premium-auto-renew__box {
+  transform: scale(0.94);
+}
+.premium-auto-renew__label {
+  line-height: 1.35;
+}
+
 .premium-buy-btn {
   /* PREMIUM MODAL — компактная CTA: меньше высота, меньше шрифт,
      уже по бокам через max-width + margin auto. */

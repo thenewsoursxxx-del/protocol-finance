@@ -408,6 +408,14 @@
       "premium.price": "150 ⭐ / 30 дней",
       "premium.ctaHint": "Полный доступ ко всем функциям · 30 дней",
 
+      // SUBSCRIPTION MODEL — чекбокс автопродления
+      "premium.autoRenew.label": "Автоматически продлевать каждые 30 дней",
+
+      // SUBSCRIPTION MODEL — блок текущего статуса подписки в премиум-модалке
+      "premium.status.activeUntil": "Premium активен до",
+      "premium.status.autoRenewOn": "🔄 Автопродление включено",
+      "premium.status.autoRenewOff": "ℹ️ Без автопродления",
+
       // TELEGRAM STARS — экраны оплаты
       "payment.processing": "Открываем оплату Telegram Stars…",
       "payment.success.title": "Premium активирован!",
@@ -1437,6 +1445,14 @@
       "premium.buyBtn": "Get Premium",
       "premium.price": "150 ⭐ / 30 days",
       "premium.ctaHint": "Full access to all features · 30 days",
+
+      // SUBSCRIPTION MODEL — auto-renew checkbox
+      "premium.autoRenew.label": "Auto-renew every 30 days",
+
+      // SUBSCRIPTION MODEL — current subscription status block in premium modal
+      "premium.status.activeUntil": "Premium active until",
+      "premium.status.autoRenewOn": "🔄 Auto-renewal is ON",
+      "premium.status.autoRenewOff": "ℹ️ No auto-renewal",
 
       // TELEGRAM STARS — payment screens
       "payment.processing": "Opening Telegram Stars payment…",

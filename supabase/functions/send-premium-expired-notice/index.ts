@@ -80,10 +80,36 @@ function pickLang(code: unknown): "ru" | "en" {
   return "en";
 }
 
-// ── ЭМОЦИОНАЛЬНЫЙ ТЕКСТ ──────────────────────────────────────────────────────
+// ── ЭМОЦИОНАЛЬНЫЕ ТЕКСТЫ ─────────────────────────────────────────────────────
+//
+// Различаем два сценария:
+//   A. previousAutoRenew=true → пользователь отменил подписку в настройках
+//      Telegram (auto-renew был, но платёж не прошёл) → мягкое сообщение
+//      «автопродление отключено» с кнопкой «Продлить вручную».
+//   B. previousAutoRenew=false → одноразовая подписка просто истекла по сроку
+//      → обычное «Premium закончился» с кнопкой «Вернуть Premium».
 
-function buildExpiredText(lang: "ru" | "en"): string {
+function buildExpiredText(lang: "ru" | "en", previousAutoRenew: boolean): string {
   if (lang === "ru") {
+    if (previousAutoRenew) {
+      // Сценарий A: подписка с автопродлением, но списание не прошло
+      // (= пользователь отменил подписку в настройках Telegram).
+      return [
+        `🌙 <b>Автопродление отключено</b>`,
+        ``,
+        `Похоже, ты решил приостановить подписку Premium — это полностью твой выбор, без обид.`,
+        ``,
+        `<b>Все твои данные остались на месте</b>: цели, события, кредиты, настройки. Ничего не потеряно.`,
+        ``,
+        `Часть возможностей Protocol теперь скрыта:`,
+        `   • Темп накоплений вернулся к стандартному`,
+        `   • Кредиты и долги не учитываются в плане`,
+        `   • Гибкая модель временно на паузе`,
+        ``,
+        `Если захочешь вернуться — продлить можно вручную в один тап.`,
+      ].join("\n");
+    }
+    // Сценарий B: одноразовая подписка истекла естественно.
     return [
       `💔 <b>Premium закончился</b>`,
       ``,
@@ -95,6 +121,23 @@ function buildExpiredText(lang: "ru" | "en"): string {
       `   • Гибкая модель временно на паузе`,
       ``,
       `Если захочешь вернуть полный контроль — это всегда в одном касании.`,
+    ].join("\n");
+  }
+  // EN
+  if (previousAutoRenew) {
+    return [
+      `🌙 <b>Auto-renewal turned off</b>`,
+      ``,
+      `It looks like you decided to pause your Premium subscription — that's entirely your choice, no hard feelings.`,
+      ``,
+      `<b>All your data is safe</b>: goals, events, debts, settings. Nothing is lost.`,
+      ``,
+      `Some of Protocol's power is now hidden:`,
+      `   • Saving pace reset to default`,
+      `   • Loans and debts no longer in the plan`,
+      `   • Flexible model is on pause`,
+      ``,
+      `Want to come back? You can renew manually in one tap.`,
     ].join("\n");
   }
   return [
@@ -111,9 +154,17 @@ function buildExpiredText(lang: "ru" | "en"): string {
   ].join("\n");
 }
 
-function buildExpiredKeyboard(lang: "ru" | "en") {
+function buildExpiredKeyboard(lang: "ru" | "en", previousAutoRenew: boolean) {
   if (!MINI_APP_URL) return undefined;
-  const text = lang === "ru" ? "✨ Вернуть Premium" : "✨ Get Premium back";
+  // Текст кнопки чуть-чуть разный по тону:
+  //   • После отмены auto-renew: «Продлить вручную» (нейтрально-практично).
+  //   • После естественного истечения: «Вернуть Premium» (тёплое возвращение).
+  let text: string;
+  if (lang === "ru") {
+    text = previousAutoRenew ? "🔄 Продлить вручную" : "✨ Вернуть Premium";
+  } else {
+    text = previousAutoRenew ? "🔄 Renew manually" : "✨ Get Premium back";
+  }
   const url = MINI_APP_URL + (MINI_APP_URL.includes("?") ? "&" : "?") + "premium=open";
   return { inline_keyboard: [[{ text, web_app: { url } }]] };
 }
@@ -141,10 +192,12 @@ Deno.serve(async (req) => {
     return json({ error: "telegram_id_mismatch" }, 401);
   }
 
-  // Достаём текущее состояние из БД.
+  // Достаём текущее состояние из БД. Поле auto_renew нужно для определения
+  // тона сообщения: была подписка с автопродлением (отменена) или одноразовая
+  // (естественно истекла).
   const { data: user, error } = await supabase
     .from("users")
-    .select("telegram_id, premium_until, premium_expired_notice_at")
+    .select("telegram_id, premium_until, premium_expired_notice_at, auto_renew")
     .eq("telegram_id", tgId)
     .maybeSingle();
 
@@ -177,8 +230,9 @@ Deno.serve(async (req) => {
   }
 
   const lang = pickLang(body?.language);
-  const text = buildExpiredText(lang);
-  const reply_markup = buildExpiredKeyboard(lang);
+  const previousAutoRenew = user.auto_renew === true;
+  const text = buildExpiredText(lang, previousAutoRenew);
+  const reply_markup = buildExpiredKeyboard(lang, previousAutoRenew);
 
   const sendRes = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
     method: "POST",
@@ -203,6 +257,10 @@ Deno.serve(async (req) => {
       premium_expired_notice_at: new Date(now).toISOString(),
       // На всякий случай чиним is_premium=false в БД (self-healing на стороне сервера).
       is_premium: false,
+      // Если был auto_renew=true и подписка не продлилась — значит юзер
+      // отменил её в настройках Telegram. Сбрасываем флаг в БД, чтобы UI
+      // отображал корректное состояние (без автопродления).
+      auto_renew: false,
     })
     .eq("telegram_id", tgId);
 

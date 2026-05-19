@@ -1,21 +1,35 @@
 // TELEGRAM STARS — Edge Function: webhook оплаты Premium-подписки.
 //
-// При успешной оплате:
-//   • UPDATE users SET is_premium=true, premium_until=now()+30d,
-//                      renewal_reminder_at=NULL, premium_expired_notice_at=NULL
-//     (сбрасываем оба notification-флага — новая подписка, можно слать снова).
-//   • Отправляет ЭМОЦИОНАЛЬНОЕ welcome-сообщение в DM с inline-кнопкой
-//     «Скорее изучить Premium» (открывает Mini App).
-//   • Язык сообщения определяется по from.language_code из Telegram update.
+// Обрабатывает ДВА типа платежей:
+//   1. ПЕРВИЧНАЯ оплата (one-time или первый платёж subscription)
+//   2. ПОВТОРНАЯ оплата (recurring) — Telegram сам списывает 150⭐ каждые
+//      30 дней для подписочных invoice'ов, шлёт нам очередной
+//      successful_payment с тем же invoice_payload и новым
+//      telegram_payment_charge_id.
 //
-// AUTO-RENEW: НЕ реализован. У нас одноразовые invoice'ы — Telegram Stars
-// поддерживают true subscription через subscription_period в createInvoiceLink,
-// но это отдельный refactor. Сейчас — простая 30-дневная активация + DM-
-// reminder за 3 дня до окончания (см. send-renewal-reminder).
+// Renewal detection (приоритет от самого надёжного к менее):
+//   (a) successful_payment.subscription_expiration_date — Telegram прямо
+//       сообщает дату следующего списания. Если поле есть → это subscription.
+//   (b) successful_payment.is_recurring (BotAPI 8.x) — true для повторных.
+//   (c) Сравнение с БД: у юзера есть активная premium_until > now() и
+//       auto_renew=true → это renewal.
+//   (d) Fallback: считаем первичной оплатой.
+//
+// Логика премиум-периода:
+//   • Первичная оплата: premium_until = now + 30d.
+//   • Renewal: premium_until = max(now, current_premium_until) + 30d
+//     (защищает от потери дней, если webhook пришёл с задержкой).
+//   • Если Telegram прислал subscription_expiration_date → используем его
+//     (Telegram = canonical truth).
+//
+// DM-сообщения:
+//   • Первичная (auto_renew=true): welcome + точные даты + «автопродление включено».
+//   • Первичная (auto_renew=false): welcome + точные даты + «одноразовая оплата».
+//   • Renewal: короткое «Подписка успешно продлена до …» без длинного welcome.
 //
 // DEPLOY:
 //   supabase secrets set TELEGRAM_BOT_TOKEN=xxx:yyy
-//   supabase secrets set TELEGRAM_WEBHOOK_SECRET=$(openssl rand -hex 32)
+//   supabase secrets set TELEGRAM_WEBHOOK_SECRET=<random_32>
 //   supabase secrets set MINI_APP_URL=https://your-domain.com/
 //   supabase functions deploy stars-payment-webhook --no-verify-jwt
 //   curl -F "url=https://<project>.supabase.co/functions/v1/stars-payment-webhook" \
@@ -38,6 +52,7 @@ const supabase = SUPABASE_URL && SERVICE_ROLE
   : null;
 
 const PREMIUM_DAYS = 30;
+const PREMIUM_MS = PREMIUM_DAYS * 24 * 60 * 60 * 1000;
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -81,8 +96,6 @@ async function sendDM(
   } catch (e) { console.warn("[stars-webhook] sendDM exception:", e); }
 }
 
-// Определяет язык пользователя. Telegram присылает language_code как BCP-47
-// тэг ("ru", "en", "en-US", "uk" и т.д.). Поддерживаем ru/en, всё остальное → en.
 function pickLang(code: string | undefined): "ru" | "en" {
   if (!code) return "en";
   const c = code.toLowerCase();
@@ -90,7 +103,6 @@ function pickLang(code: string | undefined): "ru" | "en" {
   return "en";
 }
 
-// Форматирует дату в "19 мая" (ru) или "May 19" (en).
 function formatDate(d: Date, lang: "ru" | "en"): string {
   const day = d.getDate();
   const m = d.getMonth();
@@ -103,46 +115,146 @@ function formatDate(d: Date, lang: "ru" | "en"): string {
   return `${monthsEn[m]} ${day}`;
 }
 
-// SUBSCRIPTION ACTIVATION — централизованная логика обновления users.
-async function activateSubscription(
-  telegramId: number,
-): Promise<{ ok: boolean; startsAt: Date; endsAt: Date }> {
-  const startsAt = new Date();
-  const endsAt = new Date(startsAt.getTime() + PREMIUM_DAYS * 24 * 60 * 60 * 1000);
-  if (!supabase) return { ok: false, startsAt, endsAt };
+// Парсит payload `premium_<tg_id>_<unix_ms>_<autoRenewFlag>`.
+// Backward compat: payload без флага (legacy `premium_<tg_id>_<ts>`) → autoRenew=false.
+function parsePayload(payload: string): { autoRenew: boolean } {
+  if (typeof payload !== "string" || !payload.startsWith("premium_")) {
+    return { autoRenew: false };
+  }
+  const parts = payload.split("_");
+  if (parts.length >= 4) {
+    return { autoRenew: parts[3] === "1" };
+  }
+  return { autoRenew: false };
+}
 
-  const { error } = await supabase
+// ── ОСНОВНАЯ ЛОГИКА АКТИВАЦИИ / ПРОДЛЕНИЯ ────────────────────────────────────
+
+type ActivationResult = {
+  ok: boolean;
+  isRenewal: boolean;
+  startsAt: Date;
+  endsAt: Date;
+  effectiveAutoRenew: boolean;
+};
+
+async function activateOrExtendSubscription(
+  telegramId: number,
+  payloadAutoRenew: boolean,
+  tgSubscriptionExpiryTs: number | null,
+  tgIsRecurring: boolean | null,
+): Promise<ActivationResult> {
+  const now = new Date();
+  const fallbackEnd = new Date(now.getTime() + PREMIUM_MS);
+
+  if (!supabase) {
+    return { ok: false, isRenewal: false, startsAt: now, endsAt: fallbackEnd, effectiveAutoRenew: payloadAutoRenew };
+  }
+
+  // ── 1. Читаем текущее состояние юзера ───────────────────────────────────
+  const { data: currentUser, error: readErr } = await supabase
+    .from("users")
+    .select("premium_until, auto_renew")
+    .eq("telegram_id", telegramId)
+    .maybeSingle();
+
+  if (readErr) {
+    console.error("[stars-webhook] read user failed:", readErr);
+    return { ok: false, isRenewal: false, startsAt: now, endsAt: fallbackEnd, effectiveAutoRenew: payloadAutoRenew };
+  }
+
+  // ── 2. Определяем, это первичная оплата или renewal ─────────────────────
+  // Приоритет признаков renewal (от самого надёжного к менее):
+  //   (a) tgIsRecurring=true → точно renewal (Telegram нам сказал).
+  //   (b) Юзер УЖЕ имеет активную подписку (premium_until > now) и
+  //       auto_renew=true → это плановое списание Telegram.
+  //   (c) Иначе → первичная оплата.
+  const currentEnd = currentUser?.premium_until
+    ? new Date(currentUser.premium_until)
+    : null;
+  const hasActiveSub = currentEnd !== null && currentEnd.getTime() > now.getTime();
+  const wasAutoRenew = currentUser?.auto_renew === true;
+
+  let isRenewal = false;
+  if (tgIsRecurring === true) {
+    isRenewal = true;
+  } else if (hasActiveSub && wasAutoRenew) {
+    isRenewal = true;
+  }
+
+  // ── 3. Рассчитываем новую premium_until ─────────────────────────────────
+  // Если Telegram прислал subscription_expiration_date → используем его
+  // (это authoritative truth). Иначе — наш расчёт.
+  let endsAt: Date;
+  if (tgSubscriptionExpiryTs && tgSubscriptionExpiryTs > 0) {
+    endsAt = new Date(tgSubscriptionExpiryTs * 1000);
+  } else if (isRenewal && currentEnd && currentEnd.getTime() > now.getTime()) {
+    // Защита от потери дней: продлеваем от текущего endDate, а не от now.
+    // Применяется, если webhook пришёл с задержкой (Telegram списал, но
+    // у юзера ещё были оставшиеся дни).
+    endsAt = new Date(currentEnd.getTime() + PREMIUM_MS);
+  } else {
+    endsAt = new Date(now.getTime() + PREMIUM_MS);
+  }
+
+  // ── 4. Эффективный auto_renew ───────────────────────────────────────────
+  // Если Telegram прислал subscription_expiration_date — это точно
+  // subscription invoice, значит auto_renew=true (даже если в payload "0",
+  // что маловероятно). Иначе — берём из payload.
+  const effectiveAutoRenew = (tgSubscriptionExpiryTs && tgSubscriptionExpiryTs > 0)
+    ? true
+    : payloadAutoRenew;
+
+  // ── 5. Записываем в БД ───────────────────────────────────────────────────
+  const { error: updErr } = await supabase
     .from("users")
     .update({
       is_premium: true,
       premium_until: endsAt.toISOString(),
-      // СБРАСЫВАЕМ оба notification-флага — у нас новая подписка,
-      // и reminder за 3 дня + expired-notice могут быть отправлены заново.
+      auto_renew: effectiveAutoRenew,
+      // СБРАСЫВАЕМ оба notification-флага — после нового платежа
+      // reminder за 3 дня + expired-notice должны иметь возможность
+      // отправиться заново под новый подписочный период.
       renewal_reminder_at: null,
       premium_expired_notice_at: null,
     })
     .eq("telegram_id", telegramId);
 
-  if (error) {
-    console.error("[stars-webhook] activateSubscription update failed:", error);
-    return { ok: false, startsAt, endsAt };
+  if (updErr) {
+    console.error("[stars-webhook] update user failed:", updErr);
+    return { ok: false, isRenewal, startsAt: now, endsAt, effectiveAutoRenew };
   }
-  console.log(`[stars-webhook] activated for tg=${telegramId}, until=${endsAt.toISOString()}`);
-  return { ok: true, startsAt, endsAt };
+
+  console.log(
+    `[stars-webhook] ${isRenewal ? "RENEWAL" : "ACTIVATION"} for tg=${telegramId}, ` +
+    `until=${endsAt.toISOString()}, auto_renew=${effectiveAutoRenew}`,
+  );
+  return { ok: true, isRenewal, startsAt: now, endsAt, effectiveAutoRenew };
 }
 
-// ── ЭМОЦИОНАЛЬНЫЕ ТЕКСТЫ — purchase confirmation ─────────────────────────────
+// ── ЭМОЦИОНАЛЬНЫЕ ТЕКСТЫ ─────────────────────────────────────────────────────
 
-function buildPurchaseText(lang: "ru" | "en", startsAt: Date, endsAt: Date): string {
+// Первичная активация. Текст слегка отличается в зависимости от того,
+// одноразовая это оплата или subscription с автопродлением.
+function buildActivationText(
+  lang: "ru" | "en",
+  startsAt: Date,
+  endsAt: Date,
+  isSubscription: boolean,
+): string {
   const startsStr = formatDate(startsAt, lang);
   const endsStr   = formatDate(endsAt,   lang);
   if (lang === "ru") {
+    const subscriptionLine = isSubscription
+      ? `🔄 <b>Автопродление включено</b> — следующее списание ${endsStr}. Отменить можно в любой момент в настройках Telegram.`
+      : `ℹ️ Это разовая оплата без автопродления. Когда подписка закончится — мы напомним.`;
     return [
       `🎉 <b>Добро пожаловать в Premium!</b>`,
       ``,
       `Спасибо, что доверился Protocol Finance — для нас это правда много значит.`,
       ``,
-      `📅 Твоя подписка активна <b>с ${startsStr} по ${endsStr}</b>.`,
+      `📅 Подписка активна <b>с ${startsStr} по ${endsStr}</b>.`,
+      subscriptionLine,
       ``,
       `Теперь тебе доступно всё:`,
       `   ✨ Изменение темпа накоплений`,
@@ -154,12 +266,16 @@ function buildPurchaseText(lang: "ru" | "en", startsAt: Date, endsAt: Date): str
       `Готов открыть полный потенциал? 👇`,
     ].join("\n");
   }
+  const subscriptionLineEn = isSubscription
+    ? `🔄 <b>Auto-renewal is ON</b> — next charge on ${endsStr}. You can cancel anytime in Telegram settings.`
+    : `ℹ️ This is a one-time purchase without auto-renewal. We'll remind you when the subscription ends.`;
   return [
     `🎉 <b>Welcome to Premium!</b>`,
     ``,
     `Thank you for trusting Protocol Finance — it really means a lot.`,
     ``,
     `📅 Your subscription is active <b>from ${startsStr} to ${endsStr}</b>.`,
+    subscriptionLineEn,
     ``,
     `Everything is now unlocked:`,
     `   ✨ Saving pace control`,
@@ -172,9 +288,42 @@ function buildPurchaseText(lang: "ru" | "en", startsAt: Date, endsAt: Date): str
   ].join("\n");
 }
 
-function buildPurchaseKeyboard(lang: "ru" | "en") {
-  if (!MINI_APP_URL) return undefined; // нет MINI_APP_URL — отправим без кнопки
+// Renewal — короткое и тёплое сообщение, без длинного welcome-блока.
+function buildRenewalText(lang: "ru" | "en", endsAt: Date): string {
+  const endsStr = formatDate(endsAt, lang);
+  if (lang === "ru") {
+    return [
+      `🔄 <b>Подписка успешно продлена</b>`,
+      ``,
+      `Спасибо, что остаёшься с Protocol Finance — это правда важно для нас.`,
+      ``,
+      `📅 Premium активен <b>до ${endsStr}</b>.`,
+      ``,
+      `Никаких действий с твоей стороны не нужно — продолжаем работать как обычно. 💚`,
+    ].join("\n");
+  }
+  return [
+    `🔄 <b>Subscription successfully renewed</b>`,
+    ``,
+    `Thank you for staying with Protocol Finance — it truly matters to us.`,
+    ``,
+    `📅 Premium is active <b>until ${endsStr}</b>.`,
+    ``,
+    `No action needed on your side — we continue as usual. 💚`,
+  ].join("\n");
+}
+
+function buildActivationKeyboard(lang: "ru" | "en") {
+  if (!MINI_APP_URL) return undefined;
   const text = lang === "ru" ? "🚀 Скорее изучить Premium" : "🚀 Explore Premium now";
+  return {
+    inline_keyboard: [[{ text, web_app: { url: MINI_APP_URL } }]],
+  };
+}
+
+function buildRenewalKeyboard(lang: "ru" | "en") {
+  if (!MINI_APP_URL) return undefined;
+  const text = lang === "ru" ? "📊 Открыть приложение" : "📊 Open the app";
   return {
     inline_keyboard: [[{ text, web_app: { url: MINI_APP_URL } }]],
   };
@@ -228,16 +377,45 @@ Deno.serve(async (req: Request) => {
         return new Response("OK");
       }
 
-      const result = await activateSubscription(fromId);
+      // SUBSCRIPTION MODEL — извлекаем флаг auto_renew и subscription_expiration_date.
+      const { autoRenew: payloadAutoRenew } = parsePayload(payload);
+      const tgSubExpiry = (typeof sp.subscription_expiration_date === "number")
+        ? sp.subscription_expiration_date
+        : null;
+      // Bot API 8.x присылает is_recurring=true для повторных списаний.
+      // Старые версии могут не присылать вообще — fallback на DB-сравнение.
+      const tgIsRecurring = (typeof sp.is_recurring === "boolean") ? sp.is_recurring : null;
+
+      console.log(
+        `[stars-webhook] successful_payment for tg=${fromId}, ` +
+        `payload_auto_renew=${payloadAutoRenew}, ` +
+        `tg_sub_expiry=${tgSubExpiry}, ` +
+        `tg_is_recurring=${tgIsRecurring}`,
+      );
+
+      const result = await activateOrExtendSubscription(
+        fromId,
+        payloadAutoRenew,
+        tgSubExpiry,
+        tgIsRecurring,
+      );
       if (!result.ok) return new Response("db_error", { status: 500 });
 
-      // ── DM с эмоциональным текстом + кнопкой «Скорее изучить Premium» ──
+      // ── DM ──────────────────────────────────────────────────────────
       const lang = pickLang(from.language_code);
-      await sendDM(
-        fromId,
-        buildPurchaseText(lang, result.startsAt, result.endsAt),
-        buildPurchaseKeyboard(lang),
-      );
+      if (result.isRenewal) {
+        await sendDM(
+          fromId,
+          buildRenewalText(lang, result.endsAt),
+          buildRenewalKeyboard(lang),
+        );
+      } else {
+        await sendDM(
+          fromId,
+          buildActivationText(lang, result.startsAt, result.endsAt, result.effectiveAutoRenew),
+          buildActivationKeyboard(lang),
+        );
+      }
 
       return new Response("OK");
     }

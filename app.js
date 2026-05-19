@@ -2309,6 +2309,11 @@ loadFullState();
       }
       // Блок community stats обновляем всегда — он зависит от showCommunityStats.
       if (typeof refreshProfileStats === "function") refreshProfileStats();
+      // SUBSCRIPTION MODEL: status-block в премиум-модалке — обновляем всегда,
+      // т.к. может поменяться premium_until или auto_renew.
+      if (typeof window._refreshPremiumStatusBlock === "function") {
+        window._refreshPremiumStatusBlock();
+      }
       // Statschanged используется только для логирования — UI обновляется выше всегда.
       void statsChanged;
 
@@ -11324,6 +11329,10 @@ function goalSwipeToIndex(idx, goLeft) {
 
     setTimeout(function () { sheet.classList.remove("sheet-entering"); }, 450);
 
+    // SUBSCRIPTION MODEL: обновляем status-block (если подписка активна,
+    // показываем «Premium активен до X · автопродление вкл/выкл»).
+    if (typeof refreshPremiumStatusBlock === "function") refreshPremiumStatusBlock();
+
     // Инициализируем crown-анимацию один раз — через тот же кэш animationData.
     if (typeof lottie !== "undefined" && !_lottieInstances["__crown"]) {
       var crownEl = document.getElementById("lottiePremiumCrown");
@@ -11343,6 +11352,69 @@ function goalSwipeToIndex(idx, goLeft) {
       }
     }
   }
+
+  // SUBSCRIPTION MODEL — обновляет блок текущего статуса подписки в
+  // премиум-модалке. Видимость и текст полностью контролируются стейтом:
+  //   • appState.isPremium && isPremiumActive() → показываем блок;
+  //   • appState.premiumUntil → форматируем дату «до 18 июня»;
+  //   • appState.autoRenew → «🔄 Автопродление включено» / «ℹ️ Без автопродления».
+  //
+  // Вызывается:
+  //   1. При открытии модалки (openPremiumModal).
+  //   2. После успешной оплаты (onStarsPaymentSucceeded).
+  //   3. После DB-синка (syncUserAccessFlagsFromDB).
+  function refreshPremiumStatusBlock() {
+    var block = document.getElementById("premiumStatusBlock");
+    if (!block) return;
+
+    var s = (typeof getState === "function") ? getState() : (window.appState || {});
+    var active = (typeof isPremiumActive === "function") ? isPremiumActive() : !!s.isPremium;
+
+    if (!active || !s.premiumUntil) {
+      block.style.display = "none";
+      return;
+    }
+
+    // Форматируем дату в соответствии с текущим языком приложения.
+    var lang = (s.settings && s.settings.language) ? s.settings.language : "ru";
+    var until = new Date(s.premiumUntil);
+    var dateStr = formatPremiumDate(until, lang);
+
+    var dateEl = document.getElementById("premiumStatusUntil");
+    if (dateEl) dateEl.textContent = dateStr;
+
+    var renewEl = document.getElementById("premiumStatusAutoRenew");
+    if (renewEl) {
+      if (s.autoRenew === true) {
+        renewEl.textContent = t("premium.status.autoRenewOn");
+        renewEl.classList.add("is-on");
+        renewEl.classList.remove("is-off");
+      } else {
+        renewEl.textContent = t("premium.status.autoRenewOff");
+        renewEl.classList.add("is-off");
+        renewEl.classList.remove("is-on");
+      }
+    }
+
+    block.style.display = "";
+  }
+
+  // Локализованное форматирование даты для status-block.
+  // RU: "18 июня", EN: "Jun 18". Совпадает с форматом из Edge Functions.
+  function formatPremiumDate(d, lang) {
+    var day = d.getDate();
+    var m = d.getMonth();
+    var monthsRu = ["января","февраля","марта","апреля","мая","июня",
+      "июля","августа","сентября","октября","ноября","декабря"];
+    var monthsEn = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    if (lang && lang.toLowerCase().indexOf("ru") === 0) {
+      return day + " " + monthsRu[m];
+    }
+    return monthsEn[m] + " " + day;
+  }
+
+  // Экспортируем для DB-sync кода (он лежит в другом IIFE).
+  window._refreshPremiumStatusBlock = refreshPremiumStatusBlock;
 
   function closePremiumModal() {
     var overlay = document.getElementById("premiumOverlay");
@@ -11537,11 +11609,14 @@ function goalSwipeToIndex(idx, goLeft) {
 
       _paymentInFlight = true;
     try {
-      // SUBSCRIPTION MODEL: одноразовая оплата 150⭐ → 30 дней Premium.
-      // Auto-renew не используется (Telegram Stars одноразовый invoice
-      // не поддерживает recurring billing — реализация через subscription_period
-      // оставлена на будущее).
-      console.log("[Stars] buyPremiumWithStars: opening invoice");
+      // SUBSCRIPTION MODEL — читаем выбор пользователя:
+      //   true  → subscription invoice (Telegram списывает 150⭐ каждые 30 дней
+      //           автоматически, отмена через Telegram Settings).
+      //   false → одноразовая оплата на 30 дней.
+      // Дефолт false: пользователь должен ЯВНО согласиться на recurring.
+      var autoRenewCb = document.getElementById("premiumAutoRenew");
+      var autoRenew = !!(autoRenewCb && autoRenewCb.checked);
+      console.log("[Stars] buyPremiumWithStars: auto_renew=" + autoRenew);
 
       // Дисейблим кнопку на время запроса, чтобы не было двойных кликов.
       if (buyBtn) {
@@ -11550,7 +11625,7 @@ function goalSwipeToIndex(idx, goLeft) {
       }
       showToast(t("payment.processing"), "info", { duration: 1800 });
 
-      var invoice = await window.createStarsInvoice();
+      var invoice = await window.createStarsInvoice(autoRenew);
       if (!invoice || !invoice.invoice_url) {
         showToast(t("payment.failed"), "error");
         return;
@@ -11588,19 +11663,23 @@ function goalSwipeToIndex(idx, goLeft) {
       if (typeof haptic === "function") haptic("success");
 
       // 1. Локальный state — мгновенно.
-      // SUBSCRIPTION MODEL: оптимистично проставляем premium_until = +30 дней.
-      // Webhook на бэкенде поставит canonical-значения через ~1-3 секунды,
-      // и syncUserAccessFlagsFromDB перепишет наши оптимистичные значения
-      // на серверные (что норм — даты практически одинаковые).
+      // SUBSCRIPTION MODEL: оптимистично проставляем premium_until = +30 дней
+      // и auto_renew по чекбоксу. Webhook на бэкенде поставит canonical-значения
+      // через ~1-3 секунды, и syncUserAccessFlagsFromDB перепишет наши значения
+      // на серверные (даты практически одинаковые).
+      var autoRenewCb2 = document.getElementById("premiumAutoRenew");
+      var autoRenew2 = !!(autoRenewCb2 && autoRenewCb2.checked);
       var until30d = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
       if (typeof updateState === "function") {
         updateState({
           isPremium: true,
-          premiumUntil: until30d
+          premiumUntil: until30d,
+          autoRenew: autoRenew2
         });
       } else if (window.appState) {
         window.appState.isPremium = true;
         window.appState.premiumUntil = until30d;
+        window.appState.autoRenew = autoRenew2;
       }
       if (typeof saveFullState === "function") {
         try { saveFullState(); } catch (e) { console.warn("[Stars] saveFullState:", e); }
@@ -11610,6 +11689,11 @@ function goalSwipeToIndex(idx, goLeft) {
       if (typeof window._syncPremiumUI === "function") window._syncPremiumUI();
       if (typeof renderAccountBackCards === "function") renderAccountBackCards();
       if (typeof refreshProfileStats === "function") refreshProfileStats();
+      // SUBSCRIPTION MODEL: обновляем status-block в премиум-модалке
+      // (он будет виден уже на следующем открытии).
+      if (typeof window._refreshPremiumStatusBlock === "function") {
+        window._refreshPremiumStatusBlock();
+      }
 
       // 3. Cloud push — premium-флаг должен немедленно улететь на другие устройства.
       if (window.CloudSync && typeof window.CloudSync.pushToCloud === "function") {

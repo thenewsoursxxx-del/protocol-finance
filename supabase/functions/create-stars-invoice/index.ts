@@ -1,21 +1,26 @@
 // TELEGRAM STARS — Edge Function: создание invoice link для Premium-подписки.
 //
-// SUBSCRIPTION MODEL:
-//   • Один платёж = 30 дней Premium.
-//   • Цена 150 ⭐ (временно; продакшен план — 450 ⭐).
-//   • Auto-renew не реализован (Telegram Stars поддерживает recurring через
-//     subscription_period: 2592000 в createInvoiceLink, но это другая схема
-//     invoice'ов и более сложная webhook-логика — оставлено на будущее).
-//     Сейчас работает простой шаблон: одноразовая оплата → 30 дней доступа
-//     → DM-напоминание за 3 дня до окончания → grеfully expire.
+// SUBSCRIPTION MODEL (с настоящим recurring billing):
+//   • Цена 150 ⭐ за 30 дней.
+//   • Пользователь выбирает: одноразовая оплата или автопродление каждые 30 дней.
+//   • Если auto_renew=true → invoice становится subscription-invoice'ом:
+//     добавляем поле subscription_period=2592000 (30 дней в секундах,
+//     это ЕДИНСТВЕННОЕ допустимое значение в Bot API на текущий момент).
+//     Telegram сам списывает 150⭐ каждые 30 дней и шлёт нам очередной
+//     successful_payment update; пользователь может отменить подписку в
+//     Telegram Settings → Subscriptions.
+//   • Если auto_renew=false → обычный одноразовый invoice. После 30 дней
+//     подписка истекает, пользователю отправляется expired-notice DM.
 //
 // FLOW:
-//   1. Клиент шлёт POST { telegram_id, init_data } сюда.
+//   1. Клиент шлёт POST { telegram_id, init_data, auto_renew }.
 //   2. Функция верифицирует init_data (HMAC-SHA256 от BOT_TOKEN).
-//   3. Дёргает Bot API createInvoiceLink (currency=XTR, amount=150).
-//   4. Возвращает { invoice_url, payload }.
-//      payload: `premium_<telegram_id>_<unix_ms>` — webhook парсит чтобы
-//      определить, кому активировать подписку.
+//   3. Дёргает Bot API createInvoiceLink (currency=XTR, amount=150,
+//      и subscription_period=2592000 если auto_renew=true).
+//   4. Возвращает { invoice_url, payload, amount, is_subscription }.
+//      payload: `premium_<telegram_id>_<unix_ms>_<autoRenewFlag>` —
+//      webhook парсит его, чтобы знать, какое значение записать в
+//      users.auto_renew после successful_payment.
 //
 // DEPLOY:
 //   supabase secrets set TELEGRAM_BOT_TOKEN=xxx:yyy
@@ -27,6 +32,9 @@ const BOT_TOKEN = Deno.env.get("TELEGRAM_BOT_TOKEN") || "";
 
 // Цена временно 150 ⭐ (вместо 450 ⭐). Premium на 30 дней.
 const STARS_PRICE = 150;
+// 30 дней в секундах. ЕДИНСТВЕННОЕ значение, которое Telegram Stars
+// принимает для subscription_period в createInvoiceLink на 2026 год.
+const SUBSCRIPTION_PERIOD_SEC = 2592000;
 
 const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
@@ -91,6 +99,11 @@ Deno.serve(async (req) => {
   const tgId = Number(body?.telegram_id);
   if (!tgId) return json({ error: "telegram_id_required" }, 400);
 
+  // SUBSCRIPTION MODEL: клиент явно говорит, какой invoice ему нужен.
+  // Дефолт false — одноразовая оплата (на случай, если по какой-то причине
+  // поле не пришло, лучше НЕ списывать с пользователя автоматически).
+  const autoRenew: boolean = body?.auto_renew === true;
+
   if (typeof body?.init_data === "string" && body.init_data.length > 0) {
     const v = await verifyInitData(body.init_data);
     if (!v.ok) return json({ error: "init_data_invalid" }, 401);
@@ -101,20 +114,35 @@ Deno.serve(async (req) => {
     console.warn("[create-stars-invoice] init_data not provided — dev mode for tg_id=", tgId);
   }
 
-  // Payload: `premium_<telegram_id>_<unix_ms>`.
-  // Webhook парсит это чтобы определить кому активировать подписку.
-  const payload = `premium_${tgId}_${Date.now()}`;
+  // Payload содержит auto_renew flag — webhook будет писать его в users.auto_renew.
+  // Формат: premium_<telegram_id>_<unix_ms>_<autoRenewFlag>
+  //   где autoRenewFlag = "1" (subscription) или "0" (one-time).
+  // Backward compat: webhook парсит и payload без флага (legacy "0").
+  const payload = `premium_${tgId}_${Date.now()}_${autoRenew ? "1" : "0"}`;
+
+  // Сборка тела invoice. Описание отличается для подписки vs одноразовой оплаты,
+  // чтобы пользователь чётко видел, на что соглашается в Telegram UI.
+  const invoiceBody: Record<string, unknown> = {
+    title: "Protocol Premium",
+    description: autoRenew
+      ? "Полный доступ ко всем функциям. Подписка с автопродлением — 150 ⭐ каждые 30 дней. Отмена в любой момент в настройках Telegram."
+      : "Полный доступ ко всем функциям приложения на 30 дней (одноразовая оплата).",
+    payload,
+    currency: "XTR",
+    prices: [{ label: "Premium на 30 дней", amount: STARS_PRICE }],
+  };
+
+  // RECURRING BILLING — ключевое поле для subscription-invoice'а.
+  // Telegram автоматически списывает 150⭐ каждые 2592000 секунд (30 дней)
+  // и отправляет нам очередной successful_payment update.
+  if (autoRenew) {
+    invoiceBody.subscription_period = SUBSCRIPTION_PERIOD_SEC;
+  }
 
   const tgRes = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/createInvoiceLink`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      title: "Protocol Premium",
-      description: "Полный доступ ко всем функциям приложения",
-      payload,
-      currency: "XTR",
-      prices: [{ label: "Premium на 30 дней", amount: STARS_PRICE }],
-    }),
+    body: JSON.stringify(invoiceBody),
   });
 
   const tgJson = await tgRes.json().catch(() => null);
@@ -123,9 +151,12 @@ Deno.serve(async (req) => {
     return json({ error: "telegram_api_error", details: tgJson }, 502);
   }
 
+  console.log(`[create-stars-invoice] created for tg=${tgId}, auto_renew=${autoRenew}`);
+
   return json({
     invoice_url: tgJson.result,
     payload,
     amount: STARS_PRICE,
+    is_subscription: autoRenew,
   });
 });

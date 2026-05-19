@@ -592,12 +592,14 @@ window.fetchUserAccessFlags = fetchUserAccessFlags;
  *      или не настроен). Серверная истина — за webhook'ом, но клиент тоже
  *      пишет в БД для немедленного UI-feedback.
  * ============================================================================ */
-async function createStarsInvoice() {
-  // SUBSCRIPTION MODEL: одноразовый invoice на 30 дней Premium.
-  // Auto-renew не реализован (Telegram Stars поддерживают true subscriptions
-  // через subscription_period в createInvoiceLink, но это отдельная схема —
-  // оставлено на будущее). Поэтому чекбокс в UI убран, никаких параметров
-  // от клиента не нужно — Edge Function сама сформирует invoice.
+async function createStarsInvoice(autoRenew) {
+  // SUBSCRIPTION MODEL: invoice на 30 дней Premium.
+  //   autoRenew=true  → Edge Function добавит subscription_period=2592000
+  //                     в createInvoiceLink. Telegram сам списывает 150⭐
+  //                     каждые 30 дней, юзер отменяет через Telegram Settings.
+  //   autoRenew=false → одноразовая оплата. После 30 дней — DM expired-notice.
+  // Дефолт false на случай, если параметр не передан явно.
+  var ar = autoRenew === true;
   try {
     var identity = await getVerifiedUserIdentity();
     if (!identity || !identity.telegram_id) {
@@ -621,7 +623,8 @@ async function createStarsInvoice() {
       },
       body: JSON.stringify({
         telegram_id: identity.telegram_id,
-        init_data: initData
+        init_data: initData,
+        auto_renew: ar
       })
     });
 

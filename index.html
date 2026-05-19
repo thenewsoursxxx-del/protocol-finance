@@ -16,7 +16,7 @@ viewport-fit=cover" />
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
 
-<link rel="stylesheet" href="style.css?v=20013">
+<link rel="stylesheet" href="style.css?v=20014">
 
 <!-- Базовая инициализация Telegram Mini App (ранний вызов ready — рекомендация Telegram) -->
 <script>
@@ -2130,11 +2130,39 @@ z-index: 999999;
 
   <!-- CTA -->
   <div class="premium-cta-block">
-    <!-- SUBSCRIPTION MODEL — одноразовый платёж 150⭐ на 30 дней.
-         Auto-renew checkbox удалён: Telegram Stars для recurring требует
-         subscription_period в createInvoiceLink (другая схема invoice'ов).
-         Вместо auto-renew за 3 дня до окончания приходит DM-напоминание,
-         а при истечении — «грустное» сообщение с кнопкой «Вернуть Premium». -->
+
+    <!-- SUBSCRIPTION MODEL — статус текущей подписки.
+         Показывается ТОЛЬКО если isPremiumActive()=true (заполняется в
+         refreshPremiumStatusBlock() из app.js). Содержит две строки:
+           • дата окончания подписки;
+           • статус автопродления (вкл/выкл).
+         По умолчанию display:none — JS включает видимость по факту. -->
+    <div class="premium-status-block" id="premiumStatusBlock" style="display:none">
+      <div class="premium-status__row">
+        <span class="premium-status__icon">✨</span>
+        <span class="premium-status__text">
+          <span data-i18n="premium.status.activeUntil">Premium активен до</span>
+          <strong id="premiumStatusUntil">—</strong>
+        </span>
+      </div>
+      <div class="premium-status__autorenew is-off" id="premiumStatusAutoRenew"
+           data-i18n="premium.status.autoRenewOff">Без автопродления</div>
+    </div>
+
+    <!-- SUBSCRIPTION MODEL — чекбокс автопродления (recurring billing).
+         При checked=true фронт прокидывает auto_renew=true в Edge Function
+         create-stars-invoice, та добавляет subscription_period=2592000 в
+         createInvoiceLink — и Telegram сам списывает 150⭐ каждые 30 дней.
+         Дефолт OFF: пользователь должен ЯВНО согласиться на recurring.
+         Отмена подписки — в Telegram Settings → Subscriptions. -->
+    <label class="premium-auto-renew" for="premiumAutoRenew">
+      <input type="checkbox" id="premiumAutoRenew" class="premium-auto-renew__input">
+      <span class="premium-auto-renew__box" aria-hidden="true">
+        <svg viewBox="0 0 16 16" class="premium-auto-renew__check"><path d="M3 8.5l3 3 7-7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+      <span class="premium-auto-renew__label" data-i18n="premium.autoRenew.label">Автоматически продлевать каждые 30 дней</span>
+    </label>
+
     <button class="premium-buy-btn" id="premiumBuyBtn">
       <span data-i18n="premium.buyBtn">Оформить Premium</span>
       <span class="premium-buy-price" data-i18n="premium.price">150 ⭐ / 30 дней</span>
@@ -2145,18 +2173,18 @@ z-index: 999999;
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-<script src="state-manager.js?v=20013"></script>
-<script src="i18n.js?v=20013"></script>
-<script src="financial-events.js?v=20013"></script>
-<script src="cashflow-engine.js?v=20013"></script>
-<script src="graph-engine-svg.js?v=20013"></script>
+<script src="state-manager.js?v=20014"></script>
+<script src="i18n.js?v=20014"></script>
+<script src="financial-events.js?v=20014"></script>
+<script src="cashflow-engine.js?v=20014"></script>
+<script src="graph-engine-svg.js?v=20014"></script>
 <!-- Supabase: после CDN в <head>; замените anon-ключ внутри файла -->
-<script src="supabase.js?v=20013"></script>
+<script src="supabase.js?v=20014"></script>
 <!-- CLOUD STORAGE SYNC — кросс-устройственная синхронизация через Telegram CloudStorage.
      Загружаем ПОСЛЕ state-manager (нужен applyState/saveState) и Supabase
      (для согласованности с серверным sync), но ДО app.js — чтобы хуки
      CloudSync.scheduleSync() в saveFullState() были доступны на момент init. -->
-<script src="cloud-storage.js?v=20013"></script>
-<script src="app.js?v=20013"></script>
+<script src="cloud-storage.js?v=20014"></script>
+<script src="app.js?v=20014"></script>
 </body>
 </html>
