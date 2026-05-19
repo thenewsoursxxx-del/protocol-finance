@@ -21,7 +21,9 @@
 // deno-lint-ignore-file no-explicit-any
 
 const BOT_TOKEN = Deno.env.get("TELEGRAM_BOT_TOKEN") || "";
-const STARS_PRICE = 450; // 450 Stars — Premium forever
+// TELEGRAM STARS: цена временно понижена до 150 ⭐ (вместо 450 ⭐).
+// Премиум выдаётся на 30 дней (см. label в prices).
+const STARS_PRICE = 150;
 
 const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
@@ -121,10 +123,10 @@ Deno.serve(async (req) => {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       title: "Protocol Premium",
-      description: "Доступ ко всем премиум-функциям Protocol Finance навсегда",
+      description: "Полный доступ ко всем функциям приложения",
       payload,
       currency: "XTR",
-      prices: [{ label: "Premium (forever)", amount: STARS_PRICE }],
+      prices: [{ label: "Premium на 30 дней", amount: STARS_PRICE }],
     }),
   });
 

@@ -405,8 +405,8 @@
       "premium.f5.title": "Статистика счёта",
       "premium.f5.text": "Переверни карточку счёта — и увидишь полную картину: сколько уже отложено, динамика пополнений, прогноз на следующий месяц.",
       "premium.buyBtn": "Оформить Premium",
-      "premium.price": "450 ⭐ навсегда",
-      "premium.ctaHint": "Один платёж · Без подписок · Премиум навсегда",
+      "premium.price": "150 ⭐ / 30 дней",
+      "premium.ctaHint": "Полный доступ ко всем функциям · 30 дней",
 
       // TELEGRAM STARS — экраны оплаты
       "payment.processing": "Открываем оплату Telegram Stars…",
@@ -1435,8 +1435,8 @@
       "premium.f5.title": "Account statistics",
       "premium.f5.text": "Flip the account card to see the full picture: how much you've saved, deposit dynamics, and next-month forecast.",
       "premium.buyBtn": "Get Premium",
-      "premium.price": "450 ⭐ forever",
-      "premium.ctaHint": "One-time payment · No subscription · Premium forever",
+      "premium.price": "150 ⭐ / 30 days",
+      "premium.ctaHint": "Full access to all features · 30 days",
 
       // TELEGRAM STARS — payment screens
       "payment.processing": "Opening Telegram Stars payment…",

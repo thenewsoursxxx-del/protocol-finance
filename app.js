@@ -11411,25 +11411,28 @@ function goalSwipeToIndex(idx, goLeft) {
   if (closeBtn)  closeBtn.addEventListener("click",  closePremiumModal);
   if (overlay)   overlay.addEventListener("click",   closePremiumModal);
   if (buyBtn) {
-    buyBtn.addEventListener("click", handleBuyPremium);
+    buyBtn.addEventListener("click", buyPremiumWithStars);
   }
 
   // TELEGRAM STARS — обработчик нажатия на «Оформить Premium».
   // ─────────────────────────────────────────────────────────────────────────
   // Flow:
   //   1. createStarsInvoice() (supabase.js) → POST /functions/v1/create-stars-invoice
-  //      → бэкенд (Edge Function) дёргает Bot API createInvoiceLink (XTR, 450⭐)
-  //      → возвращает invoice_url.
+  //      → бэкенд (Edge Function) дёргает Bot API createInvoiceLink (XTR, 150⭐)
+  //      → возвращает invoice_url + payload.
   //   2. tg.openInvoice(invoice_url, callback).
   //   3. callback("paid") → optimistic isPremium=true в appState + setUserPremium
   //      в Supabase (страховка на случай задержки bot webhook'а), success-toast,
-  //      закрытие модалки, перерисовка UI.
+  //      конфетти, закрытие модалки, перерисовка UI.
   //   4. callback("cancelled"|"failed") → toast с пояснением, модалка остаётся.
   //   5. Параллельно — bot webhook (stars-payment-webhook) поставит is_premium
   //      серверно из обработчика successful_payment. syncUserAccessFlagsFromDB
   //      подтвердит флаг на следующем тике (~через 1.5с).
+  //
+  // Функция экспортируется в window.buyPremiumWithStars — её можно вызвать
+  // из любого внешнего кода / отладочной консоли.
   var _paymentInFlight = false;
-  async function handleBuyPremium() {
+  async function buyPremiumWithStars() {
     if (_paymentInFlight) return;
     if (typeof haptic === "function") haptic("medium");
 
@@ -11483,8 +11486,8 @@ function goalSwipeToIndex(idx, goLeft) {
 
   // TELEGRAM STARS — действия после успешной оплаты.
   // Оптимистично включаем premium локально + пишем в БД клиентом (страховка),
-  // показываем success-UI и закрываем модалку. Background sync через ~1.5с
-  // подтвердит флаг из БД (если bot webhook сработал — там уже true).
+  // показываем success-UI с конфетти и закрываем модалку. Background sync
+  // через ~1.5с подтвердит флаг из БД (если bot webhook сработал — там true).
   async function onStarsPaymentSucceeded() {
     try {
       if (typeof haptic === "function") haptic("success");
@@ -11509,9 +11512,12 @@ function goalSwipeToIndex(idx, goLeft) {
         try { window.CloudSync.pushToCloud(); } catch (e) { console.warn("[Stars] cloud push:", e); }
       }
 
-      // 4. Success UX.
+      // 4. Success UX — конфетти + toast + закрытие модалки.
+      //    Конфетти запускаем чуть раньше, чтобы пользователь увидел вспышку
+      //    ДО анимации закрытия sheet'а.
+      fireConfetti();
       showToast(t("payment.success.title") + " · " + t("payment.success.text"), "success", { duration: 3500 });
-      closePremiumModal();
+      setTimeout(function () { closePremiumModal(); }, 350);
 
       // 5. Подстраховка серверная — клиент сам пишет is_premium=true в БД
       //    (на случай, если webhook не настроен или задерживается).
@@ -11524,6 +11530,86 @@ function goalSwipeToIndex(idx, goLeft) {
       console.error("[Stars] onStarsPaymentSucceeded exception:", e);
     }
   }
+
+  // TELEGRAM STARS — премиальное конфетти после успешной оплаты.
+  // ─────────────────────────────────────────────────────────────────────────
+  // Лёгкая DOM-реализация без внешних зависимостей: создаём 90 цветных
+  // частиц в fixed-overlay поверх всего экрана. Каждая стартует у центра,
+  // получает случайное направление + вращение, и через ~3 секунды слой
+  // удаляется из DOM. Цвета подобраны под премиум-палитру (золото + emerald).
+  //
+  // pointer-events: none — не блокирует клики по UI. z-index: 99999 —
+  // выше любых модалок/тостов.
+  function fireConfetti() {
+    try {
+      var COLORS  = ["#FFD700", "#10b981", "#34d399", "#FFFFFF", "#FBBF24", "#F59E0B", "#6EE7B7"];
+      var COUNT   = 90;
+      var BASE_MS = 2800;
+
+      var layer = document.createElement("div");
+      layer.setAttribute("aria-hidden", "true");
+      layer.style.cssText = [
+        "position:fixed",
+        "inset:0",
+        "pointer-events:none",
+        "z-index:99999",
+        "overflow:hidden"
+      ].join(";");
+      document.body.appendChild(layer);
+
+      for (var i = 0; i < COUNT; i++) {
+        (function () {
+          var el = document.createElement("div");
+          var size      = 6 + Math.random() * 8;
+          var color     = COLORS[Math.floor(Math.random() * COLORS.length)];
+          var startLeft = 50 + (Math.random() - 0.5) * 24; // ±12% от центра
+          var spread    = (Math.random() - 0.5) * 1200;    // горизонтальный разлёт
+          var fall      = 750 + Math.random() * 350;       // финальное падение вниз
+          var rot       = Math.random() * 720 - 360;
+          var dur       = BASE_MS + Math.random() * 1200;
+          var dly       = Math.random() * 220;
+          var isCircle  = Math.random() > 0.5;
+
+          el.style.cssText = [
+            "position:absolute",
+            "left:" + startLeft + "%",
+            "top:42%",
+            "width:" + size + "px",
+            "height:" + size + "px",
+            "background:" + color,
+            "border-radius:" + (isCircle ? "50%" : "2px"),
+            "opacity:1",
+            "transform:translate(0,0) rotate(0deg)",
+            "box-shadow:0 0 6px " + color + "55",
+            "transition:transform " + dur + "ms cubic-bezier(.18,.7,.36,1) " + dly + "ms,"
+                     + "opacity " + dur + "ms ease-out " + dly + "ms"
+          ].join(";");
+          layer.appendChild(el);
+
+          // Двойной rAF — гарантия, что transform применится из стартовой
+          // позиции (без двойного rAF браузер может слить два style-write
+          // в один frame и пропустить transition).
+          requestAnimationFrame(function () {
+            requestAnimationFrame(function () {
+              el.style.transform = "translate(" + spread + "px," + fall + "px) rotate(" + rot + "deg)";
+              el.style.opacity   = "0";
+            });
+          });
+        })();
+      }
+
+      // Чистим overlay из DOM, чтобы не копились слои при повторных оплатах.
+      setTimeout(function () {
+        if (layer.parentNode) layer.parentNode.removeChild(layer);
+      }, BASE_MS + 2000);
+    } catch (e) {
+      console.warn("[Stars] fireConfetti exception:", e && e.message);
+    }
+  }
+
+  // Экспортируем функции в window — пригодится для отладки и внешних вызовов.
+  window.buyPremiumWithStars = buyPremiumWithStars;
+  window.fireConfetti        = fireConfetti;
 
   // TELEGRAM STARS — подписка на invoiceClosed (бекап-канал, если callback
   // openInvoice по какой-то причине не вызвался). Telegram emit'ит это
