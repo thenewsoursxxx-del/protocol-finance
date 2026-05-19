@@ -407,14 +407,11 @@
       "premium.buyBtn": "Оформить Premium",
       "premium.price": "150 ⭐ / 30 дней",
       "premium.ctaHint": "Полный доступ ко всем функциям · 30 дней",
-      // SUBSCRIPTION MODEL — чекбокс автопродления в премиум-модалке
-      "premium.autoRenew.label": "Автопродление каждый месяц",
-      "premium.autoRenew.hint": "Подписку можно отменить в любой момент",
 
       // TELEGRAM STARS — экраны оплаты
       "payment.processing": "Открываем оплату Telegram Stars…",
       "payment.success.title": "Premium активирован!",
-      "payment.success.text": "Подписка действует 30 дней",
+      "payment.success.text": "Проверь чат с ботом — там вся информация о подписке",
       "payment.cancelled": "Оплата отменена",
       "payment.failed": "Оплата не прошла. Попробуйте ещё раз",
       "payment.unavailable": "Оплата временно недоступна",
@@ -1440,14 +1437,11 @@
       "premium.buyBtn": "Get Premium",
       "premium.price": "150 ⭐ / 30 days",
       "premium.ctaHint": "Full access to all features · 30 days",
-      // SUBSCRIPTION MODEL — auto-renew checkbox in premium modal
-      "premium.autoRenew.label": "Auto-renew every month",
-      "premium.autoRenew.hint": "Cancel anytime",
 
       // TELEGRAM STARS — payment screens
       "payment.processing": "Opening Telegram Stars payment…",
       "payment.success.title": "Premium activated!",
-      "payment.success.text": "Subscription valid for 30 days",
+      "payment.success.text": "Check your chat with the bot — all subscription details are there",
       "payment.cancelled": "Payment cancelled",
       "payment.failed": "Payment failed. Please try again",
       "payment.unavailable": "Payment is temporarily unavailable",

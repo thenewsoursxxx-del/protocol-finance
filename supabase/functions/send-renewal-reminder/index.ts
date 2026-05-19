@@ -1,28 +1,16 @@
-// TELEGRAM STARS — Edge Function: напоминание о скором окончании Premium.
+// TELEGRAM STARS — Edge Function: напоминание за 3 дня до окончания Premium.
 //
-// FLOW (client-triggered):
-//   1. Клиент на старте приложения проверяет: premium_until - now() < 3 days?
-//   2. Если да — POST { telegram_id, init_data } сюда.
-//   3. Функция верифицирует init_data (анти-spoofing).
-//   4. Перечитывает users-запись СВОИМ select'ом (не доверяет клиенту):
-//        a) is_premium = true
-//        b) premium_until между now() и now()+3 days
-//        c) renewal_reminder_at IS NULL ИЛИ < (premium_until - 7 days)
-//      Только при всех trueах отсылает DM.
-//   5. После успешной отправки фиксирует renewal_reminder_at = now() —
-//      исключает повторные напоминания в рамках одной подписки.
+// Триггерится клиентом (см. syncUserAccessFlagsFromDB в app.js), если
+// premium_until - now() < 3 дней. Все условия отправки (включая дедуп
+// через renewal_reminder_at) проверяются на бэкенде — клиент не может
+// заставить функцию слать спам.
 //
-// SECURITY:
-//   • init_data верифицируется HMAC-SHA256(WebAppData ⊕ BOT_TOKEN).
-//   • Все условия отправки проверяются на бекенде — клиент не может
-//     заставить функцию слать спам.
+// Сообщение эмоциональное, на языке пользователя (ru/en) — клиент передаёт
+// language в body, бэкенд использует его. Если language не передан —
+// fallback на "en".
 //
 // DEPLOY:
 //   supabase functions deploy send-renewal-reminder --no-verify-jwt
-//
-// АЛЬТЕРНАТИВА: можно настроить pg_cron, который раз в день вызывает
-// эту же функцию для всех eligible-юзеров (без client trigger'а). См.
-// миграцию 20260519_premium_subscription.sql.
 
 // deno-lint-ignore-file no-explicit-any
 
@@ -31,6 +19,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const BOT_TOKEN     = Deno.env.get("TELEGRAM_BOT_TOKEN") || "";
 const SUPABASE_URL  = Deno.env.get("SUPABASE_URL") || "";
 const SERVICE_ROLE  = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+const MINI_APP_URL  = Deno.env.get("MINI_APP_URL") || "";
 
 const supabase = SUPABASE_URL && SERVICE_ROLE
   ? createClient(SUPABASE_URL, SERVICE_ROLE)
@@ -49,7 +38,7 @@ function json(body: unknown, status = 200): Response {
   });
 }
 
-// ── HMAC-SHA256 верификация init_data (идентична create-stars-invoice) ───────
+// ── HMAC-SHA256 верификация init_data ─────────────────────────────────────────
 async function verifyInitData(initData: string): Promise<{ ok: boolean; userId?: number }> {
   try {
     const params = new URLSearchParams(initData);
@@ -58,8 +47,7 @@ async function verifyInitData(initData: string): Promise<{ ok: boolean; userId?:
     params.delete("hash");
     const dataCheckString = Array.from(params.entries())
       .sort(([a], [b]) => a.localeCompare(b))
-      .map(([k, v]) => `${k}=${v}`)
-      .join("\n");
+      .map(([k, v]) => `${k}=${v}`).join("\n");
     const enc = new TextEncoder();
     const secretKey = await crypto.subtle.importKey(
       "raw", enc.encode("WebAppData"),
@@ -86,11 +74,79 @@ async function verifyInitData(initData: string): Promise<{ ok: boolean; userId?:
   } catch { return { ok: false }; }
 }
 
-function formatRuDate(d: Date): string {
-  const dd = String(d.getDate()).padStart(2, "0");
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  return `${dd}.${mm}.${d.getFullYear()}`;
+function pickLang(code: unknown): "ru" | "en" {
+  if (typeof code !== "string") return "en";
+  const c = code.toLowerCase();
+  if (c === "ru" || c.startsWith("ru-")) return "ru";
+  return "en";
 }
+
+function formatDate(d: Date, lang: "ru" | "en"): string {
+  const day = d.getDate();
+  const m = d.getMonth();
+  const monthsRu = [
+    "января","февраля","марта","апреля","мая","июня",
+    "июля","августа","сентября","октября","ноября","декабря",
+  ];
+  const monthsEn = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  if (lang === "ru") return `${day} ${monthsRu[m]}`;
+  return `${monthsEn[m]} ${day}`;
+}
+
+function dayWord(n: number, lang: "ru" | "en"): string {
+  if (lang === "en") return n === 1 ? "day" : "days";
+  // ru: 1 день, 2-4 дня, 5+ дней
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod100 >= 11 && mod100 <= 14) return "дней";
+  if (mod10 === 1) return "день";
+  if (mod10 >= 2 && mod10 <= 4) return "дня";
+  return "дней";
+}
+
+// ── ЭМОЦИОНАЛЬНЫЙ ТЕКСТ ──────────────────────────────────────────────────────
+
+function buildReminderText(lang: "ru" | "en", endsAt: Date, daysLeft: number): string {
+  const endsStr = formatDate(endsAt, lang);
+  const dw = dayWord(daysLeft, lang);
+  if (lang === "ru") {
+    return [
+      `💛 <b>Через ${daysLeft} ${dw} твой Premium закончится</b>`,
+      ``,
+      `<b>${endsStr}</b> подписка истекает. И без неё:`,
+      `   • Темп накоплений вернётся к стандартному`,
+      `   • Долги и кредиты исчезнут из расчёта`,
+      `   • Гибкая модель перестанет адаптироваться`,
+      `   • Расширенные настройки портфеля заблокируются`,
+      ``,
+      `Не теряй то, что уже стало частью твоего плана. Продли подписку всего за 150 ⭐ — и продолжай уверенно идти к цели.`,
+    ].join("\n");
+  }
+  return [
+    `💛 <b>Your Premium ends in ${daysLeft} ${dw}</b>`,
+    ``,
+    `On <b>${endsStr}</b> your subscription expires. Without it:`,
+    `   • Saving pace will reset to default`,
+    `   • Loans and debts will leave your calculation`,
+    `   • Flexible model will stop adapting to you`,
+    `   • Advanced portfolio settings will be locked`,
+    ``,
+    `Don't lose what's already part of your plan. Renew for just 150 ⭐ — and keep moving toward your goal with confidence.`,
+  ].join("\n");
+}
+
+function buildReminderKeyboard(lang: "ru" | "en") {
+  if (!MINI_APP_URL) return undefined;
+  const text = lang === "ru" ? "💜 Вернуть Premium" : "💜 Get Premium back";
+  // Открываем mini app с параметром ?premium=open → app.js поймает его
+  // и сразу откроет премиум-модалку.
+  const url = MINI_APP_URL + (MINI_APP_URL.includes("?") ? "&" : "?") + "premium=open";
+  return {
+    inline_keyboard: [[{ text, web_app: { url } }]],
+  };
+}
+
+// ── Handler ──────────────────────────────────────────────────────────────────
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -104,28 +160,24 @@ Deno.serve(async (req) => {
   const tgId = Number(body?.telegram_id);
   if (!tgId) return json({ error: "telegram_id_required" }, 400);
 
-  // Верификация init_data.
-  if (typeof body?.init_data === "string" && body.init_data.length > 0) {
-    const v = await verifyInitData(body.init_data);
-    if (!v.ok) return json({ error: "init_data_invalid" }, 401);
-    if (v.userId && v.userId !== tgId) {
-      return json({ error: "telegram_id_mismatch" }, 401);
-    }
-  } else {
+  // init_data — обязательно для anti-spoofing.
+  if (typeof body?.init_data !== "string" || !body.init_data) {
     return json({ error: "init_data_required" }, 401);
   }
+  const v = await verifyInitData(body.init_data);
+  if (!v.ok) return json({ error: "init_data_invalid" }, 401);
+  if (v.userId && v.userId !== tgId) {
+    return json({ error: "telegram_id_mismatch" }, 401);
+  }
 
-  // ── Перечитываем users со своей стороны — клиенту не доверяем ──
+  // Перечитываем users со своей стороны — клиенту не доверяем.
   const { data: user, error } = await supabase
     .from("users")
-    .select("telegram_id, is_premium, premium_until, auto_renew, renewal_reminder_at")
+    .select("telegram_id, is_premium, premium_until, renewal_reminder_at")
     .eq("telegram_id", tgId)
     .maybeSingle();
 
-  if (error) {
-    console.error("[renewal-reminder] users.select failed:", error);
-    return json({ error: "db_error" }, 500);
-  }
+  if (error) return json({ error: "db_error" }, 500);
   if (!user) return json({ error: "user_not_found" }, 404);
   if (!user.is_premium || !user.premium_until) {
     return json({ skip: "not_active_subscription" });
@@ -137,50 +189,33 @@ Deno.serve(async (req) => {
   const THREE_DAYS = 3 * 24 * 60 * 60 * 1000;
   const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
 
-  // Должно быть: подписка ещё не истекла, но осталось <= 3 дней.
   if (msToExpiry <= 0 || msToExpiry > THREE_DAYS) {
     return json({ skip: "out_of_window", msToExpiry });
   }
 
-  // Не отправляем дубликат: reminder уже отсылался для этой подписки,
-  // если renewal_reminder_at заполнен в последние 7 дней.
+  // Дедуп: уже отправляли в последние 7 дней — не дублируем.
   if (user.renewal_reminder_at) {
-    const lastReminderTs = new Date(user.renewal_reminder_at).getTime();
-    if (now - lastReminderTs < SEVEN_DAYS) {
+    const lastTs = new Date(user.renewal_reminder_at).getTime();
+    if (now - lastTs < SEVEN_DAYS) {
       return json({ skip: "already_sent", renewal_reminder_at: user.renewal_reminder_at });
     }
   }
 
-  // ── Отправляем DM с inline-кнопкой «Продлить подписку» ──
-  const endsStr = formatRuDate(new Date(user.premium_until));
+  // Язык: либо передан клиентом, либо fallback "en".
+  const lang = pickLang(body?.language);
+
   const daysLeft = Math.ceil(msToExpiry / (24 * 60 * 60 * 1000));
-  const dayWord = daysLeft === 1 ? "день" : (daysLeft >= 2 && daysLeft <= 4 ? "дня" : "дней");
-
-  const text = [
-    `⏳ <b>Premium заканчивается через ${daysLeft} ${dayWord}</b>`,
-    ``,
-    `Твоя подписка действует до <b>${endsStr}</b>.`,
-    ``,
-    user.auto_renew
-      ? `🔁 Автопродление включено — мы продлим автоматически.`
-      : `Продли сейчас, чтобы не потерять доступ к премиум-функциям.`,
-  ].join("\n");
-
-  const reply_markup = {
-    inline_keyboard: [[
-      { text: "🚀 Продлить подписку", web_app: { url: req.headers.get("Origin") || "https://t.me" } },
-    ]],
-  };
+  const text = buildReminderText(lang, new Date(user.premium_until), daysLeft);
+  const reply_markup = buildReminderKeyboard(lang);
 
   const sendRes = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      chat_id: tgId,
-      text,
+      chat_id: tgId, text,
       parse_mode: "HTML",
-      reply_markup,
       disable_web_page_preview: true,
+      ...(reply_markup ? { reply_markup } : {}),
     }),
   });
 
@@ -190,7 +225,6 @@ Deno.serve(async (req) => {
     return json({ error: "send_failed", details: errText }, 502);
   }
 
-  // Фиксируем факт отправки, чтобы не дублировать.
   await supabase
     .from("users")
     .update({ renewal_reminder_at: new Date(now).toISOString() })

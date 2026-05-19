@@ -14,9 +14,14 @@
 -- ============================================================================
 
 ALTER TABLE public.users
-  ADD COLUMN IF NOT EXISTS premium_until       timestamptz,
-  ADD COLUMN IF NOT EXISTS auto_renew          boolean   NOT NULL DEFAULT false,
-  ADD COLUMN IF NOT EXISTS renewal_reminder_at timestamptz;
+  ADD COLUMN IF NOT EXISTS premium_until             timestamptz,
+  ADD COLUMN IF NOT EXISTS auto_renew                boolean   NOT NULL DEFAULT false,
+  ADD COLUMN IF NOT EXISTS renewal_reminder_at       timestamptz,
+  -- SUBSCRIPTION MODEL v2: трекинг "грустного" сообщения об окончании
+  -- подписки (отправляется один раз, сразу после истечения premium_until).
+  -- Дедуплицирует пуш, чтобы пользователь не получал «Premium закончился»
+  -- при каждом открытии mini app.
+  ADD COLUMN IF NOT EXISTS premium_expired_notice_at timestamptz;
 
 -- Индекс для быстрого поиска юзеров, у которых подписка скоро истекает
 -- (используется планируемой pg_cron job'ой server-side и в нашем

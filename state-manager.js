@@ -71,9 +71,14 @@ function getDefaultState() {
     isPremium: false,
 
     // SUBSCRIPTION MODEL (v14): Telegram Stars subscription metadata.
-    //   premiumUntil — ISO-строка, дата окончания подписки.
+    //   premiumUntil — ISO-строка, дата окончания подписки (now + 30 days).
     //                  null = lifetime / нет подписки.
-    //   autoRenew    — выбранный пользователем флаг автопродления.
+    //   autoRenew    — НЕ используется в текущей сборке. Telegram Stars
+    //                  технически поддерживают recurring через subscription_period
+    //                  в createInvoiceLink, но у нас одноразовые invoice'ы —
+    //                  поэтому чекбокс убран из UI. Поле оставлено в стейте
+    //                  для совместимости с БД (колонка users.auto_renew),
+    //                  но всегда === false до апгрейда на subscription invoices.
     // Все три поля синхронизируются с users-таблицей в Supabase через
     // fetchUserAccessFlags(). Effective premium считается как
     // isPremium && (premiumUntil === null || premiumUntil > now()).

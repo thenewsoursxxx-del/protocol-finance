@@ -2312,14 +2312,31 @@ loadFullState();
       // Statschanged используется только для логирования — UI обновляется выше всегда.
       void statsChanged;
 
-      // SUBSCRIPTION MODEL: триггер reminder за 3 дня до окончания.
-      // Все условия (дедуп, валидация, отправка) проверяются server-side.
-      if (effectivePremium && flags.premiumUntil) {
-        var msToExpiry = new Date(flags.premiumUntil).getTime() - Date.now();
-        var THREE_DAYS = 3 * 24 * 60 * 60 * 1000;
-        if (msToExpiry > 0 && msToExpiry <= THREE_DAYS) {
-          if (typeof window.triggerRenewalReminder === "function") {
-            window.triggerRenewalReminder().catch(function () { /* graceful */ });
+      // SUBSCRIPTION MODEL — три DM-триггера, все условия проверяются server-side
+      // (дедупликация через renewal_reminder_at / premium_expired_notice_at).
+      //
+      //   (a) Reminder за 3 дня до окончания — если подписка активна и кончается скоро.
+      //   (b) Expired notice — если подписка была, но истекла. Клиент дёргает endpoint;
+      //       backend проверяет premium_expired_notice_at и отправит только один раз
+      //       за подписочный период.
+      if (flags.premiumUntil) {
+        var endsAt = new Date(flags.premiumUntil).getTime();
+        if (!isNaN(endsAt)) {
+          var msToExpiry = endsAt - Date.now();
+          var THREE_DAYS = 3 * 24 * 60 * 60 * 1000;
+
+          if (effectivePremium && msToExpiry > 0 && msToExpiry <= THREE_DAYS) {
+            if (typeof window.triggerRenewalReminder === "function") {
+              window.triggerRenewalReminder().catch(function () { /* graceful */ });
+            }
+          }
+
+          // (b) Подписка истекла (effectivePremium=false и premiumUntil в прошлом).
+          // Backend сам решит, был ли уже отправлен expired-notice — мы только дёргаем.
+          if (!effectivePremium && msToExpiry <= 0) {
+            if (typeof window.triggerPremiumExpiredNotice === "function") {
+              window.triggerPremiumExpiredNotice().catch(function () { /* graceful */ });
+            }
           }
         }
       }
@@ -11520,11 +11537,11 @@ function goalSwipeToIndex(idx, goLeft) {
 
       _paymentInFlight = true;
     try {
-      // SUBSCRIPTION MODEL: читаем выбор пользователя из чекбокса
-      // «Автопродление каждый месяц» в премиум-модалке. Дефолт false.
-      var autoRenewCb = document.getElementById("premiumAutoRenew");
-      var autoRenew = !!(autoRenewCb && autoRenewCb.checked);
-      console.log("[Stars] buyPremiumWithStars: auto_renew=" + autoRenew);
+      // SUBSCRIPTION MODEL: одноразовая оплата 150⭐ → 30 дней Premium.
+      // Auto-renew не используется (Telegram Stars одноразовый invoice
+      // не поддерживает recurring billing — реализация через subscription_period
+      // оставлена на будущее).
+      console.log("[Stars] buyPremiumWithStars: opening invoice");
 
       // Дисейблим кнопку на время запроса, чтобы не было двойных кликов.
       if (buyBtn) {
@@ -11533,7 +11550,7 @@ function goalSwipeToIndex(idx, goLeft) {
       }
       showToast(t("payment.processing"), "info", { duration: 1800 });
 
-      var invoice = await window.createStarsInvoice(autoRenew);
+      var invoice = await window.createStarsInvoice();
       if (!invoice || !invoice.invoice_url) {
         showToast(t("payment.failed"), "error");
         return;
@@ -11571,23 +11588,19 @@ function goalSwipeToIndex(idx, goLeft) {
       if (typeof haptic === "function") haptic("success");
 
       // 1. Локальный state — мгновенно.
-      // SUBSCRIPTION MODEL: оптимистично проставляем premium_until = +30 дней
-      // и auto_renew из чекбокса. Webhook на бэкенде поставит canonical-значения
-      // через ~1-3 секунды, и syncUserAccessFlagsFromDB перепишет наши
-      // оптимистичные значения на серверные (что норм — даты одинаковые).
-      var autoRenewCb = document.getElementById("premiumAutoRenew");
-      var autoRenew = !!(autoRenewCb && autoRenewCb.checked);
+      // SUBSCRIPTION MODEL: оптимистично проставляем premium_until = +30 дней.
+      // Webhook на бэкенде поставит canonical-значения через ~1-3 секунды,
+      // и syncUserAccessFlagsFromDB перепишет наши оптимистичные значения
+      // на серверные (что норм — даты практически одинаковые).
       var until30d = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
       if (typeof updateState === "function") {
         updateState({
           isPremium: true,
-          premiumUntil: until30d,
-          autoRenew: autoRenew
+          premiumUntil: until30d
         });
       } else if (window.appState) {
         window.appState.isPremium = true;
         window.appState.premiumUntil = until30d;
-        window.appState.autoRenew = autoRenew;
       }
       if (typeof saveFullState === "function") {
         try { saveFullState(); } catch (e) { console.warn("[Stars] saveFullState:", e); }
@@ -11701,6 +11714,48 @@ function goalSwipeToIndex(idx, goLeft) {
   // Экспортируем функции в window — пригодится для отладки и внешних вызовов.
   window.buyPremiumWithStars = buyPremiumWithStars;
   window.fireConfetti        = fireConfetti;
+
+  // SUBSCRIPTION MODEL — deep-link `?premium=open`.
+  // Когда пользователь жмёт «Вернуть Premium» в DM от бота, кнопка открывает
+  // Mini App с URL `<MINI_APP_URL>?premium=open`. Здесь мы ловим параметр
+  // и сразу открываем премиум-модалку, чтобы пользователю не приходилось
+  // искать кнопку самому. Поддерживаем оба источника: URL query и start_param
+  // (последний приходит от t.me/<bot>/<app>?startapp=premium).
+  (function autoOpenPremiumModalFromDeepLink() {
+    try {
+      var shouldOpen = false;
+      try {
+        var qp = new URLSearchParams(window.location.search);
+        if (qp.get("premium") === "open") shouldOpen = true;
+      } catch (_e) { /* IE-graceful */ }
+      try {
+        var w = window.Telegram && window.Telegram.WebApp;
+        var sp = w && w.initDataUnsafe && w.initDataUnsafe.start_param;
+        if (sp === "premium" || sp === "premium_open") shouldOpen = true;
+      } catch (_e) { /* graceful */ }
+      if (!shouldOpen) return;
+
+      // Откладываем открытие до полной готовности UI — premium-модалка
+      // зависит от подгрузки state'а и инициализации dots.
+      function tryOpen() {
+        try {
+          if (typeof openPremiumModal === "function") {
+            openPremiumModal();
+            console.log("[Premium] auto-opened from deep-link");
+            return true;
+          }
+        } catch (e) { console.warn("[Premium] auto-open failed:", e && e.message); }
+        return false;
+      }
+      if (document.readyState === "complete") {
+        setTimeout(tryOpen, 600);
+      } else {
+        window.addEventListener("load", function () { setTimeout(tryOpen, 600); });
+      }
+    } catch (e) {
+      console.warn("[Premium] deep-link parser exception:", e && e.message);
+    }
+  })();
 
   // TELEGRAM STARS — подписка на invoiceClosed (бекап-канал, если callback
   // openInvoice по какой-то причине не вызвался). Telegram emit'ит это

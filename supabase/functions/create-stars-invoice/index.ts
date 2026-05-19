@@ -1,34 +1,31 @@
 // TELEGRAM STARS — Edge Function: создание invoice link для Premium-подписки.
 //
+// SUBSCRIPTION MODEL:
+//   • Один платёж = 30 дней Premium.
+//   • Цена 150 ⭐ (временно; продакшен план — 450 ⭐).
+//   • Auto-renew не реализован (Telegram Stars поддерживает recurring через
+//     subscription_period: 2592000 в createInvoiceLink, но это другая схема
+//     invoice'ов и более сложная webhook-логика — оставлено на будущее).
+//     Сейчас работает простой шаблон: одноразовая оплата → 30 дней доступа
+//     → DM-напоминание за 3 дня до окончания → grеfully expire.
+//
 // FLOW:
-//   1. Клиент шлёт POST { telegram_id, init_data, auto_renew } сюда.
+//   1. Клиент шлёт POST { telegram_id, init_data } сюда.
 //   2. Функция верифицирует init_data (HMAC-SHA256 от BOT_TOKEN).
 //   3. Дёргает Bot API createInvoiceLink (currency=XTR, amount=150).
 //   4. Возвращает { invoice_url, payload }.
-//      payload закодирован как `premium_<tg_id>_<timestamp>_<autoRenew>` —
-//      webhook парсит его и применяет auto_renew к users-записи.
-//
-// SUBSCRIPTION MODEL:
-//   • цена 150 ⭐ (временно; продакшен план — 450 ⭐)
-//   • период подписки 30 дней — фиксируется в момент successful_payment
-//     (premium_until = now() + 30 days) в webhook'е, не здесь.
-//   • auto_renew = что пользователь выбрал чекбоксом в UI.
+//      payload: `premium_<telegram_id>_<unix_ms>` — webhook парсит чтобы
+//      определить, кому активировать подписку.
 //
 // DEPLOY:
 //   supabase secrets set TELEGRAM_BOT_TOKEN=xxx:yyy
 //   supabase functions deploy create-stars-invoice --no-verify-jwt
-//
-// SECURITY:
-//   init_data верифицируется через HMAC-SHA256(WebAppData ⨁ BOT_TOKEN).
-//   Это гарантирует, что запрос пришёл от валидного Telegram WebApp-юзера,
-//   а не от произвольного клиента с подделанным telegram_id.
 
 // deno-lint-ignore-file no-explicit-any
 
 const BOT_TOKEN = Deno.env.get("TELEGRAM_BOT_TOKEN") || "";
 
-// TELEGRAM STARS: цена временно 150 ⭐ (вместо 450 ⭐).
-// Премиум выдаётся на 30 дней (см. label).
+// Цена временно 150 ⭐ (вместо 450 ⭐). Premium на 30 дней.
 const STARS_PRICE = 150;
 
 const corsHeaders: Record<string, string> = {
@@ -44,20 +41,17 @@ function json(body: unknown, status = 200): Response {
   });
 }
 
-// ── HMAC-SHA256 верификация Telegram WebApp initData ─────────────────────────
-// https://core.telegram.org/bots/webapps#validating-data-received-via-the-mini-app
+// HMAC-SHA256 верификация Telegram WebApp initData.
 async function verifyInitData(initData: string): Promise<{ ok: boolean; userId?: number }> {
   try {
     const params = new URLSearchParams(initData);
     const hash = params.get("hash");
     if (!hash) return { ok: false };
     params.delete("hash");
-
     const dataCheckString = Array.from(params.entries())
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([k, v]) => `${k}=${v}`)
       .join("\n");
-
     const enc = new TextEncoder();
     const secretKey = await crypto.subtle.importKey(
       "raw", enc.encode("WebAppData"),
@@ -73,7 +67,6 @@ async function verifyInitData(initData: string): Promise<{ ok: boolean; userId?:
       .map((b) => b.toString(16).padStart(2, "0"))
       .join("");
     if (sigHex !== hash) return { ok: false };
-
     const userRaw = params.get("user");
     let userId: number | undefined;
     if (userRaw) {
@@ -83,9 +76,7 @@ async function verifyInitData(initData: string): Promise<{ ok: boolean; userId?:
       } catch { /* ignore */ }
     }
     return { ok: true, userId };
-  } catch {
-    return { ok: false };
-  }
+  } catch { return { ok: false }; }
 }
 
 Deno.serve(async (req) => {
@@ -100,11 +91,6 @@ Deno.serve(async (req) => {
   const tgId = Number(body?.telegram_id);
   if (!tgId) return json({ error: "telegram_id_required" }, 400);
 
-  // SUBSCRIPTION MODEL: пользователь выбирает auto_renew чекбоксом.
-  // Дефолт false — без автопродления (явное согласие требуется).
-  const autoRenew: boolean = body?.auto_renew === true;
-
-  // Верификация init_data (если передан).
   if (typeof body?.init_data === "string" && body.init_data.length > 0) {
     const v = await verifyInitData(body.init_data);
     if (!v.ok) return json({ error: "init_data_invalid" }, 401);
@@ -115,11 +101,9 @@ Deno.serve(async (req) => {
     console.warn("[create-stars-invoice] init_data not provided — dev mode for tg_id=", tgId);
   }
 
-  // Payload содержит auto_renew, чтобы webhook знал, какое значение проставить
-  // в users.auto_renew после successful_payment. Формат:
-  //   premium_<telegram_id>_<unix_ms>_<autoRenewFlag>
-  // где autoRenewFlag = "1" (включён) или "0" (выключен).
-  const payload = `premium_${tgId}_${Date.now()}_${autoRenew ? "1" : "0"}`;
+  // Payload: `premium_<telegram_id>_<unix_ms>`.
+  // Webhook парсит это чтобы определить кому активировать подписку.
+  const payload = `premium_${tgId}_${Date.now()}`;
 
   const tgRes = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/createInvoiceLink`, {
     method: "POST",
@@ -143,6 +127,5 @@ Deno.serve(async (req) => {
     invoice_url: tgJson.result,
     payload,
     amount: STARS_PRICE,
-    auto_renew: autoRenew,
   });
 });

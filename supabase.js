@@ -592,12 +592,12 @@ window.fetchUserAccessFlags = fetchUserAccessFlags;
  *      или не настроен). Серверная истина — за webhook'ом, но клиент тоже
  *      пишет в БД для немедленного UI-feedback.
  * ============================================================================ */
-async function createStarsInvoice(autoRenew) {
-  // SUBSCRIPTION MODEL: пользователь может выбрать autoRenew чекбоксом.
-  // Дефолт false — без согласия не включаем. Параметр прокидывается
-  // в Edge Function и закодируется в payload, чтобы webhook знал, что
-  // ставить в users.auto_renew после successful_payment.
-  var ar = autoRenew === true;
+async function createStarsInvoice() {
+  // SUBSCRIPTION MODEL: одноразовый invoice на 30 дней Premium.
+  // Auto-renew не реализован (Telegram Stars поддерживают true subscriptions
+  // через subscription_period в createInvoiceLink, но это отдельная схема —
+  // оставлено на будущее). Поэтому чекбокс в UI убран, никаких параметров
+  // от клиента не нужно — Edge Function сама сформирует invoice.
   try {
     var identity = await getVerifiedUserIdentity();
     if (!identity || !identity.telegram_id) {
@@ -621,8 +621,7 @@ async function createStarsInvoice(autoRenew) {
       },
       body: JSON.stringify({
         telegram_id: identity.telegram_id,
-        init_data: initData,
-        auto_renew: ar
+        init_data: initData
       })
     });
 
@@ -644,11 +643,37 @@ async function createStarsInvoice(autoRenew) {
   }
 }
 
-// SUBSCRIPTION MODEL: триггер reminder'а за 3 дня до окончания подписки.
-// Вызывается клиентом на старте приложения, если premium_until - now() < 3d.
-// Все условия отправки (включая дедуп) проверяются на backend'е — здесь мы
-// только дёргаем endpoint и не доверяем ответу для UI-логики.
-async function triggerRenewalReminder() {
+/**
+ * SUBSCRIPTION MODEL — определяет язык для серверных DM-сообщений.
+ * Приоритет:
+ *   1. appState.settings.language (что пользователь явно выбрал в приложении)
+ *   2. tg.initDataUnsafe.user.language_code (язык Telegram-клиента)
+ *   3. "en" — fallback.
+ * Возвращает "ru" или "en" — другие пока не локализованы.
+ */
+function pickServerLanguage() {
+  try {
+    var s = (typeof window.getState === "function") ? window.getState() :
+      (typeof appState !== "undefined" ? appState : null);
+    var fromSettings = s && s.settings && s.settings.language;
+    if (typeof fromSettings === "string" && fromSettings) {
+      return fromSettings.toLowerCase().indexOf("ru") === 0 ? "ru" : "en";
+    }
+    var w = window.Telegram && window.Telegram.WebApp;
+    var ds = w && w.initDataUnsafe && w.initDataUnsafe.user;
+    var fromTg = ds && ds.language_code;
+    if (typeof fromTg === "string" && fromTg) {
+      return fromTg.toLowerCase().indexOf("ru") === 0 ? "ru" : "en";
+    }
+  } catch (_e) { /* ignore */ }
+  return "en";
+}
+
+// SUBSCRIPTION MODEL — единый helper для вызова любого notification-endpoint'а.
+// Все они принимают одинаковый { telegram_id, init_data, language } body.
+// На backend'е проверяются все условия (дедуп, expiry window) — клиент
+// только дёргает endpoint и не доверяет ответу для UI-логики.
+async function _callNotificationEndpoint(endpoint, tag) {
   try {
     var identity = await getVerifiedUserIdentity();
     if (!identity || !identity.telegram_id) return null;
@@ -659,11 +684,11 @@ async function triggerRenewalReminder() {
       initData = (w && w.initData) || "";
     } catch (_e) { /* ignore */ }
     if (!initData) {
-      console.warn("[Stars] triggerRenewalReminder: init_data отсутствует — пропускаем");
+      console.warn("[Stars] " + tag + ": init_data отсутствует — пропускаем");
       return null;
     }
 
-    var url = SUPABASE_URL.replace(/\/$/, "") + "/functions/v1/send-renewal-reminder";
+    var url = SUPABASE_URL.replace(/\/$/, "") + "/functions/v1/" + endpoint;
     var res = await fetch(url, {
       method: "POST",
       headers: {
@@ -673,17 +698,31 @@ async function triggerRenewalReminder() {
       },
       body: JSON.stringify({
         telegram_id: identity.telegram_id,
-        init_data: initData
+        init_data: initData,
+        language: pickServerLanguage()
       })
     });
 
     var data = await res.json().catch(function () { return null; });
-    console.log("[Stars] triggerRenewalReminder result:", data);
+    console.log("[Stars] " + tag + " result:", data);
     return data;
   } catch (e) {
-    console.warn("[Stars] triggerRenewalReminder exception:", e && e.message);
+    console.warn("[Stars] " + tag + " exception:", e && e.message);
     return null;
   }
+}
+
+// Триггер reminder'а за 3 дня до окончания подписки.
+async function triggerRenewalReminder() {
+  return _callNotificationEndpoint("send-renewal-reminder", "triggerRenewalReminder");
+}
+
+// Триггер «грустного» сообщения о том, что Premium закончился.
+// Вызывается клиентом, когда он видит что premium_until < now() и notice ещё
+// не был отправлен. Backend дополнительно проверяет premium_expired_notice_at
+// для дедупликации — даже если клиент вызовет повторно, сообщение уйдёт один раз.
+async function triggerPremiumExpiredNotice() {
+  return _callNotificationEndpoint("send-premium-expired-notice", "triggerPremiumExpiredNotice");
 }
 
 async function setUserPremium(value) {
@@ -713,6 +752,8 @@ async function setUserPremium(value) {
 window.createStarsInvoice = createStarsInvoice;
 window.setUserPremium = setUserPremium;
 window.triggerRenewalReminder = triggerRenewalReminder;
+window.triggerPremiumExpiredNotice = triggerPremiumExpiredNotice;
+window.pickServerLanguage = pickServerLanguage;
 
 /**
  * STATISTICS COLLECTION — публичная статистика премиум/не-премиум пользователей.
