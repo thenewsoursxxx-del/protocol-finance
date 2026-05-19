@@ -2177,6 +2177,12 @@ loadFullState();
       console.log("[Sync] Keeping local state (local is newer or equal)");
     }
 
+    // STATISTICS: track user visit после полной загрузки состояния
+    if (window.trackUserVisit) {
+      console.log("[Statistics] trackUserVisit вызван после полной загрузки состояния");
+      window.trackUserVisit();
+    }
+
   } catch (e) {
     console.error("[Sync] Error during remote state comparison:", e);
   }
@@ -3241,11 +3247,14 @@ if (profileBtn) {
     bottomNav.style.pointerEvents = "none";
     if (advancedBtn) advancedBtn.style.display = "none";
     moveProfileToActiveHeader();
+    // STATISTICS COLLECTION — обновляем счётчики premium/free каждый раз
+    // при заходе в профиль (с кэшем на 60 секунд внутри функции).
     if (typeof refreshProfileStats === "function") refreshProfileStats();
   };
 }
 
-// Блок профиля: премиум / без премиум / всего. Кэш 60 с.
+// STATISTICS COLLECTION — рендер цифр в блок #profileStats.
+// Кэш на 60с — не дёргаем БД на каждый заход в профиль.
 var _profileStatsCache = { ts: 0, data: null };
 
 function refreshProfileStats() {
@@ -3275,7 +3284,7 @@ function refreshProfileStats() {
     _profileStatsCache = { ts: Date.now(), data: stats };
     paint(stats);
   }).catch(function (err) {
-    console.warn("[PremiumStats] refreshProfileStats:", err && err.message);
+    console.warn("[Statistics] refreshProfileStats:", err && err.message);
   });
 }
 
@@ -11285,6 +11294,11 @@ function goalSwipeToIndex(idx, goLeft) {
     syncPremiumGateUI();
     syncLockBadgesVisibility();
     if (!isPremium()) initAllLockLotties();
+    // STATISTICS COLLECTION — переотправляем трекинг с актуальным is_premium
+    // (тихо, без блокировок UI; невалидные ответы просто игнорируются).
+    if (typeof window.trackUserVisit === "function") {
+      window.trackUserVisit().catch(function () { /* noop */ });
+    }
   };
 
   // PREMIUM SYSTEM — экспорт inline-гейта для прямого вызова в обработчиках.
@@ -14655,5 +14669,31 @@ function renderFlexModelSummary() {
     document.addEventListener("DOMContentLoaded", _initialSync);
   } else {
     setTimeout(_initialSync, 0);
+  }
+})();
+
+// STATISTICS: track user visit on app start
+//
+// Запускаем trackUserVisit() при инициализации приложения. Вызов:
+//   • асинхронный и неблокирующий — fire-and-forget через setTimeout(...,0);
+//   • устойчивый к раннему запуску — ждём 1.2с чтобы supabase.js успел
+//     инициализировать клиент и завершить saveCurrentUser (тот вызывает
+//     trackUserVisit сразу после, но дополнительный явный вызов даёт
+//     гарантию что мы зафиксируем визит даже если saveCurrentUser упал).
+//   • idempotent — Edge Function делает UPDATE по telegram_id, повторные
+//     вызовы безопасны (просто обновляют last_visit и геолокацию).
+(function statsTrackOnStart() {
+  function fire() {
+    if (typeof window.trackUserVisit !== "function") return;
+    try {
+      var p = window.trackUserVisit();
+      if (p && typeof p.catch === "function") p.catch(function () { /* noop */ });
+    } catch (_e) { /* noop */ }
+  }
+  // ждём DOM + Supabase-клиент
+  if (document.readyState === "complete") {
+    setTimeout(fire, 1200);
+  } else {
+    window.addEventListener("load", function () { setTimeout(fire, 1200); });
   }
 })();
