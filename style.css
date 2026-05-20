@@ -10749,37 +10749,57 @@ body.reduce-motion .settings-seg-btn {
   background: rgba(110, 231, 183, 0.55);
 }
 
+/* Кнопки: «Пропустить» слева как text-link, «Далее» справа как pill.
+   Раньше Next был flex:1 + padding 18px — на 340-px tooltip'е пилл выходил
+   за правый край. Теперь оба элемента имеют flex-shrink:0 и фиксированные
+   ширины: Skip — auto, Next — min-width 116px, padding 12px 24px. Никогда
+   не выходит за границы карточки, и расстояние между ними держится через
+   justify-content:space-between. Если Skip скрыт (последний шаг / single-step
+   premium tour) — JS добавляет класс .is-single-btn, Next центрируется. */
 .onboarding-buttons {
   display: flex;
-  gap: 10px;
-  align-items: stretch;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 2px;
 }
+.onboarding-buttons.is-single-btn { justify-content: center; }
+
 .onboarding-btn {
   border: none;
   border-radius: 12px;
   font-size: 14px;
   font-weight: 600;
-  padding: 12px 18px;
   cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
   transition: transform 0.15s, background 0.2s, color 0.2s, box-shadow 0.2s;
   -webkit-tap-highlight-color: transparent;
 }
 .onboarding-btn:active { transform: scale(0.97); }
+
 .onboarding-btn--skip {
   background: transparent;
   color: rgba(255, 255, 255, 0.55);
-  flex: 0 0 auto;
-  padding: 12px 14px;
+  font-weight: 500;
+  padding: 10px 4px;
+  margin-left: -4px; /* визуально прижимаем к левому краю карточки */
 }
 .onboarding-btn--skip:hover { color: rgba(255, 255, 255, 0.85); }
+
 .onboarding-btn--next {
-  flex: 1;
   background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
   color: #062814;
   letter-spacing: 0.01em;
+  padding: 12px 24px;
+  min-width: 116px;
+  text-align: center;
   box-shadow:
     0 4px 16px rgba(16, 185, 129, 0.42),
     inset 0 1px 0 rgba(255, 255, 255, 0.30);
+}
+.onboarding-buttons.is-single-btn .onboarding-btn--next {
+  min-width: 180px;
 }
 .onboarding-btn--next:active {
   box-shadow:

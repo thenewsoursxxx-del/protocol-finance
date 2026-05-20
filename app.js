@@ -15428,9 +15428,11 @@ var _TOURS = {
     requirePremium: false,
     steps: [
       { id: "welcome",     screen: "calc",     target: null,                       titleKey: "onb.welcome.title",     textKey: "onb.welcome.text" },
-      { id: "income",      screen: "calc",     target: "#income",                  titleKey: "onb.income.title",      textKey: "onb.income.text",      expand: ".input-wrap" },
-      { id: "expenses",    screen: "calc",     target: "#expenses",                titleKey: "onb.expenses.title",    textKey: "onb.expenses.text",    expand: ".input-wrap" },
-      { id: "goal",        screen: "calc",     target: "#goal",                    titleKey: "onb.goal.title",        textKey: "onb.goal.text",        expand: ".input-wrap" },
+      // Без expand: ".input-wrap" — wrapper включает margin-bottom инпута,
+      // поэтому ореол получался ассиметричным снизу. Таргетим сам <input>.
+      { id: "income",      screen: "calc",     target: "#income",                  titleKey: "onb.income.title",      textKey: "onb.income.text" },
+      { id: "expenses",    screen: "calc",     target: "#expenses",                titleKey: "onb.expenses.title",    textKey: "onb.expenses.text" },
+      { id: "goal",        screen: "calc",     target: "#goal",                    titleKey: "onb.goal.title",        textKey: "onb.goal.text" },
       { id: "continue",    screen: "calc",     target: "#calculate",               titleKey: "onb.continue.title",    textKey: "onb.continue.text" },
       { id: "mainAccount", screen: "accounts", target: '[data-account="main"]',    titleKey: "onb.mainAccount.title", textKey: "onb.mainAccount.text" },
       { id: "reserve",     screen: "accounts", target: '[data-account="reserve"]', titleKey: "onb.reserve.title",     textKey: "onb.reserve.text" },
@@ -15710,6 +15712,17 @@ function _renderOnboardingContent(idx) {
       skipBtn.style.display = "";
       skipBtn.textContent = _t("onb.btn.skip");
     }
+  }
+
+  // Когда «Пропустить» скрыт — центрируем «Далее/Готово» в карточке.
+  // Иначе — space-between layout. Класс читается CSS-правилом
+  // .onboarding-buttons.is-single-btn { justify-content: center; }
+  var btnsRow = (skipBtn && skipBtn.parentElement)
+    ? skipBtn.parentElement
+    : (nextBtn && nextBtn.parentElement);
+  if (btnsRow) {
+    var onlyNext = skipBtn && (skipBtn.style.display === "none");
+    btnsRow.classList.toggle("is-single-btn", !!onlyNext);
   }
 
   _positionOnboardingStep(step);
