@@ -15612,9 +15612,13 @@ function _renderOnboardingShell() {
   // Highlight-border — отдельный пустой элемент с emerald-обводкой и
   // pulse-glow в ::after. Никакого 9999px box-shadow на движущемся
   // элементе → нет full-viewport repaint при transition.
+  //
+  // .is-priming — на момент ПЕРВОГО рендера выключает все transitions и
+  // прячет элементы (visibility: hidden), чтобы избежать flash в углу.
+  // Снимается через double-rAF после установки финальной позиции.
   var root = document.createElement("div");
   root.id = "onboardingRoot";
-  root.className = "onboarding-root";
+  root.className = "onboarding-root is-priming";
   root.innerHTML = [
     '<div class="onb-dim onb-dim--top"    id="onbDimTop"></div>',
     '<div class="onb-dim onb-dim--right"  id="onbDimRight"></div>',
@@ -15800,6 +15804,51 @@ function _renderOnboardingContent(idx) {
   _positionOnboardingStep(step);
 }
 
+// Снимает .is-priming с root через double-rAF — гарантирует что инлайн-стили
+// уже применены без анимации (initial snap), и только после этого включаются
+// transitions для последующих шагов. Идемпотентна — если класса нет, выходит.
+function _finalizeOnboardingFirstRender() {
+  var root = document.getElementById("onboardingRoot");
+  if (!root || !root.classList.contains("is-priming")) return;
+  requestAnimationFrame(function () {
+    requestAnimationFrame(function () {
+      var r = document.getElementById("onboardingRoot");
+      if (r) r.classList.remove("is-priming");
+    });
+  });
+}
+
+// Возвращает true если элемент круглый/почти круглый по computed border-radius.
+// Используется для подбора radius'а у highlight'а — чтобы обводка совпадала
+// с формой круглых элементов (аватар profileBtn, badges).
+function _isCircularLike(el) {
+  if (!el) return false;
+  try {
+    var cs = window.getComputedStyle(el);
+    var first = parseFloat(cs.borderRadius) || 0;
+    var rect = el.getBoundingClientRect();
+    var minDim = Math.min(rect.width, rect.height);
+    return minDim > 0 && first >= minDim * 0.4;
+  } catch (_e) { return false; }
+}
+
+// Подбирает оптимальный border-radius для highlight'а. Если target круглый —
+// возвращает 50%; иначе computed border-radius target'а; иначе 14px.
+// Также проверяет первого визуального ребёнка — если у кнопки нет своего
+// радиуса, но внутри круглый аватар, highlight тоже становится круглым.
+function _computeHighlightRadius(target) {
+  if (!target) return "14px";
+  if (_isCircularLike(target)) return "50%";
+  var firstChild = target.firstElementChild;
+  if (firstChild && _isCircularLike(firstChild)) return "50%";
+  try {
+    var cs = window.getComputedStyle(target);
+    var br = cs.borderRadius;
+    if (br && br !== "0px" && br !== "0px 0px 0px 0px") return br;
+  } catch (_e) { /* noop */ }
+  return "14px";
+}
+
 // Резолвит реальный DOM-target шага с учётом expand-селектора (закрывающего
 // родителя для inputs). Возвращает null если шаг без target'а ИЛИ если target
 // не найден / невидим — тогда tooltip покажется по центру (graceful fallback).
@@ -15827,7 +15876,13 @@ function _positionOnboardingStep(step) {
 
   var target = _resolveStepTarget(step);
 
-  // Helper: переключает tooltip в centered-mode (welcome/final/huge-target).
+  // Helper: устанавливает tooltip в позицию через translate3d (GPU smooth).
+  // Внутри также управляет --onb-arrow-x для стрелки.
+  function setTooltipTransform(x, y) {
+    tt.style.transform = "translate3d(" + Math.round(x) + "px, " + Math.round(y) + "px, 0)";
+  }
+
+  // Helper: переключает в centered-mode (welcome/final/huge-target).
   function applyCentered() {
     hl.classList.remove("has-target");
     var vwC = window.innerWidth  || document.documentElement.clientWidth;
@@ -15835,14 +15890,16 @@ function _positionOnboardingStep(step) {
     hl.style.transform = "translate3d(" + (vwC / 2) + "px, " + (vhC / 2) + "px, 0)";
     hl.style.width  = "0px";
     hl.style.height = "0px";
-    // Полноэкранный dim — без "дырки"
     if (typeof _setDimmerHole === "function") _setDimmerHole(null, null, null, null);
 
     tt.classList.add("is-centered");
     tt.classList.remove("above", "below", "arrow-up", "arrow-down");
-    tt.style.top  = "50%";
-    tt.style.left = "50%";
-    tt.style.transform = "translate(-50%, -50%)";
+    // Центрируем по фактическим размерам tooltip'а.
+    var ttW = tt.offsetWidth  || 280;
+    var ttH = tt.offsetHeight || 200;
+    setTooltipTransform((vwC - ttW) / 2, (vhC - ttH) / 2);
+
+    _finalizeOnboardingFirstRender();
   }
 
   if (!target) {
@@ -15850,15 +15907,15 @@ function _positionOnboardingStep(step) {
     return;
   }
 
-  // Прокручиваем target в видимую область. На iOS — instant (smooth иногда
-  // лагает в WebView), на других — smooth для премиальности.
+  // Прокручиваем target в видимую область. INSTANT — smooth в WebView часто
+  // лагает и удлиняет TTFP. С instant хватает 60ms wait для layout settle.
   try {
-    target.scrollIntoView({ block: "center", behavior: "smooth" });
+    target.scrollIntoView({ block: "center", behavior: "instant" });
   } catch (_e) {
     try { target.scrollIntoView(); } catch (_e2) { /* noop */ }
   }
 
-  // Даём scroll'у завершиться (~250ms), потом замеряем и позиционируем.
+  // Минимальная задержка под layout-settle. С instant scroll этого хватает.
   setTimeout(function () {
     if (!_onboardingActive) return;
     var rect = target.getBoundingClientRect();
@@ -15866,11 +15923,12 @@ function _positionOnboardingStep(step) {
     var vw = window.innerWidth  || document.documentElement.clientWidth;
     var vh = window.innerHeight || document.documentElement.clientHeight;
 
-    // FIX (bug 3): если target огромный (премиум-туры таргетят целые
-    // экраны типа #screen-debts / #screen-pace) — tooltip позиционировать
-    // выше/ниже бессмысленно, он уезжает за viewport. Falls back в
-    // centered-modal mode: dim полноэкранный, tooltip по центру.
-    var tooBig = (rect.width > vw * 0.85) || (rect.height > vh * 0.7);
+    // FIX (bug 3): tooBig по AREA RATIO. Раньше width>85% триггерилось
+    // на обычных full-width inputs (Доход/Расход/Цель) — обводка пропадала
+    // и tooltip падал в centered mode. Теперь target считается "огромным"
+    // только если он покрывает >55% площади viewport'а.
+    var areaRatio = (rect.width * rect.height) / (vw * vh);
+    var tooBig = areaRatio > 0.55 || rect.height > vh * 0.85;
     if (tooBig) {
       applyCentered();
       return;
@@ -15878,24 +15936,12 @@ function _positionOnboardingStep(step) {
 
     hl.classList.add("has-target");
     tt.classList.remove("is-centered");
-    tt.style.transform = "";
 
-    // FIX (bug 2): копируем computed border-radius с target'а на highlight.
-    // Раньше всегда был 14px, и круглые элементы (аватар profileBtn,
-    // border-radius:50%) визуально не совпадали с прямоугольной обводкой.
-    try {
-      var cs = window.getComputedStyle(target);
-      var br = cs.borderRadius;
-      // Если target круглый (50%) или близко — увеличиваем pad, чтобы
-      // углы highlight'а не торчали за границами круга при rect-clip.
-      hl.style.borderRadius = br || "14px";
-    } catch (_e) {
-      hl.style.borderRadius = "14px";
-    }
+    // FIX (bug 2 — profile): для круглых элементов (и кнопок с круглыми
+    // детьми типа #profileBtn>.avatar) применяем 50% radius — обводка
+    // становится кругом, выровненным по центру target'а.
+    hl.style.borderRadius = _computeHighlightRadius(target);
 
-    // PERF: position via translate3d (GPU layer), size via width/height.
-    // .is-moving временно гасит pulse-glow, чтобы движущаяся обводка
-    // не размывалась во время transition'а.
     var hlX = rect.left - pad;
     var hlY = rect.top  - pad;
     var hlW = rect.width  + pad * 2;
@@ -15906,7 +15952,6 @@ function _positionOnboardingStep(step) {
     hl.style.width  = hlW + "px";
     hl.style.height = hlH + "px";
 
-    // Обновляем 4 dim-прямоугольника вокруг "дырки" — GPU-cheap.
     if (typeof _setDimmerHole === "function") _setDimmerHole(hlX, hlY, hlW, hlH);
 
     if (window._onbMoveTimer) clearTimeout(window._onbMoveTimer);
@@ -15914,33 +15959,30 @@ function _positionOnboardingStep(step) {
       if (hl) hl.classList.remove("is-moving");
     }, 440);
 
-    // Решаем: tooltip ABOVE или BELOW target'а. Простое правило:
-    // если центр target в верхней половине экрана → tooltip снизу (below),
-    // иначе → сверху (above). Это всегда даёт больше места для текста.
-    var vh = window.innerHeight || document.documentElement.clientHeight;
-    var vw = window.innerWidth  || document.documentElement.clientWidth;
+    // Tooltip: ABOVE или BELOW target'а. Если центр target в верхней
+    // половине → tooltip снизу (больше места), иначе сверху.
     var targetCenterY = rect.top + rect.height / 2;
     var placeBelow = targetCenterY < vh / 2;
 
     if (placeBelow) {
       tt.classList.add("below", "arrow-up");
       tt.classList.remove("above", "arrow-down");
-      tt.style.top = (rect.bottom + pad + 14) + "px";
     } else {
       tt.classList.add("above", "arrow-down");
       tt.classList.remove("below", "arrow-up");
-      // Высоту знаем только после раскладки — пересчитаем в rAF ниже.
-      tt.style.top = "0px";
     }
 
-    // 2-й проход — после layout'а у нас есть реальная ширина/высота tooltip'а,
-    // пересчитываем left (горизонтальное центрирование + clamp к экрану)
-    // и для above-position — top.
+    // 2-й проход — после layout'а имеем реальную ширину/высоту tooltip'а.
+    // Вычисляем итоговое translate3d, обновляем стрелку, ставим финальный
+    // transform. Это даёт стабильный transition: tooltip двигается из
+    // прошлой позиции в новую за 0.42s GPU-smooth.
     requestAnimationFrame(function () {
       if (!_onboardingActive) return;
       var ttRect = tt.getBoundingClientRect();
-      var ttWidth  = ttRect.width;
-      var ttHeight = ttRect.height;
+      // ttRect возвращает реальные размеры элемента (учитывает текущий transform).
+      // Для размеров нам нужен offsetWidth/Height — они не зависят от transform.
+      var ttWidth  = tt.offsetWidth  || ttRect.width;
+      var ttHeight = tt.offsetHeight || ttRect.height;
 
       var targetCenterX = rect.left + rect.width / 2;
       var leftPos = targetCenterX - ttWidth / 2;
@@ -15948,20 +15990,28 @@ function _positionOnboardingStep(step) {
       var maxLeft = vw - ttWidth - 12;
       if (leftPos < minLeft) leftPos = minLeft;
       if (leftPos > maxLeft) leftPos = maxLeft;
-      tt.style.left = leftPos + "px";
 
-      if (!placeBelow) {
-        tt.style.top = (rect.top - pad - 14 - ttHeight) + "px";
+      var topPos;
+      if (placeBelow) {
+        topPos = rect.bottom + pad + 14;
+      } else {
+        topPos = rect.top - pad - 14 - ttHeight;
       }
+      // Clamp по вертикали — на всякий случай (если высокий tooltip).
+      if (topPos < 12) topPos = 12;
+      if (topPos > vh - ttHeight - 12) topPos = vh - ttHeight - 12;
 
-      // Стрелка указывает на центр target'а, даже если tooltip clamped к краю.
-      // Clamp X стрелки внутри tooltip'а (с 20px-отступом от углов).
+      setTooltipTransform(leftPos, topPos);
+
+      // Стрелка указывает на центр target'а, даже если tooltip clamped.
       var arrowX = targetCenterX - leftPos;
       if (arrowX < 20) arrowX = 20;
       if (arrowX > ttWidth - 20) arrowX = ttWidth - 20;
       tt.style.setProperty("--onb-arrow-x", arrowX + "px");
+
+      _finalizeOnboardingFirstRender();
     });
-  }, 220);
+  }, 80);
 }
 
 function _onOnboardingNext() {

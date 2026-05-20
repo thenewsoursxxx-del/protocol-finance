@@ -10603,6 +10603,19 @@ body.reduce-motion .settings-seg-btn {
 @keyframes onbFadeIn  { from { opacity: 0; } to { opacity: 1; } }
 @keyframes onbFadeOut { from { opacity: 1; } to { opacity: 0; } }
 
+/* PERF: .is-priming — на момент ПЕРВОГО рендера (пока JS не успел поставить
+   финальную позицию через rAF). Всё внутри: transition OFF, visibility hidden.
+   Снимается через double-rAF в _finalizeOnboardingFirstRender() — это даёт:
+     • snap к финальной позиции без animation-flash из угла,
+     • tooltip не мелькает в (0,0) пока scrollIntoView отрабатывает,
+     • subsequent step-переходы плавные (transition уже включён). */
+.onboarding-root.is-priming .onb-dim,
+.onboarding-root.is-priming .onboarding-highlight,
+.onboarding-root.is-priming .onboarding-tooltip {
+  transition: none !important;
+  visibility: hidden !important;
+}
+
 /* ─── Dimmer (4 прямоугольника) ─────────────────────────────────────────
    PERF архитектура: вместо одного огромного box-shadow 9999px на движущемся
    highlight'е (который перерисовывал весь viewport каждый кадр анимации
@@ -10666,9 +10679,15 @@ body.reduce-motion .settings-seg-btn {
    он размывает движущуюся обводку. JS добавляет .is-moving на 420ms. */
 .onboarding-highlight.is-moving::after { animation: none; opacity: 0; }
 
-/* Tooltip-карточка с подсказкой. Glassmorphism + emerald border + soft shadow. */
+/* Tooltip-карточка. Glassmorphism + emerald border + soft shadow.
+   PERF: позиционируется через transform: translate3d (GPU compositing),
+   не через top/left. Это даёт 60 fps при перемещении между шагами.
+   .is-priming на root скрывает tooltip + блокирует transition на момент
+   первого рендера → нет flash в углу при scrollIntoView wait'е. */
 .onboarding-tooltip {
   position: fixed;
+  top: 0;
+  left: 0;
   pointer-events: auto;
   max-width: min(86vw, 340px);
   background: linear-gradient(165deg, rgba(13, 26, 20, 0.96), rgba(10, 15, 12, 0.96));
@@ -10683,14 +10702,12 @@ body.reduce-motion .settings-seg-btn {
   -webkit-backdrop-filter: blur(10px);
   color: #fff;
   --onb-arrow-x: 50%;
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+  will-change: transform, opacity;
   transition:
-    top  0.4s cubic-bezier(0.4, 0, 0.2, 1),
-    left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  animation: onbTooltipIn 0.42s cubic-bezier(0.18, 0.7, 0.36, 1);
-}
-@keyframes onbTooltipIn {
-  from { opacity: 0; transform: scale(0.96) translateY(6px); }
-  to   { opacity: 1; transform: scale(1)    translateY(0); }
+    transform 0.42s cubic-bezier(0.32, 0.72, 0.36, 1),
+    opacity   0.28s ease;
 }
 /* Стрелка-«ромб»: rotated square, рисуется через ::before. Цвет наследуется
    от background tooltip'а, бордер — те же emerald-края. */
