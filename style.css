@@ -10606,46 +10606,61 @@ body.reduce-motion .settings-seg-btn {
 /* Highlight-«дырка». Без target'а — точка 0×0 в центре экрана, и весь
    экран просто затемнён через огромный box-shadow (приветственный/финальный
    centered-модал). С target'ом — позиционируется поверх элемента + emerald
-   обводка + pulse-анимация для внимания. */
+   обводка + pulse-анимация для внимания.
+
+   PERF: разделили dimmer (статичный, 9999px shadow) и pulse (на ::after с
+   маленьким shadow) — раньше pulse 60fps + 9999px shadow перерисовывал
+   весь viewport каждый кадр, отсюда 10-15fps при переходе между шагами.
+   Теперь pulse на маленьком псевдо-элементе ≈ дешёвый GPU layer, dimmer
+   статичен и анимируется только при смене шага. will-change + translate3d
+   промоутят элемент в composite layer для GPU-accelerated transitions. */
 .onboarding-highlight {
   position: fixed;
-  top: 50%;
-  left: 50%;
+  top: 0;
+  left: 0;
   width: 0;
   height: 0;
-  border-radius: 16px;
+  border-radius: 14px;
   box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.74);
   pointer-events: none;
+  transform: translate3d(50vw, 50vh, 0);
+  will-change: transform, width, height;
+  /* Композитная трансформация — GPU. Width/height по-прежнему layout-bound,
+     но без сопутствующего pulse-репеинта они идут плавно. */
   transition:
-    top    0.45s cubic-bezier(0.4, 0, 0.2, 1),
-    left   0.45s cubic-bezier(0.4, 0, 0.2, 1),
-    width  0.45s cubic-bezier(0.4, 0, 0.2, 1),
-    height 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+    transform 0.42s cubic-bezier(0.32, 0.72, 0.36, 1),
+    width     0.42s cubic-bezier(0.32, 0.72, 0.36, 1),
+    height    0.42s cubic-bezier(0.32, 0.72, 0.36, 1);
 }
 .onboarding-highlight.has-target {
+  /* Статичные слои: dimmer + emerald-обводка + inset-белая линия.
+     Никакой анимации — этот shadow перерисовывается только когда
+     меняется size/position через transition. */
   box-shadow:
     0 0 0 9999px rgba(0, 0, 0, 0.74),
-    0 0 0 3px rgba(16, 185, 129, 0.95),
-    0 0 28px 6px rgba(16, 185, 129, 0.45),
+    0 0 0 3px rgba(16, 185, 129, 0.92),
     inset 0 0 0 1px rgba(255, 255, 255, 0.18);
-  animation: onbPulse 1.9s ease-in-out infinite;
 }
-@keyframes onbPulse {
-  0%, 100% {
-    box-shadow:
-      0 0 0 9999px rgba(0, 0, 0, 0.74),
-      0 0 0 3px rgba(16, 185, 129, 0.95),
-      0 0 28px 6px rgba(16, 185, 129, 0.45),
-      inset 0 0 0 1px rgba(255, 255, 255, 0.18);
-  }
-  50% {
-    box-shadow:
-      0 0 0 9999px rgba(0, 0, 0, 0.74),
-      0 0 0 4px rgba(52, 211, 153, 1),
-      0 0 40px 12px rgba(52, 211, 153, 0.58),
-      inset 0 0 0 1px rgba(255, 255, 255, 0.22);
-  }
+/* Pulse-glow на отдельном псевдо-элементе. Box-shadow здесь маленький
+   (28-40px), и он не задевает весь viewport — repaint area крошечная.
+   Это даёт «живое» свечение без проседания FPS. */
+.onboarding-highlight.has-target::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow: 0 0 28px 6px rgba(16, 185, 129, 0.45);
+  animation: onbPulseGlow 1.9s ease-in-out infinite;
+  will-change: box-shadow;
 }
+@keyframes onbPulseGlow {
+  0%, 100% { box-shadow: 0 0 28px 6px rgba(16, 185, 129, 0.45); }
+  50%      { box-shadow: 0 0 42px 12px rgba(52, 211, 153, 0.62); }
+}
+/* Во время transition'а glow временно глушится — иначе на момент перехода
+   он размывает движущуюся обводку. JS добавляет .is-moving на 420ms. */
+.onboarding-highlight.is-moving::after { animation: none; opacity: 0; }
 
 /* Tooltip-карточка с подсказкой. Glassmorphism + emerald border + soft shadow. */
 .onboarding-tooltip {
@@ -10749,60 +10764,58 @@ body.reduce-motion .settings-seg-btn {
   background: rgba(110, 231, 183, 0.55);
 }
 
-/* Кнопки: «Пропустить» слева как text-link, «Далее» справа как pill.
-   Раньше Next был flex:1 + padding 18px — на 340-px tooltip'е пилл выходил
-   за правый край. Теперь оба элемента имеют flex-shrink:0 и фиксированные
-   ширины: Skip — auto, Next — min-width 116px, padding 12px 24px. Никогда
-   не выходит за границы карточки, и расстояние между ними держится через
-   justify-content:space-between. Если Skip скрыт (последний шаг / single-step
-   premium tour) — JS добавляет класс .is-single-btn, Next центрируется. */
+/* Кнопки — вертикальный стек: Next full-width pill сверху, Skip text-link
+   снизу по центру. Bulletproof layout — никогда не выходит за границы
+   tooltip'а независимо от длины перевода (важно для ru/en), всегда чистая
+   симметрия. Эталонный паттерн используется в Stripe, Linear, Notion. */
 .onboarding-buttons {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
   margin-top: 2px;
 }
-.onboarding-buttons.is-single-btn { justify-content: center; }
 
 .onboarding-btn {
   border: none;
-  border-radius: 12px;
-  font-size: 14px;
+  font-size: 14.5px;
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
-  flex-shrink: 0;
-  transition: transform 0.15s, background 0.2s, color 0.2s, box-shadow 0.2s;
   -webkit-tap-highlight-color: transparent;
+  transition:
+    transform 0.15s ease,
+    background 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease;
 }
-.onboarding-btn:active { transform: scale(0.97); }
-
-.onboarding-btn--skip {
-  background: transparent;
-  color: rgba(255, 255, 255, 0.55);
-  font-weight: 500;
-  padding: 10px 4px;
-  margin-left: -4px; /* визуально прижимаем к левому краю карточки */
-}
-.onboarding-btn--skip:hover { color: rgba(255, 255, 255, 0.85); }
+.onboarding-btn:active { transform: scale(0.98); }
 
 .onboarding-btn--next {
+  width: 100%;
+  padding: 13px 20px;
+  border-radius: 14px;
   background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
   color: #062814;
   letter-spacing: 0.01em;
-  padding: 12px 24px;
-  min-width: 116px;
   text-align: center;
   box-shadow:
     0 4px 16px rgba(16, 185, 129, 0.42),
     inset 0 1px 0 rgba(255, 255, 255, 0.30);
-}
-.onboarding-buttons.is-single-btn .onboarding-btn--next {
-  min-width: 180px;
 }
 .onboarding-btn--next:active {
   box-shadow:
     0 2px 8px rgba(16, 185, 129, 0.32),
     inset 0 1px 0 rgba(255, 255, 255, 0.30);
 }
+
+.onboarding-btn--skip {
+  align-self: center;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.50);
+  font-weight: 500;
+  font-size: 13.5px;
+  padding: 8px 16px;
+  border-radius: 8px;
+}
+.onboarding-btn--skip:hover { color: rgba(255, 255, 255, 0.85); }

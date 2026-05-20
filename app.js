@@ -15713,17 +15713,8 @@ function _renderOnboardingContent(idx) {
       skipBtn.textContent = _t("onb.btn.skip");
     }
   }
-
-  // Когда «Пропустить» скрыт — центрируем «Далее/Готово» в карточке.
-  // Иначе — space-between layout. Класс читается CSS-правилом
-  // .onboarding-buttons.is-single-btn { justify-content: center; }
-  var btnsRow = (skipBtn && skipBtn.parentElement)
-    ? skipBtn.parentElement
-    : (nextBtn && nextBtn.parentElement);
-  if (btnsRow) {
-    var onlyNext = skipBtn && (skipBtn.style.display === "none");
-    btnsRow.classList.toggle("is-single-btn", !!onlyNext);
-  }
+  // NOTE: вертикальный стек кнопок (см. CSS .onboarding-buttons) сам обрабатывает
+  // случай «только Next» — никаких дополнительных классов не нужно.
 
   _positionOnboardingStep(step);
 }
@@ -15758,9 +15749,11 @@ function _positionOnboardingStep(step) {
   if (!target) {
     // No-target шаги (welcome / final): tooltip по центру, highlight 0×0 (но
     // его огромный box-shadow всё равно даёт затемнение всего экрана).
+    // PERF: используем translate3d вместо top/left → GPU composite layer.
     hl.classList.remove("has-target");
-    hl.style.top    = "50%";
-    hl.style.left   = "50%";
+    var vwC = window.innerWidth  || document.documentElement.clientWidth;
+    var vhC = window.innerHeight || document.documentElement.clientHeight;
+    hl.style.transform = "translate3d(" + (vwC / 2) + "px, " + (vhC / 2) + "px, 0)";
     hl.style.width  = "0px";
     hl.style.height = "0px";
 
@@ -15790,10 +15783,18 @@ function _positionOnboardingStep(step) {
     tt.classList.remove("is-centered");
     tt.style.transform = "";
 
-    hl.style.top    = (rect.top - pad) + "px";
-    hl.style.left   = (rect.left - pad) + "px";
+    // PERF: позиция через translate3d (GPU layer), размер — width/height
+    // (layout-bound, но без сопутствующего pulse-repaint'а).
+    // .is-moving временно убирает pulse-glow на время transition'а,
+    // чтобы движущаяся обводка не размывалась.
+    hl.classList.add("is-moving");
+    hl.style.transform = "translate3d(" + (rect.left - pad) + "px, " + (rect.top - pad) + "px, 0)";
     hl.style.width  = (rect.width  + pad * 2) + "px";
     hl.style.height = (rect.height + pad * 2) + "px";
+    if (window._onbMoveTimer) clearTimeout(window._onbMoveTimer);
+    window._onbMoveTimer = setTimeout(function () {
+      if (hl) hl.classList.remove("is-moving");
+    }, 440);
 
     // Решаем: tooltip ABOVE или BELOW target'а. Простое правило:
     // если центр target в верхней половине экрана → tooltip снизу (below),
