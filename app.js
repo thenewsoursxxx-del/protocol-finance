@@ -11810,10 +11810,25 @@ function goalSwipeToIndex(idx, goLeft) {
 
       var startSlideIdx = Math.round(touchStartScrollLeft / w);
       var intendedSlide = startSlideIdx;
-
-      if (deltaX < -threshold && startSlideIdx < _totalSlides - 1) {
+      // PREMIUM CAROUSEL — циклический свайп. Если на последнем слайде
+      // пользователь свайпает вперёд (или на первом — назад), перелистываем
+      // в противоположный конец карусели через мгновенный jump (goToSlide
+      // c animate=false). Smooth-scroll через 4 слайда выглядел бы как
+      // длинная «обратная перемотка» — instant jump UX из Instagram Stories
+      // воспринимается как естественная «петля».
+      if (deltaX < -threshold) {
+        if (startSlideIdx >= _totalSlides - 1) {
+          if (typeof haptic === "function") haptic("light");
+          goToSlide(0, false);
+          return;
+        }
         intendedSlide = startSlideIdx + 1;
-      } else if (deltaX > threshold && startSlideIdx > 0) {
+      } else if (deltaX > threshold) {
+        if (startSlideIdx <= 0) {
+          if (typeof haptic === "function") haptic("light");
+          goToSlide(_totalSlides - 1, false);
+          return;
+        }
         intendedSlide = startSlideIdx - 1;
       }
 

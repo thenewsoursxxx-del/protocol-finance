@@ -10274,26 +10274,29 @@ body.reduce-motion .settings-seg-btn {
    • Лёгкий floating-эффект через premiumIconFloat — оживляет статичные секунды.
    • pointer-events: none — пользователь не может случайно поставить на паузу. */
 .premium-slide-video {
-  width: min(48vw, 160px);
+  /* Размер увеличен (~160→240): видео теперь занимает основную визуальную
+     площадь слайда — крупная анимация важнее лишних пикселей вокруг.
+     Емкость по высоте есть (header сжат, slides — flex:1). */
+  width: min(68vw, 240px);
   height: auto;
   aspect-ratio: 1 / 1;
-  margin-bottom: 18px;
+  margin-bottom: 20px;
   object-fit: contain;
-  border-radius: 18px;
+  border-radius: 22px;
   background: transparent;
   pointer-events: none;
   -webkit-user-select: none;
   user-select: none;
   filter:
-    drop-shadow(0 0 28px rgba(16, 185, 129, 0.42))
-    drop-shadow(0 0 10px rgba(110, 231, 183, 0.30));
+    drop-shadow(0 0 32px rgba(16, 185, 129, 0.46))
+    drop-shadow(0 0 12px rgba(110, 231, 183, 0.32));
   animation: premiumIconFloat 4.5s ease-in-out infinite;
 }
-/* На низких экранах (iPhone SE и т.д.) уменьшаем видео, чтобы текст
-   и кнопка «Оформить» точно влезали без скролла внутри слайда. */
+/* На низких экранах (iPhone SE и т.д.) видео тоже выросло (130→180),
+   но чуть скромнее — чтобы текст + CTA-кнопка точно влезали без скролла. */
 @media (max-height: 700px) {
   .premium-slide-video {
-    width: min(40vw, 130px);
+    width: min(54vw, 180px);
     margin-bottom: 14px;
   }
 }
