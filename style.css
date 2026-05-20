@@ -334,19 +334,48 @@ margin: 20px auto;
 .splash-video-overlay.hidden {
   display: none;
 }
+/* SPLASH VIDEO — компактный логотип-видео в нижней трети экрана.
+   Раньше был полноэкранный object-fit:cover, из-за чего «P» центрировалась
+   и накладывалась на текст «Готово.». Теперь видео — sized-блок, прижатый
+   к низу с safe-area-aware отступом. Размер уменьшен ~на 35% относительно
+   прошлого визуала: width=min(60vw, 320px) при aspect-ratio=1:1 даёт
+   квадратное окно с P-логотипом, центрированное по горизонтали и опущенное
+   к нижней кромке. object-fit:contain — без обрезки логотипа.
+   Свечение через drop-shadow добавляет премиальный emerald glow вокруг
+   формы (двойной фильтр — близкое и дальнее свечение). */
 .splash-video {
   position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  /* Визуально сдвигаем видео ВНИЗ на ~15% — оригинал кадрируется так,
-     что smysловой центр оказывался выше центра экрана. object-position
-     не меняет лейаут, только outline. */
-  object-position: center 65%;
+  left: 50%;
+  /* Учитываем home-indicator на iOS: 12vh от низа ИЛИ safe-area + 6vh. */
+  bottom: max(12vh, calc(env(safe-area-inset-bottom, 0px) + 6vh));
+  transform: translateX(-50%);
+  width: min(60vw, 320px);
+  height: auto;
+  aspect-ratio: 1 / 1;
+  object-fit: contain;
+  object-position: center center;
+  /* Премиальный emerald glow вокруг P-логотипа. Двойной drop-shadow:
+     близкий горячий свет + дальняя мягкая тень. */
+  filter:
+    drop-shadow(0 0 24px rgba(16, 185, 129, 0.32))
+    drop-shadow(0 10px 36px rgba(0, 0, 0, 0.55));
   /* Защита от появления управления / picture-in-picture на iOS. */
   pointer-events: none;
-  background: #000;
+  background: transparent;
+  opacity: 0;
+  animation: splashVideoFadeIn 0.55s ease-out 0.05s forwards;
+}
+@keyframes splashVideoFadeIn {
+  from { opacity: 0; transform: translate(-50%, 6px) scale(0.96); }
+  to   { opacity: 1; transform: translate(-50%, 0)   scale(1); }
+}
+/* На очень узких/низких экранах ещё немного ужимаемся, чтобы видео точно
+   не «целовалось» с текстом «Готово.» по центру. */
+@media (max-height: 640px) {
+  .splash-video {
+    width: min(46vw, 240px);
+    bottom: max(8vh, calc(env(safe-area-inset-bottom, 0px) + 4vh));
+  }
 }
 .splash-video__overlay-text {
   position: relative;
