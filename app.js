@@ -11397,22 +11397,93 @@ function goalSwipeToIndex(idx, goLeft) {
       }
     });
   }
+  // PREMIUM SLIDE VIDEOS — sliding-window pre-warm стратегия.
+  // ───────────────────────────────────────────────────────────────────────
+  // Раньше все 5 видео имели preload="metadata" → одновременная загрузка
+  // 5 файлов при открытии модалки → конкуренция за bandwidth на 3G/4G,
+  // ни одно не успевало быть готовым к play() → визуально «не играют».
+  //
+  // Теперь стратегия: грузим только активный слайд + ОДИН сосед справа
+  // и слева (т.н. sliding window размером 3). При свайпе окно сдвигается
+  // — соседи начинают прогружаться ЗАГОДЯ, поэтому к моменту их активации
+  // видео уже почти готово к воспроизведению.
+  // Остальные слайды держим в preload="none" → нулевой сетевой трафик.
+  function _prewarmSlideVideos(activeIdx) {
+    if (_arePremiumVideosDisabled()) return;
+    _getPremiumSlideVideos().forEach(function (v) {
+      var idx = parseInt(v.getAttribute("data-premium-video"), 10);
+      var distance = Math.abs(idx - activeIdx);
+      if (distance <= 1) {
+        // В окне — разрешаем полную загрузку. Меняем атрибут только если
+        // он ещё не "auto" — лишний .load() ломает уже идущий download.
+        if (v.getAttribute("preload") !== "auto") {
+          v.setAttribute("preload", "auto");
+          // .load() гарантирует, что новое preload значение применилось
+          // и запустилась реальная загрузка. readyState === 0 = HAVE_NOTHING,
+          // только в этом состоянии нужен load() — иначе уже грузится.
+          if (v.readyState === 0) {
+            try { v.load(); } catch (_e) { /* noop */ }
+          }
+        }
+      } else {
+        // Вне окна — освобождаем ресурсы. Снять preload-атрибут полностью
+        // нельзя без .load() (старая загрузка продолжится), но мы хотя бы
+        // ставим паузу — это останавливает декодер и активный сетевой fetch.
+        try { v.pause(); } catch (_e) { /* noop */ }
+      }
+    });
+  }
+
+  // Запускает видео активного слайда. Если оно ещё не готово (readyState < 2,
+  // HAVE_CURRENT_DATA), вешает one-shot canplay-listener и стартует, как только
+  // браузер скажет «готов». Это решает проблему `play() rejected because no
+  // data` на медленных сетях.
+  function _playVideoWhenReady(v) {
+    // Дублируем критичные атрибуты для надёжности на iOS WebView —
+    // некоторые версии «забывают» muted/playsInline при первом .load().
+    v.muted = true;
+    v.playsInline = true;
+
+    function attemptPlay() {
+      try {
+        var p = v.play();
+        if (p && typeof p.then === "function") {
+          p.catch(function (err) {
+            // Если ещё не дошло до HAVE_CURRENT_DATA — ждём canplay и пробуем.
+            if (v.readyState < 2) {
+              v.addEventListener("canplay", attemptPlay, { once: true });
+            } else {
+              console.warn("[PremiumVideo] play() rejected:", err && err.message);
+            }
+          });
+        }
+      } catch (e) {
+        console.warn("[PremiumVideo] play() exception:", e && e.message);
+      }
+    }
+
+    if (v.readyState >= 2) {
+      // Достаточно данных — играем сразу.
+      attemptPlay();
+    } else {
+      // Не готово: ставим listener + пробуем (race-safe: если canplay
+      // случится между этими двумя строками, attemptPlay сам подтянет).
+      v.addEventListener("canplay", attemptPlay, { once: true });
+      attemptPlay();
+    }
+  }
+
   // Запускает видео активного слайда, паузит остальные.
   // Безопасно к повторным вызовам (play() на уже играющем видео — no-op).
   function _updateActiveSlideVideo() {
     if (_arePremiumVideosDisabled()) return;
+    // 1) Sliding window: грузим только current + соседей.
+    _prewarmSlideVideos(_currentSlide);
+    // 2) Активный слайд — пытаемся play() (с ожиданием canplay при необходимости).
     _getPremiumSlideVideos().forEach(function (v) {
       var idx = parseInt(v.getAttribute("data-premium-video"), 10);
       if (idx === _currentSlide) {
-        try {
-          // muted уже стоит в HTML; дублируем для надёжности перед play()
-          // — некоторые iOS-версии теряют muted при ре-инициализации.
-          v.muted = true;
-          var p = v.play();
-          if (p && typeof p.then === "function") {
-            p.catch(function () { /* autoplay блокирован — оставляем как есть */ });
-          }
-        } catch (_e) { /* noop */ }
+        _playVideoWhenReady(v);
       } else {
         try { v.pause(); } catch (_e) { /* noop */ }
       }
