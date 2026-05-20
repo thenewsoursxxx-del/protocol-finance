@@ -10159,9 +10159,11 @@ body.reduce-motion .settings-seg-btn {
   flex-shrink: 0;
 }
 .premium-crown-lottie {
-  width: 68px;
-  height: 68px;
-  margin-bottom: 12px;
+  /* PREMIUM SLIDE VIDEOS — корону немного уменьшили (68 → 56) чтобы дать
+     место под зацикленные видео в слайдах. Glow-тень оставлена прежней. */
+  width: 56px;
+  height: 56px;
+  margin-bottom: 10px;
   filter: drop-shadow(0 4px 18px rgba(16, 185, 129, 0.45));
 }
 .premium-title {
@@ -10260,6 +10262,40 @@ body.reduce-motion .settings-seg-btn {
 @keyframes premiumIconFloat {
   0%, 100% { transform: translateY(0); }
   50%      { transform: translateY(-5px); }
+}
+
+/* PREMIUM SLIDE VIDEOS — зацикленное muted-видео в каждом слайде.
+   Заменяет старые emoji-иконки. Параметры:
+   • Размер 160×160 (по высоте; ширина auto через aspect-ratio:1) — компактно
+     умещается над заголовком и текстом, не выходит за края слайда. На малых
+     экранах ужимается до 130×130 через media-query (см. ниже).
+   • object-fit: contain — не обрезаем содержимое видео, сохраняем пропорции.
+   • Двойной emerald drop-shadow — то же premium-свечение, что было у эмоджи.
+   • Лёгкий floating-эффект через premiumIconFloat — оживляет статичные секунды.
+   • pointer-events: none — пользователь не может случайно поставить на паузу. */
+.premium-slide-video {
+  width: min(48vw, 160px);
+  height: auto;
+  aspect-ratio: 1 / 1;
+  margin-bottom: 18px;
+  object-fit: contain;
+  border-radius: 18px;
+  background: transparent;
+  pointer-events: none;
+  -webkit-user-select: none;
+  user-select: none;
+  filter:
+    drop-shadow(0 0 28px rgba(16, 185, 129, 0.42))
+    drop-shadow(0 0 10px rgba(110, 231, 183, 0.30));
+  animation: premiumIconFloat 4.5s ease-in-out infinite;
+}
+/* На низких экранах (iPhone SE и т.д.) уменьшаем видео, чтобы текст
+   и кнопка «Оформить» точно влезали без скролла внутри слайда. */
+@media (max-height: 700px) {
+  .premium-slide-video {
+    width: min(40vw, 130px);
+    margin-bottom: 14px;
+  }
 }
 .premium-slide-title {
   font-size: 22px;

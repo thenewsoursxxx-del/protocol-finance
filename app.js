@@ -3749,8 +3749,13 @@ if (goalHistoryBack) {
   toggles.depositReminder = initToggle("settingsDepositReminder", "depositReminderEnabled");
   toggles.debtReminder = initToggle("settingsDebtReminder", "debtReminderEnabled");
   toggles.displayCurrencyEnabled = initToggle("settingsDisplayCurrencyEnabled", "displayCurrencyEnabled");
-  // LOADING VIDEO TOGGLE — пользователь может выключить видео-фон на
-  // экране фейк-загрузки (читается в showSplashVideo() из state.settings).
+  // LOADING VIDEO TOGGLE — пользователь может одной галочкой выключить
+  // ВСЕ фоновые видео в приложении:
+  //   • видео-фон на экране фейк-загрузки (читается в showSplashVideo())
+  //   • зацикленные видео в слайдах премиум-модалки (читается в
+  //     _arePremiumVideosDisabled() / _applyPremiumVideosVisibility())
+  // Видимая надпись настройки переименована в «Отключить загрузку видео»,
+  // подсказка тоже обновлена — см. i18n key settings.disableLoadingVideo.
   // initToggle сам подвяжет change handler и saveFullState() при изменении.
   toggles.disableLoadingVideo = initToggle("settingsDisableLoadingVideo", "disableLoadingVideo");
 
@@ -11362,6 +11367,64 @@ function goalSwipeToIndex(idx, goLeft) {
   var _currentSlide = 0;
   var _totalSlides = 5;
 
+  // PREMIUM SLIDE VIDEOS — управление воспроизведением видео в слайдах.
+  // ───────────────────────────────────────────────────────────────────────
+  // Параллельно играет МАКСИМУМ одно видео — то, что соответствует
+  // _currentSlide. Остальные ставим на pause(). Это экономит CPU/батарею
+  // на iOS (5 одновременных <video> декодеров просаживают FPS sheet'а).
+  //
+  // Учёт пользовательской настройки:
+  //   settings.disableLoadingVideo === true → ВСЕ видео скрываются
+  //   (display:none) и не играются. Та же настройка теперь отвечает за
+  //   loading screen И за премиум-карусель — одной галочкой пользователь
+  //   отключает все фоновые видео в приложении.
+  function _arePremiumVideosDisabled() {
+    var s = (typeof getState === "function") ? (getState().settings || {})
+          : ((window.appState && window.appState.settings) || {});
+    return s.disableLoadingVideo === true;
+  }
+  function _getPremiumSlideVideos() {
+    return document.querySelectorAll(".premium-slide-video");
+  }
+  // Применяем/снимаем display:none ко всем видео в слайдах в соответствии
+  // с текущей настройкой. Вызывается при открытии модалки.
+  function _applyPremiumVideosVisibility() {
+    var disabled = _arePremiumVideosDisabled();
+    _getPremiumSlideVideos().forEach(function (v) {
+      v.style.display = disabled ? "none" : "";
+      if (disabled) {
+        try { v.pause(); } catch (_e) { /* noop */ }
+      }
+    });
+  }
+  // Запускает видео активного слайда, паузит остальные.
+  // Безопасно к повторным вызовам (play() на уже играющем видео — no-op).
+  function _updateActiveSlideVideo() {
+    if (_arePremiumVideosDisabled()) return;
+    _getPremiumSlideVideos().forEach(function (v) {
+      var idx = parseInt(v.getAttribute("data-premium-video"), 10);
+      if (idx === _currentSlide) {
+        try {
+          // muted уже стоит в HTML; дублируем для надёжности перед play()
+          // — некоторые iOS-версии теряют muted при ре-инициализации.
+          v.muted = true;
+          var p = v.play();
+          if (p && typeof p.then === "function") {
+            p.catch(function () { /* autoplay блокирован — оставляем как есть */ });
+          }
+        } catch (_e) { /* noop */ }
+      } else {
+        try { v.pause(); } catch (_e) { /* noop */ }
+      }
+    });
+  }
+  // Пауза всех видео при закрытии модалки — освобождаем декодер.
+  function _pauseAllPremiumVideos() {
+    _getPremiumSlideVideos().forEach(function (v) {
+      try { v.pause(); } catch (_e) { /* noop */ }
+    });
+  }
+
   function openPremiumModal(feature) {
     var overlay = document.getElementById("premiumOverlay");
     var sheet   = document.getElementById("premiumSheet");
@@ -11377,13 +11440,22 @@ function goalSwipeToIndex(idx, goLeft) {
     void sheet.offsetWidth; // reflow для анимации
     sheet.classList.add("sheet-entering");
 
+    // PREMIUM SLIDE VIDEOS — синхронизируем видимость по настройке
+    // disableLoadingVideo (пользователь мог переключить её между сессиями).
+    _applyPremiumVideosVisibility();
+
     // PREMIUM MODAL: fixed swipe stability + layout
     // goToSlide(0) ПОСЛЕ снятия .hidden — scrollLeft не работает на
     // display:none-элементах, поэтому сбрасываем позицию ТОЛЬКО когда
     // .premium-slides уже отрендерен и имеет ненулевой clientWidth.
     // Двойной rAF — гарантия, что layout полностью применился.
     requestAnimationFrame(function () {
-      requestAnimationFrame(function () { goToSlide(0, false); });
+      requestAnimationFrame(function () {
+        goToSlide(0, false);
+        // PREMIUM SLIDE VIDEOS — первый запуск видео первого слайда.
+        // goToSlide() уже выставил _currentSlide=0, теперь стартуем play().
+        _updateActiveSlideVideo();
+      });
     });
 
     setTimeout(function () { sheet.classList.remove("sheet-entering"); }, 450);
@@ -11543,6 +11615,9 @@ function goalSwipeToIndex(idx, goLeft) {
     if (!sheet) return;
     sheet.classList.remove("sheet-entering");
     sheet.classList.add("sheet-leaving");
+    // PREMIUM SLIDE VIDEOS — паузим все видео сразу при закрытии,
+    // НЕ дожидаясь анимации скрытия sheet'а — освобождаем видео-декодер.
+    _pauseAllPremiumVideos();
     setTimeout(function () {
       sheet.classList.add("hidden");
       sheet.classList.remove("sheet-leaving");
@@ -11585,6 +11660,10 @@ function goalSwipeToIndex(idx, goLeft) {
     document.querySelectorAll(".premium-dot").forEach(function (dot, i) {
       dot.classList.toggle("active", i === _currentSlide);
     });
+    // PREMIUM SLIDE VIDEOS — обновляем активное видео при программном
+    // переходе (тап по dot / openPremiumModal). Тот же _updateActiveSlideVideo
+    // вызывается и из scroll-трекера — двойной вызов безопасен (idempotent).
+    if (typeof _updateActiveSlideVideo === "function") _updateActiveSlideVideo();
   }
 
   // PREMIUM MODAL: fixed swipe stability + layout
@@ -11615,6 +11694,9 @@ function goalSwipeToIndex(idx, goLeft) {
       document.querySelectorAll(".premium-dot").forEach(function (dot, i) {
         dot.classList.toggle("active", i === _currentSlide);
       });
+      // PREMIUM SLIDE VIDEOS — стартуем видео нового активного слайда,
+      // паузим предыдущее. Вызывается на каждый свайп/scroll-snap.
+      _updateActiveSlideVideo();
     }
 
     slides.addEventListener("scroll", function () {

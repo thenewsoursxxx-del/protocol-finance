@@ -569,8 +569,8 @@
       "settings.numberFormat": "Формат чисел",
       "settings.numberFormat.hint": "Выберите, как отображать разделители тысяч",
       // LOADING VIDEO TOGGLE — переключатель в секции «Интерфейс»
-      "settings.disableLoadingVideo": "Отключить видео при загрузке",
-      "settings.disableLoadingVideo.hint": "Загрузочный экран будет показан без видео — только чёрный фон",
+      "settings.disableLoadingVideo": "Отключить загрузку видео",
+      "settings.disableLoadingVideo.hint": "Отключает фоновые видео на экране загрузки и в премиум-вкладке — экономит трафик и батарею",
       "settings.section.notifications": "Уведомления",
       "settings.notifications": "Напоминания",
       "settings.notifications.hint": "Напоминания помогут не пропускать взносы и выплаты",
@@ -1619,8 +1619,8 @@
       "settings.numberFormat": "Number format",
       "settings.numberFormat.hint": "Choose how to display thousand separators",
       // LOADING VIDEO TOGGLE — Interface section toggle
-      "settings.disableLoadingVideo": "Disable loading video",
-      "settings.disableLoadingVideo.hint": "Loading screen will be shown without video — just a black background",
+      "settings.disableLoadingVideo": "Disable video loading",
+      "settings.disableLoadingVideo.hint": "Disables background videos on the loading screen and in the Premium tab — saves traffic and battery",
       "settings.section.notifications": "Notifications",
       "settings.notifications": "Reminders",
       "settings.notifications.hint": "Reminders help you stay on track with deposits and payments",
