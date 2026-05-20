@@ -3841,11 +3841,16 @@ if (goalHistoryBack) {
 
       // Задержка 400ms — даём screen-transition + iOS-keyboard scroll-up
       // завершиться, чтобы tour измерил getBoundingClientRect по итоговому
-      // layout'у. startOnboarding внутри ещё раз проверяет флаг — но мы его
-      // уже сбросили, поэтому тур обязательно стартанёт.
+      // layout'у. force:true обходит и defensive-фильтр _userHasMeaningfulData
+      // (у пользователя точно есть данные, раз он жмёт «перезапустить»),
+      // и проверку флага onboardingCompleted.
       setTimeout(function () {
         try {
-          if (typeof startOnboarding === "function") startOnboarding();
+          if (typeof startTour === "function") {
+            startTour("firstLaunch", { force: true });
+          } else if (typeof startOnboarding === "function") {
+            startOnboarding();
+          }
         } catch (_e) { /* noop */ }
       }, 400);
     });
@@ -15404,6 +15409,32 @@ var _onboardingViewportHandler = null;
 var _activeTour = null; // ссылка на текущий tour-объект из _TOURS
 var _ONBOARDING_PADDING = 10; // px ореол вокруг target
 
+// Predicate: возвращает true когда у пользователя есть ЛЮБЫЕ реальные
+// данные в аккаунте — доходы, расходы, цели, события, накопления и т.д.
+// Используется как defensive-фильтр: даже если onboardingCompleted в state
+// ещё false (из-за миграционного пропуска или race-condition с cloud sync),
+// мы НЕ показываем тур существующим пользователям и тихо отмечаем флаг.
+function _userHasMeaningfulData() {
+  try {
+    var s = (typeof getState === "function") ? getState() : (window.appState || {});
+    if (!s) return false;
+    if (s.isInitialized === true) return true;
+    if (Number(s.income)   > 0) return true;
+    if (Number(s.expenses) > 0) return true;
+    if (Number(s.goal)     > 0) return true;
+    if (Number(s.saved)    > 0) return true;
+    if (s.accounts) {
+      if (Number(s.accounts.main)    > 0) return true;
+      if (Number(s.accounts.reserve) > 0) return true;
+    }
+    if (Array.isArray(s.goals)           && s.goals.length           > 0) return true;
+    if (Array.isArray(s.financialEvents) && s.financialEvents.length > 0) return true;
+    if (Array.isArray(s.factHistory)     && s.factHistory.length     > 0) return true;
+    if (Array.isArray(s.debts)           && s.debts.length           > 0) return true;
+    return false;
+  } catch (_e) { return false; }
+}
+
 // Predicate: возвращает true когда у пользователя нет резерва — тогда
 // шаг "Резерв" в onboarding'е беззвучно пропускается. Используется
 // через step.skipIf в _TOURS.firstLaunch.steps.
@@ -15446,7 +15477,10 @@ var _TOURS = {
       { id: "income",      screen: "calc",     target: "#income",                  titleKey: "onb.income.title",      textKey: "onb.income.text" },
       { id: "expenses",    screen: "calc",     target: "#expenses",                titleKey: "onb.expenses.title",    textKey: "onb.expenses.text" },
       { id: "goal",        screen: "calc",     target: "#goal",                    titleKey: "onb.goal.title",        textKey: "onb.goal.text" },
-      { id: "continue",    screen: "calc",     target: "#calculate",               titleKey: "onb.continue.title",    textKey: "onb.continue.text" },
+      // noHighlight: dim вырезает "окно" вокруг кнопки (она остаётся
+      // подсвеченной сквозь затемнение), но emerald-обводка не рисуется —
+      // достаточно tooltip'а со стрелкой указывающего на кнопку.
+      { id: "continue",    screen: "calc",     target: "#calculate",               titleKey: "onb.continue.title",    textKey: "onb.continue.text",    noHighlight: true },
       { id: "mainAccount", screen: "accounts", target: '[data-account="main"]',    titleKey: "onb.mainAccount.title", textKey: "onb.mainAccount.text" },
       // Reserve-шаг показывается ТОЛЬКО если у пользователя есть резерв
       // (выбран сценарий "С резервом" → uiState.hasReserve=true либо
@@ -15551,6 +15585,7 @@ function startTour(tourId, opts) {
     console.warn("[Onboarding] Unknown tour:", tourId);
     return;
   }
+  var isForce = !!(opts && opts.force);
 
   // Premium-туры: гейт по активной подписке.
   if (tour.requirePremium && !_isPremiumActiveForOnboarding()) return;
@@ -15563,7 +15598,25 @@ function startTour(tourId, opts) {
   } else if (tour.completionType === "premium" && tour.featureKey) {
     alreadyDone = _isPremiumTourDone(tour.featureKey);
   }
-  if (alreadyDone && !(opts && opts.force)) return;
+  if (alreadyDone && !isForce) return;
+
+  // DEFENSIVE: для основного тура (firstLaunch) — если у пользователя
+  // уже есть РЕАЛЬНЫЕ данные (доход/расход/цели/события/...), значит
+  // он не новенький, даже если флаг onboardingCompleted в state ещё false
+  // (миграция могла пропустить, либо cloud sync ещё не успел перетереть).
+  // Тихо отмечаем тур как пройденный, персистим и не показываем тур.
+  // Force-режим (из настроек «Перезапустить подсказки») обходит этот гейт.
+  if (!isForce && tour.completionType === "primary" && _userHasMeaningfulData()) {
+    try {
+      if (typeof updateState === "function") {
+        updateState({ onboardingCompleted: true });
+      } else if (window.appState) {
+        window.appState.onboardingCompleted = true;
+      }
+      if (typeof saveFullState === "function") saveFullState();
+    } catch (_e) { /* noop */ }
+    return;
+  }
 
   _activeTour = tour;
   _onboardingStepIdx = 0;
@@ -15934,7 +15987,14 @@ function _positionOnboardingStep(step) {
       return;
     }
 
-    hl.classList.add("has-target");
+    // step.noHighlight: dim-cutout всё равно делается (чтобы пользователь
+    // видел кнопку сквозь затемнение), но emerald-обводка и pulse-glow
+    // не отображаются — управляется через класс has-target на highlight'е.
+    if (step && step.noHighlight) {
+      hl.classList.remove("has-target");
+    } else {
+      hl.classList.add("has-target");
+    }
     tt.classList.remove("is-centered");
 
     // FIX (bug 2 — profile): для круглых элементов (и кнопок с круглыми
