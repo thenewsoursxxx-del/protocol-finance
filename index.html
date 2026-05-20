@@ -16,7 +16,7 @@ viewport-fit=cover" />
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
 
-<link rel="stylesheet" href="style.css?v=20022">
+<link rel="stylesheet" href="style.css?v=20025">
 
 <!-- Базовая инициализация Telegram Mini App (ранний вызов ready — рекомендация Telegram) -->
 <script>
@@ -1089,6 +1089,37 @@ Protocol анализирует цель…
             </div>
           </div>
         </div>
+
+      </div>
+    </div>
+
+    <!-- SECTION: Help & Onboarding
+         Действие-кнопка: перезапуск пошаговых подсказок (основной тур
+         + 5 премиум-туров). Сбрасывает appState.onboardingCompleted=false
+         и appState.premiumOnboardingCompleted={}, после чего стартует
+         startOnboarding(). Удобно для отладки и для пользователей,
+         которые хотят повторно пройти тур. -->
+    <div class="settings-section">
+      <div class="settings-section-title" data-i18n="settings.section.help">Помощь</div>
+      <div class="settings-card">
+
+        <button type="button" id="settingsRestartOnboarding" class="settings-row settings-row--action">
+          <div class="settings-row-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M3 12a9 9 0 0 1 15.5-6.3L21 8"/>
+              <path d="M21 3v5h-5"/>
+              <path d="M21 12a9 9 0 0 1-15.5 6.3L3 16"/>
+              <path d="M3 21v-5h5"/>
+            </svg>
+          </div>
+          <div class="settings-row-info">
+            <div class="settings-row-label" data-i18n="settings.restartOnboarding">Перезапустить подсказки</div>
+            <div class="settings-row-hint" data-i18n="settings.restartOnboarding.hint">Пройти заново вступительный тур и все премиум-подсказки</div>
+          </div>
+          <span class="settings-row-chevron" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </span>
+        </button>
 
       </div>
     </div>
@@ -2273,18 +2304,18 @@ z-index: 999999;
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-<script src="state-manager.js?v=20022"></script>
-<script src="i18n.js?v=20022"></script>
-<script src="financial-events.js?v=20022"></script>
-<script src="cashflow-engine.js?v=20022"></script>
-<script src="graph-engine-svg.js?v=20022"></script>
+<script src="state-manager.js?v=20025"></script>
+<script src="i18n.js?v=20025"></script>
+<script src="financial-events.js?v=20025"></script>
+<script src="cashflow-engine.js?v=20025"></script>
+<script src="graph-engine-svg.js?v=20025"></script>
 <!-- Supabase: после CDN в <head>; замените anon-ключ внутри файла -->
-<script src="supabase.js?v=20022"></script>
+<script src="supabase.js?v=20025"></script>
 <!-- CLOUD STORAGE SYNC — кросс-устройственная синхронизация через Telegram CloudStorage.
      Загружаем ПОСЛЕ state-manager (нужен applyState/saveState) и Supabase
      (для согласованности с серверным sync), но ДО app.js — чтобы хуки
      CloudSync.scheduleSync() в saveFullState() были доступны на момент init. -->
-<script src="cloud-storage.js?v=20022"></script>
-<script src="app.js?v=20022"></script>
+<script src="cloud-storage.js?v=20025"></script>
+<script src="app.js?v=20025"></script>
 </body>
 </html>

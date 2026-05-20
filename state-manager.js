@@ -9,7 +9,7 @@
  * Загружается ДО app.js.
  */
 
-const STATE_VERSION = 14;
+const STATE_VERSION = 16;
 const STORAGE_KEY = "protocol_app_state";
 
 // ─── Default State ────────────────────────────────────────────
@@ -90,6 +90,26 @@ function getDefaultState() {
     // приложения через колонку users.show_community_stats в Supabase
     // (по умолчанию false у всех). Не связан с isPremium.
     showCommunityStats: false,
+
+    // ── First-launch onboarding (v15) ──
+    // Пошаговый тур по основным элементам приложения. Показывается ровно
+    // один раз — при первом запуске. После прохождения / пропуска ставится
+    // в true. Существующие пользователи (мигрирующие с v14) получают true
+    // автоматически если у них уже есть какие-либо данные (см. миграцию).
+    onboardingCompleted: false,
+
+    // ── Premium-feature onboardings (v16) ──
+    // Per-feature мини-туры, которые срабатывают при первом открытии
+    // премиум-функции пользователем С АКТИВНОЙ ПОДПИСКОЙ. Ключи:
+    //   flexible — Гибкая финансовая модель
+    //   pace     — Изменить темп накоплений
+    //   debts    — Добавить кредиты и долги
+    //   advanced — Расширенные настройки
+    //   stats    — Статистика счёта (обратная сторона карточки)
+    // Каждый флаг ставится в true после прохождения / пропуска тура для
+    // этой фичи. Объект изначально пустой — отсутствующий ключ трактуется
+    // как false (тур ещё не показывали).
+    premiumOnboardingCompleted: {},
 
     // ── Flexible onboarding (v5) — legacy, always true after redesign ──
     hasSeenFlexibleOnboarding: true,
@@ -432,6 +452,47 @@ function migrateState(saved) {
     saved.stateVersion = 14;
     if (typeof saved.premiumUntil === "undefined") saved.premiumUntil = null;
     if (typeof saved.autoRenew !== "boolean") saved.autoRenew = false;
+  }
+
+  // v15 → v16: PREMIUM ONBOARDINGS — per-feature мини-туры. Существующим
+  // премиум-пользователям туры показывать НЕ нужно (они уже знают функции),
+  // поэтому если у юзера активная подписка (isPremium=true) — помечаем все
+  // туры как пройденные. Новые премиум-юзеры пройдут их по мере открытия
+  // соответствующих функций.
+  if (version < 16) {
+    saved.stateVersion = 16;
+    if (!saved.premiumOnboardingCompleted || typeof saved.premiumOnboardingCompleted !== "object") {
+      saved.premiumOnboardingCompleted = {};
+    }
+    if (saved.isPremium === true) {
+      saved.premiumOnboardingCompleted = {
+        flexible: true,
+        pace: true,
+        debts: true,
+        advanced: true,
+        stats: true
+      };
+    }
+  }
+
+  // v14 → v15: ONBOARDING — пошаговый тур при первом запуске.
+  // Эвристика для существующих пользователей: если в state уже есть
+  // какие-либо данные (income/expenses/goal/accounts/goals/events) —
+  // юзер НЕ новый, онбординг ему не нужен (completed=true).
+  // Брэнд-нью юзеры с пустым state получат completed=false → тур запустится.
+  if (version < 15) {
+    saved.stateVersion = 15;
+    if (typeof saved.onboardingCompleted !== "boolean") {
+      var hasAnyData = !!(
+        saved.isInitialized ||
+        saved.income || saved.expenses || saved.goal || saved.saved ||
+        (saved.accounts && (saved.accounts.main || saved.accounts.reserve)) ||
+        (Array.isArray(saved.goals) && saved.goals.length > 0) ||
+        (Array.isArray(saved.financialEvents) && saved.financialEvents.length > 0) ||
+        (Array.isArray(saved.factHistory) && saved.factHistory.length > 0)
+      );
+      saved.onboardingCompleted = hasAnyData;
+    }
   }
 
   // Ensure settings has all expected keys

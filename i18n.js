@@ -332,6 +332,42 @@
 
       // ── Profile ──
       "profile.title": "Профиль",
+      // ── ONBOARDING (first-launch tour) ─────────────────────────────────
+      "onb.btn.next":        "Далее",
+      "onb.btn.done":        "Готово",
+      "onb.btn.skip":        "Пропустить",
+      "onb.welcome.title":   "Привет! 👋",
+      "onb.welcome.text":    "Давай я быстро покажу основное — это займёт меньше минуты.",
+      "onb.income.title":    "Доход",
+      "onb.income.text":     "Здесь ты добавляешь зарплату и другие регулярные поступления.",
+      "onb.expenses.title":  "Расход",
+      "onb.expenses.text":   "Сюда — обязательные ежемесячные траты: аренда, продукты, коммуналка.",
+      "onb.goal.title":      "Цель",
+      "onb.goal.text":       "Здесь ты ставишь сумму, на которую копишь. Protocol рассчитает план под неё.",
+      "onb.continue.title":  "Гибкая модель",
+      "onb.continue.text":   "Нажми «Продолжить» — откроется гибкая модель, темп накоплений и продвинутые настройки.",
+      "onb.mainAccount.title":"Основной счёт",
+      "onb.mainAccount.text": "Здесь видно, сколько у тебя сейчас накоплено всего. Это твой главный финансовый счёт.",
+      "onb.reserve.title":   "Резерв",
+      "onb.reserve.text":    "Здесь отображается резерв — деньги, которые ты не тратишь на цели. Это твоя финансовая подушка.",
+      "onb.profile.title":   "Premium и профиль",
+      "onb.profile.text":    "В профиле — Premium-функции, статус подписки и тонкие настройки приложения.",
+      "onb.final.title":     "Готово! 🎉",
+      "onb.final.text":      "Теперь ты полностью контролируешь свои финансы. Удачи в накоплениях!",
+      // PREMIUM FEATURE TOURS — короткие мини-онбординги, фирующие при первом
+      // открытии премиум-функции пользователем с активной подпиской.
+      "onb.prem.btn.gotIt":     "Понял",
+      "onb.prem.flexible.title":"Гибкая модель",
+      "onb.prem.flexible.text": "Используй, когда доходы и расходы непостоянны — фриланс, подработки, сезонные траты. Фиксируй каждую сумму вручную, и Protocol точно покажет, сколько осталось до цели.",
+      "onb.prem.pace.title":    "Темп накоплений",
+      "onb.prem.pace.text":     "Меняй режим — Спокойно / Умеренно / Агрессивно — когда меняется жизненная ситуация. План автоматически пересчитается под новый ритм.",
+      "onb.prem.debts.title":   "Кредиты и долги",
+      "onb.prem.debts.text":    "Добавляй ипотеку, кредиты, рассрочки и кредитные карты. Protocol учтёт обязательные платежи, льготные периоды и подскажет, когда долг будет погашен.",
+      "onb.prem.advanced.title":"Расширенные настройки",
+      "onb.prem.advanced.text": "Тонкая настройка плана: режим резерва, перенос остатков, валюта отображения и многое другое. Подгони Protocol под себя.",
+      "onb.prem.stats.title":   "Статистика счёта",
+      "onb.prem.stats.text":    "Обратная сторона карточки — распределяй накопления по типам: наличные, фондовый рынок, вклад, драгоценные металлы. Получишь точную структуру портфеля.",
+
       "profile.user": "Пользователь",
       // PREMIUM PROFILE BADGE — текст изумрудной плашки рядом с именем
       // (показывается, когда isPremiumActive()=true).
@@ -572,6 +608,11 @@
       "settings.disableLoadingVideo": "Отключить загрузку видео",
       "settings.disableLoadingVideo.hint": "Отключает фоновые видео на экране загрузки и в премиум-вкладке — экономит трафик и батарею",
       "settings.section.notifications": "Уведомления",
+      // HELP & ONBOARDING — раздел и пункт «Перезапустить подсказки».
+      "settings.section.help":            "Помощь",
+      "settings.restartOnboarding":       "Перезапустить подсказки",
+      "settings.restartOnboarding.hint":  "Пройти заново вступительный тур и все премиум-подсказки",
+      "settings.restartOnboarding.toast": "Подсказки сброшены — запускаем тур",
       "settings.notifications": "Напоминания",
       "settings.notifications.hint": "Напоминания помогут не пропускать взносы и выплаты",
       "settings.depositReminder": "Напоминание о внесении",
@@ -1384,6 +1425,42 @@
 
       // ── Profile ──
       "profile.title": "Profile",
+      // ── ONBOARDING (first-launch tour) ─────────────────────────────────
+      "onb.btn.next":        "Next",
+      "onb.btn.done":        "Done",
+      "onb.btn.skip":        "Skip",
+      "onb.welcome.title":   "Hi there! 👋",
+      "onb.welcome.text":    "Let me quickly show you the basics — it will take less than a minute.",
+      "onb.income.title":    "Income",
+      "onb.income.text":     "Add your salary and other regular sources of income here.",
+      "onb.expenses.title":  "Expenses",
+      "onb.expenses.text":   "Mandatory monthly spending goes here: rent, groceries, utilities.",
+      "onb.goal.title":      "Goal",
+      "onb.goal.text":       "Set the amount you're saving toward — Protocol will build a plan to reach it.",
+      "onb.continue.title":  "Flexible Model",
+      "onb.continue.text":   "Tap «Continue» to unlock the flexible model, pace selector and advanced features.",
+      "onb.mainAccount.title":"Main account",
+      "onb.mainAccount.text": "This shows your total savings — your main financial account in Protocol.",
+      "onb.reserve.title":   "Reserve",
+      "onb.reserve.text":    "Your reserve — money set aside, separate from goals. Your financial safety cushion.",
+      "onb.profile.title":   "Premium & Profile",
+      "onb.profile.text":    "Inside the profile — Premium features, subscription status and fine-grained settings.",
+      "onb.final.title":     "All set! 🎉",
+      "onb.final.text":      "You now have full control over your finances. Good luck saving!",
+      // PREMIUM FEATURE TOURS — short mini-onboardings shown on first open of
+      // each premium feature by a paid user.
+      "onb.prem.btn.gotIt":     "Got it",
+      "onb.prem.flexible.title":"Flexible Model",
+      "onb.prem.flexible.text": "Use it when income and expenses vary — freelance, side gigs, seasonal spending. Log each amount manually, and Protocol will precisely show how much is left to your goal.",
+      "onb.prem.pace.title":    "Savings Pace",
+      "onb.prem.pace.text":     "Switch between Calm / Moderate / Aggressive when life changes. The plan recalculates automatically to match your new rhythm.",
+      "onb.prem.debts.title":   "Debts & Credits",
+      "onb.prem.debts.text":    "Add mortgages, loans, installments and credit cards. Protocol factors in mandatory payments and grace periods, telling you exactly when each debt is paid off.",
+      "onb.prem.advanced.title":"Advanced Settings",
+      "onb.prem.advanced.text": "Fine-tune your plan: reserve mode, leftover carry-over, display currency and more. Make Protocol fit your style.",
+      "onb.prem.stats.title":   "Account Statistics",
+      "onb.prem.stats.text":    "The back of the card — split savings across cash, stocks, deposits, precious metals. See the exact structure of your portfolio.",
+
       "profile.user": "User",
       // PREMIUM PROFILE BADGE — label of the emerald badge next to the name
       // (visible when isPremiumActive()=true).
@@ -1622,6 +1699,11 @@
       "settings.disableLoadingVideo": "Disable video loading",
       "settings.disableLoadingVideo.hint": "Disables background videos on the loading screen and in the Premium tab — saves traffic and battery",
       "settings.section.notifications": "Notifications",
+      // HELP & ONBOARDING — section and «Restart onboarding tips» row.
+      "settings.section.help":            "Help",
+      "settings.restartOnboarding":       "Restart onboarding tips",
+      "settings.restartOnboarding.hint":  "Replay the intro tour and all premium feature hints",
+      "settings.restartOnboarding.toast": "Tips reset — launching the tour",
       "settings.notifications": "Reminders",
       "settings.notifications.hint": "Reminders help you stay on track with deposits and payments",
       "settings.depositReminder": "Deposit reminder",
