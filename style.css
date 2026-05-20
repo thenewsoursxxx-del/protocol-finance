@@ -346,10 +346,13 @@ margin: 20px auto;
 .splash-video {
   position: absolute;
   left: 50%;
-  /* Учитываем home-indicator на iOS: 12vh от низа ИЛИ safe-area + 6vh. */
-  bottom: max(12vh, calc(env(safe-area-inset-bottom, 0px) + 6vh));
+  /* Учитываем home-indicator на iOS: 7vh от низа ИЛИ safe-area + 3vh.
+     Видео опущено ниже, чем в первой итерации — итоговый просвет до текста
+     «Готово.» остаётся комфортным благодаря чуть увеличенному размеру. */
+  bottom: max(7vh, calc(env(safe-area-inset-bottom, 0px) + 3vh));
   transform: translateX(-50%);
-  width: min(60vw, 320px);
+  /* Размер слегка увеличен: 66vw (было 60vw), потолок 360px (было 320px). */
+  width: min(66vw, 360px);
   height: auto;
   aspect-ratio: 1 / 1;
   object-fit: contain;
@@ -373,8 +376,8 @@ margin: 20px auto;
    не «целовалось» с текстом «Готово.» по центру. */
 @media (max-height: 640px) {
   .splash-video {
-    width: min(46vw, 240px);
-    bottom: max(8vh, calc(env(safe-area-inset-bottom, 0px) + 4vh));
+    width: min(52vw, 270px);
+    bottom: max(5vh, calc(env(safe-area-inset-bottom, 0px) + 2vh));
   }
 }
 .splash-video__overlay-text {
