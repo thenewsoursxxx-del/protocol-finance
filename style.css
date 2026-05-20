@@ -10603,17 +10603,30 @@ body.reduce-motion .settings-seg-btn {
 @keyframes onbFadeIn  { from { opacity: 0; } to { opacity: 1; } }
 @keyframes onbFadeOut { from { opacity: 1; } to { opacity: 0; } }
 
-/* Highlight-«дырка». Без target'а — точка 0×0 в центре экрана, и весь
-   экран просто затемнён через огромный box-shadow (приветственный/финальный
-   centered-модал). С target'ом — позиционируется поверх элемента + emerald
-   обводка + pulse-анимация для внимания.
+/* ─── Dimmer (4 прямоугольника) ─────────────────────────────────────────
+   PERF архитектура: вместо одного огромного box-shadow 9999px на движущемся
+   highlight'е (который перерисовывал весь viewport каждый кадр анимации
+   → 10-15 fps), рендерим 4 независимых solid-color rectangle вокруг
+   "дырки". Каждый — 1×1 пиксельный div, отскейленный до нужных размеров
+   через transform: translate3d() scale(w, h). Это даёт ЧИСТО composite
+   animation — никакого layout reflow, никакого paint, только GPU.
+   transform-origin: top left чтобы scale рос вправо-вниз от позиции. */
+.onb-dim {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  background: rgba(0, 0, 0, 0.74);
+  pointer-events: none;
+  transform-origin: top left;
+  transform: translate3d(0, 0, 0) scale(0, 0);
+  will-change: transform;
+  transition: transform 0.42s cubic-bezier(0.32, 0.72, 0.36, 1);
+}
 
-   PERF: разделили dimmer (статичный, 9999px shadow) и pulse (на ::after с
-   маленьким shadow) — раньше pulse 60fps + 9999px shadow перерисовывал
-   весь viewport каждый кадр, отсюда 10-15fps при переходе между шагами.
-   Теперь pulse на маленьком псевдо-элементе ≈ дешёвый GPU layer, dimmer
-   статичен и анимируется только при смене шага. will-change + translate3d
-   промоутят элемент в composite layer для GPU-accelerated transitions. */
+/* Highlight-обводка. Самостоятельный элемент БЕЗ dimmer-shadow — только
+   emerald-обводка + inset-белая линия. Маленькая repaint-area, GPU-fast. */
 .onboarding-highlight {
   position: fixed;
   top: 0;
@@ -10621,29 +10634,20 @@ body.reduce-motion .settings-seg-btn {
   width: 0;
   height: 0;
   border-radius: 14px;
-  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.74);
   pointer-events: none;
   transform: translate3d(50vw, 50vh, 0);
   will-change: transform, width, height;
-  /* Композитная трансформация — GPU. Width/height по-прежнему layout-bound,
-     но без сопутствующего pulse-репеинта они идут плавно. */
   transition:
     transform 0.42s cubic-bezier(0.32, 0.72, 0.36, 1),
     width     0.42s cubic-bezier(0.32, 0.72, 0.36, 1),
     height    0.42s cubic-bezier(0.32, 0.72, 0.36, 1);
 }
 .onboarding-highlight.has-target {
-  /* Статичные слои: dimmer + emerald-обводка + inset-белая линия.
-     Никакой анимации — этот shadow перерисовывается только когда
-     меняется size/position через transition. */
   box-shadow:
-    0 0 0 9999px rgba(0, 0, 0, 0.74),
     0 0 0 3px rgba(16, 185, 129, 0.92),
     inset 0 0 0 1px rgba(255, 255, 255, 0.18);
 }
-/* Pulse-glow на отдельном псевдо-элементе. Box-shadow здесь маленький
-   (28-40px), и он не задевает весь viewport — repaint area крошечная.
-   Это даёт «живое» свечение без проседания FPS. */
+/* Pulse-glow на ::after. Маленький shadow (28-42px), GPU-cheap. */
 .onboarding-highlight.has-target::after {
   content: '';
   position: absolute;

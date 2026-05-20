@@ -15404,6 +15404,19 @@ var _onboardingViewportHandler = null;
 var _activeTour = null; // ссылка на текущий tour-объект из _TOURS
 var _ONBOARDING_PADDING = 10; // px ореол вокруг target
 
+// Predicate: возвращает true когда у пользователя нет резерва — тогда
+// шаг "Резерв" в onboarding'е беззвучно пропускается. Используется
+// через step.skipIf в _TOURS.firstLaunch.steps.
+function _onbHasNoReserve() {
+  try {
+    var s = (typeof getState === "function") ? getState() : (window.appState || {});
+    if (!s) return true;
+    if (s.uiState && s.uiState.hasReserve === true) return false;
+    if (s.accounts && Number(s.accounts.reserve) > 0) return false;
+    return true;
+  } catch (_e) { return true; }
+}
+
 // ─── Tour Registry ──────────────────────────────────────────────────────────
 // Все туры приложения — один источник правды.
 //
@@ -15435,7 +15448,10 @@ var _TOURS = {
       { id: "goal",        screen: "calc",     target: "#goal",                    titleKey: "onb.goal.title",        textKey: "onb.goal.text" },
       { id: "continue",    screen: "calc",     target: "#calculate",               titleKey: "onb.continue.title",    textKey: "onb.continue.text" },
       { id: "mainAccount", screen: "accounts", target: '[data-account="main"]',    titleKey: "onb.mainAccount.title", textKey: "onb.mainAccount.text" },
-      { id: "reserve",     screen: "accounts", target: '[data-account="reserve"]', titleKey: "onb.reserve.title",     textKey: "onb.reserve.text" },
+      // Reserve-шаг показывается ТОЛЬКО если у пользователя есть резерв
+      // (выбран сценарий "С резервом" → uiState.hasReserve=true либо
+      // accounts.reserve>0). Иначе шаг беззвучно скипается.
+      { id: "reserve",     screen: "accounts", target: '[data-account="reserve"]', titleKey: "onb.reserve.title",     textKey: "onb.reserve.text", skipIf: _onbHasNoReserve },
       { id: "profile",     /* fixed-pos, любой экран */ target: "#profileBtn",     titleKey: "onb.profile.title",     textKey: "onb.profile.text" },
       { id: "final",       screen: "calc",     target: null,                       titleKey: "onb.final.title",       textKey: "onb.final.text" }
     ]
@@ -15590,10 +15606,20 @@ function _renderOnboardingShell() {
   var existing = document.getElementById("onboardingRoot");
   if (existing && existing.parentNode) existing.parentNode.removeChild(existing);
 
+  // PERF архитектура: dimmer состоит из 4 независимых прямоугольников
+  // (top/right/bottom/left), окружающих "дырку" вокруг target'а. У каждого
+  // плоская solid-color заливка — анимация transform/scale GPU-cheap.
+  // Highlight-border — отдельный пустой элемент с emerald-обводкой и
+  // pulse-glow в ::after. Никакого 9999px box-shadow на движущемся
+  // элементе → нет full-viewport repaint при transition.
   var root = document.createElement("div");
   root.id = "onboardingRoot";
   root.className = "onboarding-root";
   root.innerHTML = [
+    '<div class="onb-dim onb-dim--top"    id="onbDimTop"></div>',
+    '<div class="onb-dim onb-dim--right"  id="onbDimRight"></div>',
+    '<div class="onb-dim onb-dim--bottom" id="onbDimBottom"></div>',
+    '<div class="onb-dim onb-dim--left"   id="onbDimLeft"></div>',
     '<div class="onboarding-highlight" id="onboardingHighlight"></div>',
     '<div class="onboarding-tooltip" id="onboardingTooltip" role="dialog" aria-live="polite">',
     '  <div class="onboarding-step-counter" id="onboardingStepCounter"></div>',
@@ -15601,8 +15627,8 @@ function _renderOnboardingShell() {
     '  <div class="onboarding-text" id="onboardingText"></div>',
     '  <div class="onboarding-progress" id="onboardingProgress"></div>',
     '  <div class="onboarding-buttons">',
-    '    <button type="button" class="onboarding-btn onboarding-btn--skip" id="onboardingSkipBtn"></button>',
     '    <button type="button" class="onboarding-btn onboarding-btn--next" id="onboardingNextBtn"></button>',
+    '    <button type="button" class="onboarding-btn onboarding-btn--skip" id="onboardingSkipBtn"></button>',
     '  </div>',
     '</div>'
   ].join("");
@@ -15614,10 +15640,65 @@ function _renderOnboardingShell() {
   if (nextBtn) nextBtn.addEventListener("click", _onOnboardingNext);
 }
 
+// PERF helper: позиционирует 4 dim-прямоугольника вокруг "дырки" (x,y,w,h).
+// При null — рисует полноэкранный dim (centered mode для welcome/final/huge-target).
+// Каждый rect получает translate3d + width/height. Solid-color без shadow →
+// repaint area минимальна, GPU compositing работает идеально.
+function _setDimmerHole(x, y, w, h) {
+  var vw = window.innerWidth  || document.documentElement.clientWidth;
+  var vh = window.innerHeight || document.documentElement.clientHeight;
+  var tEl = document.getElementById("onbDimTop");
+  var rEl = document.getElementById("onbDimRight");
+  var bEl = document.getElementById("onbDimBottom");
+  var lEl = document.getElementById("onbDimLeft");
+  if (!tEl || !rEl || !bEl || !lEl) return;
+
+  function setRect(el, ex, ey, ew, eh) {
+    ew = Math.max(0, ew);
+    eh = Math.max(0, eh);
+    // Element — base 1×1px, scale(w,h) растягивает до требуемого размера.
+    // translate3d позиционирует. Чисто composite — GPU без layout reflow.
+    el.style.transform = "translate3d(" + ex + "px, " + ey + "px, 0) scale(" + ew + ", " + eh + ")";
+  }
+
+  if (x === null) {
+    // Centered mode — top покрывает весь viewport, остальные нулевые.
+    setRect(tEl, 0, 0, vw, vh);
+    setRect(rEl, 0, 0, 0, 0);
+    setRect(bEl, 0, 0, 0, 0);
+    setRect(lEl, 0, 0, 0, 0);
+    return;
+  }
+
+  // Clamp значений к viewport-bounds — отрицательные размеры обнуляются.
+  var x2 = x + w;
+  var y2 = y + h;
+  setRect(tEl, 0,    0,    vw,         y);            // над дыркой
+  setRect(rEl, x2,   y,    vw - x2,    h);            // справа
+  setRect(bEl, 0,    y2,   vw,         vh - y2);      // под дыркой
+  setRect(lEl, 0,    y,    x,          h);            // слева
+}
+
 function _renderOnboardingStep(idx) {
   if (!_onboardingActive || !_activeTour) return;
   var step = _activeTour.steps[idx];
   if (!step) return;
+
+  // Условный skip: если у шага есть predicate skipIf() который вернул true —
+  // прыгаем к следующему шагу беззвучно (без UI-перехода). Поддерживает
+  // несколько skip'ов подряд через рекурсивный вызов.
+  if (typeof step.skipIf === "function") {
+    var shouldSkip = false;
+    try { shouldSkip = !!step.skipIf(); } catch (_e) { shouldSkip = false; }
+    if (shouldSkip) {
+      var nextIdx = idx + 1;
+      if (nextIdx >= _activeTour.steps.length) {
+        return _completeOnboarding();
+      }
+      _onboardingStepIdx = nextIdx;
+      return _renderOnboardingStep(nextIdx);
+    }
+  }
 
   // Screen-switch: если шаг привязан к конкретному экрану и активный экран
   // не тот же — программно вызываем openScreen(). Затем небольшая задержка
@@ -15746,22 +15827,26 @@ function _positionOnboardingStep(step) {
 
   var target = _resolveStepTarget(step);
 
-  if (!target) {
-    // No-target шаги (welcome / final): tooltip по центру, highlight 0×0 (но
-    // его огромный box-shadow всё равно даёт затемнение всего экрана).
-    // PERF: используем translate3d вместо top/left → GPU composite layer.
+  // Helper: переключает tooltip в centered-mode (welcome/final/huge-target).
+  function applyCentered() {
     hl.classList.remove("has-target");
     var vwC = window.innerWidth  || document.documentElement.clientWidth;
     var vhC = window.innerHeight || document.documentElement.clientHeight;
     hl.style.transform = "translate3d(" + (vwC / 2) + "px, " + (vhC / 2) + "px, 0)";
     hl.style.width  = "0px";
     hl.style.height = "0px";
+    // Полноэкранный dim — без "дырки"
+    if (typeof _setDimmerHole === "function") _setDimmerHole(null, null, null, null);
 
     tt.classList.add("is-centered");
     tt.classList.remove("above", "below", "arrow-up", "arrow-down");
     tt.style.top  = "50%";
     tt.style.left = "50%";
     tt.style.transform = "translate(-50%, -50%)";
+  }
+
+  if (!target) {
+    applyCentered();
     return;
   }
 
@@ -15778,19 +15863,52 @@ function _positionOnboardingStep(step) {
     if (!_onboardingActive) return;
     var rect = target.getBoundingClientRect();
     var pad = _ONBOARDING_PADDING;
+    var vw = window.innerWidth  || document.documentElement.clientWidth;
+    var vh = window.innerHeight || document.documentElement.clientHeight;
+
+    // FIX (bug 3): если target огромный (премиум-туры таргетят целые
+    // экраны типа #screen-debts / #screen-pace) — tooltip позиционировать
+    // выше/ниже бессмысленно, он уезжает за viewport. Falls back в
+    // centered-modal mode: dim полноэкранный, tooltip по центру.
+    var tooBig = (rect.width > vw * 0.85) || (rect.height > vh * 0.7);
+    if (tooBig) {
+      applyCentered();
+      return;
+    }
 
     hl.classList.add("has-target");
     tt.classList.remove("is-centered");
     tt.style.transform = "";
 
-    // PERF: позиция через translate3d (GPU layer), размер — width/height
-    // (layout-bound, но без сопутствующего pulse-repaint'а).
-    // .is-moving временно убирает pulse-glow на время transition'а,
-    // чтобы движущаяся обводка не размывалась.
+    // FIX (bug 2): копируем computed border-radius с target'а на highlight.
+    // Раньше всегда был 14px, и круглые элементы (аватар profileBtn,
+    // border-radius:50%) визуально не совпадали с прямоугольной обводкой.
+    try {
+      var cs = window.getComputedStyle(target);
+      var br = cs.borderRadius;
+      // Если target круглый (50%) или близко — увеличиваем pad, чтобы
+      // углы highlight'а не торчали за границами круга при rect-clip.
+      hl.style.borderRadius = br || "14px";
+    } catch (_e) {
+      hl.style.borderRadius = "14px";
+    }
+
+    // PERF: position via translate3d (GPU layer), size via width/height.
+    // .is-moving временно гасит pulse-glow, чтобы движущаяся обводка
+    // не размывалась во время transition'а.
+    var hlX = rect.left - pad;
+    var hlY = rect.top  - pad;
+    var hlW = rect.width  + pad * 2;
+    var hlH = rect.height + pad * 2;
+
     hl.classList.add("is-moving");
-    hl.style.transform = "translate3d(" + (rect.left - pad) + "px, " + (rect.top - pad) + "px, 0)";
-    hl.style.width  = (rect.width  + pad * 2) + "px";
-    hl.style.height = (rect.height + pad * 2) + "px";
+    hl.style.transform = "translate3d(" + hlX + "px, " + hlY + "px, 0)";
+    hl.style.width  = hlW + "px";
+    hl.style.height = hlH + "px";
+
+    // Обновляем 4 dim-прямоугольника вокруг "дырки" — GPU-cheap.
+    if (typeof _setDimmerHole === "function") _setDimmerHole(hlX, hlY, hlW, hlH);
+
     if (window._onbMoveTimer) clearTimeout(window._onbMoveTimer);
     window._onbMoveTimer = setTimeout(function () {
       if (hl) hl.classList.remove("is-moving");
