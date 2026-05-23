@@ -1,10 +1,34 @@
 // === Eruda — консоль для iOS и Android ===
+// Грузится ТОЛЬКО для разработки/отладки. Обычные пользователи не видят.
+// Условия включения (любое из):
+//   1. URL содержит ?debug=1 (можно временно поменять URL в BotFather)
+//   2. Telegram-юзер — DEV_TELEGRAM_ID (свой ID разработчика)
+//   3. localStorage.eruda === '1' (поставить вручную: localStorage.eruda='1')
 (function() {
+  var DEV_TELEGRAM_ID = 1365199221;
+
+  var hasDebugParam = false;
+  try {
+    hasDebugParam = new URLSearchParams(location.search).get('debug') === '1';
+  } catch (_e) { /* ignore */ }
+
+  var hasLocalStorageFlag = false;
+  try {
+    hasLocalStorageFlag = (localStorage.getItem('eruda') === '1');
+  } catch (_e) { /* ignore */ }
+
+  var isDevUser = false;
+  try {
+    var tg  = window.Telegram && window.Telegram.WebApp;
+    var uid = tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.id;
+    isDevUser = (uid === DEV_TELEGRAM_ID);
+  } catch (_e) { /* ignore */ }
+
+  if (!hasDebugParam && !hasLocalStorageFlag && !isDevUser) return;
+
   var script = document.createElement('script');
   script.src = 'https://cdn.jsdelivr.net/npm/eruda';
-  script.onload = function() {
-    eruda.init();
-  };
+  script.onload = function () { eruda.init(); };
   document.head.appendChild(script);
 })();
 
