@@ -231,16 +231,17 @@ async function ensureAuthenticated() {
       }
 
       var resp = await res.json();
-      if (!resp || !resp.email || !resp.token_hash) {
-        console.error("[Auth] auth-telegram: ожидался { email, token_hash }, получено:", resp);
+      if (!resp || !resp.email || !resp.token) {
+        console.error("[Auth] auth-telegram: ожидался { email, token }, получено:", resp);
         return false;
       }
 
-      // 2. verifyOtp с magic-link токеном — supabase-js обменяет его на
-      //    реальную сессию (access + refresh) и автоматически её сохранит.
+      // 2. verifyOtp с СЫРЫМ токеном (вытащен из action_link на стороне
+      //    Edge Function) — supabase-js обменяет его на реальную сессию
+      //    (access + refresh) и автоматически её сохранит.
       var otp = await supabaseClient.auth.verifyOtp({
         email: resp.email,
-        token: resp.token_hash,
+        token: resp.token,
         type:  "magiclink"
       });
 
