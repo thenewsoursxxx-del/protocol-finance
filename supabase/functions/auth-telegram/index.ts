@@ -215,16 +215,39 @@ Deno.serve(async (req) => {
     email,
   });
 
-  if (linkErr || !linkData?.properties?.hashed_token) {
+  if (linkErr || !linkData?.properties) {
     console.error("[auth-telegram] generateLink error:", linkErr?.message);
     return json({
       error:  "generate_link_failed",
-      detail: linkErr?.message || "no hashed_token in response",
+      detail: linkErr?.message || "no properties in response",
+    }, 500);
+  }
+
+  // Из action_link достаём СЫРОЙ token (не хешированный). С ним verifyOtp
+  // надёжно работает в паре с email и type:'magiclink'. Если использовать
+  // hashed_token напрямую, Supabase в некоторых случаях возвращает 403
+  // "Token has expired or is invalid", даже если токен только что выпущен.
+  let rawToken: string | null = null;
+  try {
+    const actionLink = String(linkData.properties.action_link || "");
+    if (actionLink) {
+      const u = new URL(actionLink);
+      rawToken = u.searchParams.get("token");
+    }
+  } catch (_e) { /* ignore */ }
+
+  if (!rawToken) {
+    console.error("[auth-telegram] failed to extract raw token from action_link");
+    return json({
+      error: "token_extraction_failed",
+      detail: "no ?token in action_link",
     }, 500);
   }
 
   return json({
     email,
-    token_hash: linkData.properties.hashed_token,
+    token: rawToken,
+    // На всякий случай возвращаем и hashed_token — клиент сам выбирает.
+    token_hash: linkData.properties.hashed_token || null,
   });
 });
