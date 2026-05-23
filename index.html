@@ -16,15 +16,40 @@ viewport-fit=cover" />
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
 
-<link rel="stylesheet" href="style.css?v=20030">
+<link rel="stylesheet" href="style.css?v=20040">
 
 <!-- Базовая инициализация Telegram Mini App (ранний вызов ready — рекомендация Telegram) -->
 <script>
 (function () {
+  // ───── Базовый fallback для --tg-vh (если Telegram.WebApp не доступен) ─────
+  // Используется в style.css для full-height контейнеров на узких экранах,
+  // чтобы избежать «прыжков» из-за моб. адресной строки браузера.
+  function setVhFallback() {
+    document.documentElement.style.setProperty(
+      "--tg-vh", window.innerHeight + "px"
+    );
+  }
+  setVhFallback();
+  window.addEventListener("resize", setVhFallback, { passive: true });
+  window.addEventListener("orientationchange", setVhFallback, { passive: true });
+
   if (!window.Telegram || !window.Telegram.WebApp) return;
   var tg = window.Telegram.WebApp;
   tg.ready();
   tg.expand();
+
+  // ───── Telegram viewport → CSS-переменная --tg-vh ─────
+  // Точная высота полезной области от Telegram WebApp (учитывает клавиатуру,
+  // нижнюю плашку, гесcheн-бар Android). Обновляем при viewportChanged.
+  function syncTgViewport() {
+    var h = tg.viewportHeight || window.innerHeight;
+    document.documentElement.style.setProperty("--tg-vh", h + "px");
+  }
+  syncTgViewport();
+  if (typeof tg.onEvent === "function") {
+    tg.onEvent("viewportChanged", syncTgViewport);
+  }
+
   // Опционально: проброс цветов темы в CSS-переменные (можно использовать в style.css)
   var tp = tg.themeParams || {};
   if (tp.bg_color) {
