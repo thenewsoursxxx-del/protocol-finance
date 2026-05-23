@@ -101,17 +101,15 @@ function _xhrFetch(url, opts) {
   });
 }
 
-// JWT нашей сессии (выпускается auth-telegram Edge Function в ensureAuthenticated()).
-// Хранится модульно и инжектируется во все запросы к SUPABASE_URL через
-// _iosSafeFetch ниже. Это альтернатива supabaseClient.auth.setSession(),
-// которая не работает с кастомными JWT в supabase-js v2: setSession ожидает
-// настоящий access+refresh от Supabase Auth и при попытке refresh тихо
-// сбрасывает нашу сессию. Через global.fetch override этой проблемы нет —
-// каждый запрос идёт с правильным Authorization: Bearer <JWT>.
-var _currentJWT = null;
-
 /* ── iOS-safe fetch: native fetch с безопасными опциями → XHR fallback ── */
+// Authorization header больше не подменяется здесь — supabase-js v2 ставит
+// его сам из нативной сессии (после verifyOtp в ensureAuthenticated).
 function _iosSafeFetch(url, opts) {
+  if (typeof fetch !== "function") {
+    console.log("[Supabase] fetch() не доступен, используем XHR.");
+    return _xhrFetch(url, opts);
+  }
+
   var safeOpts = {};
   if (opts) {
     Object.keys(opts).forEach(function (k) { safeOpts[k] = opts[k]; });
@@ -119,27 +117,9 @@ function _iosSafeFetch(url, opts) {
   safeOpts.cache = "no-store";
   safeOpts.credentials = "omit";
 
-  if (_currentJWT && typeof url === "string" && url.indexOf(SUPABASE_URL) === 0) {
-    var origHeaders = safeOpts.headers || {};
-    var mergedHeaders = {};
-    if (origHeaders instanceof Headers) {
-      origHeaders.forEach(function (v, k) { mergedHeaders[k] = v; });
-    } else if (typeof origHeaders === "object") {
-      Object.keys(origHeaders).forEach(function (k) { mergedHeaders[k] = origHeaders[k]; });
-    }
-    mergedHeaders["Authorization"] = "Bearer " + _currentJWT;
-    if (!mergedHeaders["apikey"]) mergedHeaders["apikey"] = SUPABASE_ANON_KEY;
-    safeOpts.headers = mergedHeaders;
-  }
-
-  if (typeof fetch !== "function") {
-    console.log("[Supabase] fetch() не доступен, используем XHR.");
-    return _xhrFetch(url, safeOpts);
-  }
-
   return fetch(url, safeOpts).catch(function (err) {
     console.warn("[Supabase] fetch() упал:", err.message, "— fallback → XHR");
-    return _xhrFetch(url, safeOpts);
+    return _xhrFetch(url, opts);
   });
 }
 
@@ -162,8 +142,14 @@ function initSupabaseClient() {
   try {
     supabaseClient = sb.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       auth: {
-        autoRefreshToken: false,
-        persistSession: false,
+        // autoRefreshToken: true — supabase-js сам обновит access_token
+        // через refresh_token до его истечения. С нативной Supabase Auth
+        // сессией (verifyOtp magiclink) это работает корректно.
+        autoRefreshToken:   true,
+        // persistSession: false — не пишем в localStorage. Telegram WebView
+        // в редких случаях очищает storage между сессиями, а initData всегда
+        // свежий → проще пере-аутентифицироваться при каждом запуске аппы.
+        persistSession:     false,
         detectSessionInUrl: false
       },
       global: {
@@ -184,28 +170,33 @@ function initSupabaseClient() {
 }
 
 /* ============================================================================
- * RLS AUTH — Supabase session bootstrap via Telegram initData
+ * RLS AUTH — Supabase Auth bootstrap via Telegram initData
  * ----------------------------------------------------------------------------
- * При первом вызове ensureAuthenticated() (см. ниже) делаем POST в
- * Edge Function `auth-telegram`, которая верифицирует initData по HMAC
- * с TELEGRAM_BOT_TOKEN и возвращает Supabase-совместимый JWT с claim
- * telegram_id. JWT сохраняем в модульной переменной _currentJWT, и
- * _iosSafeFetch (global.fetch в createClient) автоматически инжектирует
- * `Authorization: Bearer <jwt>` во все запросы к SUPABASE_URL. RLS-политики
- * вида (telegram_id = current_setting('request.jwt.claims')::json->>'telegram_id')
- * начинают РЕАЛЬНО проверять идентичность юзера.
+ * При первом вызове ensureAuthenticated():
+ *   1. POST в Edge Function `auth-telegram` с Telegram.WebApp.initData.
+ *   2. Функция верифицирует initData по HMAC, через service_role создаёт
+ *      (или находит) Supabase Auth юзера с email tg-{tid}@telegram.local
+ *      и user_metadata.telegram_id = tid, затем выпускает magic link
+ *      через admin.generateLink → отдаёт нам { email, token_hash }.
+ *   3. Делаем supabaseClient.auth.verifyOtp({ email, token, type:'magiclink' })
+ *      — supabase-js получает НАСТОЯЩУЮ сессию, подписанную текущим
+ *      JWT Signing Key проекта (ES256). С этого момента getSession(),
+ *      autoRefreshToken и Authorization во всех запросах работают нативно.
  *
- * Промис кешируется в `_authReadyPromise` — гарантирует, что в условиях
- * параллельных вызовов авторизация запускается ровно один раз, а все
- * последующие await'ы получают тот же результат.
+ * telegram_id попадает в JWT через Custom Access Token Hook
+ * (миграция 20260523_custom_access_token_hook.sql) — он копирует
+ * user_metadata.telegram_id в top-level claim, поэтому существующие
+ * RLS-политики (jwt->>'telegram_id')::bigint работают без правок.
  *
- * Возвращает boolean (true = JWT успешно установлен).
- * Все DB-функции ниже делают `if (!(await ensureAuthenticated())) return null;`
- * — это означает «авторизоваться не получилось, БД-операции пропускаем»,
- * без падений и без cascading-ошибок.
+ * Промис кешируется в _authReadyPromise — гарантирует одну авторизацию
+ * в условиях параллельных вызовов.
+ *
+ * Возвращает boolean. Все DB-функции ниже делают
+ *   if (!(await ensureAuthenticated())) return null;
+ * — без auth БД-операции пропускаются, без падений.
  * ============================================================================ */
 
-var _authReadyPromise = null;
+var _authReadyPromise    = null;
 var _authIsAuthenticated = false;
 
 async function ensureAuthenticated() {
@@ -221,11 +212,12 @@ async function ensureAuthenticated() {
         return false;
       }
 
+      // 1. Запрос к auth-telegram → получаем { email, token_hash }
       var url = SUPABASE_URL.replace(/\/$/, "") + "/functions/v1/auth-telegram";
       var res = await fetch(url, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
+          "Content-Type":  "application/json",
           "apikey":        SUPABASE_ANON_KEY,
           "Authorization": "Bearer " + SUPABASE_ANON_KEY
         },
@@ -238,21 +230,29 @@ async function ensureAuthenticated() {
         return false;
       }
 
-      var session = await res.json();
-      if (!session || !session.access_token) {
-        console.error("[Auth] auth-telegram: пустой access_token", session);
+      var resp = await res.json();
+      if (!resp || !resp.email || !resp.token_hash) {
+        console.error("[Auth] auth-telegram: ожидался { email, token_hash }, получено:", resp);
         return false;
       }
 
-      // ВАЖНО: supabaseClient.auth.setSession() НЕ работает с кастомными JWT
-      // в supabase-js v2 — библиотека пытается refresh'нуть токен через
-      // /auth/v1/token, фейлится и сбрасывает сессию (getSession() возвращает
-      // null). Поэтому сохраняем JWT модульно и инжектируем его в Authorization
-      // через _iosSafeFetch (см. global.fetch в createClient). Каждый запрос
-      // к SUPABASE_URL автоматически уйдёт с Bearer <наш JWT>.
-      _currentJWT = session.access_token;
+      // 2. verifyOtp с magic-link токеном — supabase-js обменяет его на
+      //    реальную сессию (access + refresh) и автоматически её сохранит.
+      var otp = await supabaseClient.auth.verifyOtp({
+        email: resp.email,
+        token: resp.token_hash,
+        type:  "magiclink"
+      });
+
+      if (otp.error) {
+        console.error("[Auth] verifyOtp ошибка:", otp.error.message, otp.error.status);
+        return false;
+      }
+
       _authIsAuthenticated = true;
-      console.log("[Auth] Supabase-сессия установлена (JWT с telegram_id), exp=" + (session.expires_at || "?"));
+      var sess = otp.data && otp.data.session;
+      console.log("[Auth] Supabase-сессия установлена (нативная, ES256), exp=" +
+                  (sess && sess.expires_at ? sess.expires_at : "?"));
       return true;
     } catch (e) {
       console.error("[Auth] ensureAuthenticated exception:", e && e.message);
@@ -263,14 +263,19 @@ async function ensureAuthenticated() {
 }
 
 /**
- * Возвращает текущий access_token (наш кастомный JWT, если авторизация
- * прошла; иначе anon-ключ как fallback). Используется в местах, где мы
- * делаем raw fetch / XHR вместо supabaseClient (например, Storage upload
- * с XHR-прогрессом, вызовы Edge Functions) — там нужно вручную выставить
- * правильный Bearer.
+ * Возвращает текущий access_token из активной Supabase Auth сессии
+ * (для мест, где мы делаем raw fetch/XHR вне supabaseClient, например
+ * Storage upload с XHR-прогрессом или Edge Functions). Если сессии нет
+ * (auth ещё не прошла или фейлнулась) — возвращает anon-ключ как fallback.
  */
 async function _currentAuthToken() {
-  if (_currentJWT) return _currentJWT;
+  try {
+    if (supabaseClient && supabaseClient.auth && typeof supabaseClient.auth.getSession === "function") {
+      var r = await supabaseClient.auth.getSession();
+      var tok = r && r.data && r.data.session && r.data.session.access_token;
+      if (tok) return tok;
+    }
+  } catch (_e) { /* ignore */ }
   return SUPABASE_ANON_KEY;
 }
 
