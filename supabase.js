@@ -231,19 +231,46 @@ async function ensureAuthenticated() {
       }
 
       var resp = await res.json();
-      if (!resp || !resp.email || !resp.token) {
-        console.error("[Auth] auth-telegram: ожидался { email, token }, получено:", resp);
+      if (!resp || !resp.email || (!resp.token && !resp.token_hash)) {
+        console.error("[Auth] auth-telegram: ожидался { email, token | token_hash }, получено:", resp);
         return false;
       }
 
-      // 2. verifyOtp с СЫРЫМ токеном (вытащен из action_link на стороне
-      //    Edge Function) — supabase-js обменяет его на реальную сессию
-      //    (access + refresh) и автоматически её сохранит.
-      var otp = await supabaseClient.auth.verifyOtp({
-        email: resp.email,
-        token: resp.token,
-        type:  "magiclink"
-      });
+      // 2. verifyOtp — пробуем несколько вариантов, потому что Supabase
+      //    в зависимости от настроек проекта (PKCE flow / классический)
+      //    ожидает разные комбинации параметров. Перебираем по убыванию
+      //    предпочтительности — первый успешный выигрывает.
+      var otp = null;
+      var attempts = [];
+      if (resp.token_hash) {
+        attempts.push({ token_hash: resp.token_hash, type: "email"     });
+        attempts.push({ token_hash: resp.token_hash, type: "magiclink" });
+      }
+      if (resp.token) {
+        attempts.push({ email: resp.email, token: resp.token, type: "magiclink" });
+        attempts.push({ email: resp.email, token: resp.token, type: "email"     });
+      }
+
+      var lastErr = null;
+      for (var i = 0; i < attempts.length; i++) {
+        var result = await supabaseClient.auth.verifyOtp(attempts[i]);
+        if (!result.error) {
+          otp = result;
+          console.log("[Auth] verifyOtp успех попытка " + (i + 1) + ":",
+                      JSON.stringify({ hasHash: !!attempts[i].token_hash, type: attempts[i].type }));
+          break;
+        }
+        lastErr = result.error;
+        console.warn("[Auth] verifyOtp попытка " + (i + 1) + " (" +
+                     (attempts[i].token_hash ? "token_hash" : "token") + ", " +
+                     attempts[i].type + "):", result.error.message, result.error.status);
+      }
+
+      if (!otp) {
+        console.error("[Auth] verifyOtp — все попытки провалились. Последняя ошибка:",
+                      lastErr && lastErr.message, lastErr && lastErr.status);
+        return false;
+      }
 
       if (otp.error) {
         console.error("[Auth] verifyOtp ошибка:", otp.error.message, otp.error.status);
