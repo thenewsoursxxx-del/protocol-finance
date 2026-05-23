@@ -101,13 +101,17 @@ function _xhrFetch(url, opts) {
   });
 }
 
+// JWT нашей сессии (выпускается auth-telegram Edge Function в ensureAuthenticated()).
+// Хранится модульно и инжектируется во все запросы к SUPABASE_URL через
+// _iosSafeFetch ниже. Это альтернатива supabaseClient.auth.setSession(),
+// которая не работает с кастомными JWT в supabase-js v2: setSession ожидает
+// настоящий access+refresh от Supabase Auth и при попытке refresh тихо
+// сбрасывает нашу сессию. Через global.fetch override этой проблемы нет —
+// каждый запрос идёт с правильным Authorization: Bearer <JWT>.
+var _currentJWT = null;
+
 /* ── iOS-safe fetch: native fetch с безопасными опциями → XHR fallback ── */
 function _iosSafeFetch(url, opts) {
-  if (typeof fetch !== "function") {
-    console.log("[Supabase] fetch() не доступен, используем XHR.");
-    return _xhrFetch(url, opts);
-  }
-
   var safeOpts = {};
   if (opts) {
     Object.keys(opts).forEach(function (k) { safeOpts[k] = opts[k]; });
@@ -115,9 +119,27 @@ function _iosSafeFetch(url, opts) {
   safeOpts.cache = "no-store";
   safeOpts.credentials = "omit";
 
+  if (_currentJWT && typeof url === "string" && url.indexOf(SUPABASE_URL) === 0) {
+    var origHeaders = safeOpts.headers || {};
+    var mergedHeaders = {};
+    if (origHeaders instanceof Headers) {
+      origHeaders.forEach(function (v, k) { mergedHeaders[k] = v; });
+    } else if (typeof origHeaders === "object") {
+      Object.keys(origHeaders).forEach(function (k) { mergedHeaders[k] = origHeaders[k]; });
+    }
+    mergedHeaders["Authorization"] = "Bearer " + _currentJWT;
+    if (!mergedHeaders["apikey"]) mergedHeaders["apikey"] = SUPABASE_ANON_KEY;
+    safeOpts.headers = mergedHeaders;
+  }
+
+  if (typeof fetch !== "function") {
+    console.log("[Supabase] fetch() не доступен, используем XHR.");
+    return _xhrFetch(url, safeOpts);
+  }
+
   return fetch(url, safeOpts).catch(function (err) {
     console.warn("[Supabase] fetch() упал:", err.message, "— fallback → XHR");
-    return _xhrFetch(url, opts);
+    return _xhrFetch(url, safeOpts);
   });
 }
 
@@ -160,6 +182,99 @@ function initSupabaseClient() {
     return false;
   }
 }
+
+/* ============================================================================
+ * RLS AUTH — Supabase session bootstrap via Telegram initData
+ * ----------------------------------------------------------------------------
+ * При первом вызове ensureAuthenticated() (см. ниже) делаем POST в
+ * Edge Function `auth-telegram`, которая верифицирует initData по HMAC
+ * с TELEGRAM_BOT_TOKEN и возвращает Supabase-совместимый JWT с claim
+ * telegram_id. JWT сохраняем в модульной переменной _currentJWT, и
+ * _iosSafeFetch (global.fetch в createClient) автоматически инжектирует
+ * `Authorization: Bearer <jwt>` во все запросы к SUPABASE_URL. RLS-политики
+ * вида (telegram_id = current_setting('request.jwt.claims')::json->>'telegram_id')
+ * начинают РЕАЛЬНО проверять идентичность юзера.
+ *
+ * Промис кешируется в `_authReadyPromise` — гарантирует, что в условиях
+ * параллельных вызовов авторизация запускается ровно один раз, а все
+ * последующие await'ы получают тот же результат.
+ *
+ * Возвращает boolean (true = JWT успешно установлен).
+ * Все DB-функции ниже делают `if (!(await ensureAuthenticated())) return null;`
+ * — это означает «авторизоваться не получилось, БД-операции пропускаем»,
+ * без падений и без cascading-ошибок.
+ * ============================================================================ */
+
+var _authReadyPromise = null;
+var _authIsAuthenticated = false;
+
+async function ensureAuthenticated() {
+  if (_authReadyPromise) return _authReadyPromise;
+  _authReadyPromise = (async function () {
+    try {
+      if (!initSupabaseClient()) return false;
+
+      var w = window.Telegram && window.Telegram.WebApp;
+      var initData = (w && w.initData) || "";
+      if (!initData) {
+        console.warn("[Auth] init_data отсутствует — Telegram WebApp недоступен (браузер?). DB-операции будут пропущены.");
+        return false;
+      }
+
+      var url = SUPABASE_URL.replace(/\/$/, "") + "/functions/v1/auth-telegram";
+      var res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey":        SUPABASE_ANON_KEY,
+          "Authorization": "Bearer " + SUPABASE_ANON_KEY
+        },
+        body: JSON.stringify({ init_data: initData })
+      });
+
+      if (!res.ok) {
+        var errText = await res.text().catch(function () { return ""; });
+        console.error("[Auth] auth-telegram HTTP " + res.status + ":", errText);
+        return false;
+      }
+
+      var session = await res.json();
+      if (!session || !session.access_token) {
+        console.error("[Auth] auth-telegram: пустой access_token", session);
+        return false;
+      }
+
+      // ВАЖНО: supabaseClient.auth.setSession() НЕ работает с кастомными JWT
+      // в supabase-js v2 — библиотека пытается refresh'нуть токен через
+      // /auth/v1/token, фейлится и сбрасывает сессию (getSession() возвращает
+      // null). Поэтому сохраняем JWT модульно и инжектируем его в Authorization
+      // через _iosSafeFetch (см. global.fetch в createClient). Каждый запрос
+      // к SUPABASE_URL автоматически уйдёт с Bearer <наш JWT>.
+      _currentJWT = session.access_token;
+      _authIsAuthenticated = true;
+      console.log("[Auth] Supabase-сессия установлена (JWT с telegram_id), exp=" + (session.expires_at || "?"));
+      return true;
+    } catch (e) {
+      console.error("[Auth] ensureAuthenticated exception:", e && e.message);
+      return false;
+    }
+  })();
+  return _authReadyPromise;
+}
+
+/**
+ * Возвращает текущий access_token (наш кастомный JWT, если авторизация
+ * прошла; иначе anon-ключ как fallback). Используется в местах, где мы
+ * делаем raw fetch / XHR вместо supabaseClient (например, Storage upload
+ * с XHR-прогрессом, вызовы Edge Functions) — там нужно вручную выставить
+ * правильный Bearer.
+ */
+async function _currentAuthToken() {
+  if (_currentJWT) return _currentJWT;
+  return SUPABASE_ANON_KEY;
+}
+
+window.ensureAuthenticated = ensureAuthenticated;
 
 /* ── Centralized Telegram identity extraction ── */
 
@@ -224,6 +339,13 @@ async function saveCurrentUser() {
   console.log("[Supabase] saveCurrentUser() — старт");
 
   if (!initSupabaseClient()) return;
+  // RLS AUTH: без JWT с claim telegram_id INSERT/UPDATE в users отклонится
+  // политиками "Users can insert/update own profile". Поэтому сначала
+  // выпускаем сессию через Edge Function auth-telegram.
+  if (!(await ensureAuthenticated())) {
+    console.warn("[Supabase] saveCurrentUser: нет авторизации, пропускаем.");
+    return;
+  }
 
   var identity = await getVerifiedUserIdentity();
   if (!identity) return;
@@ -303,6 +425,12 @@ async function getMyData() {
   console.log("[Supabase] getMyData() — старт");
 
   if (!initSupabaseClient()) return null;
+  // RLS AUTH: SELECT в users требует JWT с claim telegram_id (политика
+  // "Users can view own profile"). Без сессии вернётся 0 строк.
+  if (!(await ensureAuthenticated())) {
+    console.warn("[Supabase] getMyData: нет авторизации, возвращаем null.");
+    return null;
+  }
 
   var identity = await getVerifiedUserIdentity();
   if (!identity) return null;
@@ -333,6 +461,11 @@ async function saveAppState(state) {
   try {
     if (!initSupabaseClient()) {
       console.warn("[Supabase] saveAppState: клиент не инициализирован, пропускаем.");
+      return;
+    }
+    // RLS AUTH: INSERT/UPDATE в user_state требуют JWT с claim telegram_id.
+    if (!(await ensureAuthenticated())) {
+      console.warn("[Supabase] saveAppState: нет авторизации, пропускаем (cloud sync отключён).");
       return;
     }
 
@@ -392,6 +525,11 @@ async function loadAppState() {
   try {
     if (!initSupabaseClient()) {
       console.warn("[Supabase] loadAppState: клиент не инициализирован.");
+      return null;
+    }
+    // RLS AUTH: SELECT из user_state требует JWT — иначе 0 строк.
+    if (!(await ensureAuthenticated())) {
+      console.warn("[Supabase] loadAppState: нет авторизации, возвращаем null (используем localStorage).");
       return null;
     }
 
@@ -546,6 +684,11 @@ window.loadInflationRates = loadInflationRates;
 async function fetchUserAccessFlags() {
   try {
     if (!initSupabaseClient()) return null;
+    // RLS AUTH: SELECT из users требует JWT с claim telegram_id, иначе 0 строк.
+    if (!(await ensureAuthenticated())) {
+      console.warn("[AccessFlags] нет авторизации, возвращаем null.");
+      return null;
+    }
     var identity = await getVerifiedUserIdentity();
     if (!identity) return null;
 
@@ -614,12 +757,16 @@ async function createStarsInvoice(autoRenew) {
     } catch (_e) { /* ignore */ }
 
     var url = SUPABASE_URL.replace(/\/$/, "") + "/functions/v1/create-stars-invoice";
+    // RLS AUTH: Edge Function проверяет init_data сама (HMAC), но мы всё
+    // равно шлём наш кастомный JWT в Authorization — это позволит в будущем
+    // снять флаг --no-verify-jwt и переложить часть валидации на Supabase.
+    var stInvAuth = await _currentAuthToken();
     var res = await fetch(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "apikey": SUPABASE_ANON_KEY,
-        "Authorization": "Bearer " + SUPABASE_ANON_KEY
+        "Authorization": "Bearer " + stInvAuth
       },
       body: JSON.stringify({
         telegram_id: identity.telegram_id,
@@ -692,12 +839,15 @@ async function _callNotificationEndpoint(endpoint, tag) {
     }
 
     var url = SUPABASE_URL.replace(/\/$/, "") + "/functions/v1/" + endpoint;
+    // RLS AUTH: тот же приём что в createStarsInvoice — шлём наш JWT,
+    // чтобы Edge Function мог в будущем читать claims вместо повторной HMAC-проверки.
+    var notifAuth = await _currentAuthToken();
     var res = await fetch(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "apikey": SUPABASE_ANON_KEY,
-        "Authorization": "Bearer " + SUPABASE_ANON_KEY
+        "Authorization": "Bearer " + notifAuth
       },
       body: JSON.stringify({
         telegram_id: identity.telegram_id,
@@ -731,6 +881,11 @@ async function triggerPremiumExpiredNotice() {
 async function setUserPremium(value) {
   try {
     if (!initSupabaseClient()) return false;
+    // RLS AUTH: UPDATE users.is_premium требует JWT с claim telegram_id.
+    if (!(await ensureAuthenticated())) {
+      console.warn("[Stars] setUserPremium: нет авторизации, пропускаем (webhook всё равно проставит is_premium).");
+      return false;
+    }
     var identity = await getVerifiedUserIdentity();
     if (!identity) return false;
 
@@ -761,31 +916,30 @@ window.pickServerLanguage = pickServerLanguage;
 /**
  * STATISTICS COLLECTION — публичная статистика премиум/не-премиум пользователей.
  * Возвращает { premiumCount, freeCount, total }.
- * Использует COUNT через head:true + count:'exact' — пустые строки данных не везём.
+ *
+ * RLS NOTE: после включения RLS обычный пользователь видит только СВОЮ строку
+ * в users — count(*) вернёт 1/0 вместо реального числа. Поэтому считаем через
+ * SECURITY DEFINER RPC public.get_community_stats() (миграция
+ * 20260523_community_stats_and_storage.sql), которая обходит RLS и
+ * возвращает только агрегаты (никаких PII).
  */
 async function getPremiumStats() {
   try {
     if (!initSupabaseClient()) return null;
-
-    var pRes = await supabaseClient
-      .from("users")
-      .select("telegram_id", { count: "exact", head: true })
-      .eq("is_premium", true);
-
-    var fRes = await supabaseClient
-      .from("users")
-      .select("telegram_id", { count: "exact", head: true })
-      .or("is_premium.eq.false,is_premium.is.null");
-
-    if (pRes.error || fRes.error) {
-      console.warn("[Statistics] getPremiumStats ошибка:",
-        pRes.error && pRes.error.message,
-        fRes.error && fRes.error.message);
+    if (!(await ensureAuthenticated())) {
+      console.warn("[Statistics] getPremiumStats — auth не готов");
       return null;
     }
 
-    var premium = pRes.count || 0;
-    var free    = fRes.count || 0;
+    var res = await supabaseClient.rpc("get_community_stats");
+    if (res.error) {
+      console.warn("[Statistics] getPremiumStats RPC ошибка:",
+        res.error.message, res.error.code || "");
+      return null;
+    }
+    var data = res.data || {};
+    var premium = Number(data.premiumCount) || 0;
+    var free    = Number(data.freeCount)    || 0;
     return { premiumCount: premium, freeCount: free, total: premium + free };
   } catch (e) {
     console.warn("[Statistics] getPremiumStats exception:", e && e.message);
@@ -797,130 +951,75 @@ window.getPremiumStats = getPremiumStats;
 
 /**
  * COMMUNITY STATS — расширенная админская статистика для блока «Статистика
- * сообщества» в профиле. Объединяет:
- *   • premiumCount / freeCount / total  (как в getPremiumStats — для back-compat)
+ * сообщества» в профиле. Возвращает:
+ *   • premiumCount / freeCount / total
  *   • starsEarnedTotal      — SUM(amount) FROM stars_payments
  *   • starsEarnedLastMonth  — SUM(amount) WHERE created_at > now()-30d
  *   • premiumPurchases      — COUNT(*) FROM stars_payments
  *   • newUsers30d           — COUNT(*) FROM users WHERE created_at > now()-30d
  *
- * Защита от частичных сбоев: каждый запрос обёрнут в try/catch, при ошибке
- * соответствующее поле возвращается как null (а не undefined) — клиент
- * рисует «—» вместо цифры. Если таблица stars_payments ещё не создана
- * (миграция не накатана), вернутся null'ы только для stars-метрик,
- * пользовательские счётчики продолжат работать.
+ * RLS NOTE: после включения RLS клиент не может агрегировать users/stars_payments
+ * напрямую (видит только свою строку). Поэтому используется SECURITY DEFINER
+ * RPC public.get_community_stats(), которая обходит RLS и отдаёт только
+ * агрегаты (никаких PII утечь не может). Один сетевой запрос вместо шести.
  */
 async function getCommunityStats() {
   if (!initSupabaseClient()) return null;
+  if (!(await ensureAuthenticated())) {
+    console.warn("[CommunityStats] auth не готов");
+    return null;
+  }
 
-  var THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
-  var since30d = new Date(Date.now() - THIRTY_DAYS_MS).toISOString();
-
-  // ── Параллельные запросы ────────────────────────────────────────────────
-  async function safe(promise, tag) {
-    try {
-      var res = await promise;
-      if (res.error) {
-        console.warn("[CommunityStats] " + tag + ":", res.error.message,
-          res.error.code || "");
-        return null;
-      }
-      return res;
-    } catch (e) {
-      console.warn("[CommunityStats] " + tag + " exception:", e && e.message);
+  try {
+    var res = await supabaseClient.rpc("get_community_stats");
+    if (res.error) {
+      console.warn("[CommunityStats] RPC ошибка:",
+        res.error.message, res.error.code || "");
       return null;
     }
+    var d = res.data || {};
+    function num(v) {
+      if (v == null) return null;
+      var n = Number(v);
+      return isNaN(n) ? null : n;
+    }
+    return {
+      premiumCount:         num(d.premiumCount),
+      freeCount:            num(d.freeCount),
+      total:                num(d.total),
+      starsEarnedTotal:     num(d.starsEarnedTotal),
+      starsEarnedLastMonth: num(d.starsEarnedLastMonth),
+      premiumPurchases:     num(d.premiumPurchases),
+      newUsers30d:          num(d.newUsers30d)
+    };
+  } catch (e) {
+    console.warn("[CommunityStats] exception:", e && e.message);
+    return null;
   }
-
-  // 1. Premium / free / total (как в getPremiumStats).
-  var pPromise = safe(
-    supabaseClient.from("users")
-      .select("telegram_id", { count: "exact", head: true })
-      .eq("is_premium", true),
-    "premium count"
-  );
-  var fPromise = safe(
-    supabaseClient.from("users")
-      .select("telegram_id", { count: "exact", head: true })
-      .or("is_premium.eq.false,is_premium.is.null"),
-    "free count"
-  );
-
-  // 2. Новые пользователи за 30 дней.
-  var newPromise = safe(
-    supabaseClient.from("users")
-      .select("telegram_id", { count: "exact", head: true })
-      .gte("created_at", since30d),
-    "new_users_30d"
-  );
-
-  // 3. Stars: общая сумма + кол-во покупок. SUM считаем сами после SELECT'а
-  //    столбца amount (Supabase JS не имеет нативного агрегата, и edge case
-  //    в 5-10k записей это норм — таблица оплат маленькая). Для покупок
-  //    используем count:'exact' head:true.
-  var starsAllRowsPromise = safe(
-    supabaseClient.from("stars_payments").select("amount"),
-    "stars_all_rows"
-  );
-  var purchasesCountPromise = safe(
-    supabaseClient.from("stars_payments")
-      .select("id", { count: "exact", head: true }),
-    "purchases_count"
-  );
-
-  // 4. Stars за последний месяц.
-  var starsMonthPromise = safe(
-    supabaseClient.from("stars_payments")
-      .select("amount")
-      .gte("created_at", since30d),
-    "stars_last_month"
-  );
-
-  var results = await Promise.all([
-    pPromise, fPromise, newPromise,
-    starsAllRowsPromise, purchasesCountPromise, starsMonthPromise
-  ]);
-  var pRes = results[0], fRes = results[1], newRes = results[2];
-  var starsAll = results[3], purchases = results[4], starsMonth = results[5];
-
-  function sumAmount(rows) {
-    if (!Array.isArray(rows)) return null;
-    return rows.reduce(function (acc, r) {
-      var v = Number(r && r.amount);
-      return acc + (isNaN(v) ? 0 : v);
-    }, 0);
-  }
-
-  var premiumCount = (pRes && typeof pRes.count === "number") ? pRes.count : null;
-  var freeCount    = (fRes && typeof fRes.count === "number") ? fRes.count : null;
-  var total = (premiumCount != null && freeCount != null) ? premiumCount + freeCount : null;
-  var newUsers30d  = (newRes && typeof newRes.count === "number") ? newRes.count : null;
-
-  var starsTotal   = (starsAll && Array.isArray(starsAll.data)) ? sumAmount(starsAll.data) : null;
-  var starsMonthV  = (starsMonth && Array.isArray(starsMonth.data)) ? sumAmount(starsMonth.data) : null;
-  var purchasesC   = (purchases && typeof purchases.count === "number") ? purchases.count : null;
-
-  return {
-    premiumCount: premiumCount,
-    freeCount: freeCount,
-    total: total,
-    starsEarnedTotal: starsTotal,
-    starsEarnedLastMonth: starsMonthV,
-    premiumPurchases: purchasesC,
-    newUsers30d: newUsers30d
-  };
 }
 
 window.getCommunityStats = getCommunityStats;
 
 window.addEventListener("load", function () {
-  console.log("[Supabase] window.load — запускаем saveCurrentUser через 500 мс");
+  console.log("[Supabase] window.load — bootstrap: ensureAuthenticated() → saveCurrentUser");
 
+  // RLS AUTH: пораньше прогреваем сессию (через 200 мс — даём шанс Telegram
+  // WebApp проинициализироваться). Это закроет race с другими модулями,
+  // которые могут вызвать DB-функции до saveCurrentUser.
+  // ensureAuthenticated() кеширует промис, поэтому повторный вызов из
+  // других мест бесплатен — все ждут одну и ту же авторизацию.
   setTimeout(function () {
-    saveCurrentUser().catch(function (err) {
-      console.error("[Supabase] saveCurrentUser ошибка:", err);
+    ensureAuthenticated().then(function (ok) {
+      if (!ok) {
+        console.warn("[Supabase] ensureAuthenticated вернул false — DB-операции будут пропущены.");
+      }
+      // saveCurrentUser сам проверит auth, поэтому можно вызывать безопасно
+      // даже если авторизация не прошла — он просто молча выйдет.
+      return saveCurrentUser();
+    }).catch(function (err) {
+      console.error("[Supabase] bootstrap ошибка:", err);
     });
-  }, 500);
+  }, 200);
 });
 
 // NEW: Media attachment in reports
@@ -1037,6 +1136,15 @@ window.saveReport = async (telegramId, message, files, onProgress) => {
   if (!initSupabaseClient()) {
     return { ok: false, error: "Supabase-клиент не инициализирован" };
   }
+  // RLS AUTH: INSERT в reports + чтение users.chat_id + Storage-аплоад в
+  // report-media bucket — всё требует JWT с claim telegram_id.
+  if (!(await ensureAuthenticated())) {
+    return { ok: false, error: "Не удалось авторизоваться. Попробуйте перезапустить приложение." };
+  }
+
+  // RLS AUTH: для Storage upload через raw XHR нужен наш кастомный JWT
+  // (anon-ключ не пройдёт policy на бакете). Берём актуальный token из сессии.
+  var authToken = await _currentAuthToken();
 
   // NEW: Media attachment in reports — нормализация массива файлов
   var mediaFiles = Array.isArray(files) ? files.filter(Boolean) : [];
@@ -1063,8 +1171,10 @@ window.saveReport = async (telegramId, message, files, onProgress) => {
       var completedBytes = 0;
       var ts = Date.now();
 
+      // RLS AUTH: Authorization — наш JWT (для прохождения Storage RLS),
+      // apikey — anon-ключ (Supabase требует его всегда для маршрутизации запросов).
       var headers = {
-        "Authorization": "Bearer " + SUPABASE_ANON_KEY,
+        "Authorization": "Bearer " + authToken,
         "apikey":        SUPABASE_ANON_KEY,
         "x-upsert":      "false",
         "Cache-Control": "3600"
@@ -1198,6 +1308,11 @@ window.saveUserChatId = async (chatId) => {
 
   if (!initSupabaseClient()) {
     console.warn('[saveUserChatId] Supabase-клиент не инициализирован');
+    return;
+  }
+  // RLS AUTH: upsert в users требует JWT с claim telegram_id.
+  if (!(await ensureAuthenticated())) {
+    console.warn('[saveUserChatId] нет авторизации, пропускаем.');
     return;
   }
 
