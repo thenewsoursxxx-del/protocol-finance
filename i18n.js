@@ -364,7 +364,7 @@
       "onb.prem.debts.title":   "Кредиты и долги",
       "onb.prem.debts.text":    "Добавляй ипотеку, кредиты, рассрочки и кредитные карты. Protocol учтёт обязательные платежи, льготные периоды и подскажет, когда долг будет погашен.",
       "onb.prem.advanced.title":"Расширенные настройки",
-      "onb.prem.advanced.text": "Тонкая настройка плана: режим резерва, перенос остатков, валюта отображения и многое другое. Подгони Protocol под себя.",
+      "onb.prem.advanced.text": "Тонкая настройка плана: добавление нескольких целей, индивидуальная смена сроков любой из целей. Подгони Protocol под себя.",
       "onb.prem.stats.title":   "Статистика счёта",
       "onb.prem.stats.text":    "Обратная сторона карточки — распределяй накопления по типам: наличные, фондовый рынок, вклад, драгоценные металлы. Получишь точную структуру портфеля.",
 
@@ -1457,7 +1457,7 @@
       "onb.prem.debts.title":   "Debts & Credits",
       "onb.prem.debts.text":    "Add mortgages, loans, installments and credit cards. Protocol factors in mandatory payments and grace periods, telling you exactly when each debt is paid off.",
       "onb.prem.advanced.title":"Advanced Settings",
-      "onb.prem.advanced.text": "Fine-tune your plan: reserve mode, leftover carry-over, display currency and more. Make Protocol fit your style.",
+      "onb.prem.advanced.text": "Fine-tune your plan: add multiple goals and customize deadlines for any of them. Make Protocol fit your style.",
       "onb.prem.stats.title":   "Account Statistics",
       "onb.prem.stats.text":    "The back of the card — split savings across cash, stocks, deposits, precious metals. See the exact structure of your portfolio.",
 
