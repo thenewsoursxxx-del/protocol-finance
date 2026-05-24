@@ -14403,6 +14403,79 @@ function renderFlexModelSummary() {
 }
 
 /* ============================================================================
+ * Email link handler (profile → Gmail icon)
+ * ----------------------------------------------------------------------------
+ * Telegram WebView (особенно на iOS) блокирует `mailto:` в обычных <a href>.
+ * Также Telegram.WebApp.openLink() поддерживает только http/https, не mailto.
+ *
+ * Стратегия: ловим клик по любому <a href="mailto:..."> в DOM, пытаемся
+ *   1) открыть почту через window.location.href (работает на Android и Web)
+ *   2) если что-то не получилось — копируем email в буфер обмена
+ *      и показываем toast «Email скопирован: <email>» — юзер вставит
+ *      адрес в свой почтовый клиент сам.
+ * Это безопасный fallback: даже если первый шаг отработал, копия в буфере
+ * не мешает. На iOS-Telegram второй шаг — единственный способ передать email.
+ * ============================================================================ */
+(function initMailtoHandler() {
+  document.addEventListener("click", function (e) {
+    var link = e.target && e.target.closest ? e.target.closest('a[href^="mailto:"]') : null;
+    if (!link) return;
+
+    e.preventDefault();
+
+    var href  = link.getAttribute("href") || "";
+    var email = href.replace(/^mailto:/i, "").split("?")[0].trim();
+    if (!email) return;
+
+    if (typeof haptic === "function") {
+      try { haptic("light"); } catch (_e) {}
+    }
+
+    // ── 1) Попытка открыть почтовый клиент ────────────────────────────────
+    var openedNative = false;
+    try {
+      window.location.href = href;
+      openedNative = true;
+    } catch (_e) { /* iOS WebView может бросить — это норм, есть fallback */ }
+
+    // ── 2) Копируем email в буфер обмена (всегда — на случай если шаг 1 не сработал) ─
+    function showCopiedToast() {
+      if (typeof showToast === "function") {
+        showToast("Email скопирован: " + email, "success");
+      }
+    }
+    function showFailToast() {
+      if (typeof showToast === "function") {
+        showToast("Email: " + email, "info");
+      }
+    }
+
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(email).then(showCopiedToast, function () {
+          // clipboard API мог быть отклонён (permissions / non-secure context)
+          if (!openedNative) showFailToast();
+        });
+      } else {
+        // Legacy fallback: textarea + execCommand("copy")
+        var ta = document.createElement("textarea");
+        ta.value = email;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        var ok = false;
+        try { ok = document.execCommand("copy"); } catch (_e) {}
+        document.body.removeChild(ta);
+        if (ok) showCopiedToast(); else if (!openedNative) showFailToast();
+      }
+    } catch (_e) {
+      if (!openedNative) showFailToast();
+    }
+  }, false);
+})();
+
+/* ============================================================================
  * NEW: Report problem feature
  * ----------------------------------------------------------------------------
  * Кнопка "Сообщить о проблеме" во вкладке Профиль + bottom-sheet модалка
