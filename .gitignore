@@ -9,6 +9,17 @@
 *.p12
 secrets.json
 service-account*.json
+# Локальные файлы с секретами (любые .secret*, *secret*.txt, *secrets*.txt, .credentials*)
+.secret*
+*.secret
+*.secret.*
+*secret*.txt
+*secrets*.txt
+.credentials*
+*credentials*.json
+*credentials*.txt
+.supabase-secrets*
+supabase-secrets*
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Supabase CLI кеш и локальные данные
