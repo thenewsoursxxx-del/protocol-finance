@@ -844,6 +844,23 @@ function applyState(saved) {
     appState.uiState = { ...defaults.uiState };
   }
 
+  // ── ONBOARDING FLAGS (v15 + v16) — критично восстановить из persistence! ──
+  // Без этого блока флаги онбординга сбрасывались на дефолты при каждом
+  // applyState (на старте приложения и после cloud-sync). Для основного тура
+  // (firstLaunch) это маскируется защитой _userHasMeaningfulData() — флаг
+  // тихо проставляется обратно в true. А для премиум-туров такой защиты нет,
+  // и подсказки «Гибкая модель / Pace / Долги / ...» показывались КАЖДЫЙ раз
+  // при открытии фичи, вместо одного раза при первом открытии.
+  appState.onboardingCompleted = typeof saved.onboardingCompleted === "boolean"
+    ? saved.onboardingCompleted
+    : defaults.onboardingCompleted;
+
+  appState.premiumOnboardingCompleted = (saved.premiumOnboardingCompleted &&
+                                         typeof saved.premiumOnboardingCompleted === "object" &&
+                                         !Array.isArray(saved.premiumOnboardingCompleted))
+    ? { ...saved.premiumOnboardingCompleted }
+    : { ...defaults.premiumOnboardingCompleted };
+
   if (appState.planStartValue === 0 && appState.initialBalance > 0) {
     appState.planStartValue = appState.initialBalance;
   }

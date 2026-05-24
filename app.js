@@ -15482,10 +15482,13 @@ var _TOURS = {
       // достаточно tooltip'а со стрелкой указывающего на кнопку.
       { id: "continue",    screen: "calc",     target: "#calculate",               titleKey: "onb.continue.title",    textKey: "onb.continue.text",    noHighlight: true },
       { id: "mainAccount", screen: "accounts", target: '[data-account="main"]',    titleKey: "onb.mainAccount.title", textKey: "onb.mainAccount.text" },
-      // Reserve-шаг показывается ТОЛЬКО если у пользователя есть резерв
-      // (выбран сценарий "С резервом" → uiState.hasReserve=true либо
-      // accounts.reserve>0). Иначе шаг беззвучно скипается.
-      { id: "reserve",     screen: "accounts", target: '[data-account="reserve"]', titleKey: "onb.reserve.title",     textKey: "onb.reserve.text", skipIf: _onbHasNoReserve },
+      // Reserve-шаг показывается ВСЕГДА — сразу после mainAccount.
+      // Если у юзера выбран сценарий «С резервом» → блок [data-account="reserve"]
+      // видим, tooltip подсвечивает его как обычно. Если резерв не выбран →
+      // блок скрыт (display:none), _resolveStepTarget вернёт null и
+      // _positionOnboardingStep автоматически отрендерит centered modal с тем же
+      // текстом про резерв — юзер всё равно узнает, что такое резерв.
+      { id: "reserve",     screen: "accounts", target: '[data-account="reserve"]', titleKey: "onb.reserve.title",     textKey: "onb.reserve.text" },
       { id: "profile",     /* fixed-pos, любой экран */ target: "#profileBtn",     titleKey: "onb.profile.title",     textKey: "onb.profile.text" },
       { id: "final",       screen: "calc",     target: null,                       titleKey: "onb.final.title",       textKey: "onb.final.text" }
     ]
