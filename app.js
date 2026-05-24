@@ -6,7 +6,7 @@ tg?.expand();
 // (chat.id может быть ID группы, в которую бот не имеет доступа).
 //
 // Идемпотентность: saveUserChatId делает upsert по telegram_id, поэтому
-// многократные вызовы безопасны — последний всегда выигрывает.
+// многократные вызовы безопасны - последний всегда выигрывает.
 const ensureChatIdSaved = () => {
   if (!tg?.initDataUnsafe?.user) return;
 
@@ -27,7 +27,7 @@ const ensureChatIdSaved = () => {
       if (typeof window.saveUserChatId === 'function') {
         window.saveUserChatId(chatId);
       } else {
-        console.error('[ChatID] saveUserChatId всё ещё недоступна — supabase.js не загрузился');
+        console.error('[ChatID] saveUserChatId всё ещё недоступна - supabase.js не загрузился');
       }
     }, 500);
   }
@@ -37,20 +37,20 @@ const ensureChatIdSaved = () => {
 ensureChatIdSaved();
 if (tg) {
   try { tg.ready(); } catch (e) { console.warn('[ChatID] tg.ready() кинул:', e); }
-  // tg.onEvent поддерживает не все строки — оборачиваем в try/catch,
+  // tg.onEvent поддерживает не все строки - оборачиваем в try/catch,
   // чтобы возможный throw не остановил выполнение последующих setTimeout'ов.
   try { tg.onEvent('ready', ensureChatIdSaved); } catch (e) {
     console.warn('[ChatID] tg.onEvent("ready") не поддерживается:', e);
   }
-  // Дополнительно — на всякий случай
+  // Дополнительно - на всякий случай
   setTimeout(ensureChatIdSaved, 800);
   setTimeout(ensureChatIdSaved, 1500);
 }
 
-// OPTIMIZATION: Global DOM cache — устраняет повторный обход дерева DOM
+// OPTIMIZATION: Global DOM cache - устраняет повторный обход дерева DOM
 // для часто запрашиваемых элементов внутри hot-paths (recalcPlan, syncFlexibleUI,
 // renderGoals, renderAccountsUI, applyFlexibleSideVisibility, renderFlexModelSummary).
-// Топ-level `const`-ссылки на DOM (incomeInput, goalInput, ...) НЕ заменяются —
+// Топ-level `const`-ссылки на DOM (incomeInput, goalInput, ...) НЕ заменяются -
 // они один раз кэшируют ноды при загрузке.
 const domCache = {};
 function getEl(id) {
@@ -75,7 +75,7 @@ function debounce(fn, wait) {
   };
 }
 
-// OPTIMIZATION: Helper — устраняет 4+ дублирующихся блоков сохранения позиции
+// OPTIMIZATION: Helper - устраняет 4+ дублирующихся блоков сохранения позиции
 // курсора при форматировании числового input. Поведение полностью идентично
 // исходному (см. блоки fixedIncomeInput, fixedExpenseInput, expAmtInput и др.).
 function formatNumericInput(inputEl) {
@@ -249,8 +249,8 @@ function parseNumber(v) {
 /* ═════════════════════════════════════════════════
    Multi-Currency System
    ─────────────────────────────────────────────────
-   baseCurrency   — all data stored & calculated here
-   displayCurrency — UI-only dynamic conversion
+   baseCurrency   - all data stored & calculated here
+   displayCurrency - UI-only dynamic conversion
    ═════════════════════════════════════════════════ */
 
 function _currencySymbol(code) {
@@ -414,7 +414,7 @@ function changeBaseCurrency(newBase, callback) {
     var toRate = _rateFromRub(newBase);
 
     if (!fromRate || !toRate) {
-      console.warn("[Protocol] Cannot convert — rates unavailable. Fallback used.");
+      console.warn("[Protocol] Cannot convert - rates unavailable. Fallback used.");
       if (callback) callback(false);
       return;
     }
@@ -685,8 +685,8 @@ const PROTOCOL_COLORS = [
 "#ffffff" // акцент
 ];
 
-// PREMIUM GOAL COMPLETION — изумрудная палитра для левой стороны конфетти.
-// Используется только в firePremiumCelebration() (правая сторона — синие PROTOCOL_COLORS).
+// PREMIUM GOAL COMPLETION - изумрудная палитра для левой стороны конфетти.
+// Используется только в firePremiumCelebration() (правая сторона - синие PROTOCOL_COLORS).
 const EMERALD_CONFETTI_COLORS = [
   "#10b981", // основной emerald
   "#34d399", // светлый
@@ -721,7 +721,7 @@ title: ""
 /* ===== MULTI-GOAL SYSTEM ===== */
 var activeGoalIndex = 0;
 
-/** Returns live reference to goals in state-manager. Never cache — always call. */
+/** Returns live reference to goals in state-manager. Never cache - always call. */
 function getGoals() {
   var s = getState();
   if (!Array.isArray(s.goals)) { s.goals = []; }
@@ -949,7 +949,7 @@ const state = {
 
 /**
  * NEW: Robust amount parser shared between recalcPlan + assembleCashflowEvents.
- * Mirrors the parser used inside renderFlexModelSummary() — handles "10 000",
+ * Mirrors the parser used inside renderFlexModelSummary() - handles "10 000",
  * "10.000", "10000", "10,5", "10.5". Returns 0 if invalid.
  */
 function parseFlexAmount(v) {
@@ -1024,7 +1024,7 @@ function calculateNextOccurrence(startDate, frequency, monthDays) {
     return new Date(today.getFullYear(), today.getMonth() + 1, sorted[0]);
   }
 
-  // Default: monthly — same day-of-month as start, clamped to month length.
+  // Default: monthly - same day-of-month as start, clamped to month length.
   var origDay = start.getDate();
   var cursor = new Date(start);
   // Walk forward month by month until we pass today.
@@ -1043,7 +1043,7 @@ function calculateNextOccurrence(startDate, frequency, monthDays) {
  * Собирает FinancialEvent[] из legacy-источников (factHistory + skip из FinancialEvents).
  * Используется движком для расчёта балансов и проекций.
  *
- * NEW: логика fixed vs variable 11.05.2026 —
+ * NEW: логика fixed vs variable 11.05.2026 -
  *   • FIXED side  → inject a synthetic MONTHLY event sourced from the simple-model
  *     amount (s.income / s.expenses). This is read-only and matches what the user
  *     entered when opening the flexible model.
@@ -1061,7 +1061,7 @@ function assembleCashflowEvents() {
   var events = H.factHistoryToEvents(factHistory);
 
   // Pass through every user-created / persisted cashflow event verbatim.
-  // (No type-based filtering anymore — manual one-offs are independent of the
+  // (No type-based filtering anymore - manual one-offs are independent of the
   // fixed/variable toggle.)
   var fromState = s.cashflowEvents || [];
   for (var i = 0; i < fromState.length; i++) {
@@ -1086,7 +1086,7 @@ function assembleCashflowEvents() {
   } else {
     // VARIABLE: user-configured schedule.
     var incFreq = s.incomeFrequency || "monthly";
-    // CUSTOM SCHEDULE LOGIC — для freq=custom периодическое событие НЕ генерируем.
+    // CUSTOM SCHEDULE LOGIC - для freq=custom периодическое событие НЕ генерируем.
     // Вместо него в forecast уходят one-time INCOME-события из customScheduleEntries
     // (отдельный блок ниже). Это даёт «по среднему последних ручных вводов».
     if (incFreq === "custom") {
@@ -1136,7 +1136,7 @@ function assembleCashflowEvents() {
     }
   } else {
     var expFreq = s.expenseFrequency || "monthly";
-    // CUSTOM SCHEDULE LOGIC — зеркальная логика для расходов.
+    // CUSTOM SCHEDULE LOGIC - зеркальная логика для расходов.
     if (expFreq === "custom") {
       var csEntriesExp = Array.isArray(s.customScheduleEntries) ? s.customScheduleEntries : [];
       for (var cj = 0; cj < csEntriesExp.length; cj++) {
@@ -1289,18 +1289,18 @@ function computeGraphState() {
 // российских банков (Сбер, Тинькофф, Альфа, ВТБ).
 //
 // Поддерживаемые расчёты:
-//   • calculateAnnuityPayment(P, R, N)         — аннуитетный платёж
-//   • calculateRemainingTerm(balance, P, R)    — пересчёт срока при досрочке
-//   • calculateTotalInterest(P, payment, N)    — суммарная переплата
-//   • calculateCardGraceInfo(debt)             — статус льготного периода карты
-//   • getDebtStats(debt)                       — агрегированные UI-показатели
+//   • calculateAnnuityPayment(P, R, N)         - аннуитетный платёж
+//   • calculateRemainingTerm(balance, P, R)    - пересчёт срока при досрочке
+//   • calculateTotalInterest(P, payment, N)    - суммарная переплата
+//   • calculateCardGraceInfo(debt)             - статус льготного периода карты
+//   • getDebtStats(debt)                       - агрегированные UI-показатели
 // ════════════════════════════════════════════════════════════════════════════
 
 /**
  * REALISTIC DEBT LOGIC - Russian banks
  * Формула аннуитетного платежа (самая распространённая в РФ):
  *   monthly = P × [i × (1 + i)^n] / [(1 + i)^n - 1]
- * где P — сумма кредита, i — месячная ставка (годовая ÷ 12 ÷ 100), n — срок в месяцах.
+ * где P - сумма кредита, i - месячная ставка (годовая ÷ 12 ÷ 100), n - срок в месяцах.
  * При ставке 0 (беспроцентная рассрочка) возвращаем P / N.
  */
 function calculateAnnuityPayment(loanAmount, annualRatePct, termMonths) {
@@ -1319,7 +1319,7 @@ function calculateAnnuityPayment(loanAmount, annualRatePct, termMonths) {
  * REALISTIC DEBT LOGIC - Russian banks
  * Пересчёт оставшегося срока кредита после досрочного частичного погашения:
  *   n = -log(1 - i × balance / payment) / log(1 + i)
- * Возвращает число месяцев (округлённое вверх). Если payment <= balance × i —
+ * Возвращает число месяцев (округлённое вверх). Если payment <= balance × i -
  * банк не даст погасить (платёж меньше начисляемых процентов), возвращаем Infinity.
  */
 function calculateRemainingTerm(remainingBalance, monthlyPayment, annualRatePct) {
@@ -1355,9 +1355,9 @@ function calculateTotalInterest(loanAmount, monthlyPayment, termMonths) {
  *
  * Логика РФ-банков:
  *   • Период считается от lastFullPayDate (последнее полное закрытие долга);
- *     если карта новая (нет lastFullPayDate) — от startDate; иначе — от сегодня.
+ *     если карта новая (нет lastFullPayDate) - от startDate; иначе - от сегодня.
  *   • В течение gracePeriodDays процент не начисляется.
- *   • После окончания grace — минимальный платёж = minPaymentPercent от долга
+ *   • После окончания grace - минимальный платёж = minPaymentPercent от долга
  *     плюс начисленные проценты (annualRate / 12 от остатка).
  *
  * Возвращает: {
@@ -1418,7 +1418,7 @@ function calculateCardGraceInfo(debt) {
  *   interestRemaining,      // сколько процентов осталось переплатить
  *   estimatedPayoffMonths,  // прогнозный срок полного погашения с текущим платежом
  *   estimatedPayoffDate,    // ISO date предполагаемого финального платежа
- *   isCard, grace           // только для type=card — расширенная инфа по grace
+ *   isCard, grace           // только для type=card - расширенная инфа по grace
  * }
  */
 function getDebtStats(debt) {
@@ -1436,12 +1436,12 @@ function getDebtStats(debt) {
   var totalInterest = calculateTotalInterest(loanAmount, monthly, term);
 
   // Доля процентов в остатке: пропорционально остатку основного долга.
-  // Это приближённая оценка — точный расчёт требует знания графика погашения.
+  // Это приближённая оценка - точный расчёт требует знания графика погашения.
   var interestRemaining = loanAmount > 0
     ? Math.round(totalInterest * (remaining / loanAmount))
     : 0;
 
-  // Прогнозный срок: для кредитов — пересчёт по формуле, для остального — деление.
+  // Прогнозный срок: для кредитов - пересчёт по формуле, для остального - деление.
   var estimatedMonths;
   if (isCard) {
     // Для карты используем минимальный платёж, если ежемесячный не задан.
@@ -1483,13 +1483,13 @@ function getDebtMonthlyTotal() {
   var total = 0;
   debts.forEach(function (d) {
     if (d.isActive === false) return;
-    // REALISTIC DEBT LOGIC - Russian banks — для кредитных карт в льготном
+    // REALISTIC DEBT LOGIC - Russian banks - для кредитных карт в льготном
     // периоде ежемесячный платёж = 0 (банк не требует выплат, проценты не
-    // начисляются). После окончания grace — минимальный платёж.
+    // начисляются). После окончания grace - минимальный платёж.
     if (d.type === "card") {
       var grace = calculateCardGraceInfo(d);
-      if (grace.inGrace) return; // в льготном периоде — не учитываем
-      // Если monthlyPayment задан вручную — используем его, иначе минимальный.
+      if (grace.inGrace) return; // в льготном периоде - не учитываем
+      // Если monthlyPayment задан вручную - используем его, иначе минимальный.
       var cardPay = (Number(d.monthlyPayment) || 0) > 0
         ? Number(d.monthlyPayment)
         : grace.minPayment;
@@ -1548,7 +1548,7 @@ function applyDebtRepayment(amount) {
     if (debt.remainingAmount <= 0) {
       debt.remainingAmount = 0;
       debt.isActive = false;
-      // REALISTIC DEBT LOGIC - Russian banks — при полном погашении карты
+      // REALISTIC DEBT LOGIC - Russian banks - при полном погашении карты
       // фиксируем дату закрытия как точку отсчёта нового grace-периода
       // (если пользователь снова воспользуется лимитом).
       if (debt.type === "card") {
@@ -1695,7 +1695,7 @@ function getCurrentDebtObligations() {
     var remaining = Number(d.remainingAmount) || 0;
     if (remaining <= 0) return;
 
-    // REALISTIC DEBT LOGIC - Russian banks — для карт в льготном периоде
+    // REALISTIC DEBT LOGIC - Russian banks - для карт в льготном периоде
     // обязательств нет; после grace берём minPayment, если monthlyPayment не задан.
     var monthly;
     if (d.type === "card") {
@@ -1765,7 +1765,7 @@ function applyAutoDebtRepayment(amount) {
     if (ob.debt.remainingAmount <= 0) {
       ob.debt.remainingAmount = 0;
       ob.debt.isActive = false;
-      // REALISTIC DEBT LOGIC - Russian banks — отметка полного закрытия карты
+      // REALISTIC DEBT LOGIC - Russian banks - отметка полного закрытия карты
       // для перерасчёта grace-периода при последующих покупках.
       if (ob.debt.type === "card") {
         ob.debt.lastFullPayDate = new Date().toISOString().slice(0, 10);
@@ -1791,7 +1791,7 @@ function recalcPlan() {
     var incomeVal = parseNumber(incomeInput?.value || "0");
     var expensesVal = parseNumber(expensesInput?.value || "0") + getDebtMonthlyTotal();
 
-    // NEW: логика fixed vs variable 11.05.2026 — no override here.
+    // NEW: логика fixed vs variable 11.05.2026 - no override here.
     // • In FIXED mode the simple-model fields (incomeInput / expensesInput) are the single
     //   source of truth (already parsed into incomeVal/expensesVal above).
     // • In VARIABLE mode the engine runs in "cashflow" model_type and derives the forecast
@@ -1883,13 +1883,13 @@ function recalcPlan() {
 /**
  * Сохраняет все данные приложения через storage layer.
  * Синхронизирует глобальные переменные → appState → storage.
- * localStorage — мгновенно. Supabase — через debounce (1 с).
+ * localStorage - мгновенно. Supabase - через debounce (1 с).
  */
 var _supabaseSaveTimer = null;
 var SUPABASE_SAVE_DELAY = 1000;
 
 function saveFullState() {
-  // OPTIMIZATION: DOM cache (saveFullState вызывается часто — после каждого изменения).
+  // OPTIMIZATION: DOM cache (saveFullState вызывается часто - после каждого изменения).
   var fixedIncomeEl = getEl("fixedIncomeInput");
   var fixedExpenseEl = getEl("fixedExpenseInput");
   syncGoalsFromPrimary();
@@ -1932,7 +1932,7 @@ function saveFullState() {
     }, SUPABASE_SAVE_DELAY);
   }
 
-  // CLOUD STORAGE SYNC — debounced push в Telegram CloudStorage.
+  // CLOUD STORAGE SYNC - debounced push в Telegram CloudStorage.
   // Кросс-устройственный sync без бэкенда: те же данные становятся
   // доступны на другом устройстве пользователя через Telegram.
   // scheduleSync сам обрабатывает available()-check и debounce.
@@ -2027,7 +2027,7 @@ function loadFullState() {
         openScreen(targetScreen, buttons[navIdx]);
         if (loader) loader.classList.add("hidden");
 
-        // Навбар и стили кнопок — сразу, без rAF, чтобы не пропадал при восстановлении на любой вкладке
+        // Навбар и стили кнопок - сразу, без rAF, чтобы не пропадал при восстановлении на любой вкладке
         lockTabs(false);
         showBottomNav();
         if (buttons[navIdx]) {
@@ -2148,7 +2148,7 @@ loadFullState();
     console.log("[Sync] Remote timestamp:", remoteTimestamp || "(none)");
 
     if (!localState) {
-      console.log("[Sync] No local state — applying remote state");
+      console.log("[Sync] No local state - applying remote state");
       applyState(migrateState(remote.data));
       saveState();
       loadFullState();
@@ -2156,7 +2156,7 @@ loadFullState();
     }
 
     if (!remoteTimestamp) {
-      console.log("[Sync] No valid remote timestamp — keeping local state");
+      console.log("[Sync] No valid remote timestamp - keeping local state");
       return;
     }
 
@@ -2164,12 +2164,12 @@ loadFullState();
     var remoteDate = new Date(remoteTimestamp);
 
     if (isNaN(remoteDate.getTime())) {
-      console.log("[Sync] Invalid remote timestamp — keeping local state");
+      console.log("[Sync] Invalid remote timestamp - keeping local state");
       return;
     }
 
     if (!localDate || isNaN(localDate.getTime())) {
-      console.log("[Sync] Invalid or missing local timestamp — applying remote state");
+      console.log("[Sync] Invalid or missing local timestamp - applying remote state");
       applyState(migrateState(remote.data));
       saveState();
       loadFullState();
@@ -2177,7 +2177,7 @@ loadFullState();
     }
 
     if (remoteDate.getTime() > localDate.getTime()) {
-      console.log("[Sync] Remote is newer — applying remote state");
+      console.log("[Sync] Remote is newer - applying remote state");
       applyState(migrateState(remote.data));
       saveState();
       loadFullState();
@@ -2190,13 +2190,13 @@ loadFullState();
   }
 })();
 
-// CLOUD STORAGE SYNC — старт-pull из Telegram CloudStorage.
+// CLOUD STORAGE SYNC - старт-pull из Telegram CloudStorage.
 // ─────────────────────────────────────────────────────────────────────────────
 // На старте сравниваем cloud.lastSavedAt с local.lastSavedAt. Если cloud
-// новее (пользователь работал с другого устройства) — применяем cloud,
-// перезаписываем localStorage и UI. Если local новее или равен — оставляем
+// новее (пользователь работал с другого устройства) - применяем cloud,
+// перезаписываем localStorage и UI. Если local новее или равен - оставляем
 // local и push'им local в cloud в фоне (чтобы синхронизировать обратное
-// направление). Конфликтов нет — побеждает более свежий timestamp.
+// направление). Конфликтов нет - побеждает более свежий timestamp.
 //
 // pull инициализируется ПОСЛЕ Telegram WebApp.ready (когда CloudStorage
 // гарантированно доступен) и ПОСЛЕ loadFullState (когда appState уже
@@ -2205,7 +2205,7 @@ loadFullState();
   function tryPull() {
     if (!window.CloudSync) return;
     if (!window.CloudSync.available()) {
-      console.log("[CloudSync] CloudStorage недоступен — пропускаем pull");
+      console.log("[CloudSync] CloudStorage недоступен - пропускаем pull");
       return;
     }
     window.CloudSync.pullFromCloud().then(function (applied) {
@@ -2227,10 +2227,10 @@ loadFullState();
 // PREMIUM ACCESS CONTROL + ADMIN ONLY: community stats block
 // ─────────────────────────────────────────────────────────────────────────────
 // Синхронизация user-level access-флагов с таблицей users в Supabase:
-//   • is_premium            — разблокирует 5 премиум-функций (Изменить темп,
+//   • is_premium            - разблокирует 5 премиум-функций (Изменить темп,
 //                             Долги, Гибкая модель, Расширенные настройки,
 //                             Статистика счёта).
-//   • show_community_stats  — админский флаг показа блока «Статистика
+//   • show_community_stats  - админский флаг показа блока «Статистика
 //                             сообщества» в профиле (default false; включается
 //                             вручную владельцем / администратором в БД).
 //
@@ -2239,9 +2239,9 @@ loadFullState();
 (function syncUserAccessFlagsFromDB() {
   // SUBSCRIPTION MODEL: вычисляет эффективный isPremium как
   // (server_is_premium && (premium_until === null || premium_until > now())).
-  // Если БД говорит is_premium=true, но premium_until прошёл —
+  // Если БД говорит is_premium=true, но premium_until прошёл -
   // подписка считается истёкшей: локально ставим false и пишем false в БД
-  // (self-healing — БД сама приведёт себя в порядок при следующем открытии).
+  // (self-healing - БД сама приведёт себя в порядок при следующем открытии).
   function computeEffectivePremium(flags) {
     if (!flags || flags.isPremium !== true) return false;
     if (!flags.premiumUntil) return true; // legacy
@@ -2267,7 +2267,7 @@ loadFullState();
 
       var effectivePremium = computeEffectivePremium(flags);
 
-      // Self-healing: если в БД is_premium=true, но premium_until прошёл —
+      // Self-healing: если в БД is_premium=true, но premium_until прошёл -
       // обновляем БД через setUserPremium(false) (fire-and-forget).
       if (flags.isPremium === true && !effectivePremium && flags.premiumUntil) {
         console.log("[AccessFlags] подписка истекла (premium_until=" + flags.premiumUntil
@@ -2302,26 +2302,26 @@ loadFullState();
       if (typeof saveFullState === "function") saveFullState();
 
       // Перерисовываем premium-зависимый UI только если поменялся именно
-      // premium-флаг — иначе обходимся без лишних DOM-операций.
+      // premium-флаг - иначе обходимся без лишних DOM-операций.
       if (premiumChanged) {
         if (typeof window._syncPremiumUI === "function") window._syncPremiumUI();
         if (typeof renderAccountBackCards === "function") renderAccountBackCards();
       }
-      // Блок community stats обновляем всегда — он зависит от showCommunityStats.
+      // Блок community stats обновляем всегда - он зависит от showCommunityStats.
       if (typeof refreshProfileStats === "function") refreshProfileStats();
-      // SUBSCRIPTION MODEL: status-block в премиум-модалке — обновляем всегда,
+      // SUBSCRIPTION MODEL: status-block в премиум-модалке - обновляем всегда,
       // т.к. может поменяться premium_until или auto_renew.
       if (typeof window._refreshPremiumStatusBlock === "function") {
         window._refreshPremiumStatusBlock();
       }
-      // Statschanged используется только для логирования — UI обновляется выше всегда.
+      // Statschanged используется только для логирования - UI обновляется выше всегда.
       void statsChanged;
 
-      // SUBSCRIPTION MODEL — три DM-триггера, все условия проверяются server-side
+      // SUBSCRIPTION MODEL - три DM-триггера, все условия проверяются server-side
       // (дедупликация через renewal_reminder_at / premium_expired_notice_at).
       //
-      //   (a) Reminder за 3 дня до окончания — если подписка активна и кончается скоро.
-      //   (b) Expired notice — если подписка была, но истекла. Клиент дёргает endpoint;
+      //   (a) Reminder за 3 дня до окончания - если подписка активна и кончается скоро.
+      //   (b) Expired notice - если подписка была, но истекла. Клиент дёргает endpoint;
       //       backend проверяет premium_expired_notice_at и отправит только один раз
       //       за подписочный период.
       if (flags.premiumUntil) {
@@ -2337,7 +2337,7 @@ loadFullState();
           }
 
           // (b) Подписка истекла (effectivePremium=false и premiumUntil в прошлом).
-          // Backend сам решит, был ли уже отправлен expired-notice — мы только дёргаем.
+          // Backend сам решит, был ли уже отправлен expired-notice - мы только дёргаем.
           if (!effectivePremium && msToExpiry <= 0) {
             if (typeof window.triggerPremiumExpiredNotice === "function") {
               window.triggerPremiumExpiredNotice().catch(function () { /* graceful */ });
@@ -2364,7 +2364,7 @@ function repairAdviceScreenIfStuck() {
   const card = document.getElementById("adviceCard");
   if (!card || !card.querySelector("#fakeScreen")) return;
   if (loader) loader.classList.add("hidden");
-  // SPLASH VIDEO BACKGROUND — на случай зависшего сплеша при возврате на экран.
+  // SPLASH VIDEO BACKGROUND - на случай зависшего сплеша при возврате на экран.
   if (typeof hideSplashVideo === "function") hideSplashVideo();
   try {
     renderProtocolAdviceGraph();
@@ -2383,7 +2383,7 @@ function repairAdviceScreenIfStuck() {
 // Соответствие id экрана и индекса кнопки в навбаре
 const SCREEN_TO_NAV_INDEX = { "screen-calc": 0, "screen-advice": 1, "screen-accounts": 2, "screen-goals": 3, "screen-ai": 4 };
 
-// После повторного входа — показываем навбар, синхронизируем белый круг с открытой вкладкой, показываем зелёную кнопку на «Цели»
+// После повторного входа - показываем навбар, синхронизируем белый круг с открытой вкладкой, показываем зелёную кнопку на «Цели»
 function ensureNavVisibleAfterRestore() {
   if (!isInitialized || !bottomNav) return;
   const activeScreen = document.querySelector(".screen.active");
@@ -2399,13 +2399,13 @@ function ensureNavVisibleAfterRestore() {
     buttons[navIdx].classList.add("active");
     moveIndicator(buttons[navIdx]);
   }
-  // Зелёная кнопка расширенных настроек — показывать только на вкладке «Цели»
+  // Зелёная кнопка расширенных настроек - показывать только на вкладке «Цели»
   if (advancedBtn) {
     advancedBtn.style.display = "none";
   }
 }
 
-// После загрузки страницы — отложенная проверка (Telegram WebView может отрисовать DOM с задержкой)
+// После загрузки страницы - отложенная проверка (Telegram WebView может отрисовать DOM с задержкой)
 setTimeout(function () {
   repairAdviceScreenIfStuck();
   ensureNavVisibleAfterRestore();
@@ -2471,7 +2471,7 @@ function showBottomNav() {
 }
 
 /* ============================================================
-   ProtoSheet — Unified Sheet Helpers
+   ProtoSheet - Unified Sheet Helpers
    ============================================================ */
 
 window.ProtoSheet = {
@@ -2584,7 +2584,7 @@ indicator.style.opacity = "0";
 }
 clearFactInputError();
 
-// туман только на экране «Расширенные настройки» — при любом другом экране снимаем
+// туман только на экране «Расширенные настройки» - при любом другом экране снимаем
 if (name !== "advanced") {
   document.body.classList.remove("advanced-active");
 }
@@ -2594,11 +2594,11 @@ if (advancedBtn) {
   advancedBtn.style.display = "none";
 }
 
-// Если перешли на вкладку графика, а там ещё «загрузка» (например после восстановления на Счета/Цели) — сразу рендерим график
+// Если перешли на вкладку графика, а там ещё «загрузка» (например после восстановления на Счета/Цели) - сразу рендерим график
 if (name === "advice" && isInitialized && chosenPlan && lastCalc?.ok && adviceCard && adviceCard.querySelector("#fakeScreen")) {
   try {
     if (loader) loader.classList.add("hidden");
-    // SPLASH VIDEO BACKGROUND — гарантированно скрываем сплеш при ручном возврате.
+    // SPLASH VIDEO BACKGROUND - гарантированно скрываем сплеш при ручном возврате.
     if (typeof hideSplashVideo === "function") hideSplashVideo();
     renderProtocolAdviceGraph();
     if (factHistory.length) runBrain();
@@ -2617,13 +2617,13 @@ if (navScreens.includes(name) && isInitialized) {
 
 if (name === "advice") syncFlexibleUI();
 
-// NEW: Full goal creation flow in Protocol tab — синхронизируем empty-state на Protocol
+// NEW: Full goal creation flow in Protocol tab - синхронизируем empty-state на Protocol
 if (name === "advice" && typeof window._syncProtocolEmptyState === "function") {
   try { window._syncProtocolEmptyState(); } catch (e) { /* noop */ }
 }
 
-// FIX: goal completion UI — обновляем app-lock после смены экрана
-//   (на #screen-new-goal лок снимается; на любом другом экране при пустой цели — включается)
+// FIX: goal completion UI - обновляем app-lock после смены экрана
+//   (на #screen-new-goal лок снимается; на любом другом экране при пустой цели - включается)
 if (typeof window._updateAppLock === "function") {
   try { window._updateAppLock(name); } catch (e) { /* noop */ }
 }
@@ -2982,7 +2982,7 @@ return d;
 }
 
 function renderProtocolAdviceGraph() {
-  // NEW: Full goal creation flow in Protocol tab — если primary goal пуст,
+  // NEW: Full goal creation flow in Protocol tab - если primary goal пуст,
   // показываем empty-card вместо графика и выходим (не перерисовываем adviceCard,
   // чтобы избежать "мерцания" пустого графика).
   if (typeof window._syncProtocolEmptyState === "function" && window._syncProtocolEmptyState()) {
@@ -3141,14 +3141,14 @@ style="width:52px;height:52px;border-radius:50%">
       const goalTotal = parseNumber(goalInput.value || "0");
       if (!goalCompleted && goalTotal > 0 && accounts.main >= goalTotal) {
         goalCompleted = true;
-        // GOAL COMPLETION FEATURE — снапшот данных ДО любых мутаций состояния
+        // GOAL COMPLETION FEATURE - снапшот данных ДО любых мутаций состояния
         // (checkGoalCompletion ниже пропускает primary, но накоплено меняется в recalcPlan).
         var goalCompletionSnapshot = {
           name: goalMeta.title || t("misc.defaultGoalTitle"),
           amount: goalTotal,
           saved: accounts.main
         };
-        // PREMIUM GOAL COMPLETION — конфетти теперь запускается ВНУТРИ модалки,
+        // PREMIUM GOAL COMPLETION - конфетти теперь запускается ВНУТРИ модалки,
         // синхронно с её открытием (haptic + asymmetric burst). Здесь только
         // ставим в очередь показ модалки.
         setTimeout(function () { showGoalCompletionModal(goalCompletionSnapshot); }, 350);
@@ -3197,7 +3197,7 @@ style="width:52px;height:52px;border-radius:50%">
 
 // ─── SPLASH VIDEO BACKGROUND ───────────────────────────────────
 // Хелперы для управления полноэкранным видео-сплешем во время
-// фейк-загрузки protocolFlow(). Видео — `./assets/videos/snakePloop.mp4`,
+// фейк-загрузки protocolFlow(). Видео - `./assets/videos/snakePloop.mp4`,
 // autoplay/loop/muted (обязательное условие для автозапуска в браузерах).
 // При сбое загрузки видео остаётся чёрный фон, текст статуса виден.
 function showSplashVideo(initialText) {
@@ -3207,10 +3207,10 @@ function showSplashVideo(initialText) {
   setSplashVideoText(initialText || "");
   overlay.classList.remove("hidden", "fading");
 
-  // SETTINGS — пользователь может отключить видео при загрузке
+  // SETTINGS - пользователь может отключить видео при загрузке
   // (Настройки → Интерфейс → «Отключить видео при загрузке»).
   // В этом случае показываем только чёрный overlay без воспроизведения.
-  // Сам overlay остаётся виден — он даёт нужный «полноэкранный» эффект
+  // Сам overlay остаётся виден - он даёт нужный «полноэкранный» эффект
   // фейк-загрузки, просто без видео-фона.
   var s = (typeof getState === "function") ? (getState().settings || {})
         : ((window.appState && window.appState.settings) || {});
@@ -3218,7 +3218,7 @@ function showSplashVideo(initialText) {
 
   if (videoEl) {
     if (disableVideo) {
-      // Скрываем сам <video>, останавливаем воспроизведение — экономим CPU/батарею.
+      // Скрываем сам <video>, останавливаем воспроизведение - экономим CPU/батарею.
       try { videoEl.pause(); } catch (_e) { /* noop */ }
       videoEl.style.display = "none";
       return;
@@ -3230,7 +3230,7 @@ function showSplashVideo(initialText) {
       videoEl.muted = true; // дублируем для надёжного autoplay
       var p = videoEl.play();
       if (p && typeof p.then === "function") {
-        p.catch(function () { /* autoplay блокирован — фон останется чёрным */ });
+        p.catch(function () { /* autoplay блокирован - фон останется чёрным */ });
       }
     } catch (e) { /* noop */ }
   }
@@ -3292,7 +3292,7 @@ hideBottomNav();
 adviceCard.innerHTML = "";
 loader.classList.remove("hidden");
 
-// SPLASH VIDEO BACKGROUND — полноэкранный видео-сплеш поверх фейк-загрузки.
+// SPLASH VIDEO BACKGROUND - полноэкранный видео-сплеш поверх фейк-загрузки.
 // adviceCard.innerText продолжаем обновлять (он будет под overlay и сразу
 // проявится при fade-out), а текст также дублируем в .splash-video__overlay-text.
 showSplashVideo(t("flow.analyzing"));
@@ -3323,7 +3323,7 @@ setSplashVideoText(t("flow.done"));
 
 setTimeout(() => {
 loader.classList.add("hidden");
-// SPLASH VIDEO BACKGROUND — плавно скрываем сплеш и одновременно рендерим график.
+// SPLASH VIDEO BACKGROUND - плавно скрываем сплеш и одновременно рендерим график.
 hideSplashVideo();
 renderProtocolAdviceGraph();
 saveFullState();
@@ -3385,12 +3385,12 @@ function performFullReset() {
 }
 
 confirmYes.onclick = () => {
-  // NEW: Full reset button in Profile — после performFullReset() явно синхронизируем
+  // NEW: Full reset button in Profile - после performFullReset() явно синхронизируем
   //      пустое состояние с Supabase через saveFullState(). Без этого Supabase сохранял бы
   //      старые данные до следующего изменения.
   performFullReset();
   try {
-    // FIX: soft invisible blocking after goal completion — сбрасываем лок после полного сброса
+    // FIX: soft invisible blocking after goal completion - сбрасываем лок после полного сброса
     //      (goal обнулён через clearState, поэтому лок пересчитается как false).
     if (typeof window._updateAppLock === "function") window._updateAppLock();
     if (typeof saveFullState === "function") saveFullState();
@@ -3433,10 +3433,10 @@ if (profileBtn) {
     bottomNav.style.pointerEvents = "none";
     if (advancedBtn) advancedBtn.style.display = "none";
     moveProfileToActiveHeader();
-    // STATISTICS COLLECTION — обновляем счётчики premium/free каждый раз
+    // STATISTICS COLLECTION - обновляем счётчики premium/free каждый раз
     // при заходе в профиль (с кэшем на 60 секунд внутри функции).
     if (typeof refreshProfileStats === "function") refreshProfileStats();
-    // PREMIUM PROFILE BADGE — обновляем видимость изумрудной плашки
+    // PREMIUM PROFILE BADGE - обновляем видимость изумрудной плашки
     // «Premium» рядом с именем при каждом открытии профиля. Это страхует
     // от случая, когда DB-синк ещё не отработал к моменту первого захода.
     if (typeof window._refreshProfilePremiumBadge === "function") {
@@ -3445,15 +3445,15 @@ if (profileBtn) {
   };
 }
 
-// STATISTICS COLLECTION — рендер цифр в блок #profileStats.
-// Кэш на 60с — не дёргаем БД на каждый заход в профиль.
+// STATISTICS COLLECTION - рендер цифр в блок #profileStats.
+// Кэш на 60с - не дёргаем БД на каждый заход в профиль.
 var _profileStatsCache = { ts: 0, data: null };
 
-// COMMUNITY STATS — форматирует число с разделителями тысяч в соответствии
+// COMMUNITY STATS - форматирует число с разделителями тысяч в соответствии
 // с пользовательской настройкой (settings.numberFormat: "spaces" | "dots").
-// null/undefined → «—» (значение не загружено или БД-таблица не создана).
+// null/undefined → «-» (значение не загружено или БД-таблица не создана).
 function _formatStatsNumber(n) {
-  if (n == null || isNaN(n)) return "—";
+  if (n == null || isNaN(n)) return "-";
   var s = String(Math.round(n));
   var sep = (window._protocolNumberFormat === "dots") ? "." : " ";
   // Регулярка вставляет разделитель между каждыми 3-мя цифрами справа.
@@ -3465,7 +3465,7 @@ function refreshProfileStats() {
   var elPremium         = document.getElementById("profileStatsPremium");
   var elFree            = document.getElementById("profileStatsFree");
   var elTotal           = document.getElementById("profileStatsTotal");
-  // COMMUNITY STATS — новые поля.
+  // COMMUNITY STATS - новые поля.
   var elStarsTotal      = document.getElementById("profileStatsStarsTotal");
   var elStarsMonth      = document.getElementById("profileStatsStarsMonth");
   var elPurchases       = document.getElementById("profileStatsPurchases");
@@ -3473,7 +3473,7 @@ function refreshProfileStats() {
 
   if (!elPremium || !elFree || !elTotal) return;
 
-  // ADMIN ONLY: community stats block — блок «Статистика сообщества» виден
+  // ADMIN ONLY: community stats block - блок «Статистика сообщества» виден
   // только пользователям с users.show_community_stats=true (default false).
   // Этот флаг управляется вручную владельцем приложения и не связан
   // с is_premium / премиум-подпиской.
@@ -3486,26 +3486,26 @@ function refreshProfileStats() {
     elPremium.textContent = _formatStatsNumber(stats.premiumCount);
     elFree.textContent    = _formatStatsNumber(stats.freeCount);
     elTotal.textContent   = _formatStatsNumber(stats.total);
-    // COMMUNITY STATS — дорисовываем новые метрики (значения могут быть null,
+    // COMMUNITY STATS - дорисовываем новые метрики (значения могут быть null,
     // если соответствующая БД-таблица ещё не создана; _formatStatsNumber
-    // в этом случае рисует «—»).
+    // в этом случае рисует «-»).
     if (elStarsTotal)  elStarsTotal.textContent  = _formatStatsNumber(stats.starsEarnedTotal);
     if (elStarsMonth)  elStarsMonth.textContent  = _formatStatsNumber(stats.starsEarnedLastMonth);
     if (elPurchases)   elPurchases.textContent   = _formatStatsNumber(stats.premiumPurchases);
     if (elNewUsers30d) elNewUsers30d.textContent = _formatStatsNumber(stats.newUsers30d);
   }
 
-  // Сразу показываем кэш если он есть и свежий — UI не мигает «—».
+  // Сразу показываем кэш если он есть и свежий - UI не мигает «-».
   var now = Date.now();
   if (_profileStatsCache.data && (now - _profileStatsCache.ts < 60000)) {
     paint(_profileStatsCache.data);
     return;
   }
 
-  // COMMUNITY STATS — основной getter, объединяет пользователей и Stars.
+  // COMMUNITY STATS - основной getter, объединяет пользователей и Stars.
   // Fallback на legacy getPremiumStats() если новой функции нет (на случай
   // частичного деплоя). Legacy возвращает только {premiumCount, freeCount,
-  // total} → новые поля останутся «—», что нормально для graceful degradation.
+  // total} → новые поля останутся «-», что нормально для graceful degradation.
   var fetcher = (typeof window.getCommunityStats === "function")
     ? window.getCommunityStats
     : window.getPremiumStats;
@@ -3648,6 +3648,11 @@ if (goalHistoryBack) {
       applyLanguageToDOM();
       updateDynamicHints();
       if (typeof renderFlexModelSummary === "function") renderFlexModelSummary();
+      try { if (typeof updatePlanHeader === "function") updatePlanHeader(); } catch (e) {}
+      try { if (typeof runBrain === "function") runBrain(); } catch (e) {}
+      try { if (typeof renderGoals === "function") renderGoals(); } catch (e) {}
+      try { if (typeof renderAccountsUI === "function") renderAccountsUI(); } catch (e) {}
+      try { if (typeof renderCustomSchedule === "function") renderCustomSchedule(); } catch (e) {}
     }
 
     if (key === "displayCurrencyEnabled" || key === "displayCurrency") {
@@ -3749,13 +3754,13 @@ if (goalHistoryBack) {
   toggles.depositReminder = initToggle("settingsDepositReminder", "depositReminderEnabled");
   toggles.debtReminder = initToggle("settingsDebtReminder", "debtReminderEnabled");
   toggles.displayCurrencyEnabled = initToggle("settingsDisplayCurrencyEnabled", "displayCurrencyEnabled");
-  // LOADING VIDEO TOGGLE — пользователь может одной галочкой выключить
+  // LOADING VIDEO TOGGLE - пользователь может одной галочкой выключить
   // ВСЕ фоновые видео в приложении:
   //   • видео-фон на экране фейк-загрузки (читается в showSplashVideo())
   //   • зацикленные видео в слайдах премиум-модалки (читается в
   //     _arePremiumVideosDisabled() / _applyPremiumVideosVisibility())
   // Видимая надпись настройки переименована в «Отключить загрузку видео»,
-  // подсказка тоже обновлена — см. i18n key settings.disableLoadingVideo.
+  // подсказка тоже обновлена - см. i18n key settings.disableLoadingVideo.
   // initToggle сам подвяжет change handler и saveFullState() при изменении.
   toggles.disableLoadingVideo = initToggle("settingsDisableLoadingVideo", "disableLoadingVideo");
 
@@ -3798,7 +3803,7 @@ if (goalHistoryBack) {
     });
   }
 
-  // HELP & ONBOARDING — перезапуск всех подсказок (основной тур + premium-туры).
+  // HELP & ONBOARDING - перезапуск всех подсказок (основной тур + premium-туры).
   // Сбрасывает оба флага в state, сохраняет, закрывает экран настроек и
   // запускает startOnboarding() с небольшой задержкой под screen-transition.
   var restartOnbBtn = document.getElementById("settingsRestartOnboarding");
@@ -3806,7 +3811,7 @@ if (goalHistoryBack) {
     restartOnbBtn.addEventListener("click", function () {
       if (typeof haptic === "function") { try { haptic("light"); } catch (_e) {} }
       try {
-        // Сбрасываем флаги. Используем updateState() для immutable update'а —
+        // Сбрасываем флаги. Используем updateState() для immutable update'а -
         // он автоматически дёрнет saveState() через хук в state-manager.
         if (typeof updateState === "function") {
           updateState({
@@ -3817,9 +3822,9 @@ if (goalHistoryBack) {
           window.appState.onboardingCompleted = false;
           window.appState.premiumOnboardingCompleted = {};
         }
-        // Дублируем saveFullState() — он гарантирует push в storage layer
+        // Дублируем saveFullState() - он гарантирует push в storage layer
         // (localStorage + Supabase + Cloud Storage). Безопасно вызывать
-        // даже если updateState уже сохранил — saveFullState идемпотентна.
+        // даже если updateState уже сохранил - saveFullState идемпотентна.
         if (typeof saveFullState === "function") saveFullState();
       } catch (_e) { /* noop */ }
 
@@ -3839,7 +3844,7 @@ if (goalHistoryBack) {
         if (isInitialized && typeof showBottomNav === "function") showBottomNav();
       } catch (_e) { /* noop */ }
 
-      // Задержка 400ms — даём screen-transition + iOS-keyboard scroll-up
+      // Задержка 400ms - даём screen-transition + iOS-keyboard scroll-up
       // завершиться, чтобы tour измерил getBoundingClientRect по итоговому
       // layout'у. force:true обходит и defensive-фильтр _userHasMeaningfulData
       // (у пользователя точно есть данные, раз он жмёт «перезапустить»),
@@ -3900,7 +3905,7 @@ function renderGoalHistory() {
   completed.forEach(function (g, _historyIdx) {
     var card = document.createElement("div");
     card.className = "goal-history-card";
-    // GOAL COMPLETION FEATURE — data-attr для делегированного click handler.
+    // GOAL COMPLETION FEATURE - data-attr для делегированного click handler.
     card.setAttribute("data-history-idx", String(_historyIdx));
 
     var dateStr = "";
@@ -3933,7 +3938,7 @@ function checkGoalCompletion() {
   var completed = getState().completedGoals || [];
   var changed = false;
 
-  // GOAL COMPLETION FEATURE — primary goal (i=0) теперь обрабатывается
+  // GOAL COMPLETION FEATURE - primary goal (i=0) теперь обрабатывается
   // через showGoalCompletionModal() → confirmGoalCompletion(). Здесь его пропускаем,
   // чтобы не было race-условия с auto-archive до показа модалки пользователю.
   for (var i = goals.length - 1; i >= 1; i--) {
@@ -4396,7 +4401,7 @@ function showBrainMessage(text) {
  * Всплывающая toast-подсказка сверху экрана.
  * @param {string} message - Текст сообщения
  * @param {string} type - "error" | "success" | "info"
- * @param {object} opts - { duration, screenScope } duration в мс; screenScope="debts" — toast внутри экрана долгов (не виден на других вкладках, при возврате остаётся до конца таймера)
+ * @param {object} opts - { duration, screenScope } duration в мс; screenScope="debts" - toast внутри экрана долгов (не виден на других вкладках, при возврате остаётся до конца таймера)
  */
 function showToast(message, type, opts) {
   type = type === "error" || type === "success" || type === "info" ? type : "info";
@@ -4574,7 +4579,7 @@ function renderMonthlyStatus() {
  */
 function renderAccountsUI() {
 console.log("chosenPlan:", chosenPlan);
-// OPTIMIZATION: DOM cache — renderAccountsUI вызывается на каждый recalcPlan.
+// OPTIMIZATION: DOM cache - renderAccountsUI вызывается на каждый recalcPlan.
 const mainEl = getEl("mainAmount");
 const reserveEl = getEl("reserveAmount");
 const mainTitleEl = getEl("mainAccountTitle");
@@ -4645,7 +4650,7 @@ function updateGoalVerdict(text) {
 }
 
 function renderGoals() {
-// GOAL COMPLETION FEATURE — empty-state toggle (выполняется ДО проверки lastCalc.ok).
+// GOAL COMPLETION FEATURE - empty-state toggle (выполняется ДО проверки lastCalc.ok).
 // После очистки primary цели lastCalc может остаться в "ok" со старыми данными, либо
 // не пересчитываться (canRecalc=false при goalVal=0). В любом случае empty-state
 // должен корректно показаться/скрыться.
@@ -4673,7 +4678,7 @@ if (!lastCalc.ok) return;
 
 var goal = goals[idx] || null;
 
-// OPTIMIZATION: DOM cache — renderGoals вызывается на каждый recalcPlan/swipe.
+// OPTIMIZATION: DOM cache - renderGoals вызывается на каждый recalcPlan/swipe.
 var titleEl = getEl("goalTitle");
 var totalEl = getEl("goalTotal");
 var savedEl = getEl("goalSaved");
@@ -4695,7 +4700,7 @@ if (idx === 0) {
   saved = goal.saved || 0;
   total = goal.amount || 0;
 } else {
-  title = "—";
+  title = "-";
   saved = 0;
   total = 0;
 }
@@ -4813,7 +4818,7 @@ function renderGoalSwipeIndicator() {
 }
 
 function fireCelebration() {
-// haptic — аккуратно
+// haptic - аккуратно
 Telegram.WebApp.HapticFeedback.notificationOccurred("success");
 
 if (!isAnimationsEnabled()) return;
@@ -4858,8 +4863,8 @@ requestAnimationFrame(frame);
 })();
 }
 
-// PREMIUM GOAL COMPLETION — асимметричные конфетти для модалки завершения цели.
-// Слева — изумрудная палитра (EMERALD_CONFETTI_COLORS), справа — синяя (PROTOCOL_COLORS).
+// PREMIUM GOAL COMPLETION - асимметричные конфетти для модалки завершения цели.
+// Слева - изумрудная палитра (EMERALD_CONFETTI_COLORS), справа - синяя (PROTOCOL_COLORS).
 // Дополнительно: initial burst (60 частиц с каждой стороны) для "wow"-эффекта,
 // затем sustained shower 2.6s по 8 частиц/кадр. Mix shapes + scalar 1.1 + ticks 200
 // дают премиум-плотность без перегруза CPU. Идемпотентно по haptic-feedback.
@@ -4896,7 +4901,7 @@ function firePremiumCelebration() {
     colors: PROTOCOL_COLORS
   }));
 
-  // ── Sustained shower (2.6s — мягкий "дождь" частиц) ──
+  // ── Sustained shower (2.6s - мягкий "дождь" частиц) ──
   var duration = 2600;
   var end = Date.now() + duration;
   (function frame() {
@@ -5151,7 +5156,7 @@ if (_cpInfo && _cpInfo.anyCustomActive) {
   var _csSym = (typeof getCurrencySymbol === "function") ? getCurrencySymbol() : "₽";
 
   if (!_cpInfo.hasAnyEntry) {
-    // Нет ручных вводов — даём подсказку, не отображаем старый «0 ₽».
+    // Нет ручных вводов - даём подсказку, не отображаем старый «0 ₽».
     monthlyEl.innerText = t("flex.noDataTitle");
     explainEl.innerHTML = '<div class="plan-cs-empty">' + t("cs.plan.emptyHint") + '</div>';
     var _inflEl0 = getEl("inflationHint");
@@ -5159,10 +5164,10 @@ if (_cpInfo && _cpInfo.anyCustomActive) {
     return;
   }
 
-  // FIX: custom schedule accumulation + counters update — главный экран
+  // FIX: custom schedule accumulation + counters update - главный экран
   // полностью переходит на АККУМУЛИРОВАННЫЕ счётчики.
   //
-  // Заголовок: «Нужно отложить: pending ₽» — что ещё нужно докинуть.
+  // Заголовок: «Нужно отложить: pending ₽» - что ещё нужно докинуть.
   // Если pending=0 (всё отложено или free=0), показываем target и подпись
   // «Уже отложено полностью».
   var _showPending = _cpInfo.pendingDeposit > 0 ? _cpInfo.pendingDeposit : _cpInfo.targetDeposit;
@@ -5194,15 +5199,15 @@ if (_cpInfo && _cpInfo.anyCustomActive) {
     _etaLine = t("cs.plan.termMonths", { n: _cpInfo.etaMonths });
   }
 
-  // Состав счётчиков. Все значения — от накопленных тоталов:
-  //   • «Накоплено дохода» — totalIncome
-  //   • «Расходы за период» — totalExpense (если > 0)
-  //   • «Свободно» — free (только если есть расходы)
-  //   • «Отложено от этой суммы» — alreadyDeposited (Σ entry.deposited)
-  //   • «Отложено на цель» — accounts.main (total)
-  //   • «Срок» — ETA
+  // Состав счётчиков. Все значения - от накопленных тоталов:
+  //   • «Накоплено дохода» - totalIncome
+  //   • «Расходы за период» - totalExpense (если > 0)
+  //   • «Свободно» - free (только если есть расходы)
+  //   • «Отложено от этой суммы» - alreadyDeposited (Σ entry.deposited)
+  //   • «Отложено на цель» - accounts.main (total)
+  //   • «Срок» - ETA
   var rowsHtml = '';
-  // primary row: «Накоплено дохода» — главная сумма-источник.
+  // primary row: «Накоплено дохода» - главная сумма-источник.
   rowsHtml += '<div class="plan-cs-row plan-cs-row--primary">' +
                 '<span>' + t("cs.plan.totalIncome") + '</span>' +
                 '<b>' + _cpInfo.totalIncomeFormatted + ' ' + _csSym + '</b>' +
@@ -5237,9 +5242,9 @@ if (_cpInfo && _cpInfo.anyCustomActive) {
 
   // Обновляем индикатор «summaryMonths» (та же ETA).
   var _sumEl0 = getEl("summaryMonths");
-  if (_sumEl0) _sumEl0.innerText = (_cpInfo.etaMonths == null ? "—" : _cpInfo.etaMonths);
+  if (_sumEl0) _sumEl0.innerText = (_cpInfo.etaMonths == null ? "-" : _cpInfo.etaMonths);
 
-  // Инфляция/storage type — оставляем штатный рендер (полезен и в custom-режиме).
+  // Инфляция/storage type - оставляем штатный рендер (полезен и в custom-режиме).
   var _inflEl1 = getEl("inflationHint");
   if (_inflEl1) {
     var _effInfl = (typeof getEffectiveInflation === "function") ? getEffectiveInflation() : null;
@@ -5260,7 +5265,7 @@ if (_cpInfo && _cpInfo.anyCustomActive) {
   return;
 }
 
-// CUSTOM SCHEDULE v2 - fix main plan display — снимаем custom-класс, если режим
+// CUSTOM SCHEDULE v2 - fix main plan display - снимаем custom-класс, если режим
 // больше не активен (пользователь переключил частоту обратно).
 var _cardElOff = document.getElementById("planHeader");
 if (_cardElOff) _cardElOff.classList.remove("plan-cs-mode");
@@ -5287,7 +5292,7 @@ if (activeGoalIndex > 0 && activeGoal) {
   var lines = t("misc.saving") + ": " + fmtConverted(activeGoal.monthlyShare || 0) + " " + _cs + " " + t("pace.perMonth")
     + "<br>" + t("advGoals.priority") + ": " + (activeGoal.priority || 1)
     + "<br>" + t("plan.accumulated") + ": " + fmtConverted(preview) + " " + _cs
-    + "<br>" + t("plan.remaining") + ": " + (activeGoal.monthsLeft || "—") + " " + t("misc.monthShort");
+    + "<br>" + t("plan.remaining") + ": " + (activeGoal.monthsLeft || "-") + " " + t("misc.monthShort");
 
   explainEl.innerHTML = lines;
 
@@ -5324,19 +5329,19 @@ explainEl.innerHTML = explainText.replace(/\n/g, "<br>");
 // OPTIMIZATION: DOM cache.
 var inflationEl = getEl("inflationHint");
 if (inflationEl) {
-  // NEW: Storage type — prefer effective inflation (учитывает доходность
+  // NEW: Storage type - prefer effective inflation (учитывает доходность
   // инструмента: депозит / акции / металлы), fallback на raw inflation.
   var effInfl = (typeof getEffectiveInflation === "function") ? getEffectiveInflation() : null;
   var infl = (effInfl != null) ? effInfl
            : ((typeof getActiveInflation === "function") ? getActiveInflation() : null);
   if (infl != null && infl > 0) {
-    // DYNAMIC INFLATION — ставка теперь decimal (e.g. 7.8). Округляем до 1 знака
+    // DYNAMIC INFLATION - ставка теперь decimal (e.g. 7.8). Округляем до 1 знака
     // для аккуратного отображения. Целые числа (5 → "5") тоже корректно.
     var _inflStr = (Math.round(infl * 10) / 10).toString();
     inflationEl.textContent = t("misc.inflation") + ": " + _inflStr + "%";
     inflationEl.style.display = "";
   } else if (infl != null && infl < 0) {
-    // NEW: Storage type — yield outpaces inflation → показываем реальную доходность.
+    // NEW: Storage type - yield outpaces inflation → показываем реальную доходность.
     var _retStr = (Math.round(Math.abs(infl) * 10) / 10).toString();
     inflationEl.textContent = t("stats.realReturn") + ": +" + _retStr + "%";
     inflationEl.style.display = "";
@@ -5370,13 +5375,13 @@ goalEditHint.classList.add("show");
 }
 
 /* drawStaticLayer / animateFactLine / drawFactLayer / animateDotScale
-   removed — now handled by graph-engine-svg.js via renderSVGGraph() */
+   removed - now handled by graph-engine-svg.js via renderSVGGraph() */
 
 /* ===== ADVANCED SCREEN LOGIC ===== */
 
 if (advancedBtn) {
   advancedBtn.onclick = () => {
-    // PREMIUM SYSTEM — inline-гейт
+    // PREMIUM SYSTEM - inline-гейт
     if (window._premiumGate && window._premiumGate("advanced")) return;
 
     haptic("light");
@@ -5407,7 +5412,7 @@ document.querySelectorAll(".screen")
     // скрываем кнопку
     advancedBtn.style.display = "none";
 
-    // PREMIUM TOUR — мини-онбординг при первом открытии Advanced Settings.
+    // PREMIUM TOUR - мини-онбординг при первом открытии Advanced Settings.
     if (typeof startPremiumFeatureTour === "function") {
       setTimeout(function () { startPremiumFeatureTour("advanced"); }, 400);
     }
@@ -5521,9 +5526,9 @@ function setupFlipSwipe(wrapper) {
       syncAccountFlipHeight(wrapper, true);
       wrapper._flipJustSwiped = true;
       setTimeout(function () { wrapper._flipJustSwiped = false; }, 300);
-      // PREMIUM TOUR — обратная сторона карточки счёта = «Статистика счёта».
+      // PREMIUM TOUR - обратная сторона карточки счёта = «Статистика счёта».
       // Запускаем мини-онбординг при первом флипе для премиум-юзеров.
-      // Только для основного счёта (main) — резерв не имеет stats-функции.
+      // Только для основного счёта (main) - резерв не имеет stats-функции.
       if (wrapper.dataset && wrapper.dataset.account === "main" &&
           typeof startPremiumFeatureTour === "function") {
         setTimeout(function () { startPremiumFeatureTour("stats"); }, 700);
@@ -5612,7 +5617,7 @@ document.querySelectorAll(".unexpected-option").forEach(opt => {
         amountInput.value = "";
         amountInput.focus();
       }
-      // FINANCIAL EVENTS - INCOME ONLY (mirror UX for expense) — после выбора
+      // FINANCIAL EVENTS - INCOME ONLY (mirror UX for expense) - после выбора
       // источника сразу показываем «Доступно: X ₽» (накопления или резерв),
       // и live-валидация ниже подсветит превышение во время ввода.
       _renderUnexpectedAvailable();
@@ -5620,10 +5625,10 @@ document.querySelectorAll(".unexpected-option").forEach(opt => {
   });
 });
 
-// FINANCIAL EVENTS - INCOME ONLY (mirror UX for expense) — helper для индикатора
+// FINANCIAL EVENTS - INCOME ONLY (mirror UX for expense) - helper для индикатора
 // доступного остатка под input'ом «Сумма расхода». Вызывается:
-//   • при выборе варианта (goal/reserve) — показывает «Доступно: X ₽»;
-//   • из input-listener'a #unexpectedAmount — переключает .over-limit подсветку.
+//   • при выборе варианта (goal/reserve) - показывает «Доступно: X ₽»;
+//   • из input-listener'a #unexpectedAmount - переключает .over-limit подсветку.
 function _renderUnexpectedAvailable() {
   var hintEl = document.getElementById("unexpectedAvailable");
   if (!hintEl) return;
@@ -5657,7 +5662,7 @@ if (unexpectedAmountInput) {
     e.target.value = formatNumber(e.target.value);
     const a = e.target.value.length;
     e.target.selectionEnd = p + (a - b);
-    // FINANCIAL EVENTS - INCOME ONLY (mirror UX for expense) — live-валидация:
+    // FINANCIAL EVENTS - INCOME ONLY (mirror UX for expense) - live-валидация:
     // обновляем индикатор «доступно / превышено» на каждый ввод цифры.
     _renderUnexpectedAvailable();
   });
@@ -5788,9 +5793,9 @@ function freqLabel(freq, days) {
     case "weekly": return t("freq.weekly");
     case "biweekly": return t("freq.biweekly");
     case "custom":
-      // CUSTOM SCHEDULE LOGIC — для freq=custom теперь используется журнал
+      // CUSTOM SCHEDULE LOGIC - для freq=custom теперь используется журнал
       // ручного ввода (customScheduleEntries). Старые days показываем только
-      // если они уже были сохранены — иначе просто "Свой график".
+      // если они уже были сохранены - иначе просто "Свой график".
       if (Array.isArray(days) && days.length) {
         return t("freq.custom") + " (" + days.join(", ") + ")";
       }
@@ -5863,14 +5868,14 @@ function syncFlexibleUI() {
     hint.classList.toggle("visible", noData);
   }
 
-  // OPTIMIZATION: DOM cache — три getElementById на каждый ререндер.
+  // OPTIMIZATION: DOM cache - три getElementById на каждый ререндер.
   var summaryMonthlyEl = getEl("summaryMonthly");
   var summaryMonthsEl = getEl("summaryMonths");
   var summaryModeEl = getEl("summaryMode");
 
   if (noData) {
-    if (summaryMonthlyEl) summaryMonthlyEl.innerText = "—";
-    if (summaryMonthsEl) summaryMonthsEl.innerText = "—";
+    if (summaryMonthlyEl) summaryMonthlyEl.innerText = "-";
+    if (summaryMonthsEl) summaryMonthsEl.innerText = "-";
     if (summaryModeEl) summaryModeEl.innerText = t("flex.noData");
   } else if (isCashflow && lastCalc.ok) {
     if (summaryMonthlyEl) summaryMonthlyEl.innerText = fmtConverted(lastCalc.monthlySave);
@@ -5915,7 +5920,7 @@ function syncFlexibleUI() {
   var incType = s.incomeType || "fixed";
   var expType = s.expenseType || "fixed";
 
-  // NEW: логика fixed vs variable 11.05.2026 — enforce visibility from EVERY entry
+  // NEW: логика fixed vs variable 11.05.2026 - enforce visibility from EVERY entry
   // path that funnels through syncFlexibleUI (state hydrate, language change, etc.).
   applyFlexibleSideVisibility(incType, expType);
 
@@ -5929,7 +5934,7 @@ function syncFlexibleUI() {
     : ", " + cfFlowFreqLabel(s.expenseFrequency, s.expenseMonthDays);
 
   // ── In-panel flow summary ──
-  // OPTIMIZATION: DOM cache — каскад из 8 getElementById на каждый syncFlexibleUI.
+  // OPTIMIZATION: DOM cache - каскад из 8 getElementById на каждый syncFlexibleUI.
   var flowSummary = getEl("cfFlowSummary");
   var flowText = getEl("cfFlowSummaryText");
   if (flowSummary && flowText) {
@@ -5964,7 +5969,7 @@ function syncFlexibleUI() {
 
   if (typeof renderFlexModelSummary === "function") renderFlexModelSummary();
 
-  // CUSTOM SCHEDULE LOGIC — синхронизируем видимость нового блока «Свой график»
+  // CUSTOM SCHEDULE LOGIC - синхронизируем видимость нового блока «Свой график»
   // и перерендериваем его сводку/историю (сюда попадаем из recalcPlan на любое
   // изменение state, поэтому summary всегда актуален: последняя сумма, отложено,
   // примерный срок до цели).
@@ -5982,7 +5987,7 @@ function syncFlexibleUI() {
 }
 
 /**
- * NEW: логика fixed vs variable 11.05.2026 — module-level visibility enforcer.
+ * NEW: логика fixed vs variable 11.05.2026 - module-level visibility enforcer.
  *
  * Single source of truth for showing/hiding the per-side UI sections.
  * Called from BOTH initCashflowSettings() (init + toggle handlers + applySettingsChange)
@@ -5998,7 +6003,7 @@ function applyFlexibleSideVisibility(incType, expType) {
   var incIsFixed = (incType || "fixed") === "fixed";
   var expIsFixed = (expType || "fixed") === "fixed";
 
-  // OPTIMIZATION: DOM cache — 6 getElementById вызывались на каждый
+  // OPTIMIZATION: DOM cache - 6 getElementById вызывались на каждый
   // syncFlexibleUI/initCashflowSettings/toggle.
   applySideVisibility(
     incIsFixed,
@@ -6132,7 +6137,7 @@ function setupMonthDaysDateInput(dateInputId, listId, stateKey) {
 }
 
 function initCashflowSettings() {
-  // OPTIMIZATION: DOM cache — initCashflowSettings вызывается один раз, но
+  // OPTIMIZATION: DOM cache - initCashflowSettings вызывается один раз, но
   // эти id переиспользуются дальше в этом же файле, поэтому кешируем заранее.
   var flexToggle = getEl("flexibleToggle");
   var flexContent = getEl("flexibleContent");
@@ -6150,7 +6155,7 @@ function initCashflowSettings() {
   // NEW: start date inputs for VARIABLE periodic schedule
   var incomeStartDateInput = getEl("incomeStartDate");
   var expenseStartDateInput = getEl("expenseStartDate");
-  // NEW: логика fixed vs variable 11.05.2026 — read-only summary blocks shown only in FIXED mode
+  // NEW: логика fixed vs variable 11.05.2026 - read-only summary blocks shown only in FIXED mode
   var incomeFixedHint = getEl("incomeFixedHint");
   var expenseFixedHint = getEl("expenseFixedHint");
   var incomeFixedHintLine = getEl("incomeFixedHintLine");
@@ -6173,7 +6178,7 @@ function initCashflowSettings() {
 
   syncToggleUI(incomeToggle, incomeType);
   syncToggleUI(expenseToggle, expenseType);
-  // NEW: логика fixed vs variable 11.05.2026 — apply all three visibility helpers together.
+  // NEW: логика fixed vs variable 11.05.2026 - apply all three visibility helpers together.
   syncSideUIVisibility(incomeType, expenseType);
   if (fixedIncomeInput && (currentState.fixedIncomeAmount != null)) fixedIncomeInput.value = currentState.fixedIncomeAmount;
   if (fixedExpenseInput && (currentState.fixedExpenseAmount != null)) fixedExpenseInput.value = currentState.fixedExpenseAmount;
@@ -6188,7 +6193,7 @@ function initCashflowSettings() {
   setupMonthDaysDateInput("expenseMonthDaysDate", "expenseMonthDaysList", "expenseMonthDays");
 
   flexToggle.addEventListener("click", function () {
-    // PREMIUM SYSTEM — inline-гейт (флекс-модель только для премиум-пользователей)
+    // PREMIUM SYSTEM - inline-гейт (флекс-модель только для премиум-пользователей)
     if (window._premiumGate && window._premiumGate("flexible")) return;
     haptic("light");
 
@@ -6203,15 +6208,15 @@ function initCashflowSettings() {
       });
     }
 
-    // PREMIUM TOUR — после первого открытия раздела показываем мини-онбординг
-    // для премиум-пользователей. Задержка 350ms — даём content раскрыться,
+    // PREMIUM TOUR - после первого открытия раздела показываем мини-онбординг
+    // для премиум-пользователей. Задержка 350ms - даём content раскрыться,
     // чтобы scrollIntoView отработал по новому layout'у.
     if (willOpen && typeof startPremiumFeatureTour === "function") {
       setTimeout(function () { startPremiumFeatureTour("flexible"); }, 350);
     }
   });
 
-  // NEW: логика fixed vs variable 11.05.2026 — auto-fill today's date when the user
+  // NEW: логика fixed vs variable 11.05.2026 - auto-fill today's date when the user
   // switches a side to VARIABLE for the first time, so the schedule has an anchor.
   function ensureStartDateForVariable(side) {
     var st = getState();
@@ -6235,7 +6240,7 @@ function initCashflowSettings() {
       haptic("light");
       incomeType = btn.dataset.value;
       syncToggleUI(incomeToggle, incomeType);
-      // NEW: логика fixed vs variable 11.05.2026 — write the new type FIRST so all
+      // NEW: логика fixed vs variable 11.05.2026 - write the new type FIRST so all
       // downstream visibility/state helpers (ensureStartDateForVariable, syncSideUIVisibility,
       // renderFlexModelSummary) see the canonical value.
       updateState({ incomeType: incomeType });
@@ -6263,7 +6268,7 @@ function initCashflowSettings() {
   }
 
   // OPTIMIZATION: дебаунс тяжёлого каскада updateState + recalcPlan на input.
-  // Форматирование цифр и подстройка курсора — мгновенные (UX без задержки),
+  // Форматирование цифр и подстройка курсора - мгновенные (UX без задержки),
   // а пересчёт плана/UI откладывается на 250ms после последнего нажатия клавиши.
   if (fixedIncomeInput) {
     var _fixedIncomeRecalc = debounce(function () {
@@ -6292,7 +6297,7 @@ function initCashflowSettings() {
     fixedExpenseInput.addEventListener("blur", function () { saveFullState(); });
   }
 
-  // NEW: start-date change handlers — patch state, recalculate, refresh summary.
+  // NEW: start-date change handlers - patch state, recalculate, refresh summary.
   if (incomeStartDateInput) {
     incomeStartDateInput.addEventListener("change", function () {
       var v = this.value || "";
@@ -6328,13 +6333,13 @@ function initCashflowSettings() {
       syncFreqUIBlock(expenseFreqBlock, freq);
       updateMonthDaysVisibility(freq, "expense");
     }
-    // NEW: логика fixed vs variable 11.05.2026 — refresh card summary + cashflow events.
+    // NEW: логика fixed vs variable 11.05.2026 - refresh card summary + cashflow events.
     recalcPlan();
     saveFullState();
 
-    // UNIFIED CUSTOM SCHEDULE FLOW — после смены частоты сразу открываем единую
+    // UNIFIED CUSTOM SCHEDULE FLOW - после смены частоты сразу открываем единую
     // модалку «Записать поступление / расход». Это даёт пользователю общий flow
-    // для всех периодичностей: weekly / biweekly / monthly / custom — одно и то
+    // для всех периодичностей: weekly / biweekly / monthly / custom - одно и то
     // же окно с динамической подсказкой и кнопкой «Отложить на цель».
     if (typeof window.openCustomScheduleSheet === "function") {
       // Открываем модалку только если type=variable (для variable-side ввод имеет
@@ -6368,7 +6373,7 @@ function initCashflowSettings() {
       expenseFrequency: expenseFrequency,
       financialModel: model
     });
-    // NEW: логика fixed vs variable 11.05.2026 — refresh ALL side-related visibility,
+    // NEW: логика fixed vs variable 11.05.2026 - refresh ALL side-related visibility,
     // not just the frequency block, so the inputs and hint stay in sync after any change.
     syncSideUIVisibility(incomeType, expenseType);
     recalcPlan();
@@ -6379,13 +6384,13 @@ function initCashflowSettings() {
     var sideType = type === "income"
       ? (getState().incomeType || "fixed")
       : (getState().expenseType || "fixed");
-    // UNIFIED CUSTOM SCHEDULE FLOW — блок ручного ввода `.custom-schedule-block`
+    // UNIFIED CUSTOM SCHEDULE FLOW - блок ручного ввода `.custom-schedule-block`
     // теперь виден для ВСЕХ variable-периодичностей (weekly / biweekly / monthly
     // / custom), потому что единая модалка «Записать поступление» создаёт запись
     // в customScheduleEntries при любой частоте. Так пользователь видит полную
     // историю вводов и reminder'ы независимо от выбранного freq.
     var shouldShow = (sideType === "variable");
-    // CUSTOM SCHEDULE LOGIC — старый picker дней месяца полностью заменён
+    // CUSTOM SCHEDULE LOGIC - старый picker дней месяца полностью заменён
     // блоком ручного ввода `.custom-schedule-block`. Прежний wrap скрыт всегда,
     // чтобы не путать пользователя двумя UI одновременно. Сам элемент оставлен
     // в DOM для обратной совместимости с прежними listener'ами setupMonthDaysDateInput.
@@ -6400,7 +6405,7 @@ function initCashflowSettings() {
     }
   }
 
-  // NEW: логика fixed vs variable 11.05.2026 — thin wrapper around the module-level
+  // NEW: логика fixed vs variable 11.05.2026 - thin wrapper around the module-level
   // applyFlexibleSideVisibility so the toggle handlers and applySettingsChange share
   // a single source of truth for show/hide rules (no duplicated logic).
   function syncSideUIVisibility(inc, exp) {
@@ -6434,7 +6439,7 @@ var eventSubmitBtn = getEl("eventSubmit");
 
 var selectedEventType = "income";
 
-// NEW: shared helper — which sides are currently in periodic ("fixed") mode.
+// NEW: shared helper - which sides are currently in periodic ("fixed") mode.
 function getFixedSides() {
   var st = (typeof getState === "function") ? getState() : {};
   return {
@@ -6443,7 +6448,7 @@ function getFixedSides() {
   };
 }
 
-// FINANCIAL EVENTS - INCOME ONLY — функция оставлена для обратной совместимости
+// FINANCIAL EVENTS - INCOME ONLY - функция оставлена для обратной совместимости
 // со сторонними вызовами, но больше не блокирует ничего: блок принимает только
 // разовый доход, поэтому previousий механизм disabled-toggle (по фиксированности
 // сторон) перестал быть актуальным. Toggle типа скрыт через display:none в HTML.
@@ -6456,7 +6461,7 @@ function syncEventEditorTypeAvailability() {
 }
 
 function openEventEditor() {
-  // FINANCIAL EVENTS - INCOME ONLY — модалка всегда фиксирована на типе "income".
+  // FINANCIAL EVENTS - INCOME ONLY - модалка всегда фиксирована на типе "income".
   // Прежний выбор default-стороны (income/expense) убран: блок «+ Добавить доход»
   // создаёт только разовые непредсказуемые доходы. Расходы пишутся через
   // отдельный «Непредвиденный расход» на экране с графиком.
@@ -6471,8 +6476,8 @@ function openEventEditor() {
     eventDateInput.value = today.toISOString().slice(0, 10);
   }
   syncEventEditorTypeAvailability();
-  // FINANCIAL EVENTS - INCOME ONLY — submit-кнопка активна, если income сторона
-  // в variable-режиме. Если income в fixed — это означает «доход настраивается
+  // FINANCIAL EVENTS - INCOME ONLY - submit-кнопка активна, если income сторона
+  // в variable-режиме. Если income в fixed - это означает «доход настраивается
   // централизованно фиксированной суммой», но разовый непредсказуемый доход
   // мы всё равно разрешаем добавить (это не дублирует периодическое поступление).
   // Поэтому submit включен ВСЕГДА в новом INCOME-ONLY режиме.
@@ -6525,10 +6530,10 @@ if (typeof window !== "undefined" && window.visualViewport) {
 
 if (eventSubmitBtn) {
   eventSubmitBtn.addEventListener("click", function () {
-    // FINANCIAL EVENTS - INCOME ONLY — submit-обработчик упрощён до одного
+    // FINANCIAL EVENTS - INCOME ONLY - submit-обработчик упрощён до одного
     // сценария: разовый непредсказуемый доход. Все expense-ветви удалены,
     // selectedEventType жёстко = "income". Если в будущем понадобится снова
-    // разрешить расход через этот блок — достаточно вернуть toggle в HTML.
+    // разрешить расход через этот блок - достаточно вернуть toggle в HTML.
     var rawAmount = parseNumber(eventAmountInput?.value || "0");
     if (!rawAmount) {
       haptic("error");
@@ -6546,14 +6551,14 @@ if (eventSubmitBtn) {
     var H = CashflowEngineHelpers;
     var s = getState();
 
-    // FINANCIAL EVENTS - INCOME ONLY — пишем разовый INCOME-event.
-    //   • frequency: ONCE — один раз, без авто-повторения. Это ключевое отличие
+    // FINANCIAL EVENTS - INCOME ONLY - пишем разовый INCOME-event.
+    //   • frequency: ONCE - один раз, без авто-повторения. Это ключевое отличие
     //     от регулярных доходов (weekly / biweekly / monthly), которые задаются
     //     в блоках Income/Expenses выше через единую модалку «Записать
     //     поступление» (UNIFIED PERIODIC FLOW).
-    //   • meta.userCreated = true — engine отличит «ручной разовый» от
+    //   • meta.userCreated = true - engine отличит «ручной разовый» от
     //     сгенерированного периодического и не задвоит его в прогнозе.
-    //   • meta.kind = "unpredictable-income" — семантический маркер для будущих
+    //   • meta.kind = "unpredictable-income" - семантический маркер для будущих
     //     фильтров истории и аналитики (например, статистики «премий за год»).
     var meta = { userCreated: true, kind: "unpredictable-income" };
     var normalized = H.normalizeEvent({
@@ -6567,7 +6572,7 @@ if (eventSubmitBtn) {
     evts.push(normalized);
     updateState({ cashflowEvents: evts });
 
-    // FINANCIAL EVENTS - INCOME ONLY — фиксируем доход в factHistory, чтобы он
+    // FINANCIAL EVENTS - INCOME ONLY - фиксируем доход в factHistory, чтобы он
     // сразу отразился в графике баланса / accounts.main (положительное
     // движение). Это поведение симметрично «Непредвиденному расходу», который
     // пишет отрицательное движение в ту же факт-историю.
@@ -6603,7 +6608,7 @@ if (eventAmountInput) {
 initCashflowSettings();
 
 /* ============================================================================
- * CUSTOM SCHEDULE LOGIC — ручной ввод «Свой график»
+ * CUSTOM SCHEDULE LOGIC - ручной ввод «Свой график»
  * ----------------------------------------------------------------------------
  * Полная замена прежнего picker-а дней месяца. Когда пользователь выбирает
  * частоту "custom" в гибкой модели (на income или expense стороне), вместо
@@ -6620,9 +6625,9 @@ initCashflowSettings();
  *
  * Поток:
  *   1) Клик «+ Записать поступление / расход» → открывается двухшаговая sheet:
- *      step "form"  — сумма + дата (+ подсказка).
- *      step "alloc" — крупно «Нужно отложить: X ₽» + кнопки «Отложить» /
- *                     «Только записать». Шаг alloc — ТОЛЬКО для income.
+ *      step "form"  - сумма + дата (+ подсказка).
+ *      step "alloc" - крупно «Нужно отложить: X ₽» + кнопки «Отложить» /
+ *                     «Только записать». Шаг alloc - ТОЛЬКО для income.
  *   2) После отложения дохода:
  *      • factHistory получает запись (как обычный взнос пользователя)
  *      • accounts.main += deposited
@@ -6633,7 +6638,7 @@ initCashflowSettings();
  *      Если записей <2 → «недостаточно данных».
  *
  * Все события engine получает через assembleCashflowEvents() как one-time
- * INCOME/EXPENSE c meta.userCreated:true — это совместимо с forecast-логикой
+ * INCOME/EXPENSE c meta.userCreated:true - это совместимо с forecast-логикой
  * cashflow-engine.js (см. _getForecastFromEvents).
  * ============================================================================ */
 
@@ -6660,16 +6665,16 @@ initCashflowSettings();
   var allocBaseEl = document.getElementById("csAllocBase");
   var depositBtn = document.getElementById("csDepositBtn");
   var skipDepositBtn = document.getElementById("csSkipDepositBtn");
-  // UNIFIED CUSTOM SCHEDULE FLOW — DOM-узлы для live-preview и бейджа периодичности.
+  // UNIFIED CUSTOM SCHEDULE FLOW - DOM-узлы для live-preview и бейджа периодичности.
   var livePreviewEl = document.getElementById("csLivePreview");
   var livePreviewAmountEl = document.getElementById("csLivePreviewAmount");
   var livePreviewModeEl = document.getElementById("csLivePreviewMode");
   var nextOccurrenceEl = document.getElementById("csNextOccurrence");
 
-  // CUSTOM SCHEDULE LOGIC — текущий контекст модалки (закрыта по умолчанию).
+  // CUSTOM SCHEDULE LOGIC - текущий контекст модалки (закрыта по умолчанию).
   // editId !== null → режим редактирования существующей записи; шаг alloc пропускаем.
-  // UNIFIED CUSTOM SCHEDULE FLOW — добавлено поле `frequency` (weekly / biweekly /
-  // monthly / custom) — определяется по кнопке периодичности, открывшей модалку.
+  // UNIFIED CUSTOM SCHEDULE FLOW - добавлено поле `frequency` (weekly / biweekly /
+  // monthly / custom) - определяется по кнопке периодичности, открывшей модалку.
   var ctx = {
     side: "income",
     editId: null,
@@ -6716,15 +6721,15 @@ initCashflowSettings();
 
   // FIX: custom schedule accumulation + counters update ─────────────────────
   // Сумма всех ручных вводов для одной стороны (income | expense).
-  // Заменяет «последняя запись» — теперь работаем с накопленным итогом периода.
+  // Заменяет «последняя запись» - теперь работаем с накопленным итогом периода.
   function _periodTotal(side) {
     return _entriesBySide(side).reduce(function (sum, e) {
       return sum + (Number(e.amount) || 0);
     }, 0);
   }
 
-  // FIX: custom schedule accumulation + counters update — суммарно отложено
-  // по всем записям (поле entry.deposited; expense-записи всегда 0 — туда
+  // FIX: custom schedule accumulation + counters update - суммарно отложено
+  // по всем записям (поле entry.deposited; expense-записи всегда 0 - туда
   // отложения не записываются, см. _commitDeposit).
   function _alreadyDepositedTotal() {
     return _entries().reduce(function (sum, e) {
@@ -6732,7 +6737,7 @@ initCashflowSettings();
     }, 0);
   }
 
-  // FIX: custom schedule accumulation + counters update — counterpart другой
+  // FIX: custom schedule accumulation + counters update - counterpart другой
   // стороны. Для custom-стороны возвращаем СУММУ всех записей (а не последнюю),
   // что критично для корректного расчёта «Нужно отложить» при нескольких
   // ручных вводах в одном периоде.
@@ -6764,7 +6769,7 @@ initCashflowSettings();
     return { amount: vAmt > 0 ? vAmt : 0, kind: vAmt > 0 ? "variablePeriodic" : "none" };
   }
 
-  // FIX: custom schedule accumulation + counters update — главный калькулятор
+  // FIX: custom schedule accumulation + counters update - главный калькулятор
   // отложения. Параметр amount сохранён для backward-compat, но игнорируется:
   // расчёт идёт от АККУМУЛИРОВАННЫХ сумм за период (всех income- и expense-
   // ручных вводов плюс фикс. counterpart при варьирующемся типе).
@@ -6777,14 +6782,14 @@ initCashflowSettings();
   //     totalIncome:       income side total (custom sum или фикс)
   //     totalExpense:      expense side total (custom sum или фикс)
   //     free:              max(0, totalIncome − totalExpense)
-  //     counterpart:       { amount, kind } — для UI-текста «учтено …»
+  //     counterpart:       { amount, kind } - для UI-текста «учтено …»
   //   }
   function _computeDepositForEntry(side, entryAmount) {
     var s = (typeof getState === "function") ? getState() : {};
 
-    // UNIFIED CUSTOM SCHEDULE FLOW — per-entry расчёт для non-custom freq.
+    // UNIFIED CUSTOM SCHEDULE FLOW - per-entry расчёт для non-custom freq.
     // Когда пользователь записывает поступление через единую модалку с частотой
-    // weekly / biweekly / monthly, каждое поступление — самостоятельное событие,
+    // weekly / biweekly / monthly, каждое поступление - самостоятельное событие,
     // и его deposit должен считаться независимо: deposit = amount × pace.
     // Аккумулировать его с фикс. monthly counterpart'ом некорректно (дало бы
     // deposit=0 при первой weekly-записи на фоне monthly expense).
@@ -6852,7 +6857,7 @@ initCashflowSettings();
     var alreadyDeposited = _alreadyDepositedTotal();
     var pendingDeposit = Math.max(0, targetDeposit - alreadyDeposited);
 
-    // Для совместимости — какой counterpart актуален для side="income"|"expense".
+    // Для совместимости - какой counterpart актуален для side="income"|"expense".
     // (Используется в UI-подсказке «учтён ...».) Берём ту сторону, которая ВЫЧИТАЕТСЯ.
     var arg = arguments[0];
     var side = (arg === "expense") ? "expense" : "income";
@@ -6880,7 +6885,7 @@ initCashflowSettings();
   }
 
   function _formatHumanDate(iso) {
-    if (!iso) return "—";
+    if (!iso) return "-";
     var d = new Date(iso);
     if (isNaN(d.getTime())) return iso;
     var day = d.getDate();
@@ -6890,7 +6895,7 @@ initCashflowSettings();
   }
 
   // ── ETA ───────────────────────────────────────────────────────────────────
-  // CUSTOM SCHEDULE v2 - fix main plan display — примерный срок до цели на
+  // CUSTOM SCHEDULE v2 - fix main plan display - примерный срок до цели на
   // основе средних ручных вводов с УЧЁТОМ counterpart-стороны:
   //   monthlySave = max(0, avg_income - avg_expense_or_fixed) × pace.
   // Если по income стороне <2 записей → недостаточно данных.
@@ -6946,11 +6951,11 @@ initCashflowSettings();
 
   // ── Summary card ──────────────────────────────────────────────────────────
 
-  // FIX: custom schedule accumulation + counters update — summary в cs-блоке
+  // FIX: custom schedule accumulation + counters update - summary в cs-блоке
   // (под кнопкой «+ Записать») теперь показывает АККУМУЛИРОВАННЫЕ значения:
-  //   • «Накоплено» — Σ entry.amount для этой стороны
-  //   • «Отложено» (для income) — Σ entry.deposited
-  //   • «Срок» — ETA
+  //   • «Накоплено» - Σ entry.amount для этой стороны
+  //   • «Отложено» (для income) - Σ entry.deposited
+  //   • «Срок» - ETA
   function _renderSummary(side) {
     var summaryId = side === "income" ? "incomeCsSummary" : "expenseCsSummary";
     var el = document.getElementById(summaryId);
@@ -6978,10 +6983,10 @@ initCashflowSettings();
     if (side === "income") {
       html += '<div class="cs-summary-row">';
       html += '<span>' + t("cs.summary.deposited") + '</span>';
-      html += '<b>' + (depositedSide > 0 ? _amount(depositedSide) : '—') + '</b>';
+      html += '<b>' + (depositedSide > 0 ? _amount(depositedSide) : '-') + '</b>';
       html += '</div>';
 
-      // ETA — только для income.
+      // ETA - только для income.
       var eta = _computeEta();
       if (eta == null) {
         html += '<div class="cs-summary-eta cs-summary-eta--insufficient">';
@@ -7008,7 +7013,7 @@ initCashflowSettings();
     if (!listEl) return;
 
     var entries = _entriesBySide(side).slice().sort(function (a, b) {
-      // Сортируем по date desc, при равной дате — по createdAt desc.
+      // Сортируем по date desc, при равной дате - по createdAt desc.
       var dCmp = String(b.date).localeCompare(String(a.date));
       if (dCmp !== 0) return dCmp;
       return String(b.createdAt || "").localeCompare(String(a.createdAt || ""));
@@ -7042,7 +7047,7 @@ initCashflowSettings();
       }
 
       html += '<div class="cs-history-item-actions">';
-      // Кнопка «Отложить» — только для income, не отложенных ранее записей.
+      // Кнопка «Отложить» - только для income, не отложенных ранее записей.
       if (side === "income" && dep <= 0) {
         html += '<button type="button" class="cs-history-icon-btn cs-history-icon-btn--deposit" data-cs-action="deposit" data-cs-id="' + e.id + '" title="' + t("cs.history.deposit") + '">↑</button>';
       }
@@ -7056,7 +7061,7 @@ initCashflowSettings();
 
   // ── Expense reminder (sticky-card после income deposit) ───────────────────
 
-  // CUSTOM SCHEDULE v2 - fix main plan display — обе reminder-карточки.
+  // CUSTOM SCHEDULE v2 - fix main plan display - обе reminder-карточки.
   function _renderExpenseReminder() {
     var expCard = document.getElementById("csExpenseReminder");
     var incCard = document.getElementById("csIncomeReminder");
@@ -7071,7 +7076,7 @@ initCashflowSettings();
     _renderExpenseReminder();
   }
 
-  // CUSTOM SCHEDULE v2 - fix main plan display — зеркальный сеттер для income-prompt.
+  // CUSTOM SCHEDULE v2 - fix main plan display - зеркальный сеттер для income-prompt.
   function _setIncomePrompt(active) {
     if (typeof updateState !== "function") return;
     updateState({ customScheduleIncomePrompt: !!active });
@@ -7087,7 +7092,7 @@ initCashflowSettings();
       if (side === "income") _renderExpenseReminder();
       return;
     }
-    // Без аргумента — рендерим обе стороны.
+    // Без аргумента - рендерим обе стороны.
     _renderSummary("income");
     _renderHistory("income");
     _renderSummary("expense");
@@ -7102,11 +7107,11 @@ initCashflowSettings();
     if (stepAlloc) stepAlloc.style.display = step === "alloc" ? "" : "none";
   }
 
-  // UNIFIED CUSTOM SCHEDULE FLOW — applySheetTextsForSide(side, isEdit, freq).
+  // UNIFIED CUSTOM SCHEDULE FLOW - applySheetTextsForSide(side, isEdit, freq).
   // freq влияет на заголовок модалки, подсказку под полем суммы и бейдж
-  // «дальше — каждую неделю / две недели / месяц / вручную». Кнопка primary
-  // унифицирована: для income всегда «Отложить на цель», для expense — «Сохранить
-  // запись»; для редактирования — «Сохранить».
+  // «дальше - каждую неделю / две недели / месяц / вручную». Кнопка primary
+  // унифицирована: для income всегда «Отложить на цель», для expense - «Сохранить
+  // запись»; для редактирования - «Сохранить».
   function _applySheetTextsForSide(side, isEdit, freq) {
     var freqKey = freq || "custom";
 
@@ -7123,7 +7128,7 @@ initCashflowSettings();
     }
     if (amountLabelEl) amountLabelEl.textContent = t("cs.field.amount." + side);
     if (amountHintEl) {
-      // Динамическая подсказка — главное визуальное отличие при разных freq.
+      // Динамическая подсказка - главное визуальное отличие при разных freq.
       var hintKey = "cs.field.amountHint." + side + "." + freqKey;
       var hintTr = t(hintKey);
       var hintFallback = t("cs.field.amountHint." + side);
@@ -7148,18 +7153,18 @@ initCashflowSettings();
       if (isEdit) {
         continueBtn.textContent = t("cs.modal.save");
       } else if (side === "income") {
-        // Single-step flow — главная кнопка сразу «Отложить на цель».
+        // Single-step flow - главная кнопка сразу «Отложить на цель».
         continueBtn.textContent = t("cs.alloc.depositBtn");
       } else {
-        // Расход не отлагается — просто фиксируем запись.
+        // Расход не отлагается - просто фиксируем запись.
         continueBtn.textContent = t("cs.modal.save");
       }
     }
   }
 
-  // UNIFIED CUSTOM SCHEDULE FLOW — live-preview расчёт «сколько уйдёт на цель».
+  // UNIFIED CUSTOM SCHEDULE FLOW - live-preview расчёт «сколько уйдёт на цель».
   // Обновляется на каждый input в поле «Сумма поступления». Для side="income"
-  // показывает блок с deposit-суммой; для expense — скрывает блок (расход не идёт
+  // показывает блок с deposit-суммой; для expense - скрывает блок (расход не идёт
   // на цель напрямую).
   function _updateLivePreview() {
     if (!livePreviewEl) return;
@@ -7180,8 +7185,8 @@ initCashflowSettings();
       return;
     }
 
-    // Вычисляем deposit ОТ ВВЕДЁННОЙ суммы. Для freq!=custom — per-entry режим
-    // (deposit = amount × pace). Для freq=custom — accumulated режим (с учётом
+    // Вычисляем deposit ОТ ВВЕДЁННОЙ суммы. Для freq!=custom - per-entry режим
+    // (deposit = amount × pace). Для freq=custom - accumulated режим (с учётом
     // уже накопленных entries; live-preview показывает «что будет после этого ввода»).
     var calc;
     if (ctx.frequency === "custom") {
@@ -7209,7 +7214,7 @@ initCashflowSettings();
     livePreviewEl.style.display = "";
   }
 
-  // UNIFIED CUSTOM SCHEDULE FLOW — openCustomScheduleSheet(side, opts) теперь
+  // UNIFIED CUSTOM SCHEDULE FLOW - openCustomScheduleSheet(side, opts) теперь
   // принимает opts.frequency для динамической подсказки и заголовка. Если freq
   // не передан явно, берём из state (incomeFrequency / expenseFrequency).
   function openCustomScheduleSheet(side, opts) {
@@ -7232,7 +7237,7 @@ initCashflowSettings();
     _applySheetTextsForSide(ctx.side, isEdit, ctx.frequency);
     _showStep("form");
 
-    // Заполняем поля. Для редактирования — текущие значения, иначе чистая форма.
+    // Заполняем поля. Для редактирования - текущие значения, иначе чистая форма.
     if (isEdit) {
       var existing = _entries().filter(function (e) { return e.id === ctx.editId; })[0];
       if (existing) {
@@ -7246,8 +7251,8 @@ initCashflowSettings();
       if (dateInput) dateInput.value = _todayIso();
     }
 
-    // UNIFIED CUSTOM SCHEDULE FLOW — обновляем live-preview по начальному значению
-    // (для edit-режима покажет amount × pace; для нового ввода — скрыт до ввода суммы).
+    // UNIFIED CUSTOM SCHEDULE FLOW - обновляем live-preview по начальному значению
+    // (для edit-режима покажет amount × pace; для нового ввода - скрыт до ввода суммы).
     _updateLivePreview();
 
     if (typeof ProtoSheet !== "undefined") ProtoSheet.open(sheet, overlay);
@@ -7259,7 +7264,7 @@ initCashflowSettings();
 
   // ── Save / commit deposit ─────────────────────────────────────────────────
 
-  // CUSTOM SCHEDULE LOGIC — добавление новой записи в журнал.
+  // CUSTOM SCHEDULE LOGIC - добавление новой записи в журнал.
   function _addEntry(side, amount, dateIso) {
     var arr = _entries();
     var entry = {
@@ -7276,7 +7281,7 @@ initCashflowSettings();
     return entry;
   }
 
-  // CUSTOM SCHEDULE LOGIC — обновление amount/date существующей записи.
+  // CUSTOM SCHEDULE LOGIC - обновление amount/date существующей записи.
   // Намеренно НЕ трогаем `deposited`: если пользователь уже отложил по этой
   // записи, его реальный взнос остаётся в factHistory неизменным.
   function _updateEntry(id, amount, dateIso) {
@@ -7291,7 +7296,7 @@ initCashflowSettings();
     _persist(arr);
   }
 
-  // CUSTOM SCHEDULE LOGIC — удаление записи из истории.
+  // CUSTOM SCHEDULE LOGIC - удаление записи из истории.
   // factHistory НЕ откатываем: уже отложенные деньги остаются на счёте, чтобы
   // не создавать резких просадок баланса при чистке истории.
   function _deleteEntry(id) {
@@ -7299,7 +7304,7 @@ initCashflowSettings();
     _persist(arr);
   }
 
-  // CUSTOM SCHEDULE LOGIC — отложить взнос на цель по конкретной записи.
+  // CUSTOM SCHEDULE LOGIC - отложить взнос на цель по конкретной записи.
   // Использует тот же канал, что и обычные взносы пользователя:
   //   factHistory.push({ value, date, to: "main", timestamp })
   // + accounts.main += amount. Это даёт корректное отображение в графике,
@@ -7337,7 +7342,7 @@ initCashflowSettings();
     }
     updateState({ customScheduleEntries: arr });
 
-    // UNIFIED CUSTOM SCHEDULE FLOW — после отложения поднимаем reminder
+    // UNIFIED CUSTOM SCHEDULE FLOW - после отложения поднимаем reminder
     // противоположной стороны, если она в variable-режиме (любая freq, не
     // только custom). Это даёт пользователю единое поведение для всех freq.
     var sNow = (typeof getState === "function") ? getState() : {};
@@ -7375,7 +7380,7 @@ initCashflowSettings();
       }
       var dateVal = (dateInput && dateInput.value) ? dateInput.value : _todayIso();
 
-      // Редактирование — просто пишем и закрываем (без шага alloc).
+      // Редактирование - просто пишем и закрываем (без шага alloc).
       if (ctx.editId) {
         _updateEntry(ctx.editId, rawAmount, dateVal);
         if (typeof showToast === "function") showToast(t("cs.toast.updated"), "success");
@@ -7384,7 +7389,7 @@ initCashflowSettings();
         return;
       }
 
-      // UNIFIED CUSTOM SCHEDULE FLOW — single-step flow. После клика «Отложить
+      // UNIFIED CUSTOM SCHEDULE FLOW - single-step flow. После клика «Отложить
       // на цель» (или «Сохранить запись» для расхода) приложение:
       //   1. Фиксирует периодичность (incomeFrequency / expenseFrequency).
       //   2. Для non-custom freq: сохраняет fixedIncomeAmount/fixedExpenseAmount
@@ -7422,15 +7427,15 @@ initCashflowSettings();
       ctx.entryDate = dateVal;
       ctx.editId = entry.id;
 
-      // ── 4. Считаем deposit. Для freq!=custom — per-entry режим; для custom —
+      // ── 4. Считаем deposit. Для freq!=custom - per-entry режим; для custom -
       //      accumulated (включает только что добавленную запись).
       var calc = _computeDepositForEntry(ctx.side, rawAmount);
       ctx.pendingDeposit = calc.deposit;
 
-      // ── 5. Для INCOME с положительным deposit — сразу делаем commit.
-      //      Для EXPENSE — просто записываем (расход не идёт на цель напрямую).
+      // ── 5. Для INCOME с положительным deposit - сразу делаем commit.
+      //      Для EXPENSE - просто записываем (расход не идёт на цель напрямую).
       if (ctx.side === "income" && calc.deposit > 0) {
-        // Проверяем, что есть цель — иначе откладывать не на что.
+        // Проверяем, что есть цель - иначе откладывать не на что.
         var goalVal = 0;
         try {
           var gi = document.getElementById("goal");
@@ -7453,7 +7458,7 @@ initCashflowSettings();
         if (typeof showToast === "function") showToast(t("cs.toast.added.expense"), "success");
       }
 
-      // UNIFIED CUSTOM SCHEDULE FLOW — финальный источник правды для reminder'ов.
+      // UNIFIED CUSTOM SCHEDULE FLOW - финальный источник правды для reminder'ов.
       // Вызываем ПОСЛЕ всех updateState (в т.ч. внутри _commitDeposit), чтобы
       // ничего нас не перетёрло. Reminder поднимаем только если противоположная
       // сторона в variable-режиме (иначе он бесполезен).
@@ -7470,7 +7475,7 @@ initCashflowSettings();
 
       closeCustomScheduleSheet();
       if (typeof recalcPlan === "function") recalcPlan();
-      // UNIFIED CUSTOM SCHEDULE FLOW — force-render обоих блоков и main-plan,
+      // UNIFIED CUSTOM SCHEDULE FLOW - force-render обоих блоков и main-plan,
       // чтобы счётчики и история сразу обновились.
       if (typeof window.renderCustomSchedule === "function") {
         window.renderCustomSchedule("income");
@@ -7480,16 +7485,16 @@ initCashflowSettings();
     });
   }
 
-  // FIX: custom schedule accumulation + counters update — рендер шага
+  // FIX: custom schedule accumulation + counters update - рендер шага
   // «График отложений» теперь показывает АККУМУЛИРОВАННЫЕ тоталы за период,
   // а не одну только что введённую сумму. Это даёт пользователю полную
   // картину: «всего накопилось X, расходы Y, нужно отложить Z (уже отложено W)».
   function _renderAllocStep(side, amount, calc) {
-    // Главное число — это pending deposit (то, что ещё надо докинуть).
+    // Главное число - это pending deposit (то, что ещё надо докинуть).
     if (allocAmountEl) {
       allocAmountEl.textContent = (typeof fmtNum === "function") ? fmtNum(calc.deposit) : String(calc.deposit);
     }
-    // "Откуда" — теперь от накопленных тоталов (а не от введённой суммы).
+    // "Откуда" - теперь от накопленных тоталов (а не от введённой суммы).
     var fromWrap = sheet ? sheet.querySelector(".cs-alloc-from") : null;
     if (fromWrap) {
       // Для income: «от накопленного дохода X (вы только что добавили Y)»
@@ -7504,7 +7509,7 @@ initCashflowSettings();
       allocBaseEl.textContent = _amount(side === "expense" ? calc.totalExpense : calc.totalIncome);
     }
 
-    // Breakdown: income − expense = free  (и при необходимости — уже отложено).
+    // Breakdown: income − expense = free  (и при необходимости - уже отложено).
     var breakdownEl = document.getElementById("csAllocBreakdown");
     if (breakdownEl) {
       var html = "";
@@ -7533,24 +7538,24 @@ initCashflowSettings();
       } catch (e) { goalVal = 0; }
       if (goalVal <= 0) {
         if (typeof showToast === "function") showToast(t("cs.toast.noGoal"), "info");
-        // Всё равно закрываем — запись уже создана.
+        // Всё равно закрываем - запись уже создана.
         closeCustomScheduleSheet();
         if (typeof recalcPlan === "function") recalcPlan();
         return;
       }
-      // FIX: custom schedule accumulation + counters update — пересчитываем
+      // FIX: custom schedule accumulation + counters update - пересчитываем
       // pendingDeposit непосредственно перед commit, чтобы избежать гонок
       // (state мог поменяться, пока модалка была открыта).
       var freshCalc = _computeDepositForEntry(ctx.side);
       var commitAmount = freshCalc.deposit > 0 ? freshCalc.deposit : ctx.pendingDeposit;
 
-      // FIX: custom schedule accumulation + counters update — атрибуцию
+      // FIX: custom schedule accumulation + counters update - атрибуцию
       // delta-отложения держим на income-entry (даже если триггер был от
       // expense-стороны). Это нужно потому, что:
       //   • в истории badge «Отложено X» показывается только у income-записей
-      //   • смысл deposited — «сколько денег ушло на цель», что концептуально
+      //   • смысл deposited - «сколько денег ушло на цель», что концептуально
       //     связано с источником дохода, а не с расходом
-      // Если income-записей нет (только что введён expense без custom-доходов) —
+      // Если income-записей нет (только что введён expense без custom-доходов) -
       // fallback на ту запись, что только что создана (поведение прежнее).
       var targetEntry = _entries().filter(function (e) { return e.id === ctx.editId; })[0];
       if (ctx.side === "expense") {
@@ -7568,7 +7573,7 @@ initCashflowSettings();
         showToast(t("cs.toast.deposited", { amount: _amount(commitAmount) }), "success");
       }
       closeCustomScheduleSheet();
-      // FIX: custom schedule accumulation + counters update — гарантированный
+      // FIX: custom schedule accumulation + counters update - гарантированный
       // re-render счётчиков «Отложено от этой суммы» / «Отложено на цель»
       // сразу после клика, не дожидаясь следующего естественного recalcPlan.
       if (typeof recalcPlan === "function") recalcPlan();
@@ -7580,7 +7585,7 @@ initCashflowSettings();
   if (skipDepositBtn) {
     skipDepositBtn.addEventListener("click", function () {
       if (typeof haptic === "function") haptic("light");
-      // CUSTOM SCHEDULE v2 - fix main plan display — даже без отложения важно
+      // CUSTOM SCHEDULE v2 - fix main plan display - даже без отложения важно
       // показать соответствующий reminder: пользователь зафиксировал движение
       // одной стороны, имеет смысл предложить дополнить другую (но только если
       // противоположная сторона тоже в custom-режиме).
@@ -7613,7 +7618,7 @@ initCashflowSettings();
     amountInput.addEventListener("input", function (e) {
       if (typeof formatNumericInput === "function") formatNumericInput(e.target);
       else e.target.value = (typeof formatNumber === "function") ? formatNumber(e.target.value) : e.target.value;
-      // UNIFIED CUSTOM SCHEDULE FLOW — синхронно обновляем live-preview, чтобы
+      // UNIFIED CUSTOM SCHEDULE FLOW - синхронно обновляем live-preview, чтобы
       // пользователь сразу видел рассчитанную сумму отложения.
       _updateLivePreview();
     });
@@ -7626,7 +7631,7 @@ initCashflowSettings();
     if (addBtn) {
       var side = addBtn.getAttribute("data-side") || "income";
       if (typeof haptic === "function") haptic("light");
-      // CUSTOM SCHEDULE v2 - fix main plan display — открывая модалку нужной
+      // CUSTOM SCHEDULE v2 - fix main plan display - открывая модалку нужной
       // стороны, гасим соответствующий sticky-reminder (он становится неактуален).
       if (side === "income") _setIncomePrompt(false);
       if (side === "expense") _setExpensePrompt(false);
@@ -7667,10 +7672,10 @@ initCashflowSettings();
           if (typeof showToast === "function") showToast(t("cs.toast.noGoal"), "info");
           return;
         }
-        // UNIFIED CUSTOM SCHEDULE FLOW — inline-кнопка ↑ работает в двух режимах
+        // UNIFIED CUSTOM SCHEDULE FLOW - inline-кнопка ↑ работает в двух режимах
         // в зависимости от freq:
-        //   • freq=custom — аккумулированный pending (закрывает весь period-debt).
-        //   • freq!=custom — per-entry pending (только эта запись: amount×pace − deposited).
+        //   • freq=custom - аккумулированный pending (закрывает весь period-debt).
+        //   • freq!=custom - per-entry pending (только эта запись: amount×pace − deposited).
         // Это устраняет несоответствие после смены freq и сохраняет premium UX:
         // пользователь докидывает ровно то, что не отлажено по конкретному поступлению.
         var sInline = (typeof getState === "function") ? getState() : {};
@@ -7694,7 +7699,7 @@ initCashflowSettings();
           showToast(t("cs.toast.deposited", { amount: _amount(dep) }), "success");
         }
         if (typeof recalcPlan === "function") recalcPlan();
-        // FIX: custom schedule accumulation + counters update — force-render
+        // FIX: custom schedule accumulation + counters update - force-render
         // history и main-plan сразу после inline-deposit.
         if (typeof window.renderCustomSchedule === "function") window.renderCustomSchedule();
         if (typeof updatePlanHeader === "function") updatePlanHeader();
@@ -7721,7 +7726,7 @@ initCashflowSettings();
     });
   }
 
-  // CUSTOM SCHEDULE v2 - fix main plan display — зеркальные handlers для income-reminder.
+  // CUSTOM SCHEDULE v2 - fix main plan display - зеркальные handlers для income-reminder.
   var reminderIncCta = document.getElementById("csIncomeReminderCta");
   var reminderIncDismiss = document.getElementById("csIncomeReminderDismiss");
   if (reminderIncCta) {
@@ -7744,14 +7749,14 @@ initCashflowSettings();
   window.openCustomScheduleSheet = openCustomScheduleSheet;
   window.closeCustomScheduleSheet = closeCustomScheduleSheet;
 
-  // FIX: custom schedule accumulation + counters update — публичный API для
+  // FIX: custom schedule accumulation + counters update - публичный API для
   // блока «Текущий план» и других внешних потребителей. ВСЕ значения теперь
   // от АККУМУЛИРОВАННЫХ тоталов (а не от последней записи).
   //
   // Возвращает:
   //   {
-  //     anyCustomActive,   // boolean — хотя бы одна сторона freq=custom
-  //     hasAnyEntry,       // boolean — есть ли хоть одна ручная запись
+  //     anyCustomActive,   // boolean - хотя бы одна сторона freq=custom
+  //     hasAnyEntry,       // boolean - есть ли хоть одна ручная запись
   //     side,              // последняя сторона ввода (для контекстного UI)
   //     entry,             // последняя запись (объект)
   //     totalIncome,       // ΣincomeEntries (или фикс)
@@ -7759,7 +7764,7 @@ initCashflowSettings();
   //     free,              // max(0, totalIncome − totalExpense)
   //     targetDeposit,     // free × pace
   //     alreadyDeposited,  // Σentry.deposited
-  //     pendingDeposit,    // max(0, target − already) — "Осталось отложить"
+  //     pendingDeposit,    // max(0, target − already) - "Осталось отложить"
   //     counterpart,       // { amount, kind } для UI-подсказки «учтено …»
   //     etaMonths,         // примерный срок до цели или null
   //     // fmt-помощники для render-кода:
@@ -7816,7 +7821,7 @@ initCashflowSettings();
 
   window.getCustomPlanInfo = getCustomPlanInfo;
 
-  // CUSTOM SCHEDULE LOGIC — первичный рендер на момент загрузки страницы.
+  // CUSTOM SCHEDULE LOGIC - первичный рендер на момент загрузки страницы.
   // syncFlexibleUI() мог отработать ДО парсинга этой IIFE, тогда блоки
   // оказались бы видимыми, но пустыми. Рендерим явно один раз.
   try { renderCustomSchedule(); } catch (e) { /* swallow */ }
@@ -7824,9 +7829,9 @@ initCashflowSettings();
 
 /* ===== ACCOUNT STATS SYSTEM ===== */
 
-// DYNAMIC INFLATION — карта расширена полем dbName (имя как в public.inflation_rates),
+// DYNAMIC INFLATION - карта расширена полем dbName (имя как в public.inflation_rates),
 // добавлены страны ES (Испания) и JP (Япония) из новых данных Supabase.
-// Поле `inflation` теперь только FALLBACK (5.0 если Supabase недоступен — см.
+// Поле `inflation` теперь только FALLBACK (5.0 если Supabase недоступен - см.
 // supabase.js INFLATION_FALLBACK). Реальные ставки приходят асинхронно из
 // loadInflationRates() / getInflationRate(dbName).
 var STATS_COUNTRY_MAP = {
@@ -7838,7 +7843,7 @@ var STATS_COUNTRY_MAP = {
   JP: { currency: "JPY", inflation: 5.0, labelKey: "stats.country.JP", dbName: "Япония" }
 };
 
-// DYNAMIC INFLATION — reverse-lookup "Россия" → "RU". Используется при загрузке
+// DYNAMIC INFLATION - reverse-lookup "Россия" → "RU". Используется при загрузке
 // списка из Supabase, чтобы сопоставить DB-имя с внутренним ISO-кодом.
 function _statsCountryCodeFromDbName(dbName) {
   if (!dbName) return null;
@@ -7848,19 +7853,19 @@ function _statsCountryCodeFromDbName(dbName) {
   return null;
 }
 
-// DYNAMIC INFLATION — последний загруженный список из Supabase (для отображения
-// в дропдауне). Если пуст / не получен — используем ключи STATS_COUNTRY_MAP как
+// DYNAMIC INFLATION - последний загруженный список из Supabase (для отображения
+// в дропдауне). Если пуст / не получен - используем ключи STATS_COUNTRY_MAP как
 // fallback, чтобы экран не оставался пустым в offline-режиме.
 var _statsInflationRows = [];
 
 function getStatsTypeLabel(type) {
-  return t("stats.type." + type) || type || "—";
+  return t("stats.type." + type) || type || "-";
 }
 
 var _statsSelectedType = null;
 var _statsTargetAccount = "main";
 
-// DYNAMIC INFLATION — рендерит <option>-список в #statsCountry на основе
+// DYNAMIC INFLATION - рендерит <option>-список в #statsCountry на основе
 // _statsInflationRows. Сохраняет текущее выбранное значение (если оно ещё
 // присутствует в списке). Локализует через labelKey, fallback на dbName.
 function _renderStatsCountryOptions() {
@@ -7879,7 +7884,7 @@ function _renderStatsCountryOptions() {
       if (code) {
         sourceCodes.push(code);
       } else {
-        // Новая страна, не в нашей карте — добавим как опцию с raw dbName.
+        // Новая страна, не в нашей карте - добавим как опцию с raw dbName.
         var opt = document.createElement("option");
         opt.value = row.country;
         opt.textContent = row.country;
@@ -7903,7 +7908,7 @@ function _renderStatsCountryOptions() {
   if (prev) sel.value = prev;
 }
 
-// DYNAMIC INFLATION — обновляет live-preview ставки в дропдауне страны.
+// DYNAMIC INFLATION - обновляет live-preview ставки в дропдауне страны.
 function _updateInflationPreview(rate, isLoading) {
   var el = document.getElementById("statsInflationPreview");
   if (!el) return;
@@ -7925,7 +7930,7 @@ function _updateInflationPreview(rate, isLoading) {
 }
 
 /* ============================================================================
- * PORTFOLIO ALLOCATION LOGIC — Account Statistics portfolio composition
+ * PORTFOLIO ALLOCATION LOGIC - Account Statistics portfolio composition
  * ----------------------------------------------------------------------------
  * The screen now holds an array of allocations (`storageAllocation: []`) per
  * account (`main` / `reserve`), with a per-account savingsMode toggle. The
@@ -7937,12 +7942,12 @@ function _updateInflationPreview(rate, isLoading) {
  * Inside the modal (`#statsAllocSheet`) the user picks one type and fills
  * type-specific fields. The same DOM nodes for fields (`#statsCashFields`
  * etc.) that used to live on the screen are now siblings of the sheet inside
- * the modal — UI / handlers were refactored accordingly.
+ * the modal - UI / handlers were refactored accordingly.
  * ============================================================================ */
-// MOEX INTEGRATION — RU-only preset assets (stocks + MOEX ETFs).
+// MOEX INTEGRATION - RU-only preset assets (stocks + MOEX ETFs).
 // Each preset bakes the long-run expected return (used in projections); live
 // prices/change are fetched from MOEX ISS via window.fetchMoexQuote.
-// FIX: stable stock logos — ISIN is required because Tinkoff brand CDN keys by
+// FIX: stable stock logos - ISIN is required because Tinkoff brand CDN keys by
 // ISIN, not by ticker (https://invest-brands.cdn-tinkoff.ru/{ISIN}x160.png).
 // For Tinkoff/Sber funds the ticker also works; for FinEx (FX*) ETFs the IE...
 // ISINs are used.
@@ -7966,7 +7971,7 @@ var STOCK_ASSET_PRESETS = {
   etf_sbsp:   { return: 10.0, ticker: "SBSP", isin: "RU000A1014L8" }
 };
 
-// FIX: stable stock logos — Tinkoff brand CDN keys assets by ISIN, not ticker
+// FIX: stable stock logos - Tinkoff brand CDN keys assets by ISIN, not ticker
 // (see https://github.com/Tinkoff/investAPI/issues/135). For Tinkoff/Sber funds
 // the ticker also resolves; for FinEx ETFs we use the IE-prefixed ISIN.
 // We build a ticker → ISIN map from the presets and produce a CHAIN of URLs:
@@ -8002,13 +8007,13 @@ function getStockLogoUrl(ticker) {
 window.getStockLogoUrl = getStockLogoUrl;
 window.getStockLogoUrls = getStockLogoUrls;
 
-// FIX: stable stock logos — global cache of tickers whose ENTIRE candidate
+// FIX: stable stock logos - global cache of tickers whose ENTIRE candidate
 // chain failed. On any subsequent re-render we skip <img> entirely and render
 // the colored letter fallback right away. This kills the "flash + disappear"
 // loop caused by re-creating <img> nodes on every list re-render.
 window._stockLogoFailed = window._stockLogoFailed || Object.create(null);
 
-// FIX: stable stock logos — try the next URL in the candidate chain; if there
+// FIX: stable stock logos - try the next URL in the candidate chain; if there
 // is none left, mark the ticker as failed and swap to the CSS-only letter
 // fallback (the <img> is just hidden, no outerHTML mutation).
 window._tryNextLogoUrl = function (imgEl) {
@@ -8025,7 +8030,7 @@ window._tryNextLogoUrl = function (imgEl) {
   if (imgEl.parentNode) imgEl.parentNode.classList.add("logo-failed");
 };
 
-// FIX: stable stock logos — single source of truth for rendering a stock icon.
+// FIX: stable stock logos - single source of truth for rendering a stock icon.
 // Always returns a stable wrapper containing both <img> and the letter fallback;
 // CSS swaps them via `.logo-failed`, never via innerHTML reflow. Cached failures
 // short-circuit straight to the fallback (no <img> at all).
@@ -8052,7 +8057,7 @@ function renderStockLogoHtml(ticker) {
 }
 window.renderStockLogoHtml = renderStockLogoHtml;
 
-// MOEX INTEGRATION — public MOEX ISS API (no auth required, CORS-friendly).
+// MOEX INTEGRATION - public MOEX ISS API (no auth required, CORS-friendly).
 // Quotes are cached in-memory for 60s to avoid spamming the endpoint while the
 // user toggles assets in the picker. Falls back to null on any error so the
 // UI just shows a friendly "could not fetch" state.
@@ -8094,14 +8099,14 @@ window.fetchMoexQuote = function (ticker) {
     });
 };
 
-// PORTFOLIO ALLOCATION v2 — metal preset returns (long-run avg, % p.a.).
+// PORTFOLIO ALLOCATION v2 - metal preset returns (long-run avg, % p.a.).
 var METAL_PRESETS = {
   gold:     { return: 8.0 },
   silver:   { return: 6.0 },
   platinum: { return: 5.0 }
 };
 
-// PORTFOLIO ALLOCATION + CARD EXPANSION — global helpers reused by both the
+// PORTFOLIO ALLOCATION + CARD EXPANSION - global helpers reused by both the
 // editor screen and the back-card detail flow. Kept here so renderAccountBackCards
 // and openAllocationDetail can compute consistent labels/icons/meta.
 function allocTypeIcon(type) {
@@ -8114,32 +8119,32 @@ function allocTypeIcon(type) {
   }
 }
 function allocTypeLabel(type) {
-  return (typeof t === "function") ? t("stats.type." + type) : (type || "—");
+  return (typeof t === "function") ? t("stats.type." + type) : (type || "-");
 }
 function allocInstrumentLabel(item) {
-  if (!item) return "—";
+  if (!item) return "-";
   var p = item.details || {};
   if (item.type === "cash") {
-    return p.country ? (STATS_COUNTRY_MAP[p.country] ? t(STATS_COUNTRY_MAP[p.country].labelKey) : p.country) : "—";
+    return p.country ? (STATS_COUNTRY_MAP[p.country] ? t(STATS_COUNTRY_MAP[p.country].labelKey) : p.country) : "-";
   }
   if (item.type === "stock") {
-    return p.asset ? t("stats.asset." + p.asset) : (p.ticker || "—");
+    return p.asset ? t("stats.asset." + p.asset) : (p.ticker || "-");
   }
   if (item.type === "deposit") {
     var er = getStorageExpectedReturn({ type: "deposit", params: p });
     return (Math.round(er * 10) / 10) + "% · " + (p.termMonths || 0) + " " + t("misc.monthShort");
   }
   if (item.type === "metals") {
-    return p.metal ? t("stats.metal." + p.metal) : "—";
+    return p.metal ? t("stats.metal." + p.metal) : "-";
   }
-  return "—";
+  return "-";
 }
 function allocBackMeta(item) {
   if (!item) return "";
   var p = item.details || {};
   if (item.type === "cash") {
-    var infl = (p.inflation != null) ? (Math.round(p.inflation * 10) / 10) + "%" : "—";
-    return (p.currency || "—") + " · " + t("misc.inflation") + " " + infl;
+    var infl = (p.inflation != null) ? (Math.round(p.inflation * 10) / 10) + "%" : "-";
+    return (p.currency || "-") + " · " + t("misc.inflation") + " " + infl;
   }
   if (item.type === "stock") {
     var sR = getStorageExpectedReturn({ type: "stock", params: p });
@@ -8171,13 +8176,13 @@ function allocBackMeta(item) {
   var allocProgressFill = document.getElementById("statsAllocProgressFill");
   var allocProgressLabel = document.getElementById("statsAllocProgressLabel");
   var allocProgressValue = document.getElementById("statsAllocProgressValue");
-  // FUTURE DEPOSITS PER ITEM — global savings-mode toggle removed; refs kept
+  // FUTURE DEPOSITS PER ITEM - global savings-mode toggle removed; refs kept
   // null-safe in case any old skin still ships the element.
   var savingsModeSeg = document.getElementById("statsSavingsMode");
   var savingsModeHint = document.getElementById("statsSavingsModeHint");
-  // FUTURE DEPOSITS PER ITEM — per-allocation auto-replenish checkboxes.
+  // FUTURE DEPOSITS PER ITEM - per-allocation auto-replenish checkboxes.
   var stockReplenish = document.getElementById("statsStockReplenish");
-  // FIX: portfolio UX v2 — new refs (logo preview, live percentage amount).
+  // FIX: portfolio UX v2 - new refs (logo preview, live percentage amount).
   var stockPreviewRow  = document.getElementById("statsStockPreviewRow");
   var stockPreviewLogo = document.getElementById("statsStockPreviewLogo");
   var stockPreviewName = document.getElementById("statsStockPreviewName");
@@ -8199,7 +8204,7 @@ function allocBackMeta(item) {
   var metalsFields = document.getElementById("statsMetalsFields");
   var countrySelect = document.getElementById("statsCountry");
   var currencySelect = document.getElementById("statsCurrency");
-  // PORTFOLIO ALLOCATION v2 — stocks now resolve return from preset (no manual input).
+  // PORTFOLIO ALLOCATION v2 - stocks now resolve return from preset (no manual input).
   var stockAssetSel = document.getElementById("statsStockAsset");
   var stockReturnHint = document.getElementById("statsStockReturnHint");
   var depositRate = document.getElementById("statsDepositRate");
@@ -8211,17 +8216,17 @@ function allocBackMeta(item) {
   var depositCap  = document.getElementById("statsDepositCap");
   var depositReplenish = document.getElementById("statsDepositReplenish");
   var depositEffPreview = document.getElementById("statsDepositEffectivePreview"); // FIX: live preview
-  // METALS - IN DEVELOPMENT — metal inputs replaced by info card; refs may be null.
+  // METALS - IN DEVELOPMENT - metal inputs replaced by info card; refs may be null.
   var metalSelect = document.getElementById("statsMetal");
   var metalReturnHint = document.getElementById("statsMetalReturnHint");
 
-  // MOEX INTEGRATION — refs for live quote card under stock asset select.
+  // MOEX INTEGRATION - refs for live quote card under stock asset select.
   var moexBlock       = document.getElementById("statsStockMoexBlock");
   var moexPriceEl     = document.getElementById("statsStockMoexPrice");
   var moexChangeEl    = document.getElementById("statsStockMoexChange");
   var _moexReqToken   = 0; // guards against out-of-order async responses
 
-  // PORTFOLIO ALLOCATION v2 — small helpers for showing return hints.
+  // PORTFOLIO ALLOCATION v2 - small helpers for showing return hints.
   function _showReturnHint(el, retVal) {
     if (!el) return;
     if (!isFinite(retVal) || retVal <= 0) {
@@ -8234,7 +8239,7 @@ function allocBackMeta(item) {
     el.style.display = "";
   }
 
-  // MOEX INTEGRATION — render live quote card states (loading / data / error).
+  // MOEX INTEGRATION - render live quote card states (loading / data / error).
   function _renderMoexCard(state, quote) {
     if (!moexBlock) return;
     moexBlock.style.display = "";
@@ -8242,13 +8247,13 @@ function allocBackMeta(item) {
     if (state === "loading") {
       moexBlock.classList.add("is-loading");
       if (moexPriceEl)  moexPriceEl.textContent  = t("stats.moex.loading");
-      if (moexChangeEl) { moexChangeEl.textContent = "—"; moexChangeEl.className = "moex-quote-change muted"; }
+      if (moexChangeEl) { moexChangeEl.textContent = "-"; moexChangeEl.className = "moex-quote-change muted"; }
       return;
     }
     if (state === "error" || !quote || quote.price == null) {
       moexBlock.classList.add("is-error");
       if (moexPriceEl)  moexPriceEl.textContent  = t("stats.moex.error");
-      if (moexChangeEl) { moexChangeEl.textContent = "—"; moexChangeEl.className = "moex-quote-change muted"; }
+      if (moexChangeEl) { moexChangeEl.textContent = "-"; moexChangeEl.className = "moex-quote-change muted"; }
       return;
     }
     var price = Number(quote.price);
@@ -8258,7 +8263,7 @@ function allocBackMeta(item) {
     }
     if (moexChangeEl) {
       if (chg == null || !isFinite(chg)) {
-        moexChangeEl.textContent = "—";
+        moexChangeEl.textContent = "-";
         moexChangeEl.className = "moex-quote-change muted";
       } else {
         var sign = chg > 0 ? "+" : "";
@@ -8268,7 +8273,7 @@ function allocBackMeta(item) {
     }
   }
 
-  // MOEX INTEGRATION — fetch quote for the currently selected asset and render it.
+  // MOEX INTEGRATION - fetch quote for the currently selected asset and render it.
   // Uses a request token so a late response from a previous ticker can't overwrite
   // the card after the user has already picked another asset.
   function _refreshMoexForSelected() {
@@ -8286,7 +8291,7 @@ function allocBackMeta(item) {
     });
   }
 
-  // FIX: dynamic deposit rate label — switches between base-only and after-promo.
+  // FIX: dynamic deposit rate label - switches between base-only and after-promo.
   function _updateDepositRateLabel() {
     if (!depositRateLabel) return;
     var n = depositPromoMonths ? (parseInt(depositPromoMonths.value, 10) || 0) : 0;
@@ -8329,13 +8334,13 @@ function allocBackMeta(item) {
   }
 
   // ── Working state (mirrors what will be written into appState on submit) ─
-  // PORTFOLIO ALLOCATION LOGIC — local mutable working copy. Submit pushes
+  // PORTFOLIO ALLOCATION LOGIC - local mutable working copy. Submit pushes
   // this into appState.accountStats[_statsTargetAccount].
   var _allocations = [];          // [{ id, type, percentage, details }]
   var _modalEditIndex = -1;       // -1 → adding; >=0 → editing existing
   var _modalDepositCap = "monthly";
 
-  // FUTURE DEPOSITS PER ITEM — global savings-mode state removed; the
+  // FUTURE DEPOSITS PER ITEM - global savings-mode state removed; the
   // per-allocation `details.acceptsFutureDeposits` flag is the new source of truth.
   // Expose for openAccountStatsScreen (defined outside this IIFE).
   window._statsState = {
@@ -8366,7 +8371,7 @@ function allocBackMeta(item) {
     return (typeof t === "function") ? t("stats.type." + item.type) : item.type;
   }
 
-  // FIX: stable stock logos — delegates to renderStockLogoHtml which uses a
+  // FIX: stable stock logos - delegates to renderStockLogoHtml which uses a
   // wrapper + CSS-controlled fallback (no outerHTML swap, no flash on re-render).
   function _allocIconHtml(item) {
     if (item && item.type === "stock" && item.details && item.details.ticker && typeof renderStockLogoHtml === "function") {
@@ -8378,33 +8383,33 @@ function allocBackMeta(item) {
   function _allocMetaText(item) {
     var p = item.details || {};
     if (item.type === "cash") {
-      var country = p.country ? (STATS_COUNTRY_MAP[p.country] ? t(STATS_COUNTRY_MAP[p.country].labelKey) : p.country) : "—";
-      var infl = (p.inflation != null) ? (Math.round(p.inflation * 10) / 10) + "%" : "—";
-      return country + " · " + (p.currency || "—") + " · " + t("misc.inflation") + " " + infl;
+      var country = p.country ? (STATS_COUNTRY_MAP[p.country] ? t(STATS_COUNTRY_MAP[p.country].labelKey) : p.country) : "-";
+      var infl = (p.inflation != null) ? (Math.round(p.inflation * 10) / 10) + "%" : "-";
+      return country + " · " + (p.currency || "-") + " · " + t("misc.inflation") + " " + infl;
     }
     if (item.type === "stock") {
-      // PORTFOLIO ALLOCATION v2 — return is preset-resolved (no manual field).
-      var asset = p.asset ? t("stats.asset." + p.asset) : (p.ticker || "—");
+      // PORTFOLIO ALLOCATION v2 - return is preset-resolved (no manual field).
+      var asset = p.asset ? t("stats.asset." + p.asset) : (p.ticker || "-");
       var sR = getStorageExpectedReturn({ type: "stock", params: p });
       return asset + " · " + (Math.round(sR * 10) / 10) + "%";
     }
     if (item.type === "deposit") {
-      // PORTFOLIO ALLOCATION v2 — show the blended effective rate so users see
+      // PORTFOLIO ALLOCATION v2 - show the blended effective rate so users see
       // the actual yield reflecting promo + base + capitalization.
       var dR = getStorageExpectedReturn({ type: "deposit", params: p });
-      var term = (p.termMonths != null) ? p.termMonths + " " + t("misc.monthShort") : "—";
+      var term = (p.termMonths != null) ? p.termMonths + " " + t("misc.monthShort") : "-";
       var promoStr = (p.promoMonths > 0 && p.promoRate != null) ? " · " + p.promoMonths + "m@" + (Math.round(p.promoRate * 10) / 10) + "%" : "";
       return (Math.round(dR * 10) / 10) + "% · " + term + promoStr;
     }
     if (item.type === "metals") {
-      var metal = p.metal ? t("stats.metal." + p.metal) : "—";
+      var metal = p.metal ? t("stats.metal." + p.metal) : "-";
       var mR = getStorageExpectedReturn({ type: "metals", params: p });
       return metal + " · " + (Math.round(mR * 10) / 10) + "%";
     }
     return "";
   }
 
-  // PORTFOLIO ALLOCATION v2 — withdrawn allocations are tracked in the same
+  // PORTFOLIO ALLOCATION v2 - withdrawn allocations are tracked in the same
   // array but skipped from rebalance / totals / calc; they live in a separate
   // visual section as a history snapshot.
   function _isActive(a) { return a && !a.withdrawn; }
@@ -8416,7 +8421,7 @@ function allocBackMeta(item) {
     return _allocations.reduce(function (acc, a) { return _isActive(a) ? acc + (Number(a.percentage) || 0) : acc; }, 0);
   }
 
-  /* PORTFOLIO ALLOCATION v2 — auto-rebalance helper.
+  /* PORTFOLIO ALLOCATION v2 - auto-rebalance helper.
    * After the user adds, edits or removes an active allocation, the remaining
    * active items are rescaled proportionally so the total = 100%. Rounding is
    * absorbed by the last touched item to guarantee exact 100 sum (integers).
@@ -8463,7 +8468,7 @@ function allocBackMeta(item) {
       });
     }
 
-    // Final guard — any over-100 due to rounding sums clipped.
+    // Final guard - any over-100 due to rounding sums clipped.
     var total = _allocTotal();
     if (total !== 100 && actives.length) {
       var diff = 100 - total;
@@ -8526,7 +8531,7 @@ function allocBackMeta(item) {
 
     var html = "";
 
-    // PORTFOLIO ALLOCATION v2 — stacked composition bar (color per type).
+    // PORTFOLIO ALLOCATION v2 - stacked composition bar (color per type).
     if (active.length) {
       html += '<div class="alloc-stacked" aria-hidden="true">';
       active.forEach(function (a) {
@@ -8539,7 +8544,7 @@ function allocBackMeta(item) {
 
     _allocations.forEach(function (item, idx) {
       if (!item || item.withdrawn) return;
-      // FIX: portfolio UX v2 — for stocks render a round company logo (with a
+      // FIX: portfolio UX v2 - for stocks render a round company logo (with a
       // type-icon fallback if the image fails to load).
       var iconHtml = _allocIconHtml(item);
       html +=
@@ -8563,7 +8568,7 @@ function allocBackMeta(item) {
       _allocations.forEach(function (item, idx) {
         if (!item || !item.withdrawn) return;
         var dateStr = _formatWithdrawnDate(item.withdrawnAt);
-        // FIX: portfolio UX v2 — same logo-aware icon helper for withdrawn rows.
+        // FIX: portfolio UX v2 - same logo-aware icon helper for withdrawn rows.
         var iconHtml = _allocIconHtml(item);
         html +=
           '<div class="alloc-item alloc-item--withdrawn" data-type="' + item.type + '" data-alloc-idx="' + idx + '">' +
@@ -8586,7 +8591,7 @@ function allocBackMeta(item) {
   }
 
   function _renderAllocProgress() {
-    // FIX: portfolio UX v2 — also keeps the "+ Add storage type" button in a
+    // FIX: portfolio UX v2 - also keeps the "+ Add storage type" button in a
     // soft-disabled state when the portfolio is already at 100%.
     _syncAddBtnDisabled();
     if (!allocProgressEl) return;
@@ -8611,7 +8616,7 @@ function allocBackMeta(item) {
     }
   }
 
-  // FIX: portfolio UX v2 — soft-disable add button at exactly 100% portfolio.
+  // FIX: portfolio UX v2 - soft-disable add button at exactly 100% portfolio.
   // We don't set `disabled` so the click still reaches our handler and can
   // surface a friendly toast.
   function _syncAddBtnDisabled() {
@@ -8621,7 +8626,7 @@ function allocBackMeta(item) {
     allocAddBtn.setAttribute("aria-disabled", atFull ? "true" : "false");
   }
 
-  // FUTURE DEPOSITS PER ITEM — savings-mode renderer removed (no UI to draw).
+  // FUTURE DEPOSITS PER ITEM - savings-mode renderer removed (no UI to draw).
 
   function _updateSubmitState() {
     if (!submitBtn) return;
@@ -8630,7 +8635,7 @@ function allocBackMeta(item) {
   }
 
   // ── List interactions: edit / remove / withdraw / restore ─────────────
-  // PORTFOLIO ALLOCATION v2 — every action that mutates active set triggers
+  // PORTFOLIO ALLOCATION v2 - every action that mutates active set triggers
   // an auto-rebalance so the active total stays at exactly 100%.
   if (allocListEl) {
     allocListEl.addEventListener("click", function (e) {
@@ -8670,11 +8675,11 @@ function allocBackMeta(item) {
     });
   }
 
-  // FUTURE DEPOSITS PER ITEM — global savings-mode listener removed.
+  // FUTURE DEPOSITS PER ITEM - global savings-mode listener removed.
 
   // ── Add button → open modal in "add" mode ──────────────────────────────
   if (allocAddBtn) {
-    // FIX: portfolio UX v2 — soft-block when portfolio is already at 100%.
+    // FIX: portfolio UX v2 - soft-block when portfolio is already at 100%.
     allocAddBtn.addEventListener("click", function () {
       if (allocAddBtn.classList.contains("is-disabled")) {
         showToast(t("portfolio.addBtn.fullToast"), "info");
@@ -8686,7 +8691,7 @@ function allocBackMeta(item) {
   }
 
   // ──────────────────────────────────────────────────────────────────────
-  // PORTFOLIO ALLOCATION LOGIC — modal: open / close / save
+  // PORTFOLIO ALLOCATION LOGIC - modal: open / close / save
   // ──────────────────────────────────────────────────────────────────────
   function _toggleFieldsForType(type) {
     if (cashFields)    cashFields.style.display    = (type === "cash")    ? "" : "none";
@@ -8703,9 +8708,9 @@ function allocBackMeta(item) {
       });
     }
     _toggleFieldsForType(type);
-    // MOEX INTEGRATION — refresh live quote when user switches into stock mode.
+    // MOEX INTEGRATION - refresh live quote when user switches into stock mode.
     if (type === "stock") _refreshMoexForSelected();
-    // FIX: portfolio UX v2 — keep stock-only preview in sync with type switch.
+    // FIX: portfolio UX v2 - keep stock-only preview in sync with type switch.
     if (type === "stock") _updateStockPreview();
     else if (stockPreviewRow) stockPreviewRow.style.display = "none";
   }
@@ -8741,22 +8746,22 @@ function allocBackMeta(item) {
     }
     _renderStatsCountryOptions();
 
-    // PORTFOLIO ALLOCATION v2 — STOCK: only preset asset; return is shown as a hint.
+    // PORTFOLIO ALLOCATION v2 - STOCK: only preset asset; return is shown as a hint.
     if (stockAssetSel) {
       var savedAsset = (defaultType === "stock" && d.asset && STOCK_ASSET_PRESETS[d.asset]) ? d.asset : "ru_sber";
       stockAssetSel.value = savedAsset;
       var _sPreset = STOCK_ASSET_PRESETS[stockAssetSel.value];
       _showReturnHint(stockReturnHint, _sPreset ? _sPreset.return : 0);
-      // MOEX INTEGRATION — auto-load live quote when opening the modal in stock mode.
+      // MOEX INTEGRATION - auto-load live quote when opening the modal in stock mode.
       if (defaultType === "stock") _refreshMoexForSelected();
       else if (moexBlock) moexBlock.style.display = "none";
     }
-    // FUTURE DEPOSITS PER ITEM — restore per-item flag for stock.
+    // FUTURE DEPOSITS PER ITEM - restore per-item flag for stock.
     if (stockReplenish) {
       stockReplenish.checked = !!(defaultType === "stock" && d.acceptsFutureDeposits);
     }
 
-    // PORTFOLIO ALLOCATION v2 — DEPOSIT: base rate + term + promo period + capitalization.
+    // PORTFOLIO ALLOCATION v2 - DEPOSIT: base rate + term + promo period + capitalization.
     if (depositRate) depositRate.value = (defaultType === "deposit" && d.rate != null) ? d.rate : "";
     if (depositTerm) depositTerm.value = (defaultType === "deposit" && d.termMonths != null) ? d.termMonths : "";
     if (depositPromoMonths) depositPromoMonths.value = (defaultType === "deposit" && d.promoMonths != null) ? d.promoMonths : "0";
@@ -8768,7 +8773,7 @@ function allocBackMeta(item) {
         b.classList.toggle("active", b.getAttribute("data-cap") === _modalDepositCap);
       });
     }
-    // FUTURE DEPOSITS PER ITEM — checkbox now reflects acceptsFutureDeposits
+    // FUTURE DEPOSITS PER ITEM - checkbox now reflects acceptsFutureDeposits
     // (falls back to the legacy `replenishable` flag for back-compat).
     if (depositReplenish) {
       var depAccepts = (d.acceptsFutureDeposits != null) ? d.acceptsFutureDeposits : d.replenishable;
@@ -8778,7 +8783,7 @@ function allocBackMeta(item) {
     _updateDepositRateLabel();
     _updateDepositEffectivePreview();
 
-    // PORTFOLIO ALLOCATION v2 — METALS: preset only, return shown as a hint.
+    // PORTFOLIO ALLOCATION v2 - METALS: preset only, return shown as a hint.
     if (metalSelect) {
       var savedMetal = (defaultType === "metals" && d.metal && METAL_PRESETS[d.metal]) ? d.metal : "gold";
       metalSelect.value = savedMetal;
@@ -8786,7 +8791,7 @@ function allocBackMeta(item) {
       _showReturnHint(metalReturnHint, _mPreset ? _mPreset.return : 0);
     }
 
-    // PORTFOLIO ALLOCATION v2 — Percentage prefill:
+    // PORTFOLIO ALLOCATION v2 - Percentage prefill:
     //   editing → existing value;
     //   adding  → remaining slot (100 − active total), or 100/N+1 if portfolio full.
     if (allocPctInput) {
@@ -8804,7 +8809,7 @@ function allocBackMeta(item) {
     }
     _updatePctHint();
 
-    // FIX: portfolio UX v2 — refresh live amount & stock preview after restore.
+    // FIX: portfolio UX v2 - refresh live amount & stock preview after restore.
     _updateAllocPctLive();
     _updateStockPreview();
 
@@ -8814,7 +8819,7 @@ function allocBackMeta(item) {
       allocSheet.style.display = "block";
       requestAnimationFrame(function () { allocSheet.classList.add("open"); });
     }
-    // FIX: portfolio UX v2 — hide bottom nav while the modal is open so the
+    // FIX: portfolio UX v2 - hide bottom nav while the modal is open so the
     // top-right close button is never obscured by it.
     if (typeof hideBottomNav === "function") { try { hideBottomNav(); } catch (e) {} }
   }
@@ -8826,13 +8831,13 @@ function allocBackMeta(item) {
       if (allocOverlay) allocOverlay.style.display = "none";
     }, 320);
     _modalEditIndex = -1;
-    // FIX: portfolio UX v2 — restore bottom nav after the modal animates out.
+    // FIX: portfolio UX v2 - restore bottom nav after the modal animates out.
     if (typeof showBottomNav === "function") { try { showBottomNav(); } catch (e) {} }
     // Clear any stale error highlights so the next open is pristine.
     _clearFieldErrors();
   }
 
-  // FIX: portfolio UX v2 — live "= XXX ₽" amount under the percentage input.
+  // FIX: portfolio UX v2 - live "= XXX ₽" amount under the percentage input.
   function _updateAllocPctLive() {
     if (!allocPctLive) return;
     var pct = parseInt(allocPctInput ? allocPctInput.value : "", 10);
@@ -8840,7 +8845,7 @@ function allocBackMeta(item) {
     var bal = (typeof accounts !== "undefined" && accounts && accounts[balKey] != null) ? Number(accounts[balKey]) : 0;
     if (!isFinite(pct) || pct <= 0 || pct > 100) {
       allocPctLive.classList.add("is-zero");
-      allocPctLive.textContent = "—";
+      allocPctLive.textContent = "-";
       return;
     }
     var amount = Math.round(bal * pct / 100);
@@ -8850,7 +8855,7 @@ function allocBackMeta(item) {
     allocPctLive.textContent = t("portfolio.percentage.liveLabel").replace("{amount}", formatted + " " + symbol);
   }
 
-  // FIX: stable stock logos — logo + name preview row under the stock select.
+  // FIX: stable stock logos - logo + name preview row under the stock select.
   // The static <img id="statsStockPreviewLogo"> is replaced with a fresh
   // wrapper from renderStockLogoHtml so the failure cache + CSS fallback work
   // exactly like in the list. The row never hides itself on logo error
@@ -8883,7 +8888,7 @@ function allocBackMeta(item) {
     }
   }
 
-  // FIX: portfolio UX v2 — required field highlight + iOS-style shake. Reuses
+  // FIX: portfolio UX v2 - required field highlight + iOS-style shake. Reuses
   // the existing `input-shake` keyframe via `.field-error` + `.field-shake`.
   function _flashFieldError(el) {
     if (!el) return;
@@ -8925,7 +8930,7 @@ function allocBackMeta(item) {
 
   function _updatePctHint() {
     if (!allocPctHint) return;
-    // PORTFOLIO ALLOCATION v2 — with auto-rebalance, any 1-100 share is valid;
+    // PORTFOLIO ALLOCATION v2 - with auto-rebalance, any 1-100 share is valid;
     // the hint just tells the user what will happen ("others will be rescaled").
     var current = parseInt(allocPctInput ? allocPctInput.value : "0", 10) || 0;
     var othersCount = _activeAllocations().filter(function (a, i) {
@@ -8945,7 +8950,7 @@ function allocBackMeta(item) {
 
   if (allocPctInput) {
     allocPctInput.addEventListener("input", _updatePctHint);
-    // FIX: portfolio UX v2 — keep the live "= XXX ₽" amount in sync as user types.
+    // FIX: portfolio UX v2 - keep the live "= XXX ₽" amount in sync as user types.
     allocPctInput.addEventListener("input", _updateAllocPctLive);
   }
 
@@ -8974,18 +8979,18 @@ function allocBackMeta(item) {
     });
   }
 
-  // MOEX INTEGRATION — stock asset → update return hint + pull live MOEX quote.
+  // MOEX INTEGRATION - stock asset → update return hint + pull live MOEX quote.
   if (stockAssetSel) {
     stockAssetSel.addEventListener("change", function () {
       var preset = STOCK_ASSET_PRESETS[stockAssetSel.value] || null;
       _showReturnHint(stockReturnHint, preset ? preset.return : 0);
       _refreshMoexForSelected();
-      // FIX: portfolio UX v2 — refresh logo + name preview on asset change.
+      // FIX: portfolio UX v2 - refresh logo + name preview on asset change.
       _updateStockPreview();
     });
   }
 
-  // METALS - IN DEVELOPMENT — metalSelect/hint refs are null (replaced by info card).
+  // METALS - IN DEVELOPMENT - metalSelect/hint refs are null (replaced by info card).
   if (metalSelect) {
     metalSelect.addEventListener("change", function () {
       var mp = METAL_PRESETS[metalSelect.value] || null;
@@ -8993,8 +8998,8 @@ function allocBackMeta(item) {
     });
   }
 
-  // PORTFOLIO ALLOCATION v2 — promo months → reveal/hide promo rate input.
-  // FIX: Promo period for deposits — clamp 0–12, dynamic rate label, live preview.
+  // PORTFOLIO ALLOCATION v2 - promo months → reveal/hide promo rate input.
+  // FIX: Promo period for deposits - clamp 0–12, dynamic rate label, live preview.
   if (depositPromoMonths) {
     depositPromoMonths.addEventListener("input", function () {
       var n = parseInt(depositPromoMonths.value, 10);
@@ -9035,31 +9040,31 @@ function allocBackMeta(item) {
       };
     }
     if (type === "stock") {
-      // PORTFOLIO ALLOCATION v2 — no manual return, asset → preset return.
+      // PORTFOLIO ALLOCATION v2 - no manual return, asset → preset return.
       var assetVal = stockAssetSel ? stockAssetSel.value : "";
       var sPreset = STOCK_ASSET_PRESETS[assetVal];
       if (!sPreset) return null;
       return {
         asset: assetVal,
         ticker: sPreset.ticker || "",
-        // FUTURE DEPOSITS PER ITEM — per-allocation auto-replenishment toggle.
+        // FUTURE DEPOSITS PER ITEM - per-allocation auto-replenishment toggle.
         acceptsFutureDeposits: !!(stockReplenish && stockReplenish.checked)
-        // expectedReturn is intentionally NOT stored — resolved at runtime from preset.
+        // expectedReturn is intentionally NOT stored - resolved at runtime from preset.
       };
     }
     if (type === "deposit") {
-      // PORTFOLIO ALLOCATION v2 — base rate, term, promo period, capitalization.
+      // PORTFOLIO ALLOCATION v2 - base rate, term, promo period, capitalization.
       var rate = parseFloat(depositRate ? depositRate.value : "");
       var term = parseInt(depositTerm ? depositTerm.value : "", 10);
       if (!isFinite(rate) || rate <= 0) return null;
       if (!isFinite(term) || term <= 0) return null;
-      // FIX: Promo period for deposits — extended to 0–12 months.
+      // FIX: Promo period for deposits - extended to 0–12 months.
       var promoM = parseInt(depositPromoMonths ? depositPromoMonths.value : "0", 10);
       if (!isFinite(promoM) || promoM < 0) promoM = 0;
       promoM = Math.min(promoM, 12);
       var promoR = parseFloat(depositPromoRate ? depositPromoRate.value : "");
       if (promoM > 0 && (!isFinite(promoR) || promoR <= 0)) return null; // require promo rate when months > 0
-      // FUTURE DEPOSITS PER ITEM — the replenishment checkbox now drives the
+      // FUTURE DEPOSITS PER ITEM - the replenishment checkbox now drives the
       // shared per-item flag. We keep `replenishable` mirrored for back-compat
       // with any legacy code path that still reads it.
       var depAccepts = !!(depositReplenish && depositReplenish.checked);
@@ -9074,7 +9079,7 @@ function allocBackMeta(item) {
       };
     }
     if (type === "metals") {
-      // METALS - IN DEVELOPMENT — saving is blocked; caller handles the toast.
+      // METALS - IN DEVELOPMENT - saving is blocked; caller handles the toast.
       // Existing metal allocations from older state remain visible/removable.
       return null;
     }
@@ -9086,14 +9091,14 @@ function allocBackMeta(item) {
       var type = _statsSelectedType;
       if (!type) { showToast(t("portfolio.validation.fillFields"), "error"); return; }
 
-      // METALS - IN DEVELOPMENT — intercept before validation so the user gets
+      // METALS - IN DEVELOPMENT - intercept before validation so the user gets
       // a clear "coming soon" toast instead of a generic "fill fields" error.
       if (type === "metals") {
         showToast(t("metals.inDev.toast"), "info");
         return;
       }
 
-      // FIX: portfolio UX v2 — visual required-field check with red outline +
+      // FIX: portfolio UX v2 - visual required-field check with red outline +
       // iOS-style shake. Shows the new red "fill required fields" toast.
       if (!_validateRequiredFields(type)) {
         showToast(t("portfolio.validation.requiredFields"), "error");
@@ -9138,7 +9143,7 @@ function allocBackMeta(item) {
         newIndex = _allocations.length - 1;
       }
 
-      // PORTFOLIO ALLOCATION v2 — auto-rebalance: fix the just-edited slice and
+      // PORTFOLIO ALLOCATION v2 - auto-rebalance: fix the just-edited slice and
       // rescale the other ACTIVE slices proportionally to keep total = 100%.
       _autoRebalanceActive(newIndex);
 
@@ -9156,11 +9161,11 @@ function allocBackMeta(item) {
   if (allocOverlay) allocOverlay.addEventListener("click", _closeAllocModal);
 
   // ──────────────────────────────────────────────────────────────────────
-  // PORTFOLIO ALLOCATION LOGIC — main submit: persist portfolio to state
+  // PORTFOLIO ALLOCATION LOGIC - main submit: persist portfolio to state
   // ──────────────────────────────────────────────────────────────────────
   if (submitBtn) {
     submitBtn.addEventListener("click", function () {
-      // PORTFOLIO ALLOCATION v2 — active total must hit 100% (withdrawn excluded).
+      // PORTFOLIO ALLOCATION v2 - active total must hit 100% (withdrawn excluded).
       var activeTotal = _allocTotal();
       var activeCount = _activeAllocations().length;
       if (!activeCount || activeTotal !== 100) {
@@ -9177,8 +9182,8 @@ function allocBackMeta(item) {
         currency: (primary.type === "cash" ? primary.details.currency : null) || null,
         inflation: (primary.type === "cash" ? primary.details.inflation : null),
         params: (primary.type !== "cash" ? Object.assign({}, primary.details) : null),
-        // PORTFOLIO ALLOCATION v2 — full portfolio incl. withdrawn history.
-        // FUTURE DEPOSITS PER ITEM — per-allocation acceptsFutureDeposits
+        // PORTFOLIO ALLOCATION v2 - full portfolio incl. withdrawn history.
+        // FUTURE DEPOSITS PER ITEM - per-allocation acceptsFutureDeposits
         // is persisted inside `details` (no top-level futureSavingsMode anymore).
         storageAllocation: _allocations.map(function (a) {
           return {
@@ -9219,9 +9224,9 @@ function allocBackMeta(item) {
 })();
 
 function openAccountStatsScreen(accountKey) {
-  // PREMIUM SYSTEM — гейт на уровне самой функции (последняя линия защиты).
+  // PREMIUM SYSTEM - гейт на уровне самой функции (последняя линия защиты).
   // Сюда может вести несколько путей (back-card-button, future direct calls);
-  // если не премиум — открываем premium-модалку и отменяем переход.
+  // если не премиум - открываем premium-модалку и отменяем переход.
   if (window._premiumGate && window._premiumGate("stats")) return;
 
   _statsTargetAccount = accountKey || "main";
@@ -9236,7 +9241,7 @@ function openAccountStatsScreen(accountKey) {
   hideBottomNav();
   moveProfileToActiveHeader();
 
-  // PORTFOLIO ALLOCATION LOGIC — derive the working portfolio from saved state.
+  // PORTFOLIO ALLOCATION LOGIC - derive the working portfolio from saved state.
   // 1) If `storageAllocation` exists → use as-is.
   // 2) Else if legacy `type` exists → migrate to a one-item 100% portfolio.
   // 3) Otherwise → empty list.
@@ -9252,12 +9257,12 @@ function openAccountStatsScreen(accountKey) {
     }
     allocs = [{ id: "alloc_" + Math.random().toString(36).slice(2, 9), type: stats.type, percentage: 100, details: details }];
   }
-  // FUTURE DEPOSITS PER ITEM — global savings mode removed; per-item flag lives in details.
+  // FUTURE DEPOSITS PER ITEM - global savings mode removed; per-item flag lives in details.
   if (window._statsState && typeof window._statsState.setAllocations === "function") {
     window._statsState.setAllocations(allocs);
   }
 
-  // PORTFOLIO ALLOCATION LOGIC — prime country dropdown in the modal (fast,
+  // PORTFOLIO ALLOCATION LOGIC - prime country dropdown in the modal (fast,
   // uses cached _statsInflationRows; refresh from Supabase in background).
   _renderStatsCountryOptions();
   if (typeof window.loadInflationRates === "function") {
@@ -9270,7 +9275,7 @@ function openAccountStatsScreen(accountKey) {
   }
 }
 
-/* PORTFOLIO ALLOCATION v2 — weighted active inflation across the portfolio.
+/* PORTFOLIO ALLOCATION v2 - weighted active inflation across the portfolio.
  * Uses storageAllocation when available, falls back to legacy single `inflation`.
  * Only ACTIVE (non-withdrawn) "cash" allocations carry inflation. */
 function getActiveInflation() {
@@ -9299,7 +9304,7 @@ function getActiveInflation() {
 }
 
 /* ----------------------------------------------------------------------------
- * NEW: Storage type — annualized expected return (%) per account stats record.
+ * NEW: Storage type - annualized expected return (%) per account stats record.
  * Returns 0 for cash / unknown / missing params (no instrument yield).
  * For deposit: converts nominal rate to effective annual using capitalization.
  * For stock / metals: uses raw expectedReturn (assumed annual %).
@@ -9308,7 +9313,7 @@ function getStorageExpectedReturn(stats) {
   if (!stats || !stats.type) return 0;
   var p = stats.params || {};
 
-  // PORTFOLIO ALLOCATION v2 — stocks now resolve return from preset (no manual).
+  // PORTFOLIO ALLOCATION v2 - stocks now resolve return from preset (no manual).
   if (stats.type === "stock") {
     var preset = p.asset ? STOCK_ASSET_PRESETS[p.asset] : null;
     if (preset && isFinite(preset.return)) return preset.return;
@@ -9317,7 +9322,7 @@ function getStorageExpectedReturn(stats) {
     return (isFinite(lr) && lr > 0) ? lr : 0;
   }
 
-  // PORTFOLIO ALLOCATION v2 — metals now resolve return from preset (no manual).
+  // PORTFOLIO ALLOCATION v2 - metals now resolve return from preset (no manual).
   if (stats.type === "metals") {
     var mPreset = p.metal ? METAL_PRESETS[p.metal] : null;
     if (mPreset && isFinite(mPreset.return)) return mPreset.return;
@@ -9326,7 +9331,7 @@ function getStorageExpectedReturn(stats) {
   }
 
   if (stats.type === "deposit") {
-    // PORTFOLIO ALLOCATION v2 — blended effective rate:
+    // PORTFOLIO ALLOCATION v2 - blended effective rate:
     //   weighted-avg(promoRate, baseRate) by months, then compounded per capitalization.
     var rate = parseFloat(p.rate);
     if (!isFinite(rate) || rate <= 0) return 0;
@@ -9334,7 +9339,7 @@ function getStorageExpectedReturn(stats) {
     var term = parseInt(p.termMonths, 10);
     if (!isFinite(term) || term <= 0) term = 12;
 
-    // FIX: Promo period for deposits — extended to 0–12 months.
+    // FIX: Promo period for deposits - extended to 0–12 months.
     var promoM = parseInt(p.promoMonths, 10);
     if (!isFinite(promoM) || promoM < 0) promoM = 0;
     promoM = Math.min(promoM, 12, term);
@@ -9364,7 +9369,7 @@ function getStorageExpectedReturn(stats) {
 }
 
 /* ----------------------------------------------------------------------------
- * PORTFOLIO ALLOCATION LOGIC — weighted effective inflation for the whole
+ * PORTFOLIO ALLOCATION LOGIC - weighted effective inflation for the whole
  * portfolio: Σ((inflation_i − expectedReturn_i) × weight_i) / Σ(weight_i)
  *
  *   cash    contributes (inflation − 0)
@@ -9384,7 +9389,7 @@ function getEffectiveInflation() {
   var stats = allStats.main || allStats.reserve;
   if (!stats) return null;
 
-  // PORTFOLIO ALLOCATION v2 — portfolio branch over ACTIVE allocations only.
+  // PORTFOLIO ALLOCATION v2 - portfolio branch over ACTIVE allocations only.
   // Withdrawn slices are history and do not contribute to live calculations.
   if (Array.isArray(stats.storageAllocation) && stats.storageAllocation.length) {
     var active = stats.storageAllocation.filter(function (a) { return a && !a.withdrawn; });
@@ -9475,7 +9480,7 @@ function renderAccountBackCards() {
     var stats = allStats[accountKey] || null;
 
     if (!stats || !stats.type) {
-      // PREMIUM SYSTEM — для не-премиум-пользователей добавляем lock-бадж
+      // PREMIUM SYSTEM - для не-премиум-пользователей добавляем lock-бадж
       // прямо внутрь кнопки «+ Добавить статистику». Уникальный id Lottie
       // (lottieAccountStats_<accountKey>) нужен чтобы инициализировать оба
       // (main + reserve) бэк-card'а независимо.
@@ -9493,7 +9498,7 @@ function renderAccountBackCards() {
         t("stats.addBtn") + lockHtml +
         '</button>' +
         '</div>';
-      // PREMIUM SYSTEM — инициализируем Lottie замок сразу после рендера.
+      // PREMIUM SYSTEM - инициализируем Lottie замок сразу после рендера.
       // renderAccountBackCards вызывается ДО запуска IIFE initPremiumSystem
       // (строка 9422 vs 10896), поэтому _initLockLottieDynamic может быть
       // ещё не экспортирован. Делаем retry-loop с интервалом 100мс пока
@@ -9515,7 +9520,7 @@ function renderAccountBackCards() {
 
     var html = '<div class="account-back-content">';
 
-    // PORTFOLIO ALLOCATION v2 — composite back card uses ACTIVE allocations.
+    // PORTFOLIO ALLOCATION v2 - composite back card uses ACTIVE allocations.
     // Withdrawn slices appear as a single summary line so users still see they
     // existed, but they don't influence live calculations.
     var allAllocs = Array.isArray(stats.storageAllocation) ? stats.storageAllocation : [];
@@ -9527,7 +9532,7 @@ function renderAccountBackCards() {
     var _baselineInfl = (inflation != null) ? Number(inflation) : 0;
 
     if (hasPortfolio) {
-      // FUTURE DEPOSITS PER ITEM — footer shows how many active slots accept
+      // FUTURE DEPOSITS PER ITEM - footer shows how many active slots accept
       // auto-replenishment (replaces the old global savings-mode chip).
       var acceptingCount = activeAllocs.filter(function (a) { return a && a.details && a.details.acceptsFutureDeposits; }).length;
       var acceptLabel;
@@ -9539,7 +9544,7 @@ function renderAccountBackCards() {
               activeAllocs.length + ' · ' + acceptLabel +
               '</span></div>';
 
-      // PORTFOLIO ALLOCATION + CARD EXPANSION — per-allocation tappable row.
+      // PORTFOLIO ALLOCATION + CARD EXPANSION - per-allocation tappable row.
       // Mirrors the editor list visually (left accent + icon + meta + %) and
       // opens the detail sheet via `data-action="alloc-detail"`. Each row has
       // its own type color so users instantly see the portfolio breakdown.
@@ -9549,7 +9554,7 @@ function renderAccountBackCards() {
         var meta = allocBackMeta(a);
         html +=
           '<div class="acc-alloc-row" data-type="' + a.type + '" data-action="alloc-detail" data-account="' + accountKey + '" data-alloc-id="' + (a.id || "") + '" role="button" tabindex="0">' +
-            // FIX: stable stock logos — wrapper-based renderer; never replaces
+            // FIX: stable stock logos - wrapper-based renderer; never replaces
             // <img> via outerHTML so list re-renders cannot flash the icon.
             '<div class="acc-alloc-row-icon">' + (
               (a.type === "stock" && a.details && a.details.ticker && typeof renderStockLogoHtml === "function")
@@ -9594,8 +9599,8 @@ function renderAccountBackCards() {
     } else {
       // Legacy single-type back card (preserves original layout/behaviour).
       var typeLabel = getStatsTypeLabel(stats.type);
-      var countryLabel = stats.country ? (STATS_COUNTRY_MAP[stats.country] ? t(STATS_COUNTRY_MAP[stats.country].labelKey) : stats.country) : "—";
-      var currencyLabel = stats.currency || "—";
+      var countryLabel = stats.country ? (STATS_COUNTRY_MAP[stats.country] ? t(STATS_COUNTRY_MAP[stats.country].labelKey) : stats.country) : "-";
+      var currencyLabel = stats.currency || "-";
 
       html += '<div class="stats-info-row"><span>' + t("stats.storageType") + '</span><span>' + typeLabel + '</span></div>';
 
@@ -9603,7 +9608,7 @@ function renderAccountBackCards() {
         html += '<div class="stats-info-row"><span>' + t("stats.country") + '</span><span>' + countryLabel + '</span></div>' +
                 '<div class="stats-info-row"><span>' + t("stats.currency") + '</span><span>' + currencyLabel + '</span></div>';
       } else if (stats.type === "stock") {
-        var _ticker = (stats.params && stats.params.ticker) ? stats.params.ticker : "—";
+        var _ticker = (stats.params && stats.params.ticker) ? stats.params.ticker : "-";
         var _rStock = (stats.params && stats.params.expectedReturn != null) ? stats.params.expectedReturn : 0;
         html += '<div class="stats-info-row"><span>' + t("stats.stockInfo") + '</span><span>' + _ticker + '</span></div>' +
                 '<div class="stats-info-row"><span>' + t("stats.field.expectedReturn") + '</span><span>' + (Math.round(_rStock * 10) / 10) + '%</span></div>';
@@ -9626,7 +9631,7 @@ function renderAccountBackCards() {
       _expReturn = getStorageExpectedReturn(stats);
     }
 
-    // PORTFOLIO ALLOCATION LOGIC — effective inflation drives the rest of the card.
+    // PORTFOLIO ALLOCATION LOGIC - effective inflation drives the rest of the card.
     var _effInfl = _baselineInfl - _expReturn;
     var inflRate = _effInfl / 100;
     var result = calculateInflationAdjustedValue(amount, inflRate, monthsLeft);
@@ -9649,7 +9654,7 @@ function renderAccountBackCards() {
 
       if (timeStr) {
         html += '<div class="inflation-time">' + timeStr + '</div>';
-        // PORTFOLIO ALLOCATION LOGIC — disclaimer shows the effective inflation
+        // PORTFOLIO ALLOCATION LOGIC - disclaimer shows the effective inflation
         // (after subtracting weighted yield) so users see what actually drives
         // the loss in the card below.
         if (_effInfl > 0) {
@@ -9679,7 +9684,7 @@ function renderAccountBackCards() {
 
       html += '</div>';
     } else if (_effInfl < 0 && amount > 0 && monthsLeft > 0 && isFinite(monthsLeft)) {
-      // NEW: Storage type — yield outpaces inflation → real gain UI
+      // NEW: Storage type - yield outpaces inflation → real gain UI
       var _years = monthsLeft / 12;
       var _grownVal = Math.round(amount * Math.pow(1 + Math.abs(inflRate), _years));
       var _gain = _grownVal - amount;
@@ -9709,7 +9714,7 @@ function renderAccountBackCards() {
 document.addEventListener("click", function (e) {
   var btn = e.target.closest("[data-action='add-stats']");
   if (btn) {
-    // PREMIUM SYSTEM — inline-гейт для динамической кнопки «+ Добавить статистику»
+    // PREMIUM SYSTEM - inline-гейт для динамической кнопки «+ Добавить статистику»
     if (window._premiumGate && window._premiumGate("stats")) return;
     var acc = btn.getAttribute("data-account") || "main";
     openAccountStatsScreen(acc);
@@ -9717,12 +9722,12 @@ document.addEventListener("click", function (e) {
 });
 
 /* ============================================================================
- * DYNAMIC INFLATION — startup warmup + background refresh
+ * DYNAMIC INFLATION - startup warmup + background refresh
  * ----------------------------------------------------------------------------
- * 1) Прогреваем кэш (loadInflationRates) на старте — будущие открытия экрана
+ * 1) Прогреваем кэш (loadInflationRates) на старте - будущие открытия экрана
  *    "Статистика счёта" получают список мгновенно.
- * 2) Для сохранённых accountStats.main / .reserve — асинхронно перевычитываем
- *    inflation_rate из БД. Если изменилась — updateState + ререндер. Не блокирует
+ * 2) Для сохранённых accountStats.main / .reserve - асинхронно перевычитываем
+ *    inflation_rate из БД. Если изменилась - updateState + ререндер. Не блокирует
  *    UI, не показывает спиннер; на любые ошибки fallback на старое значение.
  * ============================================================================ */
 (function bootstrapInflation() {
@@ -9734,7 +9739,7 @@ document.addEventListener("click", function (e) {
         _statsInflationRows = rows;
       }
       // Обновляем accountStats только если в state есть сохранённая страна.
-      // PORTFOLIO ALLOCATION LOGIC — refresh both legacy `inflation` field and
+      // PORTFOLIO ALLOCATION LOGIC - refresh both legacy `inflation` field and
       // every cash slice inside storageAllocation (each may have its own country).
       var s = (typeof getState === "function") ? getState() : null;
       var allStats = (s && s.accountStats) || {};
@@ -9795,7 +9800,7 @@ document.addEventListener("click", function (e) {
 renderAccountBackCards();
 
 /* ============================================================================
- * PORTFOLIO ALLOCATION + CARD EXPANSION — per-allocation deep-detail sheet
+ * PORTFOLIO ALLOCATION + CARD EXPANSION - per-allocation deep-detail sheet
  * ----------------------------------------------------------------------------
  * Opens a premium bottom sheet when the user taps any allocation row on the
  * account back-card. Renders four sections (params / share / analytics /
@@ -9807,28 +9812,28 @@ function _allocDetailParamsHtml(item) {
   var p = item.details || {};
   var rows = [];
   if (item.type === "cash") {
-    rows.push([t("stats.country"),  p.country ? (STATS_COUNTRY_MAP[p.country] ? t(STATS_COUNTRY_MAP[p.country].labelKey) : p.country) : "—"]);
-    rows.push([t("stats.currency"), p.currency || "—"]);
-    rows.push([t("misc.inflation"), (p.inflation != null) ? (Math.round(p.inflation * 10) / 10) + "%" : "—"]);
+    rows.push([t("stats.country"),  p.country ? (STATS_COUNTRY_MAP[p.country] ? t(STATS_COUNTRY_MAP[p.country].labelKey) : p.country) : "-"]);
+    rows.push([t("stats.currency"), p.currency || "-"]);
+    rows.push([t("misc.inflation"), (p.inflation != null) ? (Math.round(p.inflation * 10) / 10) + "%" : "-"]);
   } else if (item.type === "stock") {
-    rows.push([t("stats.stockInfo"), p.asset ? t("stats.asset." + p.asset) : "—"]);
+    rows.push([t("stats.stockInfo"), p.asset ? t("stats.asset." + p.asset) : "-"]);
     if (p.ticker) rows.push(["Ticker", p.ticker]);
-    // FUTURE DEPOSITS PER ITEM — surface the per-item flag in the detail view.
-    rows.push([t("stats.field.acceptsFutureDeposits.short"), p.acceptsFutureDeposits ? "✓" : "—"]);
+    // FUTURE DEPOSITS PER ITEM - surface the per-item flag in the detail view.
+    rows.push([t("stats.field.acceptsFutureDeposits.short"), p.acceptsFutureDeposits ? "✓" : "-"]);
   } else if (item.type === "metals") {
-    // METALS - IN DEVELOPMENT — show the legacy chosen metal but no editable params.
-    rows.push([t("stats.metalInfo"), p.metal ? t("stats.metal." + p.metal) : "—"]);
+    // METALS - IN DEVELOPMENT - show the legacy chosen metal but no editable params.
+    rows.push([t("stats.metalInfo"), p.metal ? t("stats.metal." + p.metal) : "-"]);
   } else if (item.type === "deposit") {
-    rows.push([t("stats.field.depositRate"), (p.rate != null) ? (Math.round(p.rate * 10) / 10) + "%" : "—"]);
-    rows.push([t("stats.field.depositTerm"), (p.termMonths != null) ? p.termMonths + " " + t("misc.monthShort") : "—"]);
+    rows.push([t("stats.field.depositRate"), (p.rate != null) ? (Math.round(p.rate * 10) / 10) + "%" : "-"]);
+    rows.push([t("stats.field.depositTerm"), (p.termMonths != null) ? p.termMonths + " " + t("misc.monthShort") : "-"]);
     if (p.promoMonths > 0) {
       rows.push([t("stats.field.promoMonths"), p.promoMonths + " " + t("misc.monthShort")]);
       if (p.promoRate != null) rows.push([t("stats.field.promoRate"), (Math.round(p.promoRate * 10) / 10) + "%"]);
     }
     rows.push([t("stats.field.capitalization"), t("stats.cap." + (p.capitalization || "monthly"))]);
-    // FUTURE DEPOSITS PER ITEM — prefer the new flag, fall back to legacy `replenishable`.
+    // FUTURE DEPOSITS PER ITEM - prefer the new flag, fall back to legacy `replenishable`.
     var depAcc = (p.acceptsFutureDeposits != null) ? p.acceptsFutureDeposits : p.replenishable;
-    rows.push([t("stats.field.acceptsFutureDeposits.short"), depAcc ? "✓" : "—"]);
+    rows.push([t("stats.field.acceptsFutureDeposits.short"), depAcc ? "✓" : "-"]);
   }
   var html = '<div class="alloc-detail-rows">';
   rows.forEach(function (r) {
@@ -9836,11 +9841,11 @@ function _allocDetailParamsHtml(item) {
   });
   html += '</div>';
 
-  // MOEX INTEGRATION — placeholder for live quote; filled async in showAllocationDetail.
+  // MOEX INTEGRATION - placeholder for live quote; filled async in showAllocationDetail.
   if (item.type === "stock" && p.ticker) {
     html += '<div id="allocDetailMoexQuote" class="moex-quote-card is-loading" style="margin-top:12px">' +
       '<div class="moex-quote-row"><span class="moex-quote-label">' + t("stats.moex.price") + '</span><span class="moex-quote-price">' + t("stats.moex.loading") + '</span></div>' +
-      '<div class="moex-quote-row"><span class="moex-quote-label">' + t("stats.moex.change") + '</span><span class="moex-quote-change muted">—</span></div>' +
+      '<div class="moex-quote-row"><span class="moex-quote-label">' + t("stats.moex.change") + '</span><span class="moex-quote-change muted">-</span></div>' +
       '<div class="moex-quote-source">' + t("stats.moex.source") + '</div>' +
     '</div>';
   }
@@ -9882,7 +9887,7 @@ function _allocDetailAnalyticsHtml(accountKey, stats, item) {
     '<div class="alloc-detail-row"><span class="alloc-detail-row-label">' + t("portfolio.detail.analytics.realReturn") + '</span><span class="alloc-detail-row-value ' + (realReturn > 0 ? "positive" : (realReturn < 0 ? "negative" : "muted")) + '">' + (realReturn > 0 ? "+" : "") + (Math.round(realReturn * 10) / 10) + '%</span></div>' +
   '</div>';
 
-  // Projection block — uses goal timeline if known, otherwise show note.
+  // Projection block - uses goal timeline if known, otherwise show note.
   var monthsLeft = (typeof lastCalc !== "undefined" && lastCalc && lastCalc.months) ? lastCalc.months : 0;
   if (monthsLeft > 0 && isFinite(monthsLeft)) {
     var years = monthsLeft / 12;
@@ -9892,7 +9897,7 @@ function _allocDetailAnalyticsHtml(accountKey, stats, item) {
     var monthlyRate = Math.pow(1 + rateFraction, 1 / 12) - 1;
     var projectedBase = sliceAmount * Math.pow(1 + rateFraction, years);
 
-    // FUTURE DEPOSITS PER ITEM — split the household's planned monthly savings
+    // FUTURE DEPOSITS PER ITEM - split the household's planned monthly savings
     // across active allocations that opted into auto-replenishment, weighted by
     // their share of the portfolio. The current item's slice grows as an
     // annuity at the same real return; non-accepting items see no top-ups.
@@ -9953,9 +9958,9 @@ function _allocDetailHistoryHtml(item) {
   } catch (e) {}
   var snap = item.withdrawnSnapshot || {};
   return '<div class="alloc-detail-rows">' +
-    '<div class="alloc-detail-row"><span class="alloc-detail-row-label">' + t("portfolio.withdrawnOn", { date: "" }).replace("{date}", "").replace(/^\s+|\s+$/g, "") + '</span><span class="alloc-detail-row-value">' + (dateStr || "—") + '</span></div>' +
-    '<div class="alloc-detail-row"><span class="alloc-detail-row-label">' + t("portfolio.detail.history.snapshotShare") + '</span><span class="alloc-detail-row-value">' + (snap.percentage != null ? snap.percentage + "%" : "—") + '</span></div>' +
-    '<div class="alloc-detail-row"><span class="alloc-detail-row-label">' + t("portfolio.detail.history.snapshotReturn") + '</span><span class="alloc-detail-row-value">' + (snap.expectedReturn != null ? (Math.round(snap.expectedReturn * 10) / 10) + "%" : "—") + '</span></div>' +
+    '<div class="alloc-detail-row"><span class="alloc-detail-row-label">' + t("portfolio.withdrawnOn", { date: "" }).replace("{date}", "").replace(/^\s+|\s+$/g, "") + '</span><span class="alloc-detail-row-value">' + (dateStr || "-") + '</span></div>' +
+    '<div class="alloc-detail-row"><span class="alloc-detail-row-label">' + t("portfolio.detail.history.snapshotShare") + '</span><span class="alloc-detail-row-value">' + (snap.percentage != null ? snap.percentage + "%" : "-") + '</span></div>' +
+    '<div class="alloc-detail-row"><span class="alloc-detail-row-label">' + t("portfolio.detail.history.snapshotReturn") + '</span><span class="alloc-detail-row-value">' + (snap.expectedReturn != null ? (Math.round(snap.expectedReturn * 10) / 10) + "%" : "-") + '</span></div>' +
   '</div>';
 }
 
@@ -9977,7 +9982,7 @@ function showAllocationDetail(accountKey, allocId) {
 
   // Header.
   sheet.setAttribute("data-type", item.type);
-  // FIX: stable stock logos — same wrapper-based renderer (CSS-only fallback).
+  // FIX: stable stock logos - same wrapper-based renderer (CSS-only fallback).
   if (iconEl) {
     iconEl.classList.remove("has-logo");
     if (item.type === "stock" && item.details && item.details.ticker && typeof renderStockLogoHtml === "function") {
@@ -10008,11 +10013,11 @@ function showAllocationDetail(accountKey, allocId) {
   overlay.style.display = "block";
   sheet.style.display = "block";
   requestAnimationFrame(function () { sheet.classList.add("open"); });
-  // FIX: portfolio UX v2 — hide bottom nav so the top-right close (✕) stays
+  // FIX: portfolio UX v2 - hide bottom nav so the top-right close (✕) stays
   // unobstructed by the tab bar while reading allocation details.
   if (typeof hideBottomNav === "function") { try { hideBottomNav(); } catch (e) {} }
 
-  // MOEX INTEGRATION — async-fill the live quote card if this is a stock allocation.
+  // MOEX INTEGRATION - async-fill the live quote card if this is a stock allocation.
   if (item.type === "stock" && item.details && item.details.ticker && typeof window.fetchMoexQuote === "function") {
     var ticker = item.details.ticker;
     window.fetchMoexQuote(ticker).then(function (q) {
@@ -10024,7 +10029,7 @@ function showAllocationDetail(accountKey, allocId) {
       if (!q || q.price == null) {
         card.classList.add("is-error");
         if (priceEl)  priceEl.textContent  = t("stats.moex.error");
-        if (changeEl) { changeEl.textContent = "—"; changeEl.className = "moex-quote-change muted"; }
+        if (changeEl) { changeEl.textContent = "-"; changeEl.className = "moex-quote-change muted"; }
         return;
       }
       var price = Number(q.price);
@@ -10032,7 +10037,7 @@ function showAllocationDetail(accountKey, allocId) {
       if (changeEl) {
         var chg = (q.changePct != null) ? Number(q.changePct) : null;
         if (chg == null || !isFinite(chg)) {
-          changeEl.textContent = "—";
+          changeEl.textContent = "-";
           changeEl.className = "moex-quote-change muted";
         } else {
           changeEl.textContent = (chg > 0 ? "+" : "") + chg.toFixed(2) + "%";
@@ -10051,11 +10056,11 @@ function _closeAllocDetail() {
     if (sheet) sheet.style.display = "none";
     if (overlay) overlay.style.display = "none";
   }, 320);
-  // FIX: portfolio UX v2 — bring the nav back after the detail sheet closes.
+  // FIX: portfolio UX v2 - bring the nav back after the detail sheet closes.
   if (typeof showBottomNav === "function") { try { showBottomNav(); } catch (e) {} }
 }
 
-// PORTFOLIO ALLOCATION + CARD EXPANSION — delegated click for back-card rows
+// PORTFOLIO ALLOCATION + CARD EXPANSION - delegated click for back-card rows
 // and the modal close/overlay. Lives on document so it survives any DOM
 // re-render of `.account-back-content`.
 document.addEventListener("click", function (e) {
@@ -10086,7 +10091,7 @@ document.addEventListener("click", function (e) {
   var graphGoalIndicator = document.getElementById("graphGoalIndicator");
   var _slideAnimating = false;
 
-  /* ───── setActiveGoal — single entry point for switching goals ─── */
+  /* ───── setActiveGoal - single entry point for switching goals ─── */
 
   function resetAccountFlips() {
     document.querySelectorAll(".account-block.flip-wrapper").forEach(function (block) {
@@ -10647,7 +10652,7 @@ document.addEventListener("click", function (e) {
     goals.sort(function (a, b) { return a.priority - b.priority; });
   }
 
-  /* ───── SAVE BUTTON — creates/edits goal via state-manager ── */
+  /* ───── SAVE BUTTON - creates/edits goal via state-manager ── */
 
   function addGoal() {
     var title = advGoalTitleInput ? advGoalTitleInput.value.trim() : "";
@@ -10801,7 +10806,7 @@ document.addEventListener("click", function (e) {
         '</div>' +
         '<div class="adv-goal-card-info">' +
           '<span>' + t("advGoals.perMonthLabel") + ': <b>' + fmtConverted(g.monthlyShare || 0) + ' ' + getCurrencySymbol() + '</b></span>' +
-          '<span>' + t("advGoals.termLabel") + ': <b>' + (g.monthsLeft || "—") + ' ' + t("advGoals.termMonths") + '</b></span>' +
+          '<span>' + t("advGoals.termLabel") + ': <b>' + (g.monthsLeft || "-") + ' ' + t("advGoals.termMonths") + '</b></span>' +
         '</div>' +
         '<div class="adv-goal-card-progress">' +
           '<div style="height:4px;border-radius:4px;background:#222;overflow:hidden">' +
@@ -11072,7 +11077,7 @@ document.addEventListener("click", function (e) {
         '</div>' +
         '<div class="goal-mgmt-prio-detail">' +
           t("priority.saving") + ': ' + fmtConverted(g.monthlyShare || 0) + ' ' + getCurrencySymbol() + ' ' + t("timeline.perMonth") +
-          '<br>' + t("priority.goalReachedIn") + ': ' + (g.monthsLeft || "—") + ' ' + t("timeline.monthsUnit") +
+          '<br>' + t("priority.goalReachedIn") + ': ' + (g.monthsLeft || "-") + ' ' + t("timeline.monthsUnit") +
         '</div>' +
         '<div class="goal-mgmt-prio-controls">' +
           '<label class="goal-mgmt-prio-label">' + t("priority.label") + '</label>' +
@@ -11274,14 +11279,14 @@ function goalSwipeToIndex(idx, goLeft) {
 // Централизованная система проверки премиум-статуса и управления модалкой.
 //
 // Точки входа (5 штук):
-//   1. changePaceBtn  — Изменить темп накоплений
-//   2. addDebtsBtn    — Добавить кредиты и долги
-//   3. flexibleToggle — Гибкая финансовая модель
-//   4. advancedBtn    — Расширенные настройки
-//   5. account flip (обратная сторона) — Статистика счёта
+//   1. changePaceBtn  - Изменить темп накоплений
+//   2. addDebtsBtn    - Добавить кредиты и долги
+//   3. flexibleToggle - Гибкая финансовая модель
+//   4. advancedBtn    - Расширенные настройки
+//   5. account flip (обратная сторона) - Статистика счёта
 //
 // Паттерн: каждая кнопка оборачивается через wrapPremiumGate(btn, original).
-// При isPremium=false — открывается модалка. При true — выполняется original.
+// При isPremium=false - открывается модалка. При true - выполняется original.
 // Lock-анимации Lottie инициализируются один раз после DOM-ready.
 // ════════════════════════════════════════════════════════════════════════════
 
@@ -11289,7 +11294,7 @@ function goalSwipeToIndex(idx, goLeft) {
   // ── Helpers ────────────────────────────────────────────────────────────
 
   /**
-   * SUBSCRIPTION MODEL — определяет, активна ли премиум-подписка СЕЙЧАС.
+   * SUBSCRIPTION MODEL - определяет, активна ли премиум-подписка СЕЙЧАС.
    *
    * Учитывает:
    *   • appState.isPremium (boolean флаг покупки)
@@ -11313,11 +11318,11 @@ function goalSwipeToIndex(idx, goLeft) {
     if (s.isPremium !== true) return false;
     if (!s.premiumUntil) return true; // legacy: бессрочный премиум
     var until = new Date(s.premiumUntil).getTime();
-    if (isNaN(until)) return true; // не парсится — считаем активным (graceful)
+    if (isNaN(until)) return true; // не парсится - считаем активным (graceful)
     return until > Date.now();
   }
 
-  /** Backward-compatible alias — все существующие call-site'ы используют isPremium(). */
+  /** Backward-compatible alias - все существующие call-site'ы используют isPremium(). */
   function isPremium() {
     return isPremiumActive();
   }
@@ -11328,7 +11333,7 @@ function goalSwipeToIndex(idx, goLeft) {
   }
 
   /**
-   * PREMIUM SYSTEM — единый перехватчик кликов через body-level capture-делегацию.
+   * PREMIUM SYSTEM - единый перехватчик кликов через body-level capture-делегацию.
    * Это надёжнее, чем привязка к каждой кнопке отдельно, потому что:
    *   - срабатывает на ЛЮБОЙ элемент с [data-premium-gate], даже если он создан
    *     динамически (например, "+Добавить статистику" в перевёрнутой карточке);
@@ -11353,7 +11358,7 @@ function goalSwipeToIndex(idx, goLeft) {
     else if (statsBtn) feature = "stats";
     else return;
 
-    // Блокируем ВСЁ — оригинальные хендлеры (onclick, addEventListener bubble,
+    // Блокируем ВСЁ - оригинальные хендлеры (onclick, addEventListener bubble,
     // document delegation) не должны сработать.
     e.preventDefault();
     e.stopPropagation();
@@ -11368,7 +11373,7 @@ function goalSwipeToIndex(idx, goLeft) {
     document.querySelectorAll(".premium-gate-btn").forEach(function (btn) {
       btn.classList.toggle("premium-locked", locked);
     });
-    // Обратная сторона счёта — показываем/скрываем premium-hint
+    // Обратная сторона счёта - показываем/скрываем premium-hint
     var hint = document.getElementById("accountBackPremiumHint");
     if (hint) hint.style.display = locked ? "" : "none";
   }
@@ -11377,7 +11382,7 @@ function goalSwipeToIndex(idx, goLeft) {
   //
   // Грузим JSON-анимацию ОДИН раз через fetch и кэшируем в _lockAnimData.
   // Затем для каждого контейнера создаём loadAnimation с `animationData`
-  // (не `path`) — это надёжнее, чем 5 параллельных XHR через lottie-web,
+  // (не `path`) - это надёжнее, чем 5 параллельных XHR через lottie-web,
   // и решает баг "анимация только на одной кнопке".
 
   var _lottieInstances = {};
@@ -11401,7 +11406,7 @@ function goalSwipeToIndex(idx, goLeft) {
     if (_lottieInstances[containerId]) return; // уже инициализирован
 
     loadLockAnimData().then(function (data) {
-      if (!data) return; // graceful — файл не найден
+      if (!data) return; // graceful - файл не найден
       if (_lottieInstances[containerId]) return; // защита от race
       try {
         _lottieInstances[containerId] = lottie.loadAnimation({
@@ -11421,9 +11426,9 @@ function goalSwipeToIndex(idx, goLeft) {
     initLockLottie("lottieAddDebts",       true);
     initLockLottie("lottieFlexible",       true);
     initLockLottie("lottieAdvanced",       true);
-    initLockLottie("lottieAdvancedGoals",  true); // PREMIUM SYSTEM — видимая кнопка «Расширенные настройки»
+    initLockLottie("lottieAdvancedGoals",  true); // PREMIUM SYSTEM - видимая кнопка «Расширенные настройки»
     initLockLottie("lottieAccountStats",   true);
-    // PREMIUM SYSTEM — динамические stats-кнопки (renderAccountBackCards рендерит их
+    // PREMIUM SYSTEM - динамические stats-кнопки (renderAccountBackCards рендерит их
     // ДО того, как IIFE экспортирует _initLockLottieDynamic, поэтому делаем повторную
     // попытку здесь, после старта IIFE).
     initLockLottie("lottieAccountStats_main",    true);
@@ -11441,20 +11446,20 @@ function goalSwipeToIndex(idx, goLeft) {
 
   // ── Premium Modal ──────────────────────────────────────────────────────
 
-  // PREMIUM MODAL — индекс текущего слайда
+  // PREMIUM MODAL - индекс текущего слайда
   var _currentSlide = 0;
   var _totalSlides = 5;
 
-  // PREMIUM SLIDE VIDEOS — управление воспроизведением видео в слайдах.
+  // PREMIUM SLIDE VIDEOS - управление воспроизведением видео в слайдах.
   // ───────────────────────────────────────────────────────────────────────
-  // Параллельно играет МАКСИМУМ одно видео — то, что соответствует
+  // Параллельно играет МАКСИМУМ одно видео - то, что соответствует
   // _currentSlide. Остальные ставим на pause(). Это экономит CPU/батарею
   // на iOS (5 одновременных <video> декодеров просаживают FPS sheet'а).
   //
   // Учёт пользовательской настройки:
   //   settings.disableLoadingVideo === true → ВСЕ видео скрываются
   //   (display:none) и не играются. Та же настройка теперь отвечает за
-  //   loading screen И за премиум-карусель — одной галочкой пользователь
+  //   loading screen И за премиум-карусель - одной галочкой пользователь
   //   отключает все фоновые видео в приложении.
   function _arePremiumVideosDisabled() {
     var s = (typeof getState === "function") ? (getState().settings || {})
@@ -11475,7 +11480,7 @@ function goalSwipeToIndex(idx, goLeft) {
       }
     });
   }
-  // PREMIUM SLIDE VIDEOS — sliding-window pre-warm стратегия.
+  // PREMIUM SLIDE VIDEOS - sliding-window pre-warm стратегия.
   // ───────────────────────────────────────────────────────────────────────
   // Раньше все 5 видео имели preload="metadata" → одновременная загрузка
   // 5 файлов при открытии модалки → конкуренция за bandwidth на 3G/4G,
@@ -11483,7 +11488,7 @@ function goalSwipeToIndex(idx, goLeft) {
   //
   // Теперь стратегия: грузим только активный слайд + ОДИН сосед справа
   // и слева (т.н. sliding window размером 3). При свайпе окно сдвигается
-  // — соседи начинают прогружаться ЗАГОДЯ, поэтому к моменту их активации
+  // - соседи начинают прогружаться ЗАГОДЯ, поэтому к моменту их активации
   // видео уже почти готово к воспроизведению.
   // Остальные слайды держим в preload="none" → нулевой сетевой трафик.
   function _prewarmSlideVideos(activeIdx) {
@@ -11492,21 +11497,21 @@ function goalSwipeToIndex(idx, goLeft) {
       var idx = parseInt(v.getAttribute("data-premium-video"), 10);
       var distance = Math.abs(idx - activeIdx);
       if (distance <= 1) {
-        // В окне — разрешаем полную загрузку. Меняем атрибут только если
-        // он ещё не "auto" — лишний .load() ломает уже идущий download.
+        // В окне - разрешаем полную загрузку. Меняем атрибут только если
+        // он ещё не "auto" - лишний .load() ломает уже идущий download.
         if (v.getAttribute("preload") !== "auto") {
           v.setAttribute("preload", "auto");
           // .load() гарантирует, что новое preload значение применилось
           // и запустилась реальная загрузка. readyState === 0 = HAVE_NOTHING,
-          // только в этом состоянии нужен load() — иначе уже грузится.
+          // только в этом состоянии нужен load() - иначе уже грузится.
           if (v.readyState === 0) {
             try { v.load(); } catch (_e) { /* noop */ }
           }
         }
       } else {
-        // Вне окна — освобождаем ресурсы. Снять preload-атрибут полностью
+        // Вне окна - освобождаем ресурсы. Снять preload-атрибут полностью
         // нельзя без .load() (старая загрузка продолжится), но мы хотя бы
-        // ставим паузу — это останавливает декодер и активный сетевой fetch.
+        // ставим паузу - это останавливает декодер и активный сетевой fetch.
         try { v.pause(); } catch (_e) { /* noop */ }
       }
     });
@@ -11517,7 +11522,7 @@ function goalSwipeToIndex(idx, goLeft) {
   // браузер скажет «готов». Это решает проблему `play() rejected because no
   // data` на медленных сетях.
   function _playVideoWhenReady(v) {
-    // Дублируем критичные атрибуты для надёжности на iOS WebView —
+    // Дублируем критичные атрибуты для надёжности на iOS WebView -
     // некоторые версии «забывают» muted/playsInline при первом .load().
     v.muted = true;
     v.playsInline = true;
@@ -11527,7 +11532,7 @@ function goalSwipeToIndex(idx, goLeft) {
         var p = v.play();
         if (p && typeof p.then === "function") {
           p.catch(function (err) {
-            // Если ещё не дошло до HAVE_CURRENT_DATA — ждём canplay и пробуем.
+            // Если ещё не дошло до HAVE_CURRENT_DATA - ждём canplay и пробуем.
             if (v.readyState < 2) {
               v.addEventListener("canplay", attemptPlay, { once: true });
             } else {
@@ -11541,7 +11546,7 @@ function goalSwipeToIndex(idx, goLeft) {
     }
 
     if (v.readyState >= 2) {
-      // Достаточно данных — играем сразу.
+      // Достаточно данных - играем сразу.
       attemptPlay();
     } else {
       // Не готово: ставим listener + пробуем (race-safe: если canplay
@@ -11552,12 +11557,12 @@ function goalSwipeToIndex(idx, goLeft) {
   }
 
   // Запускает видео активного слайда, паузит остальные.
-  // Безопасно к повторным вызовам (play() на уже играющем видео — no-op).
+  // Безопасно к повторным вызовам (play() на уже играющем видео - no-op).
   function _updateActiveSlideVideo() {
     if (_arePremiumVideosDisabled()) return;
     // 1) Sliding window: грузим только current + соседей.
     _prewarmSlideVideos(_currentSlide);
-    // 2) Активный слайд — пытаемся play() (с ожиданием canplay при необходимости).
+    // 2) Активный слайд - пытаемся play() (с ожиданием canplay при необходимости).
     _getPremiumSlideVideos().forEach(function (v) {
       var idx = parseInt(v.getAttribute("data-premium-video"), 10);
       if (idx === _currentSlide) {
@@ -11567,7 +11572,7 @@ function goalSwipeToIndex(idx, goLeft) {
       }
     });
   }
-  // Пауза всех видео при закрытии модалки — освобождаем декодер.
+  // Пауза всех видео при закрытии модалки - освобождаем декодер.
   function _pauseAllPremiumVideos() {
     _getPremiumSlideVideos().forEach(function (v) {
       try { v.pause(); } catch (_e) { /* noop */ }
@@ -11579,7 +11584,7 @@ function goalSwipeToIndex(idx, goLeft) {
     var sheet   = document.getElementById("premiumSheet");
     if (!overlay || !sheet) return;
 
-    // PREMIUM MODAL — модалка всегда открывается с первого слайда,
+    // PREMIUM MODAL - модалка всегда открывается с первого слайда,
     // независимо от того, какую премиум-кнопку нажал пользователь.
     // Параметр feature оставлен в сигнатуре для возможной аналитики.
     void feature;
@@ -11589,19 +11594,19 @@ function goalSwipeToIndex(idx, goLeft) {
     void sheet.offsetWidth; // reflow для анимации
     sheet.classList.add("sheet-entering");
 
-    // PREMIUM SLIDE VIDEOS — синхронизируем видимость по настройке
+    // PREMIUM SLIDE VIDEOS - синхронизируем видимость по настройке
     // disableLoadingVideo (пользователь мог переключить её между сессиями).
     _applyPremiumVideosVisibility();
 
     // PREMIUM MODAL: fixed swipe stability + layout
-    // goToSlide(0) ПОСЛЕ снятия .hidden — scrollLeft не работает на
+    // goToSlide(0) ПОСЛЕ снятия .hidden - scrollLeft не работает на
     // display:none-элементах, поэтому сбрасываем позицию ТОЛЬКО когда
     // .premium-slides уже отрендерен и имеет ненулевой clientWidth.
-    // Двойной rAF — гарантия, что layout полностью применился.
+    // Двойной rAF - гарантия, что layout полностью применился.
     requestAnimationFrame(function () {
       requestAnimationFrame(function () {
         goToSlide(0, false);
-        // PREMIUM SLIDE VIDEOS — первый запуск видео первого слайда.
+        // PREMIUM SLIDE VIDEOS - первый запуск видео первого слайда.
         // goToSlide() уже выставил _currentSlide=0, теперь стартуем play().
         _updateActiveSlideVideo();
       });
@@ -11613,7 +11618,7 @@ function goalSwipeToIndex(idx, goLeft) {
     // показываем «Premium активен до X · автопродление вкл/выкл»).
     if (typeof refreshPremiumStatusBlock === "function") refreshPremiumStatusBlock();
 
-    // Инициализируем crown-анимацию один раз — через тот же кэш animationData.
+    // Инициализируем crown-анимацию один раз - через тот же кэш animationData.
     if (typeof lottie !== "undefined" && !_lottieInstances["__crown"]) {
       var crownEl = document.getElementById("lottiePremiumCrown");
       if (crownEl) {
@@ -11633,7 +11638,7 @@ function goalSwipeToIndex(idx, goLeft) {
     }
   }
 
-  // SUBSCRIPTION MODEL — обновляет блок текущего статуса подписки в
+  // SUBSCRIPTION MODEL - обновляет блок текущего статуса подписки в
   // премиум-модалке. Видимость и текст полностью контролируются стейтом:
   //   • appState.isPremium && isPremiumActive() → показываем блок;
   //   • appState.premiumUntil → форматируем дату «до 18 июня»;
@@ -11696,11 +11701,11 @@ function goalSwipeToIndex(idx, goLeft) {
   // Экспортируем для DB-sync кода (он лежит в другом IIFE).
   window._refreshPremiumStatusBlock = refreshPremiumStatusBlock;
 
-  // PREMIUM PROFILE BADGE — анимированная корона (Lottie king1.json).
+  // PREMIUM PROFILE BADGE - анимированная корона (Lottie king1.json).
   // ──────────────────────────────────────────────────────────────────────────
   // Загружаем JSON один раз, кешируем в _kingAnimData; loadKingAnimData()
   // возвращает существующий промис при параллельных вызовах. Если файл
-  // недоступен — graceful fallback: badge остаётся видимой, но иконка пуста
+  // недоступен - graceful fallback: badge остаётся видимой, но иконка пуста
   // (нет визуального бага).
   var KING_ANIM_PATH = "./assets/animation/king1.json";
   var _kingAnimData = null;
@@ -11718,7 +11723,7 @@ function goalSwipeToIndex(idx, goLeft) {
   }
 
   // Lazy-init Lottie-инстанса в #profilePremiumBadgeIcon. Вызывается из
-  // refreshProfilePremiumBadge() ТОЛЬКО когда badge становится видимой —
+  // refreshProfilePremiumBadge() ТОЛЬКО когда badge становится видимой -
   // экономим ресурсы у пользователей без премиума.
   function ensureKingLottie() {
     if (_kingLottieInstance) return;
@@ -11738,8 +11743,8 @@ function goalSwipeToIndex(idx, goLeft) {
     });
   }
 
-  // PREMIUM PROFILE BADGE — управляет видимостью изумрудной плашки «Premium»
-  // на экране профиля. Видимость завязана на isPremiumActive() — то есть
+  // PREMIUM PROFILE BADGE - управляет видимостью изумрудной плашки «Premium»
+  // на экране профиля. Видимость завязана на isPremiumActive() - то есть
   // одновременно appState.isPremium === true И premium_until > now().
   // При первой активации lazy-init'ит Lottie-корону.
   function refreshProfilePremiumBadge() {
@@ -11764,8 +11769,8 @@ function goalSwipeToIndex(idx, goLeft) {
     if (!sheet) return;
     sheet.classList.remove("sheet-entering");
     sheet.classList.add("sheet-leaving");
-    // PREMIUM SLIDE VIDEOS — паузим все видео сразу при закрытии,
-    // НЕ дожидаясь анимации скрытия sheet'а — освобождаем видео-декодер.
+    // PREMIUM SLIDE VIDEOS - паузим все видео сразу при закрытии,
+    // НЕ дожидаясь анимации скрытия sheet'а - освобождаем видео-декодер.
     _pauseAllPremiumVideos();
     setTimeout(function () {
       sheet.classList.add("hidden");
@@ -11793,7 +11798,7 @@ function goalSwipeToIndex(idx, goLeft) {
       var w = slides.clientWidth || 0;
       var target = _currentSlide * w;
       if (animate === false) {
-        // Мгновенный jump (без smooth-scroll) — для openPremiumModal.
+        // Мгновенный jump (без smooth-scroll) - для openPremiumModal.
         slides.scrollLeft = target;
       } else {
         // Плавный программный скролл с native snap.
@@ -11805,13 +11810,13 @@ function goalSwipeToIndex(idx, goLeft) {
         }
       }
     }
-    // Dots — синхронизируем сразу (нативный scroll-event подхватит позже).
+    // Dots - синхронизируем сразу (нативный scroll-event подхватит позже).
     document.querySelectorAll(".premium-dot").forEach(function (dot, i) {
       dot.classList.toggle("active", i === _currentSlide);
     });
-    // PREMIUM SLIDE VIDEOS — обновляем активное видео при программном
+    // PREMIUM SLIDE VIDEOS - обновляем активное видео при программном
     // переходе (тап по dot / openPremiumModal). Тот же _updateActiveSlideVideo
-    // вызывается и из scroll-трекера — двойной вызов безопасен (idempotent).
+    // вызывается и из scroll-трекера - двойной вызов безопасен (idempotent).
     if (typeof _updateActiveSlideVideo === "function") _updateActiveSlideVideo();
   }
 
@@ -11820,12 +11825,12 @@ function goalSwipeToIndex(idx, goLeft) {
   // 1) Трекер активного слайда через scroll-event на .premium-slides.
   //    Сам свайп обрабатывает БРАУЗЕР через CSS scroll-snap-type: x mandatory.
   //
-  // 2) JS-ассист на touchend — фиксит баг «свайп срабатывает через раз».
+  // 2) JS-ассист на touchend - фиксит баг «свайп срабатывает через раз».
   //    Корневая причина: native scroll-snap решает «лететь вперёд или откатить»
-  //    по СКОРОСТИ свайпа. Если палец двигался медленно — снап откатывается
+  //    по СКОРОСТИ свайпа. Если палец двигался медленно - снап откатывается
   //    к исходному слайду, и пользователь видит «не сработало». Решение:
   //    на touchend смотрим НАПРАВЛЕНИЕ и ДИСТАНЦИЮ движения пальца. Если
-  //    палец прошёл > 12% ширины — гарантированно переходим к соседнему
+  //    палец прошёл > 12% ширины - гарантированно переходим к соседнему
   //    слайду через scrollTo, перекрывая native snap. Скорость уже не важна.
   (function initSlideScrollTracking() {
     var slides = document.getElementById("premiumSlides");
@@ -11843,13 +11848,13 @@ function goalSwipeToIndex(idx, goLeft) {
       document.querySelectorAll(".premium-dot").forEach(function (dot, i) {
         dot.classList.toggle("active", i === _currentSlide);
       });
-      // PREMIUM SLIDE VIDEOS — стартуем видео нового активного слайда,
+      // PREMIUM SLIDE VIDEOS - стартуем видео нового активного слайда,
       // паузим предыдущее. Вызывается на каждый свайп/scroll-snap.
       _updateActiveSlideVideo();
     }
 
     slides.addEventListener("scroll", function () {
-      // requestAnimationFrame-троттлинг — scroll-event на iOS может фaйрить
+      // requestAnimationFrame-троттлинг - scroll-event на iOS может фaйрить
       // по 60+ раз в секунду; считаем индекс не чаще раза за кадр.
       if (rafPending) return;
       rafPending = true;
@@ -11882,17 +11887,17 @@ function goalSwipeToIndex(idx, goLeft) {
       var endX = e.changedTouches[0].clientX;
       var deltaX = endX - touchStartX;
       var w = slides.clientWidth || 1;
-      // 12% от ширины — низкий порог, делает свайп очень отзывчивым,
+      // 12% от ширины - низкий порог, делает свайп очень отзывчивым,
       // но защищает от случайных микро-движений (тапы / scroll-init).
       var threshold = w * 0.12;
 
       var startSlideIdx = Math.round(touchStartScrollLeft / w);
       var intendedSlide = startSlideIdx;
-      // PREMIUM CAROUSEL — циклический свайп. Если на последнем слайде
-      // пользователь свайпает вперёд (или на первом — назад), перелистываем
+      // PREMIUM CAROUSEL - циклический свайп. Если на последнем слайде
+      // пользователь свайпает вперёд (или на первом - назад), перелистываем
       // в противоположный конец карусели через мгновенный jump (goToSlide
       // c animate=false). Smooth-scroll через 4 слайда выглядел бы как
-      // длинная «обратная перемотка» — instant jump UX из Instagram Stories
+      // длинная «обратная перемотка» - instant jump UX из Instagram Stories
       // воспринимается как естественная «петля».
       if (deltaX < -threshold) {
         if (startSlideIdx >= _totalSlides - 1) {
@@ -11911,8 +11916,8 @@ function goalSwipeToIndex(idx, goLeft) {
       }
 
       var targetScrollLeft = intendedSlide * w;
-      // rAF — даём native snap чуть-чуть стартануть, потом перехватываем
-      // через scrollTo. Если native уже идёт в нужную точку — scrollTo
+      // rAF - даём native snap чуть-чуть стартануть, потом перехватываем
+      // через scrollTo. Если native уже идёт в нужную точку - scrollTo
       // просто подтверждает её и snap завершается плавно.
       requestAnimationFrame(function () {
         if (Math.abs(slides.scrollLeft - targetScrollLeft) > 1) {
@@ -11942,7 +11947,7 @@ function goalSwipeToIndex(idx, goLeft) {
     buyBtn.addEventListener("click", buyPremiumWithStars);
   }
 
-  // TELEGRAM STARS — обработчик нажатия на «Оформить Premium».
+  // TELEGRAM STARS - обработчик нажатия на «Оформить Premium».
   // ─────────────────────────────────────────────────────────────────────────
   // Flow:
   //   1. createStarsInvoice() (supabase.js) → POST /functions/v1/create-stars-invoice
@@ -11953,11 +11958,11 @@ function goalSwipeToIndex(idx, goLeft) {
   //      в Supabase (страховка на случай задержки bot webhook'а), success-toast,
   //      конфетти, закрытие модалки, перерисовка UI.
   //   4. callback("cancelled"|"failed") → toast с пояснением, модалка остаётся.
-  //   5. Параллельно — bot webhook (stars-payment-webhook) поставит is_premium
+  //   5. Параллельно - bot webhook (stars-payment-webhook) поставит is_premium
   //      серверно из обработчика successful_payment. syncUserAccessFlagsFromDB
   //      подтвердит флаг на следующем тике (~через 1.5с).
   //
-  // Функция экспортируется в window.buyPremiumWithStars — её можно вызвать
+  // Функция экспортируется в window.buyPremiumWithStars - её можно вызвать
   // из любого внешнего кода / отладочной консоли.
   var _paymentInFlight = false;
   async function buyPremiumWithStars() {
@@ -11976,7 +11981,7 @@ function goalSwipeToIndex(idx, goLeft) {
 
       _paymentInFlight = true;
     try {
-      // SUBSCRIPTION MODEL — читаем выбор пользователя:
+      // SUBSCRIPTION MODEL - читаем выбор пользователя:
       //   true  → subscription invoice (Telegram списывает 150⭐ каждые 30 дней
       //           автоматически, отмена через Telegram Settings).
       //   false → одноразовая оплата на 30 дней.
@@ -12007,7 +12012,7 @@ function goalSwipeToIndex(idx, goLeft) {
         } else if (status === "failed") {
           showToast(t("payment.failed"), "error");
         }
-        // "pending" — Telegram сообщит позже через invoiceClosed, ничего не делаем.
+        // "pending" - Telegram сообщит позже через invoiceClosed, ничего не делаем.
       });
     } catch (e) {
       console.error("[Stars] handleBuyPremium exception:", e);
@@ -12021,15 +12026,15 @@ function goalSwipeToIndex(idx, goLeft) {
     }
   }
 
-  // TELEGRAM STARS — действия после успешной оплаты.
+  // TELEGRAM STARS - действия после успешной оплаты.
   // Оптимистично включаем premium локально + пишем в БД клиентом (страховка),
   // показываем success-UI с конфетти и закрываем модалку. Background sync
-  // через ~1.5с подтвердит флаг из БД (если bot webhook сработал — там true).
+  // через ~1.5с подтвердит флаг из БД (если bot webhook сработал - там true).
   async function onStarsPaymentSucceeded() {
     try {
       if (typeof haptic === "function") haptic("success");
 
-      // 1. Локальный state — мгновенно.
+      // 1. Локальный state - мгновенно.
       // SUBSCRIPTION MODEL: оптимистично проставляем premium_until = +30 дней
       // и auto_renew по чекбоксу. Webhook на бэкенде поставит canonical-значения
       // через ~1-3 секунды, и syncUserAccessFlagsFromDB перепишет наши значения
@@ -12062,19 +12067,19 @@ function goalSwipeToIndex(idx, goLeft) {
         window._refreshPremiumStatusBlock();
       }
 
-      // 3. Cloud push — premium-флаг должен немедленно улететь на другие устройства.
+      // 3. Cloud push - premium-флаг должен немедленно улететь на другие устройства.
       if (window.CloudSync && typeof window.CloudSync.pushToCloud === "function") {
         try { window.CloudSync.pushToCloud(); } catch (e) { console.warn("[Stars] cloud push:", e); }
       }
 
-      // 4. Success UX — конфетти + toast + закрытие модалки.
+      // 4. Success UX - конфетти + toast + закрытие модалки.
       //    Конфетти запускаем чуть раньше, чтобы пользователь увидел вспышку
       //    ДО анимации закрытия sheet'а.
       fireConfetti();
       showToast(t("payment.success.title") + " · " + t("payment.success.text"), "success", { duration: 3500 });
       setTimeout(function () { closePremiumModal(); }, 350);
 
-      // 5. Подстраховка серверная — клиент сам пишет is_premium=true в БД
+      // 5. Подстраховка серверная - клиент сам пишет is_premium=true в БД
       //    (на случай, если webhook не настроен или задерживается).
       if (typeof window.setUserPremium === "function") {
         window.setUserPremium(true).catch(function (err) {
@@ -12086,14 +12091,14 @@ function goalSwipeToIndex(idx, goLeft) {
     }
   }
 
-  // TELEGRAM STARS — премиальное конфетти после успешной оплаты.
+  // TELEGRAM STARS - премиальное конфетти после успешной оплаты.
   // ─────────────────────────────────────────────────────────────────────────
   // Лёгкая DOM-реализация без внешних зависимостей: создаём 90 цветных
   // частиц в fixed-overlay поверх всего экрана. Каждая стартует у центра,
   // получает случайное направление + вращение, и через ~3 секунды слой
   // удаляется из DOM. Цвета подобраны под премиум-палитру (золото + emerald).
   //
-  // pointer-events: none — не блокирует клики по UI. z-index: 99999 —
+  // pointer-events: none - не блокирует клики по UI. z-index: 99999 -
   // выше любых модалок/тостов.
   function fireConfetti() {
     try {
@@ -12141,7 +12146,7 @@ function goalSwipeToIndex(idx, goLeft) {
           ].join(";");
           layer.appendChild(el);
 
-          // Двойной rAF — гарантия, что transform применится из стартовой
+          // Двойной rAF - гарантия, что transform применится из стартовой
           // позиции (без двойного rAF браузер может слить два style-write
           // в один frame и пропустить transition).
           requestAnimationFrame(function () {
@@ -12162,11 +12167,11 @@ function goalSwipeToIndex(idx, goLeft) {
     }
   }
 
-  // Экспортируем функции в window — пригодится для отладки и внешних вызовов.
+  // Экспортируем функции в window - пригодится для отладки и внешних вызовов.
   window.buyPremiumWithStars = buyPremiumWithStars;
   window.fireConfetti        = fireConfetti;
 
-  // SUBSCRIPTION MODEL — deep-link `?premium=open`.
+  // SUBSCRIPTION MODEL - deep-link `?premium=open`.
   // Когда пользователь жмёт «Вернуть Premium» в DM от бота, кнопка открывает
   // Mini App с URL `<MINI_APP_URL>?premium=open`. Здесь мы ловим параметр
   // и сразу открываем премиум-модалку, чтобы пользователю не приходилось
@@ -12186,7 +12191,7 @@ function goalSwipeToIndex(idx, goLeft) {
       } catch (_e) { /* graceful */ }
       if (!shouldOpen) return;
 
-      // Откладываем открытие до полной готовности UI — premium-модалка
+      // Откладываем открытие до полной готовности UI - premium-модалка
       // зависит от подгрузки state'а и инициализации dots.
       function tryOpen() {
         try {
@@ -12208,14 +12213,14 @@ function goalSwipeToIndex(idx, goLeft) {
     }
   })();
 
-  // TELEGRAM STARS — подписка на invoiceClosed (бекап-канал, если callback
+  // TELEGRAM STARS - подписка на invoiceClosed (бекап-канал, если callback
   // openInvoice по какой-то причине не вызвался). Telegram emit'ит это
   // событие при закрытии нативного оплатного UI с тем же status'ом.
   if (window.Telegram && window.Telegram.WebApp && typeof window.Telegram.WebApp.onEvent === "function") {
     try {
       window.Telegram.WebApp.onEvent("invoiceClosed", function (e) {
         if (!e || e.status !== "paid") return;
-        // Если onStarsPaymentSucceeded уже отработал из callback — повторный
+        // Если onStarsPaymentSucceeded уже отработал из callback - повторный
         // вызов идемпотентен (isPremium уже true, UI уже перерисован).
         if (typeof getState === "function" && getState().isPremium === true) return;
         onStarsPaymentSucceeded();
@@ -12236,20 +12241,20 @@ function goalSwipeToIndex(idx, goLeft) {
   // ── Перехват 5 премиум-точек через ЕДИНЫЙ body-capture listener ──────
   //
   // Перехватываются:
-  //   1. [data-premium-gate="pace"]     — кнопка changePaceBtn
-  //   2. [data-premium-gate="debts"]    — кнопка addDebtsBtn
-  //   3. [data-premium-gate="flexible"] — flexibleToggle
-  //   4. [data-premium-gate="advanced"] — advancedBtn (FAB)
-  //   5. [data-action="add-stats"]       — динамическая кнопка статистики
+  //   1. [data-premium-gate="pace"]     - кнопка changePaceBtn
+  //   2. [data-premium-gate="debts"]    - кнопка addDebtsBtn
+  //   3. [data-premium-gate="flexible"] - flexibleToggle
+  //   4. [data-premium-gate="advanced"] - advancedBtn (FAB)
+  //   5. [data-action="add-stats"]       - динамическая кнопка статистики
   //
   // Capture phase на document.body гарантирует, что мы получаем событие
   // ДО любых других обработчиков (включая onclick=, addEventListener bubble
   // и document.addEventListener delegation для [data-action='add-stats']).
   document.body.addEventListener("click", globalGateHandler, true);
-  // На всякий случай — touchend (некоторые WebView в Telegram могут не
+  // На всякий случай - touchend (некоторые WebView в Telegram могут не
   // диспатчить click консистентно при tap'е по кнопке с overflow).
   document.body.addEventListener("touchend", function (e) {
-    // Только если это потенциальная премиум-цель — иначе пропускаем.
+    // Только если это потенциальная премиум-цель - иначе пропускаем.
     var t = e.target;
     if (!t || !t.closest) return;
     if (!t.closest("[data-premium-gate],[data-action='add-stats']")) return;
@@ -12268,17 +12273,17 @@ function goalSwipeToIndex(idx, goLeft) {
     syncPremiumGateUI();
     syncLockBadgesVisibility();
     if (!isPremium()) initAllLockLotties();
-    // PREMIUM PROFILE BADGE — изумрудная плашка «Premium» рядом с именем
+    // PREMIUM PROFILE BADGE - изумрудная плашка «Premium» рядом с именем
     // в профиле. Обновляется вместе с остальным premium-UI.
     if (typeof window._refreshProfilePremiumBadge === "function") {
       window._refreshProfilePremiumBadge();
     }
   };
 
-  // PREMIUM SYSTEM — экспорт inline-гейта для прямого вызова в обработчиках.
-  // Если возвращает true — оригинальный обработчик должен немедленно выйти.
+  // PREMIUM SYSTEM - экспорт inline-гейта для прямого вызова в обработчиках.
+  // Если возвращает true - оригинальный обработчик должен немедленно выйти.
   // Это «belt and suspenders» дополнение к body capture: если capture phase
-  // по какой-то причине не блокирует (WebView quirks) — inline-check всё равно
+  // по какой-то причине не блокирует (WebView quirks) - inline-check всё равно
   // не даст функции выполниться.
   window._premiumGate = function (feature) {
     if (isPremium()) return false;
@@ -12287,11 +12292,11 @@ function goalSwipeToIndex(idx, goLeft) {
     return true;
   };
 
-  // PREMIUM SYSTEM — экспорт для инициализации Lottie на ДИНАМИЧЕСКИ
+  // PREMIUM SYSTEM - экспорт для инициализации Lottie на ДИНАМИЧЕСКИ
   // создаваемых элементах (например, кнопка «+ Добавить статистику»,
   // которую рендерит renderAccountBackCards).
   //
-  // Каждый раз renderAccountBackCards делает backCard.innerHTML = "..." —
+  // Каждый раз renderAccountBackCards делает backCard.innerHTML = "..." -
   // старый DOM-узел убивается, но _lottieInstances хранит ссылку на него
   // и initLockLottie возвращается раньше времени с пометкой «уже создан».
   // Поэтому здесь явно убиваем стэйл-инстанс и повторно инициализируем.
@@ -12357,7 +12362,7 @@ function goalSwipeToIndex(idx, goLeft) {
     var curMonthsEl = document.getElementById("paceCurrentMonths");
     if (curModeEl) curModeEl.textContent = curLabel;
     if (curMonthlyEl) curMonthlyEl.textContent = fmtConverted(lastCalc.monthlySave || plannedMonthly || 0);
-    if (curMonthsEl) curMonthsEl.textContent = lastCalc.months || "—";
+    if (curMonthsEl) curMonthsEl.textContent = lastCalc.months || "-";
 
     paceModeButtons.forEach(function (b) {
       b.classList.toggle("active", b.dataset.mode === draftPace);
@@ -12378,7 +12383,7 @@ function goalSwipeToIndex(idx, goLeft) {
       var pmEl = document.getElementById("pacePreviewMonthly");
       var pmoEl = document.getElementById("pacePreviewMonths");
       if (pmEl) pmEl.textContent = fmtConverted(lastCalc.monthlySave || 0);
-      if (pmoEl) pmoEl.textContent = lastCalc.months || "—";
+      if (pmoEl) pmoEl.textContent = lastCalc.months || "-";
       return;
     }
 
@@ -12411,11 +12416,11 @@ function goalSwipeToIndex(idx, goLeft) {
 
   if (changePaceBtn) {
     changePaceBtn.addEventListener("click", function () {
-      // PREMIUM SYSTEM — inline-гейт (защита если body capture не сработал)
+      // PREMIUM SYSTEM - inline-гейт (защита если body capture не сработал)
       if (window._premiumGate && window._premiumGate("pace")) return;
       if (typeof haptic === "function") haptic("light");
       openPaceScreen();
-      // PREMIUM TOUR — мини-онбординг при первом открытии Pace.
+      // PREMIUM TOUR - мини-онбординг при первом открытии Pace.
       if (typeof startPremiumFeatureTour === "function") {
         setTimeout(function () { startPremiumFeatureTour("pace"); }, 400);
       }
@@ -12559,7 +12564,7 @@ function goalSwipeToIndex(idx, goLeft) {
       if (nextPayment) {
         nextEl.textContent = nextPayment.getDate() + " " + getMonthNameShort(nextPayment.getMonth());
       } else {
-        nextEl.textContent = "—";
+        nextEl.textContent = "-";
       }
     }
 
@@ -12595,10 +12600,10 @@ function goalSwipeToIndex(idx, goLeft) {
   function renderDebtCard(d) {
     var typeLabel = getTypeLabel(d.type);
     var _locale = getCurrentLanguage() === "en" ? "en-US" : "ru-RU";
-    var endStr = d.endDate ? new Date(d.endDate).toLocaleDateString(_locale, { month: "short", year: "numeric" }) : "—";
-    var nextStr = d.nextPaymentDate ? new Date(d.nextPaymentDate).toLocaleDateString(_locale, { day: "numeric", month: "short" }) : "—";
+    var endStr = d.endDate ? new Date(d.endDate).toLocaleDateString(_locale, { month: "short", year: "numeric" }) : "-";
+    var nextStr = d.nextPaymentDate ? new Date(d.nextPaymentDate).toLocaleDateString(_locale, { day: "numeric", month: "short" }) : "-";
 
-    // REALISTIC DEBT LOGIC - Russian banks — агрегированные показатели.
+    // REALISTIC DEBT LOGIC - Russian banks - агрегированные показатели.
     var stats = getDebtStats(d);
     var isCard = d.type === "card";
 
@@ -12608,7 +12613,7 @@ function goalSwipeToIndex(idx, goLeft) {
       + '<span class="debt-item-type-badge">' + typeLabel + '</span>'
       + '</div>';
 
-    // REALISTIC DEBT LOGIC - Russian banks — grace-period badge для карт.
+    // REALISTIC DEBT LOGIC - Russian banks - grace-period badge для карт.
     if (isCard && stats && stats.grace) {
       if (stats.grace.inGrace) {
         html += '<div class="debt-grace-badge debt-grace-badge--active">'
@@ -12623,7 +12628,7 @@ function goalSwipeToIndex(idx, goLeft) {
       }
     }
 
-    // REALISTIC DEBT LOGIC - Russian banks — прогресс-бар выплат.
+    // REALISTIC DEBT LOGIC - Russian banks - прогресс-бар выплат.
     if (stats && stats.alreadyPaidPercent >= 0 && (Number(d.totalAmount) || Number(d.loanAmount) || 0) > 0) {
       html += '<div class="debt-progress-block">'
         + '<div class="debt-progress-label">'
@@ -12639,7 +12644,7 @@ function goalSwipeToIndex(idx, goLeft) {
       + '<div class="debt-item-row"><span>' + t("debts.remaining") + '</span><span>' + fmtConverted(Number(d.remainingAmount) || 0) + ' ' + getCurrencySymbol() + '</span></div>'
       + '<div class="debt-item-row"><span>' + t("debts.monthlyPayment") + '</span><span>' + fmtConverted(Number(d.monthlyPayment) || 0) + ' ' + getCurrencySymbol() + '</span></div>';
 
-    // REALISTIC DEBT LOGIC - Russian banks — ставка и срок для кредитов.
+    // REALISTIC DEBT LOGIC - Russian banks - ставка и срок для кредитов.
     if (!isCard && Number(d.interestRate) > 0) {
       html += '<div class="debt-item-row"><span>' + t("debts.interestRate") + '</span><span>' + d.interestRate + '%</span></div>';
     }
@@ -12650,7 +12655,7 @@ function goalSwipeToIndex(idx, goLeft) {
     html += '<div class="debt-item-row"><span>' + t("debts.nextPayment") + '</span><span>' + nextStr + '</span></div>'
       + '<div class="debt-item-row"><span>' + t("debts.endDate") + '</span><span>' + endStr + '</span></div>';
 
-    // REALISTIC DEBT LOGIC - Russian banks — поля кредитной карты.
+    // REALISTIC DEBT LOGIC - Russian banks - поля кредитной карты.
     if (isCard && d.creditLimit) {
       html += '<div class="debt-item-row"><span>' + t("debts.creditLimit") + '</span><span>' + fmtConverted(Number(d.creditLimit) || 0) + ' ' + getCurrencySymbol() + '</span></div>';
       html += '<div class="debt-item-row"><span>' + t("debts.freeLimit") + '</span><span>' + fmtConverted(Number(d.freeLimit) || 0) + ' ' + getCurrencySymbol() + '</span></div>';
@@ -12662,7 +12667,7 @@ function goalSwipeToIndex(idx, goLeft) {
       html += '<div class="debt-item-row"><span>' + t("debts.minPayment") + '</span><span>' + fmtConverted(stats.grace.minPayment) + ' ' + getCurrencySymbol() + '</span></div>';
     }
 
-    // REALISTIC DEBT LOGIC - Russian banks — переплата и прогноз срока.
+    // REALISTIC DEBT LOGIC - Russian banks - переплата и прогноз срока.
     if (stats && stats.interestRemaining > 0) {
       html += '<div class="debt-item-row"><span>' + t("debts.interestRemaining") + '</span><span>' + fmtConverted(stats.interestRemaining) + ' ' + getCurrencySymbol() + '</span></div>';
     }
@@ -12913,7 +12918,7 @@ function goalSwipeToIndex(idx, goLeft) {
     var freeLim = document.getElementById("debtFreeLimit");
     var note = document.getElementById("debtNote");
 
-    // REALISTIC DEBT LOGIC - Russian banks — новые поля формы.
+    // REALISTIC DEBT LOGIC - Russian banks - новые поля формы.
     var interestRate = document.getElementById("debtInterestRate");
     var termMonths = document.getElementById("debtTermMonths");
     var graceDays = document.getElementById("debtGracePeriodDays");
@@ -12942,7 +12947,7 @@ function goalSwipeToIndex(idx, goLeft) {
         b.classList.toggle("active", b.dataset.value === debtType);
       });
       if (debtCardFields) debtCardFields.style.display = debtType === "card" ? "" : "none";
-      // REALISTIC DEBT LOGIC - Russian banks — блок параметров кредита скрыт
+      // REALISTIC DEBT LOGIC - Russian banks - блок параметров кредита скрыт
       // только для записей типа "debt" (просто долг знакомому без процентов).
       if (creditFields) creditFields.style.display = (debtType === "debt" || debtType === "card") ? "none" : "";
     } else {
@@ -12952,7 +12957,7 @@ function goalSwipeToIndex(idx, goLeft) {
       });
       debtTypeToggle.forEach(function (b, i) { b.classList.toggle("active", i === 0); });
       if (debtCardFields) debtCardFields.style.display = "none";
-      // REALISTIC DEBT LOGIC - Russian banks — по умолчанию активен тип "credit",
+      // REALISTIC DEBT LOGIC - Russian banks - по умолчанию активен тип "credit",
       // поэтому показываем блок процентной ставки/срока.
       if (creditFields) creditFields.style.display = "";
     }
@@ -12972,11 +12977,11 @@ function goalSwipeToIndex(idx, goLeft) {
 
   if (addDebtsBtn) {
     addDebtsBtn.addEventListener("click", function () {
-      // PREMIUM SYSTEM — inline-гейт
+      // PREMIUM SYSTEM - inline-гейт
       if (window._premiumGate && window._premiumGate("debts")) return;
       if (typeof haptic === "function") haptic("light");
       openDebtsScreen();
-      // PREMIUM TOUR — мини-онбординг при первом открытии Debts.
+      // PREMIUM TOUR - мини-онбординг при первом открытии Debts.
       if (typeof startPremiumFeatureTour === "function") {
         setTimeout(function () { startPremiumFeatureTour("debts"); }, 400);
       }
@@ -13031,9 +13036,9 @@ function goalSwipeToIndex(idx, goLeft) {
       btn.classList.add("active");
       var typeVal = btn.dataset.value;
       if (debtCardFields) debtCardFields.style.display = typeVal === "card" ? "" : "none";
-      // REALISTIC DEBT LOGIC - Russian banks — блок «процентная ставка + срок»
+      // REALISTIC DEBT LOGIC - Russian banks - блок «процентная ставка + срок»
       // нужен только для типов credit / installment. Для "debt" (личный долг
-      // знакомому) и "card" (своя логика grace-периода) — скрываем.
+      // знакомому) и "card" (своя логика grace-периода) - скрываем.
       var creditFieldsEl = document.getElementById("debtCreditFields");
       if (creditFieldsEl) creditFieldsEl.style.display = (typeVal === "debt" || typeVal === "card") ? "none" : "";
     });
@@ -13051,7 +13056,7 @@ function goalSwipeToIndex(idx, goLeft) {
     }
   });
 
-  // REALISTIC DEBT LOGIC - Russian banks — отдельный форматтер для
+  // REALISTIC DEBT LOGIC - Russian banks - отдельный форматтер для
   // процентных/числовых полей: разрешаем точку как десятичный разделитель.
   function formatRateInput(el) {
     if (!el) return;
@@ -13064,7 +13069,7 @@ function goalSwipeToIndex(idx, goLeft) {
   }
   formatRateInput(document.getElementById("debtInterestRate"));
   formatRateInput(document.getElementById("debtMinPaymentPercent"));
-  // termMonths и gracePeriodDays — целочисленные.
+  // termMonths и gracePeriodDays - целочисленные.
   [document.getElementById("debtTermMonths"),
    document.getElementById("debtGracePeriodDays")].forEach(function (el) {
     if (el) {
@@ -13084,7 +13089,7 @@ function goalSwipeToIndex(idx, goLeft) {
 
       var type = getSelectedDebtType();
 
-      // REALISTIC DEBT LOGIC - Russian banks — извлекаем новые параметры.
+      // REALISTIC DEBT LOGIC - Russian banks - извлекаем новые параметры.
       var interestRate = parseFloat((document.getElementById("debtInterestRate") || {}).value || "0") || 0;
       var termMonths = parseInt((document.getElementById("debtTermMonths") || {}).value || "0", 10) || 0;
       var gracePeriodDays = type === "card"
@@ -13098,8 +13103,8 @@ function goalSwipeToIndex(idx, goLeft) {
       var remainAmt = parseNumber(document.getElementById("debtRemainingAmount").value || "0");
       var monthlyPayRaw = parseNumber(monthlyPayEl.value || "0");
 
-      // REALISTIC DEBT LOGIC - Russian banks — для credit / installment, если
-      // пользователь не указал ежемесячный платёж, но указал ставку и срок —
+      // REALISTIC DEBT LOGIC - Russian banks - для credit / installment, если
+      // пользователь не указал ежемесячный платёж, но указал ставку и срок -
       // рассчитываем аннуитет автоматически по формуле РФ-банков.
       var monthlyPay = monthlyPayRaw;
       if ((type === "credit" || type === "installment") && monthlyPay <= 0
@@ -13157,11 +13162,11 @@ function goalSwipeToIndex(idx, goLeft) {
         if (existingDebtForEdit) {
           entry.paidInCurrentPeriod = existingDebtForEdit.paidInCurrentPeriod || 0;
           entry.currentPeriodKey = existingDebtForEdit.currentPeriodKey || entry.currentPeriodKey;
-          // REALISTIC DEBT LOGIC - Russian banks — сохраняем историю карты:
+          // REALISTIC DEBT LOGIC - Russian banks - сохраняем историю карты:
           // startDate (дата выдачи) и lastFullPayDate (последнее закрытие).
           entry.startDate = existingDebtForEdit.startDate || "";
           entry.lastFullPayDate = existingDebtForEdit.lastFullPayDate || "";
-          // loanAmount берём исходный, если он был задан — иначе из формы.
+          // loanAmount берём исходный, если он был задан - иначе из формы.
           if (existingDebtForEdit.loanAmount > 0) {
             entry.loanAmount = existingDebtForEdit.loanAmount;
           }
@@ -13170,7 +13175,7 @@ function goalSwipeToIndex(idx, goLeft) {
           if (debts[i].id === editingDebtId) { debts[i] = entry; break; }
         }
       } else {
-        // REALISTIC DEBT LOGIC - Russian banks — для нового долга фиксируем
+        // REALISTIC DEBT LOGIC - Russian banks - для нового долга фиксируем
         // дату создания как startDate (используется для карт как точка отсчёта
         // первого grace-периода, если lastFullPayDate ещё не задан).
         entry.startDate = new Date().toISOString().slice(0, 10);
@@ -13672,7 +13677,7 @@ function goalSwipeToIndex(idx, goLeft) {
     if (elAddBtn) elAddBtn.style.display = "";
 
     if (elSpent) elSpent.textContent = fmtConverted(spent);
-    if (elLimit) elLimit.textContent = limit > 0 ? fmtConverted(limit) : "—";
+    if (elLimit) elLimit.textContent = limit > 0 ? fmtConverted(limit) : "-";
 
     if (remaining >= 0) {
       if (elRemaining) elRemaining.textContent = fmtConverted(remaining);
@@ -14016,7 +14021,7 @@ function goalSwipeToIndex(idx, goLeft) {
 })();
 
 /* ============================================================
-   Flexible Model — "Текущая модель" live summary renderer
+   Flexible Model - "Текущая модель" live summary renderer
    ------------------------------------------------------------
    Pure rendering layer. Reads existing state via getState(),
    uses i18n via t(), and updates already-existing DOM nodes:
@@ -14045,7 +14050,7 @@ function renderFlexModelSummary() {
       .replace(/'/g, "&#39;");
   }
 
-  // Robust amount parser — handles every format the user can produce:
+  // Robust amount parser - handles every format the user can produce:
   //   "10 000"  (default spaces format from formatNumber)
   //   "10.000"  (dots format when settings.numberFormat === "dots")
   //   "10000"   (raw, unformatted)
@@ -14101,7 +14106,7 @@ function renderFlexModelSummary() {
   }
 
   function sideConfig(side) {
-    // NEW: логика fixed vs variable 11.05.2026 —
+    // NEW: логика fixed vs variable 11.05.2026 -
     //   • FIXED   → amount sourced from the SIMPLE-model field (s.income / s.expenses),
     //               frequency is implicitly monthly, no start-date meta.
     //   • VARIABLE → amount sourced from the user-entered fixedXxxAmount, frequency &
@@ -14181,7 +14186,7 @@ function renderFlexModelSummary() {
     // Determine amount + frequency line independently for each side.
     var amountHtml, freqText, amountMissing = false, periodicMetaHtml = "";
 
-    // NEW: логика fixed vs variable 11.05.2026 — both modes display amount+freq.
+    // NEW: логика fixed vs variable 11.05.2026 - both modes display amount+freq.
     // The frequency for FIXED is always "monthly" (simple-model assumption) and there
     // is NO Start/Next meta. VARIABLE shows the user-configured freq AND Start/Next.
     var amt = parseAmount(c.amount);
@@ -14199,7 +14204,7 @@ function renderFlexModelSummary() {
       freqText += " \u00B7 " + datesCountText(c.days.length);
     }
 
-    // NEW: Start + Next occurrence meta — only for VARIABLE side (the schedule the
+    // NEW: Start + Next occurrence meta - only for VARIABLE side (the schedule the
     // user explicitly configured). FIXED side is monthly+read-only with no anchor.
     if (c.type === "variable" && amt > 0) {
       var startStr, nextStr;
@@ -14217,7 +14222,7 @@ function renderFlexModelSummary() {
         : '<span class="cf-side-meta-placeholder">' + escapeHtml(t("flex.current.startNotSet")) + '</span>';
       var nextInner = nextStr
         ? escapeHtml(nextStr)
-        : '<span class="cf-side-meta-placeholder">—</span>';
+        : '<span class="cf-side-meta-placeholder">-</span>';
 
       periodicMetaHtml =
         '<div class="cf-side-meta">' +
@@ -14257,9 +14262,9 @@ function renderFlexModelSummary() {
   }
 
   // ── Compact one-line summary used on the inline card slots ──
-  // NEW: логика fixed vs variable 11.05.2026 —
+  // NEW: логика fixed vs variable 11.05.2026 -
   //   • FIXED:   "Доход: Фиксированный · данные из начального состояния"
-  //              (no amount placeholder, no frequency — it's read-only initial data).
+  //              (no amount placeholder, no frequency - it's read-only initial data).
   //   • VARIABLE: "Доход: Нефиксированный · 125 000 ₽ · Раз в неделю · Начало: 17 мая 2026"
   function buildInlineLine(side) {
     var c         = sideConfig(side);
@@ -14293,7 +14298,7 @@ function renderFlexModelSummary() {
     return label + ": " + parts.join(" \u00B7 ");
   }
 
-  // ── 1) "Текущая модель" main card — premium two-block layout ──
+  // ── 1) "Текущая модель" main card - premium two-block layout ──
   // OPTIMIZATION: DOM cache в renderFlexModelSummary (вызывается из syncFlexibleUI).
   var summaryText = getEl("cfFlowSummaryText");
   if (summaryText) {
@@ -14315,7 +14320,7 @@ function renderFlexModelSummary() {
   }
 
   // ── 3) Header chips (independent per side) ──
-  // NEW: логика fixed vs variable 11.05.2026 —
+  // NEW: логика fixed vs variable 11.05.2026 -
   //   • FIXED → chip says "Фиксированный" (uses simple-model amount); muted if 0.
   //   • VARIABLE → chip says the freq label (e.g. "Раз в неделю"); muted only when
   //     custom freq has no selected days OR amount is 0.
@@ -14353,7 +14358,7 @@ function renderFlexModelSummary() {
   applyChip("expenseCardStatus", chipFor("expense"));
 
   // ── 4) In-card "Фиксированный · сумма · Ежемесячно" hint lines (FIXED mode only) ──
-  // NEW: логика fixed vs variable 11.05.2026 — these blocks live above the read-only
+  // NEW: логика fixed vs variable 11.05.2026 - these blocks live above the read-only
   // mode and explain WHAT data is being reused (simple-model income/expenses).
   function buildFixedHintLine(side) {
     var c   = sideConfig(side);
@@ -14383,11 +14388,11 @@ function renderFlexModelSummary() {
   }
 
   // ── 6) +Add Event button state ──
-  // FINANCIAL EVENTS - INCOME ONLY — кнопка «+ Добавить доход» теперь добавляет
+  // FINANCIAL EVENTS - INCOME ONLY - кнопка «+ Добавить доход» теперь добавляет
   // ТОЛЬКО разовый непредсказуемый доход (премия, подарок, возврат долга,
   // продажа). Это полезно при любой конфигурации сторон: даже если регулярный
   // доход настроен в fixed-режиме, разовый непредсказуемый доход ему не
-  // противоречит — это отдельная категория. Поэтому previousнее блокирование
+  // противоречит - это отдельная категория. Поэтому previousнее блокирование
   // по принципу «обе стороны fixed» больше не нужно: снимаем блок всегда.
   var addEventBtn = getEl("addFinancialEvent");
   if (addEventBtn) {
@@ -14410,11 +14415,11 @@ function renderFlexModelSummary() {
  *
  * Стратегия: ловим клик по любому <a href="mailto:..."> в DOM, пытаемся
  *   1) открыть почту через window.location.href (работает на Android и Web)
- *   2) если что-то не получилось — копируем email в буфер обмена
- *      и показываем toast «Email скопирован: <email>» — юзер вставит
+ *   2) если что-то не получилось - копируем email в буфер обмена
+ *      и показываем toast «Email скопирован: <email>» - юзер вставит
  *      адрес в свой почтовый клиент сам.
  * Это безопасный fallback: даже если первый шаг отработал, копия в буфере
- * не мешает. На iOS-Telegram второй шаг — единственный способ передать email.
+ * не мешает. На iOS-Telegram второй шаг - единственный способ передать email.
  * ============================================================================ */
 (function initMailtoHandler() {
   document.addEventListener("click", function (e) {
@@ -14436,9 +14441,9 @@ function renderFlexModelSummary() {
     try {
       window.location.href = href;
       openedNative = true;
-    } catch (_e) { /* iOS WebView может бросить — это норм, есть fallback */ }
+    } catch (_e) { /* iOS WebView может бросить - это норм, есть fallback */ }
 
-    // ── 2) Копируем email в буфер обмена (всегда — на случай если шаг 1 не сработал) ─
+    // ── 2) Копируем email в буфер обмена (всегда - на случай если шаг 1 не сработал) ─
     function showCopiedToast() {
       if (typeof showToast === "function") {
         showToast("Email скопирован: " + email, "success");
@@ -14482,27 +14487,27 @@ function renderFlexModelSummary() {
  * с textarea. Отправка идёт через supabase.saveReport(message) (см. supabase.js).
  *
  * Зависимости:
- *   • ProtoSheet.open/close — единая система модалок (см. начало app.js)
- *   • showToast(message, type) — единая система уведомлений
- *   • haptic() — Telegram WebApp вибро-отклик
- *   • t() — i18n
- *   • getEl() — DOM cache
- *   • window.saveReport — async helper из supabase.js
- *   • window.getTelegramIdentity — для проверки наличия Telegram-пользователя
+ *   • ProtoSheet.open/close - единая система модалок (см. начало app.js)
+ *   • showToast(message, type) - единая система уведомлений
+ *   • haptic() - Telegram WebApp вибро-отклик
+ *   • t() - i18n
+ *   • getEl() - DOM cache
+ *   • window.saveReport - async helper из supabase.js
+ *   • window.getTelegramIdentity - для проверки наличия Telegram-пользователя
  *
  * Поведение:
  *   1) Нажатие на #reportProblemBtn → openReportSheet()
- *   2) В модалке — textarea + счётчик + Отмена / Отправить + крестик ✕
+ *   2) В модалке - textarea + счётчик + Отмена / Отправить + крестик ✕
  *   3) Отправка:
- *        a) Валидация — текст не пустой;
+ *        a) Валидация - текст не пустой;
  *        b) Блокировка кнопки + текст "Отправляем…";
  *        c) await window.saveReport(text);
  *        d) Успех → toast "Спасибо…", закрыть и очистить;
  *        e) Ошибка → toast "Не удалось…", разблокировать кнопку (поле НЕ чистим);
- *   4) Pending: sendResolutionPush(telegram_id) — заглушка (см. ниже).
+ *   4) Pending: sendResolutionPush(telegram_id) - заглушка (см. ниже).
  * ============================================================================ */
 (function initReportProblem() {
-  // NEW: Report problem feature — точка входа из вкладки Профиль.
+  // NEW: Report problem feature - точка входа из вкладки Профиль.
 
   // ── DOM refs через DOM cache ──
   var btnOpen     = getEl("reportProblemBtn");
@@ -14520,14 +14525,14 @@ function renderFlexModelSummary() {
 
   if (!btnOpen || !sheet || !overlay) return;
 
-  // NEW: Report problem feature — флаг защиты от двойной отправки.
+  // NEW: Report problem feature - флаг защиты от двойной отправки.
   var _isSending = false;
-  // FIX: cancel button during upload — флаг "пользователь нажал Отмена".
+  // FIX: cancel button during upload - флаг "пользователь нажал Отмена".
   // Используется в submitReport, чтобы НЕ показывать toast "не удалось отправить"
   // при штатной отмене (reject от xhr.abort() в saveReport).
   var _isCancelling = false;
 
-  // NEW: Media attachment in reports — лимиты и state выбранных файлов.
+  // NEW: Media attachment in reports - лимиты и state выбранных файлов.
   var MAX_FILES = 5;
   var MAX_FILE_BYTES = 25 * 1024 * 1024; // 25 MB
   var selectedFiles = [];
@@ -14575,7 +14580,7 @@ function renderFlexModelSummary() {
         thumb.muted = true;
         thumb.playsInline = true;
         thumb.preload = "metadata";
-        // Чтобы появился первый кадр в превью на iOS — добавляем #t=0.1
+        // Чтобы появился первый кадр в превью на iOS - добавляем #t=0.1
         thumb.src = url + "#t=0.1";
       } else {
         thumb = document.createElement("img");
@@ -14661,11 +14666,11 @@ function renderFlexModelSummary() {
       textArea.value = "";
       updateCounter();
     }
-    // NEW: Media attachment in reports — каждое открытие модалки начинает с пустого state.
+    // NEW: Media attachment in reports - каждое открытие модалки начинает с пустого state.
     clearSelectedFiles();
     setSendingState(false);
     syncAttachBtnState();
-    // PREMIUM PROGRESS BAR — гарантированно сбрасываем прогресс при открытии
+    // PREMIUM PROGRESS BAR - гарантированно сбрасываем прогресс при открытии
     hideProgressBar();
     ProtoSheet.open(sheet, overlay);
     // Фокус ставим после анимации, чтобы клавиатура не дёргала sheet вверх раньше времени.
@@ -14683,14 +14688,14 @@ function renderFlexModelSummary() {
           updateCounter();
         }
         clearSelectedFiles();
-        // PREMIUM PROGRESS BAR — на всякий случай сбрасываем прогресс после закрытия
+        // PREMIUM PROGRESS BAR - на всякий случай сбрасываем прогресс после закрытия
         hideProgressBar();
       }
     });
   }
 
-  // FIX: cancel button during upload — обработчик кнопки "Отмена".
-  // Вне отправки — обычное закрытие. Во время отправки — abort всех активных
+  // FIX: cancel button during upload - обработчик кнопки "Отмена".
+  // Вне отправки - обычное закрытие. Во время отправки - abort всех активных
   // XHR-аплоадов, force-close модалки, без toast "ошибка".
   function cancelDuringUpload() {
     if (!_isSending) {
@@ -14702,7 +14707,7 @@ function renderFlexModelSummary() {
     if (typeof window.cancelReportUpload === "function") {
       window.cancelReportUpload();
     }
-    // Сразу гасим прогресс-бар (без error-вспышки — это штатная отмена, не сбой).
+    // Сразу гасим прогресс-бар (без error-вспышки - это штатная отмена, не сбой).
     hideProgressBar();
     // Снимаем sending state, чтобы ProtoSheet.close сработал без early-return.
     _isSending = false;
@@ -14728,18 +14733,18 @@ function renderFlexModelSummary() {
         ? (selectedFiles.length > 0 ? t("report.modal.uploading") : t("report.modal.sending"))
         : t("report.modal.send");
     }
-    // FIX: cancel button during upload — НЕ блокируем btnCancel во время отправки.
+    // FIX: cancel button during upload - НЕ блокируем btnCancel во время отправки.
     // Теперь нажатие во время _isSending вызывает cancelDuringUpload() (см. wiring ниже).
     if (btnCancel) btnCancel.disabled = false;
     if (btnClose)  btnClose.disabled  = _isSending;
     if (textArea)  textArea.disabled  = _isSending;
-    // NEW: Media attachment in reports — блокируем attach и remove-кнопки во время отправки
+    // NEW: Media attachment in reports - блокируем attach и remove-кнопки во время отправки
     if (attachBtn) attachBtn.disabled = _isSending || selectedFiles.length >= MAX_FILES;
     if (previewEl) {
       var rms = previewEl.querySelectorAll(".report-media-item__remove");
       for (var i = 0; i < rms.length; i++) rms[i].disabled = _isSending;
     }
-    // PREMIUM PROGRESS ANIMATION — запуск/сброс анимации.
+    // PREMIUM PROGRESS ANIMATION - запуск/сброс анимации.
     // Mode выбирается на основе наличия файлов: с файлами получаем REAL прогресс
     // от XHR, без файлов запускается RAF fake-progress (text-only request).
     if (_isSending) {
@@ -14749,24 +14754,24 @@ function renderFlexModelSummary() {
       !sheet.classList.contains("report-uploading--done") &&
       !sheet.classList.contains("report-uploading--error")
     ) {
-      // Не сбрасываем, если только что показали галочку/error — их скроет
+      // Не сбрасываем, если только что показали галочку/error - их скроет
       // completeProgressBar()/errorProgressBar() сами в нужный момент.
       hideProgressBar();
     }
   }
 
   // ──────────────────────────────────────────────────────────────────────────
-  // PREMIUM PROGRESS ANIMATION (v2) — JS-driven через CSS-переменные.
+  // PREMIUM PROGRESS ANIMATION (v2) - JS-driven через CSS-переменные.
   //
   // Модель: единый progress (0..1) хранится в _progressValue.
-  // setProgress(p) — клампит, считает --p-vert / --p-horz, пушит на sheet.
-  // startProgressBar({real}) — initialize:
+  // setProgress(p) - клампит, считает --p-vert / --p-horz, пушит на sheet.
+  // startProgressBar({real}) - initialize:
   //   real=true   → ждём reportProgress() от внешнего источника (XHR)
   //   real=false  → RAF-loop: ease-out до 0.85 за ~1.4s (для text-only reports)
-  // reportProgress(p) — внешний пуш (вызывается из onProgress в saveReport).
-  // completeProgressBar(cb) — стопает RAF, p=1, --done класс, burst, callback ~1.1s.
-  // errorProgressBar(cb) — стопает RAF, --error класс (красная вспышка + fade), ~0.65s.
-  // hideProgressBar() — мгновенный сброс всех классов и transforms.
+  // reportProgress(p) - внешний пуш (вызывается из onProgress в saveReport).
+  // completeProgressBar(cb) - стопает RAF, p=1, --done класс, burst, callback ~1.1s.
+  // errorProgressBar(cb) - стопает RAF, --error класс (красная вспышка + fade), ~0.65s.
+  // hideProgressBar() - мгновенный сброс всех классов и transforms.
   // ──────────────────────────────────────────────────────────────────────────
   var _progressValue = 0;
   var _progressRafId = null;
@@ -14794,7 +14799,7 @@ function renderFlexModelSummary() {
   }
 
   // RAF-loop с ease-out cubic-bezier (0.16, 1, 0.3, 1) аппроксимирован через
-  // 1 - (1-t)^3 — достаточно близко на глаз. 1.4s до 0.85.
+  // 1 - (1-t)^3 - достаточно близко на глаз. 1.4s до 0.85.
   function _startFakeProgress() {
     _cancelFakeProgress();
     _progressStartTs = (window.performance && performance.now) ? performance.now() : Date.now();
@@ -14809,7 +14814,7 @@ function renderFlexModelSummary() {
       var t = Math.max(0, Math.min(1, (now - _progressStartTs) / duration));
       var eased = 1 - Math.pow(1 - t, 3);
       var v = startVal + (targetVal - startVal) * eased;
-      // setProgress() гарантирует монотонность — никогда не откатывает прогресс назад.
+      // setProgress() гарантирует монотонность - никогда не откатывает прогресс назад.
       setProgress(v);
       if (t < 1 && _progressRafId != null) {
         _progressRafId = requestAnimationFrame(tick);
@@ -14841,7 +14846,7 @@ function renderFlexModelSummary() {
   // Внешний пуш реального прогресса (из onProgress в saveReport).
   // Маппим p ∈ [0..1] → [0..0.95], оставляя финальные 5% на финиш-анимацию.
   function reportProgress(p) {
-    _cancelFakeProgress(); // если был fake — переключаемся на real
+    _cancelFakeProgress(); // если был fake - переключаемся на real
     setProgress(Math.max(0, Math.min(1, p)) * 0.95);
   }
 
@@ -14852,7 +14857,7 @@ function renderFlexModelSummary() {
     sheet.classList.remove("report-uploading--error");
     sheet.classList.add("report-uploading--done");
     // Total finish time: 0.32s burst delay + 0.95s burst animation = 1.27s.
-    // Закрываем чуть раньше пика fade-out частиц, на 1100ms — galочка успевает
+    // Закрываем чуть раньше пика fade-out частиц, на 1100ms - galочка успевает
     // нарисоваться (~0.18 delay + 0.45 draw = 0.63s), burst успевает на peak (0.32+0.18=0.5s).
     setTimeout(function () {
       if (onAfter) onAfter();
@@ -14891,7 +14896,7 @@ function renderFlexModelSummary() {
     counterEl.textContent = len + " / " + max;
   }
 
-  // NEW: Report problem feature — debounce на счётчик, чтобы не дёргать DOM
+  // NEW: Report problem feature - debounce на счётчик, чтобы не дёргать DOM
   // на каждое нажатие при длинных сообщениях. Сам textarea обновляется браузером
   // мгновенно, дебаунс лишь снижает частоту обновления визуального счётчика.
   var debouncedCounter = (typeof debounce === "function")
@@ -14903,8 +14908,8 @@ function renderFlexModelSummary() {
   }
 
   /**
-   * NEW: Report problem feature — основная функция отправки.
-   * Никогда не throw — всегда возвращает { ok, error? } чтобы UI мог
+   * NEW: Report problem feature - основная функция отправки.
+   * Никогда не throw - всегда возвращает { ok, error? } чтобы UI мог
    * мягко обработать обе ветки и не упасть.
    */
   async function submitReport() {
@@ -14939,14 +14944,14 @@ function renderFlexModelSummary() {
     setSendingState(true);
     if (typeof haptic === "function") haptic("light");
 
-    // NEW: Report problem feature — simple telegramId extraction (`tg` is defined at top of app.js)
+    // NEW: Report problem feature - simple telegramId extraction (`tg` is defined at top of app.js)
     const telegramId = window.tgUserId || tg?.initDataUnsafe?.user?.id;
 
     var result = { ok: false };
     try {
       if (typeof window.saveReport === "function") {
-        // NEW: Media attachment in reports — передаём массив выбранных файлов
-        // PREMIUM PROGRESS ANIMATION (real) — onProgress(p) пушит реальный прогресс
+        // NEW: Media attachment in reports - передаём массив выбранных файлов
+        // PREMIUM PROGRESS ANIMATION (real) - onProgress(p) пушит реальный прогресс
         // от XHR.upload.onprogress в общий progress bar (через reportProgress).
         result = await window.saveReport(
           telegramId,
@@ -14963,11 +14968,11 @@ function renderFlexModelSummary() {
     }
 
     if (result && result.ok) {
-      // PREMIUM PROGRESS BAR — финиш-анимация: добиваем до 1.0, рисуем галочку,
+      // PREMIUM PROGRESS BAR - финиш-анимация: добиваем до 1.0, рисуем галочку,
       // и только потом закрываем модалку, чтобы пользователь увидел финал.
       if (typeof haptic === "function") haptic("medium");
 
-      // NEW: Report problem feature — заглушка для будущего push-уведомления
+      // NEW: Report problem feature - заглушка для будущего push-уведомления
       // о факте решения проблемы. Когда backend помечает report.resolved=true
       // и отправляет push, эта функция станет реальной отправкой.
       sendResolutionPush(telegramId);
@@ -14990,15 +14995,15 @@ function renderFlexModelSummary() {
         ProtoSheet.close(sheet, overlay);
       });
     } else {
-      // PREMIUM PROGRESS ANIMATION (error) — красная вспышка линий + fade-out
+      // PREMIUM PROGRESS ANIMATION (error) - красная вспышка линий + fade-out
       // вместо мгновенного скрытия. Toast и haptic срабатывают сразу,
       // разблокировку кнопок делаем после анимации, чтобы не "прыгало".
       console.error("[Report] Ошибка:", result && result.error);
 
-      // FIX: cancel button during upload — если пользователь нажал "Отмена",
+      // FIX: cancel button during upload - если пользователь нажал "Отмена",
       // saveReport возвращает ошибку "upload aborted" из-за xhr.abort().
       // Полагаемся на флаг _isCancelling (выставляется синхронно в момент клика).
-      // Дополнительно ловим текст "aborted" — на случай браузеров, где abort()
+      // Дополнительно ловим текст "aborted" - на случай браузеров, где abort()
       // мог сработать без участия нашего обработчика.
       var wasAborted = _isCancelling ||
         (result && result.error && /\babort(ed)?\b/i.test(String(result.error)));
@@ -15006,7 +15011,7 @@ function renderFlexModelSummary() {
         // Модалка уже закрывается через cancelDuringUpload → выходим тихо.
         return;
       }
-      // NEW: Media attachment in reports — если сбой произошёл на конкретном файле,
+      // NEW: Media attachment in reports - если сбой произошёл на конкретном файле,
       // используем переведённый ключ с именем файла.
       var errMsg;
       if (result && result.failedFile) {
@@ -15022,14 +15027,14 @@ function renderFlexModelSummary() {
       errorProgressBar(function () {
         setSendingState(false);
       });
-      // Поле и файлы НЕ чистим — пользователь может исправить и нажать снова.
+      // Поле и файлы НЕ чистим - пользователь может исправить и нажать снова.
     }
   }
 
   /**
-   * NEW: Report problem feature — placeholder.
+   * NEW: Report problem feature - placeholder.
    * Реальная отправка push будет привязана к событию `reports.resolved=true`
-   * на backend (Edge Function / cron) — это правильная точка отправки,
+   * на backend (Edge Function / cron) - это правильная точка отправки,
    * потому что клиент не знает, когда отчёт фактически решён.
    *
    * TODO: отправить push когда проблема решена
@@ -15040,7 +15045,7 @@ function renderFlexModelSummary() {
    */
   function sendResolutionPush(telegramId) {
     console.log(
-      "[Report] sendResolutionPush placeholder — telegram_id=" + telegramId,
+      "[Report] sendResolutionPush placeholder - telegram_id=" + telegramId,
       "(будет отправлен с backend, когда отчёт получит resolved=true)"
     );
   }
@@ -15048,12 +15053,12 @@ function renderFlexModelSummary() {
   // ── Event wiring ──
   btnOpen.addEventListener("click", openReportSheet);
   if (btnClose)   btnClose.addEventListener("click", closeReportSheet);
-  // FIX: cancel button during upload — Cancel теперь умеет прерывать аплоад
+  // FIX: cancel button during upload - Cancel теперь умеет прерывать аплоад
   if (btnCancel)  btnCancel.addEventListener("click", cancelDuringUpload);
   if (overlay)    overlay.addEventListener("click", closeReportSheet);
   if (btnSend)    btnSend.addEventListener("click", submitReport);
 
-  // NEW: Media attachment in reports — wiring attach-кнопки и file-input.
+  // NEW: Media attachment in reports - wiring attach-кнопки и file-input.
   if (attachBtn && fileInput) {
     attachBtn.addEventListener("click", function () {
       if (_isSending || selectedFiles.length >= MAX_FILES) return;
@@ -15078,7 +15083,7 @@ function renderFlexModelSummary() {
 })();
 
 /* ============================================================================
- * OPTIMIZATION SUMMARY — Protocol Finance Mini App (app.js)
+ * OPTIMIZATION SUMMARY - Protocol Finance Mini App (app.js)
  * ============================================================================
  *
  * Цель: ускорить hot-paths и убрать дублирование, НЕ меняя поведение.
@@ -15089,20 +15094,20 @@ function renderFlexModelSummary() {
  * 1. DOM CACHE (`domCache` + `getEl(id)`)
  *    Добавлен лёгкий кэш для `document.getElementById` в hot-path функциях,
  *    которые вызываются на каждое изменение состояния / каждый рендер:
- *      • recalcPlan()              — 2 замены
- *      • saveFullState()           — 2 замены
- *      • syncFlexibleUI()          — 14 замен (самый горячий путь UI)
- *      • applyFlexibleSideVisibility() — 6 замен
- *      • renderGoals()             — 11 замен (titleEl, totalEl, savedEl, ...)
- *      • renderAccountsUI()        — 3 замены
- *      • updatePlanHeader()        — 4 замены
- *      • renderFlexModelSummary()  — 7 замен
- *      • initCashflowSettings()    — 20 замен
- *      • Event editor (открывается часто) — 6 замен
- *    Узлы кешируются только когда они `isConnected` — это безопасно при ре-
+ *      • recalcPlan()              - 2 замены
+ *      • saveFullState()           - 2 замены
+ *      • syncFlexibleUI()          - 14 замен (самый горячий путь UI)
+ *      • applyFlexibleSideVisibility() - 6 замен
+ *      • renderGoals()             - 11 замен (titleEl, totalEl, savedEl, ...)
+ *      • renderAccountsUI()        - 3 замены
+ *      • updatePlanHeader()        - 4 замены
+ *      • renderFlexModelSummary()  - 7 замен
+ *      • initCashflowSettings()    - 20 замен
+ *      • Event editor (открывается часто) - 6 замен
+ *    Узлы кешируются только когда они `isConnected` - это безопасно при ре-
  *    рендере фрагментов DOM.
  *    Топ-level `const`-объявления (incomeInput, goalInput, calculateBtn, ...)
- *    оставлены без изменений — они выполняются один раз при загрузке.
+ *    оставлены без изменений - они выполняются один раз при загрузке.
  *
  * 2. DEBOUNCE (250 ms) для тяжёлых input-каскадов
  *    `fixedIncomeInput` и `fixedExpenseInput` ранее вызывали
@@ -15121,7 +15126,7 @@ function renderFlexModelSummary() {
  *    Поведение полностью идентично исходному.
  *
  * 4. `applyFlexibleSideVisibility` уже разделена с helper `applySideVisibility`
- *    в исходном коде — дополнительный рефакторинг не требовался. Это уже
+ *    в исходном коде - дополнительный рефакторинг не требовался. Это уже
  *    единый источник правды для visibility логики (используется и из
  *    `initCashflowSettings`, и из `syncFlexibleUI`).
  *
@@ -15130,7 +15135,7 @@ function renderFlexModelSummary() {
  *  • Event delegation для `forEach(addEventListener)` в render-функциях
  *    (renderAdvancedGoals, renderDebtList, renderCategoryList и др.).
  *    Замена потребует унификации data-атрибутов и проверки всех ветвей кликов.
- *  • Batch-рендер textContent/innerHTML — большинство кейсов уже использует
+ *  • Batch-рендер textContent/innerHTML - большинство кейсов уже использует
  *    единичные innerHTML с шаблонной строкой; точечные textContent в
  *    syncFlexibleUI/renderGoals безопасно оставить как есть.
  *  • Разделение на отдельные файлы (goals-advanced.js, debts.js):
@@ -15139,25 +15144,25 @@ function renderFlexModelSummary() {
  *    переменных (`accounts`, `factHistory`, `plannedMonthly`, `chosenPlan`,
  *    `lastCalc`, `factRatio`, `goalCompleted`, `isInitialized`, ...).
  *    Вынос потребует либо перевешивания их в `window.*` (загрязнение глобала),
- *    либо большого рефакторинга всех ссылок — оба варианта нарушают принцип
+ *    либо большого рефакторинга всех ссылок - оба варианта нарушают принцип
  *    "минимально-инвазивно". Это потенциальная будущая задача (требует
  *    полноценного модульного дизайна, например через бандлер).
  *
  * ── ОЖИДАЕМЫЙ ЭФФЕКТ ─────────────────────────────────────────────────────────
  *
- *  • Снижение нагрузки при наборе в `fixedIncome/Expense` — пересчёт плана
+ *  • Снижение нагрузки при наборе в `fixedIncome/Expense` - пересчёт плана
  *    идёт не 5-10 раз в секунду, а максимум 4 раза/сек.
  *  • Сокращение времени каждого `syncFlexibleUI()` за счёт устранения
  *    14 `getElementById` запросов (заменены на хеш-лукапы).
- *  • Одинаковые поведение и UX — все сценарии гибкой модели
+ *  • Одинаковые поведение и UX - все сценарии гибкой модели
  *    (fixed/variable, custom monthDays, событий, дат старта) работают
  *    идентично исходной реализации.
  *
  * ── ВАЛИДАЦИЯ ────────────────────────────────────────────────────────────────
  *
- *  • `node --check app.js` — passes (синтаксис).
+ *  • `node --check app.js` - passes (синтаксис).
  *  • Поведение `syncFlexibleUI`, `applyFlexibleSideVisibility`,
- *    `recalcPlan`, `renderFlexModelSummary` — сохранено 1-в-1.
+ *    `recalcPlan`, `renderFlexModelSummary` - сохранено 1-в-1.
  *
  * ============================================================================ */
 
@@ -15166,7 +15171,7 @@ function renderFlexModelSummary() {
  * ----------------------------------------------------------------------------
  * Полный flow завершения цели:
  *   1) recalcPlan/applyFact обнаруживает accounts.main >= goalTotal →
- *      goalCompleted=true, fireCelebration() (конфетти), затем через 600ms —
+ *      goalCompleted=true, fireCelebration() (конфетти), затем через 600ms -
  *      showGoalCompletionModal(snapshot).
  *   2) checkGoalCompletion() пропускает i=0 (primary), чтобы не было гонки.
  *   3) Пользователь нажимает "Я молодец!" → confirmGoalCompletion():
@@ -15177,9 +15182,9 @@ function renderFlexModelSummary() {
  *   4) renderGoals() переключает #activeGoalCard <-> #emptyGoalCard по
  *      primaryAmount === 0 (см. правки выше).
  *   5) #createNewGoalBtn открывает существующий goalEditorSheet.
- *   6) History card click → showGoalHistoryDetail(goalData) — детальная модалка.
+ *   6) History card click → showGoalHistoryDetail(goalData) - детальная модалка.
  *
- * ВАЖНО: accounts.main, factHistory, initialBalance НЕ сбрасываются —
+ * ВАЖНО: accounts.main, factHistory, initialBalance НЕ сбрасываются -
  * это финансовые данные пользователя. Очищается только goal metadata.
  * ============================================================================ */
 
@@ -15216,7 +15221,7 @@ function renderFlexModelSummary() {
 
   // ── Public: показ модалки поздравления ──
   // snapshot: { name, amount, saved } захватывается в apply-fact ДО мутаций.
-  // PREMIUM GOAL COMPLETION — синхронно с открытием запускает асимметричные конфетти
+  // PREMIUM GOAL COMPLETION - синхронно с открытием запускает асимметричные конфетти
   // (left emerald + right blue) и эмоциональный текст в стиле premium-UX.
   window.showGoalCompletionModal = function (snapshot) {
     var overlay = _q("goalCompleteOverlay");
@@ -15229,7 +15234,7 @@ function renderFlexModelSummary() {
       : String(snapshot.amount || 0);
     var nameStr = snapshot.name || t("misc.defaultGoalTitle");
 
-    // PREMIUM GOAL COMPLETION — subtitle с суммой и названием цели (emerald accent).
+    // PREMIUM GOAL COMPLETION - subtitle с суммой и названием цели (emerald accent).
     var subtitleEl = _q("goalCompleteSubtitle");
     if (subtitleEl) {
       var subtitleTpl = t("goalComplete.modal.subtitle");
@@ -15245,7 +15250,7 @@ function renderFlexModelSummary() {
 
     ProtoSheet.open(sheet, overlay);
 
-    // PREMIUM GOAL COMPLETION — fire конфетти сразу при открытии модалки.
+    // PREMIUM GOAL COMPLETION - fire конфетти сразу при открытии модалки.
     // requestAnimationFrame синхронизирует с CSS-анимацией открытия (translateY).
     requestAnimationFrame(function () {
       if (typeof firePremiumCelebration === "function") firePremiumCelebration();
@@ -15289,7 +15294,7 @@ function renderFlexModelSummary() {
     if (typeof goalMeta !== "undefined" && goalMeta) {
       goalMeta.title = "";
     }
-    // Глобальный goalCompleted — сбросить, чтобы следующая цель могла триггерить модалку.
+    // Глобальный goalCompleted - сбросить, чтобы следующая цель могла триггерить модалку.
     if (typeof goalCompleted !== "undefined") {
       // eslint-disable-next-line no-global-assign
       try { goalCompleted = false; } catch (e) { window.goalCompleted = false; }
@@ -15325,7 +15330,7 @@ function renderFlexModelSummary() {
         if (typeof renderProtocolAdviceGraph === "function") renderProtocolAdviceGraph();
         if (typeof updateGraphGoalIndicator === "function") updateGraphGoalIndicator();
         if (typeof saveFullState === "function") saveFullState();
-        // FIX: goal completion UI — включаем app-lock после закрытия поздравительной модалки.
+        // FIX: goal completion UI - включаем app-lock после закрытия поздравительной модалки.
         //      Goal только что был обнулён, активный screen остаётся текущим (обычно advice).
         if (typeof window._updateAppLock === "function") window._updateAppLock();
       }
@@ -15366,7 +15371,7 @@ function renderFlexModelSummary() {
         var d2 = new Date(goalData.completedDate);
         toStr = getMonthName(d2.getMonth()) + " " + d2.getFullYear();
       }
-      periodEl.textContent = fromStr + " — " + toStr;
+      periodEl.textContent = fromStr + " - " + toStr;
     }
     if (durationEl) {
       var months = Number(goalData.durationMonths) || 0;
@@ -15385,7 +15390,7 @@ function renderFlexModelSummary() {
     ProtoSheet.close(sheet, overlay);
   }
 
-  // ── Wiring (DOMContentLoaded не нужен — этот файл подключается в конце <body>). ──
+  // ── Wiring (DOMContentLoaded не нужен - этот файл подключается в конце <body>). ──
 
   // 1) Кнопка "Я молодец!" в congrats модалке.
   var completeBtn = _q("goalCompleteBtn");
@@ -15395,10 +15400,10 @@ function renderFlexModelSummary() {
 
   // 2) Кнопка "Создать новую цель" в empty-state карточке.
   //    Открывает существующий goalEditorSheet (тот же flow, что и кнопка редактирования).
-  // NEW: Full goal creation flow in Protocol tab — оба #createNewGoalBtn (на Goals tab)
+  // NEW: Full goal creation flow in Protocol tab - оба #createNewGoalBtn (на Goals tab)
   //      и #protocolCreateNewGoalBtn (на Protocol tab) теперь ведут на полноценный
   //      экран #screen-new-goal через window.openNewGoalScreen().
-  // FIX: new goal creation flow — wire #protocolCreateNewGoalBtn (раньше был только Goals tab).
+  // FIX: new goal creation flow - wire #protocolCreateNewGoalBtn (раньше был только Goals tab).
   ["createNewGoalBtn", "protocolCreateNewGoalBtn"].forEach(function (btnId) {
     var btn = _q(btnId);
     if (!btn) return;
@@ -15417,7 +15422,7 @@ function renderFlexModelSummary() {
   if (hdOverlay)  hdOverlay.addEventListener("click", closeGoalHistoryDetail);
 
   // 4) Делегирование клика по карточкам в #goalHistoryList.
-  //    Это работает с DOM-узлами, которые renderGoalHistory() создаёт динамически —
+  //    Это работает с DOM-узлами, которые renderGoalHistory() создаёт динамически -
   //    нам не нужно перерезать обработчики при каждом рендере.
   var historyList = _q("goalHistoryList");
   if (historyList) {
@@ -15436,15 +15441,15 @@ function renderFlexModelSummary() {
 /* ============================================================================
  * NEW: Full goal creation flow in Protocol tab
  * ----------------------------------------------------------------------------
- * 1) _syncProtocolEmptyState() — синхронизирует видимость
+ * 1) _syncProtocolEmptyState() - синхронизирует видимость
  *    #protocolEmptyGoalCard и #adviceCard на Protocol tab.
- *    Если у пользователя нет активной цели (primary goal amount === 0) — показываем
- *    empty-card и скрываем график; иначе — обратное.
+ *    Если у пользователя нет активной цели (primary goal amount === 0) - показываем
+ *    empty-card и скрываем график; иначе - обратное.
  *
- * 2) window.openNewGoalScreen() — открывает экран #screen-new-goal с предзаполнением
+ * 2) window.openNewGoalScreen() - открывает экран #screen-new-goal с предзаполнением
  *    значениями из текущих accountStats, чтобы пользователь не вводил всё заново.
  *
- * 3) Submit (#newGoalSubmit) — валидирует все поля, заполняет
+ * 3) Submit (#newGoalSubmit) - валидирует все поля, заполняет
  *    goalInput/incomeInput/expensesInput/savedInput, обновляет goalMeta.title,
  *    accounts.main, initialBalance, planStartValue, saveMode/selectedMode,
  *    сбрасывает goalCompleted и factHistory. Затем вызывает recalcPlan() +
@@ -15457,17 +15462,17 @@ function renderFlexModelSummary() {
  * ============================================================================ */
 
 /* ────────────────────────────────────────────────────────────────────────────
- * ONBOARDING — пошаговый тур при первом запуске.
+ * ONBOARDING - пошаговый тур при первом запуске.
  * ────────────────────────────────────────────────────────────────────────────
  * Mechanic:
  *   1. Box-shadow trick для cutout: highlight-box получает огромный
  *      shadow (0 0 0 9999px rgba(0,0,0,0.74)), который накрывает экран
- *      ВОКРУГ box'а — в нём же остаётся «дырка» с emerald-обводкой.
+ *      ВОКРУГ box'а - в нём же остаётся «дырка» с emerald-обводкой.
  *      Совместимо везде, без clip-path.
  *   2. Tooltip позиционируется над/под target'ом по координатам
  *      getBoundingClientRect; стрелка указывает на центр target'а через
  *      CSS-переменную --onb-arrow-x.
- *   3. При смене шага меняем координаты — transition в CSS делает
+ *   3. При смене шага меняем координаты - transition в CSS делает
  *      плавное «перетекание» подсветки с одного элемента на другой.
  *
  * Запуск: проверка appState.onboardingCompleted в _initialSync с задержкой
@@ -15483,7 +15488,7 @@ var _activeTour = null; // ссылка на текущий tour-объект и
 var _ONBOARDING_PADDING = 10; // px ореол вокруг target
 
 // Predicate: возвращает true когда у пользователя есть ЛЮБЫЕ реальные
-// данные в аккаунте — доходы, расходы, цели, события, накопления и т.д.
+// данные в аккаунте - доходы, расходы, цели, события, накопления и т.д.
 // Используется как defensive-фильтр: даже если onboardingCompleted в state
 // ещё false (из-за миграционного пропуска или race-condition с cloud sync),
 // мы НЕ показываем тур существующим пользователям и тихо отмечаем флаг.
@@ -15508,7 +15513,7 @@ function _userHasMeaningfulData() {
   } catch (_e) { return false; }
 }
 
-// Predicate: возвращает true когда у пользователя нет резерва — тогда
+// Predicate: возвращает true когда у пользователя нет резерва - тогда
 // шаг "Резерв" в onboarding'е беззвучно пропускается. Используется
 // через step.skipIf в _TOURS.firstLaunch.steps.
 function _onbHasNoReserve() {
@@ -15522,20 +15527,20 @@ function _onbHasNoReserve() {
 }
 
 // ─── Tour Registry ──────────────────────────────────────────────────────────
-// Все туры приложения — один источник правды.
+// Все туры приложения - один источник правды.
 //
-//   id              — ключ для startTour(id).
-//   completionType  — "primary" (тур первого запуска: пишет в onboardingCompleted)
+//   id              - ключ для startTour(id).
+//   completionType  - "primary" (тур первого запуска: пишет в onboardingCompleted)
 //                     или "premium" (per-feature: пишет в
 //                     premiumOnboardingCompleted[featureKey]).
-//   featureKey      — для premium-туров: ключ в premiumOnboardingCompleted.
-//   requirePremium  — для premium-туров: true → пропустить если нет активной
+//   featureKey      - для premium-туров: ключ в premiumOnboardingCompleted.
+//   requirePremium  - для premium-туров: true → пропустить если нет активной
 //                     подписки (isPremiumActive()).
-//   steps           — массив step-объектов:
+//   steps           - массив step-объектов:
 //     { id, target?, screen?, expand?, titleKey, textKey }
-//     • screen — если задан, перед показом шага вызовется openScreen(screen).
-//     • target — CSS-селектор; null → centered modal без подсветки.
-//     • expand — селектор-«расширитель» (берём closest(expand) для target'а).
+//     • screen - если задан, перед показом шага вызовется openScreen(screen).
+//     • target - CSS-селектор; null → centered modal без подсветки.
+//     • expand - селектор-«расширитель» (берём closest(expand) для target'а).
 //
 // Premium-туры используют "Понял" вместо "Далее" если шаг один.
 var _TOURS = {
@@ -15545,22 +15550,22 @@ var _TOURS = {
     requirePremium: false,
     steps: [
       { id: "welcome",     screen: "calc",     target: null,                       titleKey: "onb.welcome.title",     textKey: "onb.welcome.text" },
-      // Без expand: ".input-wrap" — wrapper включает margin-bottom инпута,
+      // Без expand: ".input-wrap" - wrapper включает margin-bottom инпута,
       // поэтому ореол получался ассиметричным снизу. Таргетим сам <input>.
       { id: "income",      screen: "calc",     target: "#income",                  titleKey: "onb.income.title",      textKey: "onb.income.text" },
       { id: "expenses",    screen: "calc",     target: "#expenses",                titleKey: "onb.expenses.title",    textKey: "onb.expenses.text" },
       { id: "goal",        screen: "calc",     target: "#goal",                    titleKey: "onb.goal.title",        textKey: "onb.goal.text" },
       // noHighlight: dim вырезает "окно" вокруг кнопки (она остаётся
-      // подсвеченной сквозь затемнение), но emerald-обводка не рисуется —
+      // подсвеченной сквозь затемнение), но emerald-обводка не рисуется -
       // достаточно tooltip'а со стрелкой указывающего на кнопку.
       { id: "continue",    screen: "calc",     target: "#calculate",               titleKey: "onb.continue.title",    textKey: "onb.continue.text",    noHighlight: true },
       { id: "mainAccount", screen: "accounts", target: '[data-account="main"]',    titleKey: "onb.mainAccount.title", textKey: "onb.mainAccount.text" },
-      // Reserve-шаг показывается ВСЕГДА — сразу после mainAccount.
+      // Reserve-шаг показывается ВСЕГДА - сразу после mainAccount.
       // Если у юзера выбран сценарий «С резервом» → блок [data-account="reserve"]
       // видим, tooltip подсвечивает его как обычно. Если резерв не выбран →
       // блок скрыт (display:none), _resolveStepTarget вернёт null и
       // _positionOnboardingStep автоматически отрендерит centered modal с тем же
-      // текстом про резерв — юзер всё равно узнает, что такое резерв.
+      // текстом про резерв - юзер всё равно узнает, что такое резерв.
       { id: "reserve",     screen: "accounts", target: '[data-account="reserve"]', titleKey: "onb.reserve.title",     textKey: "onb.reserve.text" },
       { id: "profile",     /* fixed-pos, любой экран */ target: "#profileBtn",     titleKey: "onb.profile.title",     textKey: "onb.profile.text" },
       { id: "final",       screen: "calc",     target: null,                       titleKey: "onb.final.title",       textKey: "onb.final.text" }
@@ -15568,7 +15573,7 @@ var _TOURS = {
   },
   // ── Premium feature tours ───────────────────────────────────────────────
   // Один шаг на фичу: коротко и ёмко. Срабатывают при первом открытии каждой
-  // премиум-функции пользователем С АКТИВНОЙ ПОДПИСКОЙ. Не двигают экран —
+  // премиум-функции пользователем С АКТИВНОЙ ПОДПИСКОЙ. Не двигают экран -
   // фича уже открыта пользовательским действием, мы только объясняем её.
   premiumFlexible: {
     id: "premiumFlexible",
@@ -15676,7 +15681,7 @@ function startTour(tourId, opts) {
   }
   if (alreadyDone && !isForce) return;
 
-  // DEFENSIVE: для основного тура (firstLaunch) — если у пользователя
+  // DEFENSIVE: для основного тура (firstLaunch) - если у пользователя
   // уже есть РЕАЛЬНЫЕ данные (доход/расход/цели/события/...), значит
   // он не новенький, даже если флаг onboardingCompleted в state ещё false
   // (миграция могла пропустить, либо cloud sync ещё не успел перетереть).
@@ -15711,7 +15716,7 @@ function startTour(tourId, opts) {
   setTimeout(function () { _renderOnboardingStep(0); }, 80);
 }
 
-// Алиас для обратной совместимости — startOnboarding() → firstLaunch tour.
+// Алиас для обратной совместимости - startOnboarding() → firstLaunch tour.
 function startOnboarding() {
   startTour("firstLaunch");
 }
@@ -15737,12 +15742,12 @@ function _renderOnboardingShell() {
 
   // PERF архитектура: dimmer состоит из 4 независимых прямоугольников
   // (top/right/bottom/left), окружающих "дырку" вокруг target'а. У каждого
-  // плоская solid-color заливка — анимация transform/scale GPU-cheap.
-  // Highlight-border — отдельный пустой элемент с emerald-обводкой и
+  // плоская solid-color заливка - анимация transform/scale GPU-cheap.
+  // Highlight-border - отдельный пустой элемент с emerald-обводкой и
   // pulse-glow в ::after. Никакого 9999px box-shadow на движущемся
   // элементе → нет full-viewport repaint при transition.
   //
-  // .is-priming — на момент ПЕРВОГО рендера выключает все transitions и
+  // .is-priming - на момент ПЕРВОГО рендера выключает все transitions и
   // прячет элементы (visibility: hidden), чтобы избежать flash в углу.
   // Снимается через double-rAF после установки финальной позиции.
   var root = document.createElement("div");
@@ -15774,7 +15779,7 @@ function _renderOnboardingShell() {
 }
 
 // PERF helper: позиционирует 4 dim-прямоугольника вокруг "дырки" (x,y,w,h).
-// При null — рисует полноэкранный dim (centered mode для welcome/final/huge-target).
+// При null - рисует полноэкранный dim (centered mode для welcome/final/huge-target).
 // Каждый rect получает translate3d + width/height. Solid-color без shadow →
 // repaint area минимальна, GPU compositing работает идеально.
 function _setDimmerHole(x, y, w, h) {
@@ -15789,13 +15794,13 @@ function _setDimmerHole(x, y, w, h) {
   function setRect(el, ex, ey, ew, eh) {
     ew = Math.max(0, ew);
     eh = Math.max(0, eh);
-    // Element — base 1×1px, scale(w,h) растягивает до требуемого размера.
-    // translate3d позиционирует. Чисто composite — GPU без layout reflow.
+    // Element - base 1×1px, scale(w,h) растягивает до требуемого размера.
+    // translate3d позиционирует. Чисто composite - GPU без layout reflow.
     el.style.transform = "translate3d(" + ex + "px, " + ey + "px, 0) scale(" + ew + ", " + eh + ")";
   }
 
   if (x === null) {
-    // Centered mode — top покрывает весь viewport, остальные нулевые.
+    // Centered mode - top покрывает весь viewport, остальные нулевые.
     setRect(tEl, 0, 0, vw, vh);
     setRect(rEl, 0, 0, 0, 0);
     setRect(bEl, 0, 0, 0, 0);
@@ -15803,7 +15808,7 @@ function _setDimmerHole(x, y, w, h) {
     return;
   }
 
-  // Clamp значений к viewport-bounds — отрицательные размеры обнуляются.
+  // Clamp значений к viewport-bounds - отрицательные размеры обнуляются.
   var x2 = x + w;
   var y2 = y + h;
   setRect(tEl, 0,    0,    vw,         y);            // над дыркой
@@ -15817,7 +15822,7 @@ function _renderOnboardingStep(idx) {
   var step = _activeTour.steps[idx];
   if (!step) return;
 
-  // Условный skip: если у шага есть predicate skipIf() который вернул true —
+  // Условный skip: если у шага есть predicate skipIf() который вернул true -
   // прыгаем к следующему шагу беззвучно (без UI-перехода). Поддерживает
   // несколько skip'ов подряд через рекурсивный вызов.
   if (typeof step.skipIf === "function") {
@@ -15834,7 +15839,7 @@ function _renderOnboardingStep(idx) {
   }
 
   // Screen-switch: если шаг привязан к конкретному экрану и активный экран
-  // не тот же — программно вызываем openScreen(). Затем небольшая задержка
+  // не тот же - программно вызываем openScreen(). Затем небольшая задержка
   // под layout transition, и только потом рендерим контент шага.
   if (step.screen) {
     var currentActive = document.querySelector(".screen.active");
@@ -15871,7 +15876,7 @@ function _renderOnboardingContent(idx) {
 
   var total = _activeTour.steps.length;
   if (counter) {
-    // Premium-туры из 1 шага: счётчик «1 / 1» выглядит лишним — скрываем.
+    // Premium-туры из 1 шага: счётчик «1 / 1» выглядит лишним - скрываем.
     if (_activeTour.completionType === "premium" && total === 1) {
       counter.style.display = "none";
     } else {
@@ -15928,14 +15933,14 @@ function _renderOnboardingContent(idx) {
     }
   }
   // NOTE: вертикальный стек кнопок (см. CSS .onboarding-buttons) сам обрабатывает
-  // случай «только Next» — никаких дополнительных классов не нужно.
+  // случай «только Next» - никаких дополнительных классов не нужно.
 
   _positionOnboardingStep(step);
 }
 
-// Снимает .is-priming с root через double-rAF — гарантирует что инлайн-стили
+// Снимает .is-priming с root через double-rAF - гарантирует что инлайн-стили
 // уже применены без анимации (initial snap), и только после этого включаются
-// transitions для последующих шагов. Идемпотентна — если класса нет, выходит.
+// transitions для последующих шагов. Идемпотентна - если класса нет, выходит.
 function _finalizeOnboardingFirstRender() {
   var root = document.getElementById("onboardingRoot");
   if (!root || !root.classList.contains("is-priming")) return;
@@ -15948,7 +15953,7 @@ function _finalizeOnboardingFirstRender() {
 }
 
 // Возвращает true если элемент круглый/почти круглый по computed border-radius.
-// Используется для подбора radius'а у highlight'а — чтобы обводка совпадала
+// Используется для подбора radius'а у highlight'а - чтобы обводка совпадала
 // с формой круглых элементов (аватар profileBtn, badges).
 function _isCircularLike(el) {
   if (!el) return false;
@@ -15961,9 +15966,9 @@ function _isCircularLike(el) {
   } catch (_e) { return false; }
 }
 
-// Подбирает оптимальный border-radius для highlight'а. Если target круглый —
+// Подбирает оптимальный border-radius для highlight'а. Если target круглый -
 // возвращает 50%; иначе computed border-radius target'а; иначе 14px.
-// Также проверяет первого визуального ребёнка — если у кнопки нет своего
+// Также проверяет первого визуального ребёнка - если у кнопки нет своего
 // радиуса, но внутри круглый аватар, highlight тоже становится круглым.
 function _computeHighlightRadius(target) {
   if (!target) return "14px";
@@ -15980,12 +15985,12 @@ function _computeHighlightRadius(target) {
 
 // Резолвит реальный DOM-target шага с учётом expand-селектора (закрывающего
 // родителя для inputs). Возвращает null если шаг без target'а ИЛИ если target
-// не найден / невидим — тогда tooltip покажется по центру (graceful fallback).
+// не найден / невидим - тогда tooltip покажется по центру (graceful fallback).
 function _resolveStepTarget(step) {
   if (!step || !step.target) return null;
   var el = document.querySelector(step.target);
   if (!el) return null;
-  // Невидимый элемент (display:none или вне layout) — пропускаем как «нет target».
+  // Невидимый элемент (display:none или вне layout) - пропускаем как «нет target».
   if (el.offsetParent === null && el !== document.body) {
     // ПРИМЕЧАНИЕ: position:fixed не имеет offsetParent, но виден. Проверим rect.
     var rect = el.getBoundingClientRect();
@@ -16036,7 +16041,7 @@ function _positionOnboardingStep(step) {
     return;
   }
 
-  // Прокручиваем target в видимую область. INSTANT — smooth в WebView часто
+  // Прокручиваем target в видимую область. INSTANT - smooth в WebView часто
   // лагает и удлиняет TTFP. С instant хватает 60ms wait для layout settle.
   try {
     target.scrollIntoView({ block: "center", behavior: "instant" });
@@ -16053,7 +16058,7 @@ function _positionOnboardingStep(step) {
     var vh = window.innerHeight || document.documentElement.clientHeight;
 
     // FIX (bug 3): tooBig по AREA RATIO. Раньше width>85% триггерилось
-    // на обычных full-width inputs (Доход/Расход/Цель) — обводка пропадала
+    // на обычных full-width inputs (Доход/Расход/Цель) - обводка пропадала
     // и tooltip падал в centered mode. Теперь target считается "огромным"
     // только если он покрывает >55% площади viewport'а.
     var areaRatio = (rect.width * rect.height) / (vw * vh);
@@ -16065,7 +16070,7 @@ function _positionOnboardingStep(step) {
 
     // step.noHighlight: dim-cutout всё равно делается (чтобы пользователь
     // видел кнопку сквозь затемнение), но emerald-обводка и pulse-glow
-    // не отображаются — управляется через класс has-target на highlight'е.
+    // не отображаются - управляется через класс has-target на highlight'е.
     if (step && step.noHighlight) {
       hl.classList.remove("has-target");
     } else {
@@ -16073,8 +16078,8 @@ function _positionOnboardingStep(step) {
     }
     tt.classList.remove("is-centered");
 
-    // FIX (bug 2 — profile): для круглых элементов (и кнопок с круглыми
-    // детьми типа #profileBtn>.avatar) применяем 50% radius — обводка
+    // FIX (bug 2 - profile): для круглых элементов (и кнопок с круглыми
+    // детьми типа #profileBtn>.avatar) применяем 50% radius - обводка
     // становится кругом, выровненным по центру target'а.
     hl.style.borderRadius = _computeHighlightRadius(target);
 
@@ -16108,7 +16113,7 @@ function _positionOnboardingStep(step) {
       tt.classList.remove("below", "arrow-up");
     }
 
-    // 2-й проход — после layout'а имеем реальную ширину/высоту tooltip'а.
+    // 2-й проход - после layout'а имеем реальную ширину/высоту tooltip'а.
     // Вычисляем итоговое translate3d, обновляем стрелку, ставим финальный
     // transform. Это даёт стабильный transition: tooltip двигается из
     // прошлой позиции в новую за 0.42s GPU-smooth.
@@ -16116,7 +16121,7 @@ function _positionOnboardingStep(step) {
       if (!_onboardingActive) return;
       var ttRect = tt.getBoundingClientRect();
       // ttRect возвращает реальные размеры элемента (учитывает текущий transform).
-      // Для размеров нам нужен offsetWidth/Height — они не зависят от transform.
+      // Для размеров нам нужен offsetWidth/Height - они не зависят от transform.
       var ttWidth  = tt.offsetWidth  || ttRect.width;
       var ttHeight = tt.offsetHeight || ttRect.height;
 
@@ -16133,7 +16138,7 @@ function _positionOnboardingStep(step) {
       } else {
         topPos = rect.top - pad - 14 - ttHeight;
       }
-      // Clamp по вертикали — на всякий случай (если высокий tooltip).
+      // Clamp по вертикали - на всякий случай (если высокий tooltip).
       if (topPos < 12) topPos = 12;
       if (topPos > vh - ttHeight - 12) topPos = vh - ttHeight - 12;
 
@@ -16173,7 +16178,7 @@ function _completeOnboarding() {
   _onboardingActive = false;
   _activeTour = null;
 
-  // Persist — пишем в правильный флаг в зависимости от типа тура.
+  // Persist - пишем в правильный флаг в зависимости от типа тура.
   try {
     if (finishedTour.completionType === "primary") {
       if (typeof updateState === "function") {
@@ -16241,7 +16246,7 @@ window.startPremiumFeatureTour = startPremiumFeatureTour;
     if (isEmpty) {
       emptyCard.style.display = "";
       advice.style.display = "none";
-      // Hide actions container (Unexpected Expense btn) — оно не релевантно без цели.
+      // Hide actions container (Unexpected Expense btn) - оно не релевантно без цели.
       var actions = _q("protocolActionsContainer");
       if (actions) actions.style.display = "none";
       // Hide swipe indicator dots
@@ -16293,7 +16298,7 @@ window.startPremiumFeatureTour = startPremiumFeatureTour;
   _bindNumericFormatting(_q("newGoalExpenses"));
 
   // ---- 3. Pace selection (calm/normal/aggressive) ----
-  // FIX: new goal creation flow — убран tempo-segment (rate/duration), оставлен только pace.
+  // FIX: new goal creation flow - убран tempo-segment (rate/duration), оставлен только pace.
   var paceButtons  = _q("newGoalPaceButtons");
   var _selectedPace = "calm";
   if (paceButtons) {
@@ -16312,7 +16317,7 @@ window.startPremiumFeatureTour = startPremiumFeatureTour;
 
   // ---- 4. Open screen helper ----
   window.openNewGoalScreen = function () {
-    // FIX: new goal creation flow — title-field удалён; ничего не очищаем для него.
+    // FIX: new goal creation flow - title-field удалён; ничего не очищаем для него.
     var amountEl   = _q("newGoalAmount");
     var savedEl    = _q("newGoalSaved");
     var incomeEl   = _q("newGoalIncome");
@@ -16336,7 +16341,7 @@ window.startPremiumFeatureTour = startPremiumFeatureTour;
       });
     }
 
-    // FIX: new goal creation flow — calculateBtn.onclick прячет ВСЕ .mode-buttons и .input-wrap
+    // FIX: new goal creation flow - calculateBtn.onclick прячет ВСЕ .mode-buttons и .input-wrap
     //      селектором без префикса (видимая мутация затрагивает наш экран). Восстанавливаем
     //      видимость явно при каждом открытии #screen-new-goal.
     document.querySelectorAll(
@@ -16344,8 +16349,8 @@ window.startPremiumFeatureTour = startPremiumFeatureTour;
     ).forEach(function (el) { el.style.display = ""; });
 
     if (typeof openScreen === "function") openScreen("new-goal", null);
-    // FIX: goal completion UI — снимаем app-lock при входе в screen-new-goal.
-    //      openScreen уже вызывает _updateAppLock, но дублируем явно — это hot-path.
+    // FIX: goal completion UI - снимаем app-lock при входе в screen-new-goal.
+    //      openScreen уже вызывает _updateAppLock, но дублируем явно - это hot-path.
     if (typeof window._updateAppLock === "function") window._updateAppLock("new-goal");
     setTimeout(function () { try { amountEl && amountEl.focus(); } catch (_) {} }, 250);
   };
@@ -16363,7 +16368,7 @@ window.startPremiumFeatureTour = startPremiumFeatureTour;
   }
 
   // ---- 6. Submit ----
-  // FIX: new goal creation flow — submit заполняет инпуты #screen-calc и триггерит
+  // FIX: new goal creation flow - submit заполняет инпуты #screen-calc и триггерит
   //      существующий calculateBtn.click(), который запускает фабричный flow:
   //      validate → CashflowEngine → renderProtocolResult (выбор "Все в цель / С резервом") →
   //      protocolFlow(scenario) → graph. Это переиспользует ПОЛНОСТЬЮ существующую логику
@@ -16397,7 +16402,7 @@ window.startPremiumFeatureTour = startPremiumFeatureTour;
         if (typeof incomeInput   !== "undefined" && incomeInput)   incomeInput.value   = (typeof formatNumber === "function") ? formatNumber(String(incomeVal))   : String(incomeVal);
         if (typeof expensesInput !== "undefined" && expensesInput) expensesInput.value = (typeof formatNumber === "function") ? formatNumber(String(expensesVal)) : String(expensesVal);
 
-        // accounts + balance: новая цель — новый отсчёт.
+        // accounts + balance: новая цель - новый отсчёт.
         if (typeof accounts !== "undefined" && accounts) {
           accounts.main    = savedVal;
           accounts.reserve = 0;
@@ -16408,21 +16413,21 @@ window.startPremiumFeatureTour = startPremiumFeatureTour;
         try { goalCompleted = false; }           catch (e) { window.goalCompleted = false; }
         try { saveMode = _selectedPace; }        catch (e) { window.saveMode = _selectedPace; }
         try { selectedMode = _selectedPace; }    catch (e) { window.selectedMode = _selectedPace; }
-        // ВАЖНО: НЕ задаём chosenPlan и НЕ ставим isInitialized=true —
+        // ВАЖНО: НЕ задаём chosenPlan и НЕ ставим isInitialized=true -
         // эти значения проставит calculateBtn.onclick после успешного расчёта.
         try { chosenPlan = null; }               catch (e) { window.chosenPlan = null; }
         try { isInitialized = false; }           catch (e) { window.isInitialized = false; }
 
-        // goalMeta.title — дефолтное название цели (поле "Название" убрано из UI).
+        // goalMeta.title - дефолтное название цели (поле "Название" убрано из UI).
         var defaultTitle = (typeof t === "function" && (t("advGoals.mainGoal") || t("misc.defaultGoalTitle"))) || "Основная цель";
         if (typeof goalMeta !== "undefined" && goalMeta) goalMeta.title = defaultTitle;
 
-        // Sync UI .mode-btn на calc-экране (для согласованности — calculateBtn читает saveMode).
+        // Sync UI .mode-btn на calc-экране (для согласованности - calculateBtn читает saveMode).
         document.querySelectorAll('#screen-calc .mode-buttons .mode-btn').forEach(function (b) {
           b.classList.toggle("active", b.dataset.mode === _selectedPace);
         });
 
-        // goals[0] — primary через хелперы.
+        // goals[0] - primary через хелперы.
         if (typeof getGoals === "function") {
           var goalsArr = getGoals();
           if (!goalsArr[0]) {
@@ -16472,14 +16477,14 @@ window.startPremiumFeatureTour = startPremiumFeatureTour;
     try { window._updateAppLock && window._updateAppLock(); }
     catch (e) { /* noop */ }
 
-    // ONBOARDING — запускаем пошаговый тур (если ещё не проходили).
+    // ONBOARDING - запускаем пошаговый тур (если ещё не проходили).
     // Задержка 1500ms даёт время:
-    //   • Supabase loadAppState() догнать remote state — если юзер уже
+    //   • Supabase loadAppState() догнать remote state - если юзер уже
     //     проходил тур на другом устройстве, флаг onboardingCompleted=true
     //     в remote'е перекроет локальный false и тур НЕ запустится повторно.
     //   • splash-video fade-out'у завершиться (он ~450ms).
     //   • DOM-у calc-экрана точно завершить layout.
-    // Сама startOnboarding ещё раз проверяет флаг внутри — двойная защита
+    // Сама startOnboarding ещё раз проверяет флаг внутри - двойная защита
     // от ложного срабатывания.
     setTimeout(function () {
       try {

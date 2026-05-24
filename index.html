@@ -12,13 +12,13 @@ viewport-fit=cover" />
 <title>Protocol</title>
 
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-<!-- Supabase JS v2 — явный UMD-бандл (ставит window.supabase.createClient) -->
+<!-- Supabase JS v2 - явный UMD-бандл (ставит window.supabase.createClient) -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
 
 <link rel="stylesheet" href="style.css?v=20040">
 
-<!-- Базовая инициализация Telegram Mini App (ранний вызов ready — рекомендация Telegram) -->
+<!-- Базовая инициализация Telegram Mini App (ранний вызов ready - рекомендация Telegram) -->
 <script>
 (function () {
   // ───── Базовый fallback для --tg-vh (если Telegram.WebApp не доступен) ─────
@@ -128,25 +128,25 @@ viewport-fit=cover" />
 <div style="font-size:14px;opacity:.7" data-i18n="plan.current">Текущий план</div>
 
 <div style="margin-top:8px;font-size:18px;font-weight:600">
-<span id="summaryMonthly">—</span> <span id="summaryCurrencyUnit"></span> <span data-i18n="plan.perMonth">/ месяц</span>
+<span id="summaryMonthly">-</span> <span id="summaryCurrencyUnit"></span> <span data-i18n="plan.perMonth">/ месяц</span>
 </div>
 <div id="summaryFreqHint" class="summary-freq-hint" style="display:none"></div>
 
 <div style="margin-top:4px;font-size:14px;opacity:.7">
-<span data-i18n="plan.approx">Примерно</span> <span id="summaryMonths">—</span> <span data-i18n="plan.months">месяцев</span>
+<span data-i18n="plan.approx">Примерно</span> <span id="summaryMonths">-</span> <span data-i18n="plan.months">месяцев</span>
 </div>
 
 <div style="margin-top:8px;font-size:13px;opacity:.6">
-<span data-i18n="plan.mode">Режим</span>: <span id="summaryMode">—</span>
+<span data-i18n="plan.mode">Режим</span>: <span id="summaryMode">-</span>
 </div>
 <div id="summaryModelReport" class="summary-model-report" style="display:none"></div>
 
 </div>
 
 <div class="plan-actions">
-<!-- PREMIUM SYSTEM — кнопки с lock-баджем; при isPremium=false перехватываются в app.js
+<!-- PREMIUM SYSTEM - кнопки с lock-баджем; при isPremium=false перехватываются в app.js
      data-premium-gate помечает кнопку для body-level capture-делегатора. -->
-<!-- PREMIUM SYSTEM — data-i18n переехал на внутренний <span>, иначе applyLanguageToDOM()
+<!-- PREMIUM SYSTEM - data-i18n переехал на внутренний <span>, иначе applyLanguageToDOM()
      через el.textContent = text стирал вложенный lock-бадж и Lottie не рендерился. -->
 <button id="changePaceBtn" class="plan-action-btn premium-gate-btn" type="button" data-premium-gate="pace"><span data-i18n="plan.changePace">Изменить темп накоплений</span><span class="premium-lock-badge" id="lockChangePace"><span class="premium-lock-lottie" id="lottieChangePace"></span></span></button>
 <button id="addDebtsBtn" class="plan-action-btn premium-gate-btn" type="button" data-premium-gate="debts"><span data-i18n="plan.addDebts">Добавить кредиты и долги</span><span class="premium-lock-badge" id="lockAddDebts"><span class="premium-lock-lottie" id="lottieAddDebts"></span></span></button>
@@ -155,7 +155,7 @@ viewport-fit=cover" />
 <!-- ===== FLEXIBLE MODEL ===== -->
 <section id="cashflowSettings" class="cashflow-settings">
 
-  <!-- PREMIUM SYSTEM — flex toggle с lock-баджем -->
+  <!-- PREMIUM SYSTEM - flex toggle с lock-баджем -->
   <button type="button" id="flexibleToggle" class="flexible-toggle premium-gate-btn" data-premium-gate="flexible">
     <span data-i18n="flex.toggle">Гибкая финансовая модель</span>
     <span class="premium-lock-badge" id="lockFlexible"><span class="premium-lock-lottie" id="lottieFlexible"></span></span>
@@ -166,7 +166,7 @@ viewport-fit=cover" />
     <div class="flexible-content-inner">
 
     <!-- Step 1: Income -->
-    <!-- VISUAL DISTINCTION: expenses red border — оставляем изумрудную обводку
+    <!-- VISUAL DISTINCTION: expenses red border - оставляем изумрудную обводку
          (cf-card--configured + cf-card--income), чтобы доходы визуально выделялись
          премиум-зелёным акцентом. -->
     <div class="cf-card cf-card--configured cf-card--income" id="cfCardIncome">
@@ -185,12 +185,12 @@ viewport-fit=cover" />
         <button class="mode-btn active" data-value="fixed" data-i18n="flex.fixed">Фиксированный</button>
         <button class="mode-btn" data-value="variable" data-i18n="flex.variable">Нефиксированный</button>
       </div>
-      <!-- NEW: логика fixed vs variable 11.05.2026 — read-only summary shown only in fixed mode -->
+      <!-- NEW: логика fixed vs variable 11.05.2026 - read-only summary shown only in fixed mode -->
       <div id="incomeFixedHint" class="cf-fixed-hint" style="display:none">
         <div class="cf-fixed-hint-line" id="incomeFixedHintLine"></div>
         <div class="cf-fixed-hint-helper" data-i18n="flex.fixedSummary.helper">Используются данные, введённые при открытии гибкой модели</div>
       </div>
-      <!-- NEW: логика fixed vs variable 11.05.2026 — amount + start date appear ONLY in non-fixed (variable) mode -->
+      <!-- NEW: логика fixed vs variable 11.05.2026 - amount + start date appear ONLY in non-fixed (variable) mode -->
       <div id="fixedIncomeWrap" class="cf-fixed-amount-wrap cf-nonfixed-wrap" style="display:none">
         <div class="input-wrap">
           <input id="fixedIncomeInput" type="text" inputmode="numeric" class="cf-amount-input" data-i18n-placeholder="flex.variable.amountPlaceholder.income" placeholder="Сумма дохода" />
@@ -213,7 +213,7 @@ viewport-fit=cover" />
           <input type="date" id="incomeMonthDaysDate" class="monthdays-date-input" />
           <div id="incomeMonthDaysList" class="monthdays-list"></div>
         </div>
-        <!-- CUSTOM SCHEDULE LOGIC — новый блок ручного ввода поступлений
+        <!-- CUSTOM SCHEDULE LOGIC - новый блок ручного ввода поступлений
              (полностью заменяет старый month-days picker, который теперь скрыт постоянно). -->
         <div class="custom-schedule-block" id="incomeCustomBlock" data-side="income" style="display:none">
           <div class="cs-summary" id="incomeCsSummary"></div>
@@ -221,7 +221,7 @@ viewport-fit=cover" />
             <div class="cs-expense-reminder-icon" aria-hidden="true">💡</div>
             <div class="cs-expense-reminder-text">
               <div class="cs-expense-reminder-title" data-i18n="cs.reminder.expenses.title">Не забудьте ввести расходы</div>
-              <div class="cs-expense-reminder-sub" data-i18n="cs.reminder.expenses.subtitle">Запишите расходы за этот период, если они были — прогноз станет точнее.</div>
+              <div class="cs-expense-reminder-sub" data-i18n="cs.reminder.expenses.subtitle">Запишите расходы за этот период, если они были - прогноз станет точнее.</div>
             </div>
             <div class="cs-expense-reminder-actions">
               <button type="button" class="cs-reminder-cta" id="csExpenseReminderCta" data-i18n="cs.reminder.expenses.cta">Записать расход</button>
@@ -237,7 +237,7 @@ viewport-fit=cover" />
     </div>
 
     <!-- Step 2: Expenses -->
-    <!-- VISUAL DISTINCTION: expenses red border — добавляем модификатор cf-card--expense,
+    <!-- VISUAL DISTINCTION: expenses red border - добавляем модификатор cf-card--expense,
          который в style.css переопределяет emerald-обводку на accent-red, чтобы блок
          расходов сразу визуально отличался от блока доходов. -->
     <div class="cf-card cf-card--configured cf-card--expense" id="cfCardExpense">
@@ -256,12 +256,12 @@ viewport-fit=cover" />
         <button class="mode-btn active" data-value="fixed" data-i18n="flex.fixed">Фиксированный</button>
         <button class="mode-btn" data-value="variable" data-i18n="flex.variable">Нефиксированный</button>
       </div>
-      <!-- NEW: логика fixed vs variable 11.05.2026 — read-only summary shown only in fixed mode -->
+      <!-- NEW: логика fixed vs variable 11.05.2026 - read-only summary shown only in fixed mode -->
       <div id="expenseFixedHint" class="cf-fixed-hint" style="display:none">
         <div class="cf-fixed-hint-line" id="expenseFixedHintLine"></div>
         <div class="cf-fixed-hint-helper" data-i18n="flex.fixedSummary.helper">Используются данные, введённые при открытии гибкой модели</div>
       </div>
-      <!-- NEW: логика fixed vs variable 11.05.2026 — amount + start date appear ONLY in non-fixed (variable) mode -->
+      <!-- NEW: логика fixed vs variable 11.05.2026 - amount + start date appear ONLY in non-fixed (variable) mode -->
       <div id="fixedExpenseWrap" class="cf-fixed-amount-wrap cf-nonfixed-wrap" style="display:none">
         <div class="input-wrap">
           <input id="fixedExpenseInput" type="text" inputmode="numeric" class="cf-amount-input" data-i18n-placeholder="flex.variable.amountPlaceholder.expense" placeholder="Сумма расхода" />
@@ -284,16 +284,16 @@ viewport-fit=cover" />
           <input type="date" id="expenseMonthDaysDate" class="monthdays-date-input" />
           <div id="expenseMonthDaysList" class="monthdays-list"></div>
         </div>
-        <!-- CUSTOM SCHEDULE LOGIC — ручной ввод расходов (зеркало income-блока). -->
+        <!-- CUSTOM SCHEDULE LOGIC - ручной ввод расходов (зеркало income-блока). -->
         <div class="custom-schedule-block" id="expenseCustomBlock" data-side="expense" style="display:none">
           <div class="cs-summary" id="expenseCsSummary"></div>
-          <!-- CUSTOM SCHEDULE v2 - fix main plan display — зеркальный reminder
+          <!-- CUSTOM SCHEDULE v2 - fix main plan display - зеркальный reminder
                после ввода расхода: подсказываем зафиксировать доход за период. -->
           <div class="cs-expense-reminder cs-income-reminder" id="csIncomeReminder" style="display:none">
             <div class="cs-expense-reminder-icon" aria-hidden="true">💡</div>
             <div class="cs-expense-reminder-text">
               <div class="cs-expense-reminder-title" data-i18n="cs.reminder.income.title">Зафиксируйте доход за период</div>
-              <div class="cs-expense-reminder-sub" data-i18n="cs.reminder.income.subtitle">Если за этот период был доход — впишите его, чтобы план отложений был точнее.</div>
+              <div class="cs-expense-reminder-sub" data-i18n="cs.reminder.income.subtitle">Если за этот период был доход - впишите его, чтобы план отложений был точнее.</div>
             </div>
             <div class="cs-expense-reminder-actions">
               <button type="button" class="cs-reminder-cta" id="csIncomeReminderCta" data-i18n="cs.reminder.income.cta">Записать поступление</button>
@@ -319,9 +319,9 @@ viewport-fit=cover" />
     </div>
 
     <!-- Step 4: Events -->
-    <!-- FINANCIAL EVENTS - INCOME ONLY — блок теперь только для добавления
+    <!-- FINANCIAL EVENTS - INCOME ONLY - блок теперь только для добавления
          разовых непредсказуемых доходов. Текстовая структура: один заголовок
-         + один directive в subtitle («регулярные доходы — выше») + один
+         + один directive в subtitle («регулярные доходы - выше») + один
          блок с примерами. Без дублирования. -->
     <div class="cf-card cf-card--events">
       <div class="cf-card-header">
@@ -331,7 +331,7 @@ viewport-fit=cover" />
           <div class="cf-card-subtitle" data-i18n="flex.events.subtitle">Регулярные доходы настраиваются в блоках выше</div>
         </div>
       </div>
-      <!-- FINANCIAL EVENTS - INCOME ONLY — единственное место с примерами. -->
+      <!-- FINANCIAL EVENTS - INCOME ONLY - единственное место с примерами. -->
       <div class="cf-event-examples" data-i18n="flex.events.examples">
         Примеры: премия, подарок, возврат долга, продажа вещей, фриланс-подработка
       </div>
@@ -358,7 +358,7 @@ viewport-fit=cover" />
 <!-- ===== ADVICE ===== -->
 <div class="screen" id="screen-advice">
 
-<!-- SPLASH VIDEO BACKGROUND — видео-фон фейк-загрузки, лежит за всем контентом экрана.
+<!-- SPLASH VIDEO BACKGROUND - видео-фон фейк-загрузки, лежит за всем контентом экрана.
      position:absolute внутри position:relative #screen-advice → z-index:0 гарантированно
      ниже шапки, спиннера и карточки (все они z-index:auto/1/2 выше нуля). -->
 <div id="splashVideoOverlay" class="splash-video-overlay hidden" aria-hidden="true">
@@ -402,14 +402,14 @@ Protocol анализирует данные…
 
 </div>
 
-<!-- NEW: Full goal creation flow in Protocol tab — empty-state на месте графика.
+<!-- NEW: Full goal creation flow in Protocol tab - empty-state на месте графика.
      Сосед #adviceCard внутри #flipWrapper (не внутри adviceCard, т.к. renderProtocolAdviceGraph
      перезаписывает innerHTML adviceCard). Toggle через JS: при primary goal = 0 показываем
      эту карточку и скрываем #adviceCard. -->
 <div class="card goal-empty-card protocol-empty-goal-card" id="protocolEmptyGoalCard" style="display:none">
   <div class="goal-empty-icon" aria-hidden="true">🎯</div>
   <h3 class="goal-empty-title" data-i18n="goalEmpty.title">У вас пока нет активной цели</h3>
-  <p class="goal-empty-subtitle" data-i18n="goalEmpty.subtitle">Поставьте новую цель — Protocol поможет её достичь</p>
+  <p class="goal-empty-subtitle" data-i18n="goalEmpty.subtitle">Поставьте новую цель - Protocol поможет её достичь</p>
   <button type="button" id="protocolCreateNewGoalBtn" class="goal-empty-btn" data-i18n="goalEmpty.button">Начать копить на новую цель</button>
 </div>
 </div>
@@ -471,15 +471,15 @@ Protocol анализирует данные…
 <div class="account-hint neutral" data-i18n="accounts.mainHint">
 Этот счёт отражает ваши накопления по плану Protocol.
 Это может быть банковский или инвестиционный счёт
-либо наличные — главное, чтобы сумма соответствовала расчётам.
+либо наличные - главное, чтобы сумма соответствовала расчётам.
 </div>
 </div>
 <div class="flip-back account-flip-back account-flip-back--main">
-  <!-- PREMIUM SYSTEM — обратная сторона счёта открывает статистику (премиум) -->
+  <!-- PREMIUM SYSTEM - обратная сторона счёта открывает статистику (премиум) -->
   <div class="account-back-card">
     <div class="account-back-premium-hint" id="accountBackPremiumHint">
       <div class="premium-lock-lottie premium-lock-lottie--lg" id="lottieAccountStats" style="width:40px;height:40px"></div>
-      <span data-i18n="premium.statsLocked">Статистика — премиум-функция</span>
+      <span data-i18n="premium.statsLocked">Статистика - премиум-функция</span>
     </div>
   </div>
 </div>
@@ -500,7 +500,7 @@ Protocol анализирует данные…
 </div>
 </div>
 <div class="account-hint" data-i18n="accounts.reserveHint">
-Резерв — это средства для экстренных ситуаций.
+Резерв - это средства для экстренных ситуаций.
 Эти деньги не участвуют в достижении цели и
 используются только при необходимости.
 </div>
@@ -525,11 +525,11 @@ Protocol анализирует данные…
 <div class="goal-swipe-wrapper" id="goalSwipeWrapper">
 <div class="goal-swipe-content" id="goalSwipeContent">
 
-<!-- GOAL COMPLETION FEATURE — empty-state card (показывается после завершения цели) -->
+<!-- GOAL COMPLETION FEATURE - empty-state card (показывается после завершения цели) -->
 <div class="card goal-empty-card" id="emptyGoalCard" style="display:none">
   <div class="goal-empty-icon" aria-hidden="true">🎯</div>
   <h3 class="goal-empty-title" data-i18n="goalEmpty.title">Начать копить на новую цель</h3>
-  <p class="goal-empty-subtitle" data-i18n="goalEmpty.subtitle">Поставьте новую цель — Protocol поможет её достичь</p>
+  <p class="goal-empty-subtitle" data-i18n="goalEmpty.subtitle">Поставьте новую цель - Protocol поможет её достичь</p>
   <button type="button" id="createNewGoalBtn" class="goal-empty-btn" data-i18n="goalEmpty.button">Создать новую цель</button>
 </div>
 
@@ -553,8 +553,8 @@ Protocol анализирует данные…
 </div>
 
 <div class="goal-meta">
-<span data-i18n="goals.goalLabel">Цель</span>: <b><span id="goalTotal">—</span> <span class="currency-symbol">₽</span></b><br>
-<span data-i18n="goals.savedLabel">Накоплено</span>: <b><span id="goalSaved">—</span> <span class="currency-symbol">₽</span></b>
+<span data-i18n="goals.goalLabel">Цель</span>: <b><span id="goalTotal">-</span> <span class="currency-symbol">₽</span></b><br>
+<span data-i18n="goals.savedLabel">Накоплено</span>: <b><span id="goalSaved">-</span> <span class="currency-symbol">₽</span></b>
 </div>
 
 <div class="card goal-reserve-card" id="goalReserveCard" style="display:none">
@@ -586,7 +586,7 @@ Protocol анализирует данные…
 Protocol анализирует цель…
 </div>
 
-<!-- PREMIUM SYSTEM — добавлен lock-бадж, premium-gate-btn и data-premium-gate.
+<!-- PREMIUM SYSTEM - добавлен lock-бадж, premium-gate-btn и data-premium-gate.
      data-i18n перенесён на внутренний <span>, иначе applyLanguageToDOM()
      стирал бы lock-бадж через textContent. -->
 <button id="advancedSettingsGoals" class="advanced-settings-btn premium-gate-btn" type="button" data-premium-gate="advanced"><span data-i18n="goals.advancedSettings">Расширенные настройки</span><span class="premium-lock-badge" id="lockAdvancedGoals"><span class="premium-lock-lottie" id="lottieAdvancedGoals"></span></span></button>
@@ -730,7 +730,7 @@ Protocol анализирует цель…
 <div class="profile-status">Protocol Finance</div>
 </div>
 
-<!-- PREMIUM PROFILE BADGE — изумрудная плашка с анимированной короной (Lottie).
+<!-- PREMIUM PROFILE BADGE - изумрудная плашка с анимированной короной (Lottie).
      Размещена как прямой ребёнок .profile-card → align-items:center на родителе
      гарантирует вертикальное центрирование с аватаром и текстом, и плашка
      никогда не выходит за обводку карточки. По умолчанию display:none;
@@ -745,21 +745,21 @@ Protocol анализирует цель…
 
 <button id="settingsBtn" class="profile-btn" data-i18n="profile.settings">⚙️ Настройки</button>
 <button id="goalHistoryBtn" class="profile-btn" data-i18n="profile.goalHistory">📋 История целей</button>
-<!-- NEW: Report problem feature — кнопка "Сообщить о проблеме" в стиле emerald accent -->
+<!-- NEW: Report problem feature - кнопка "Сообщить о проблеме" в стиле emerald accent -->
 <button id="reportProblemBtn" class="profile-btn profile-btn--report" data-i18n="profile.reportProblem">🐞 Сообщить о проблеме</button>
-<!-- NEW: Full reset button in Profile — переименовано из "Сбросить план" для большей ясности.
+<!-- NEW: Full reset button in Profile - переименовано из "Сбросить план" для большей ясности.
      Кнопка переиспользует существующий #confirmReset → confirmYes → performFullReset(),
      который через clearState() обнуляет ВСЁ: текущую цель, накопления, factHistory,
      completedGoals (история целей), accountStats (статистика счетов). После сброса
      приложение возвращается в начальное состояние (как при первом запуске). -->
 <button id="profileResetPlan" class="profile-btn danger" data-i18n="profile.fullReset">🆕 Начать сначала</button>
 
-<!-- STATISTICS COLLECTION — публичная статистика пользователей: premium / free / total.
+<!-- STATISTICS COLLECTION - публичная статистика пользователей: premium / free / total.
      Подтягивается из таблицы users через getPremiumStats() в app.js.
-     ADMIN ONLY: community stats block — видимость управляется колонкой
+     ADMIN ONLY: community stats block - видимость управляется колонкой
      users.show_community_stats (default false; включается вручную владельцем
      и 1-2 администраторами). refreshProfileStats() в app.js сверяет
-     appState.showCommunityStats и переключает display. Стартовое состояние —
+     appState.showCommunityStats и переключает display. Стартовое состояние -
      скрыто, чтобы у обычных пользователей блок не вспыхивал прочерками. -->
 <div class="profile-stats" id="profileStats" aria-live="polite" style="display:none">
   <div class="profile-stats-title" data-i18n="profile.stats.title">Статистика сообщества</div>
@@ -770,22 +770,22 @@ Protocol анализирует цель…
       <span class="profile-stats-icon">👤</span>
       <span data-i18n="profile.stats.premium">Пользователей с премиум</span>
     </span>
-    <span class="profile-stats-value" id="profileStatsPremium">—</span>
+    <span class="profile-stats-value" id="profileStatsPremium">-</span>
   </div>
   <div class="profile-stats-row">
     <span class="profile-stats-label">
       <span class="profile-stats-icon">🌿</span>
       <span data-i18n="profile.stats.free">Пользователей без премиум</span>
     </span>
-    <span class="profile-stats-value" id="profileStatsFree">—</span>
+    <span class="profile-stats-value" id="profileStatsFree">-</span>
   </div>
   <div class="profile-stats-row profile-stats-row--total">
     <span class="profile-stats-label" data-i18n="profile.stats.total">Всего</span>
-    <span class="profile-stats-value" id="profileStatsTotal">—</span>
+    <span class="profile-stats-value" id="profileStatsTotal">-</span>
   </div>
 
   <!-- ── Группа 2: Доходы Stars ──────────────────────────────────────────
-       Sub-section divider — изумрудная линия с подписью. Визуально отделяет
+       Sub-section divider - изумрудная линия с подписью. Визуально отделяет
        финансовый блок от пользовательского. Значения подсвечены золотом
        в тон ⭐ Telegram Stars (см. .profile-stats-value--stars в style.css). -->
   <div class="profile-stats-subtitle" data-i18n="profile.stats.subtitle.revenue">Доходы Stars</div>
@@ -794,14 +794,14 @@ Protocol анализирует цель…
       <span class="profile-stats-icon">⭐</span>
       <span data-i18n="profile.stats.starsTotal">Заработано Stars всего</span>
     </span>
-    <span class="profile-stats-value profile-stats-value--stars" id="profileStatsStarsTotal">—</span>
+    <span class="profile-stats-value profile-stats-value--stars" id="profileStatsStarsTotal">-</span>
   </div>
   <div class="profile-stats-row">
     <span class="profile-stats-label">
       <span class="profile-stats-icon">📅</span>
       <span data-i18n="profile.stats.starsMonth">За последний месяц</span>
     </span>
-    <span class="profile-stats-value profile-stats-value--stars" id="profileStatsStarsMonth">—</span>
+    <span class="profile-stats-value profile-stats-value--stars" id="profileStatsStarsMonth">-</span>
   </div>
 
   <!-- ── Группа 3: Активность ──────────────────────────────────────────── -->
@@ -811,18 +811,18 @@ Protocol анализирует цель…
       <span class="profile-stats-icon">💳</span>
       <span data-i18n="profile.stats.purchases">Покупок Premium</span>
     </span>
-    <span class="profile-stats-value" id="profileStatsPurchases">—</span>
+    <span class="profile-stats-value" id="profileStatsPurchases">-</span>
   </div>
   <div class="profile-stats-row">
     <span class="profile-stats-label">
       <span class="profile-stats-icon">✨</span>
       <span data-i18n="profile.stats.newUsers30d">Новых пользователей за 30 дней</span>
     </span>
-    <span class="profile-stats-value" id="profileStatsNewUsers30d">—</span>
+    <span class="profile-stats-value" id="profileStatsNewUsers30d">-</span>
   </div>
 </div>
 
-<!-- SOCIAL LINKS IN PROFILE — круглые иконки соцсетей в едином премиум-стиле.
+<!-- SOCIAL LINKS IN PROFILE - круглые иконки соцсетей в едином премиум-стиле.
      Все кликабельны: Telegram, X, Instagram, Gmail (mailto). -->
 <div class="profile-socials" role="navigation" aria-label="Social links">
   <a class="profile-social-btn" href="https://t.me/protocolexe" target="_blank" rel="noopener noreferrer" aria-label="Telegram">
@@ -981,7 +981,7 @@ Protocol анализирует цель…
           </div>
           <div class="settings-row-info">
             <div class="settings-row-label" data-i18n="settings.allowOverpay">Разрешить перевыполнение плана</div>
-            <div class="settings-row-hint" id="settingsOverpayHint" data-i18n="settings.allowOverpay.on">Можно откладывать больше плана — лишняя сумма будет учтена в следующих периодах</div>
+            <div class="settings-row-hint" id="settingsOverpayHint" data-i18n="settings.allowOverpay.on">Можно откладывать больше плана - лишняя сумма будет учтена в следующих периодах</div>
           </div>
           <label class="settings-toggle">
             <input type="checkbox" id="settingsOverpay" class="settings-toggle-input">
@@ -1029,7 +1029,7 @@ Protocol анализирует цель…
 
         <div class="settings-divider"></div>
 
-        <!-- LOADING VIDEO TOGGLE — позволяет пользователю выключить видео-фон
+        <!-- LOADING VIDEO TOGGLE - позволяет пользователю выключить видео-фон
              на экране фейк-загрузки. По умолчанию false (видео включено).
              Значение сохраняется в appState.settings.disableLoadingVideo
              через initToggle("settingsDisableLoadingVideo", "disableLoadingVideo"). -->
@@ -1039,7 +1039,7 @@ Protocol анализирует цель…
           </div>
           <div class="settings-row-info">
             <div class="settings-row-label" data-i18n="settings.disableLoadingVideo">Отключить загрузку видео</div>
-            <div class="settings-row-hint" data-i18n="settings.disableLoadingVideo.hint">Отключает фоновые видео на экране загрузки и в премиум-вкладке — экономит трафик и батарею</div>
+            <div class="settings-row-hint" data-i18n="settings.disableLoadingVideo.hint">Отключает фоновые видео на экране загрузки и в премиум-вкладке - экономит трафик и батарею</div>
           </div>
           <label class="settings-toggle">
             <input type="checkbox" id="settingsDisableLoadingVideo" class="settings-toggle-input">
@@ -1171,7 +1171,7 @@ Protocol анализирует цель…
   </div>
 </div>
 
-<!-- ===== NEW: Full goal creation flow in Protocol tab — screen ===== -->
+<!-- ===== NEW: Full goal creation flow in Protocol tab - screen ===== -->
 <div class="screen" id="screen-new-goal">
 
   <div class="app-header">
@@ -1185,10 +1185,10 @@ Protocol анализирует цель…
   </div>
 
   <div class="new-goal-body">
-    <!-- FIX: new goal creation flow — убраны поле "Название цели" + сегмент "По скорости / По сроку".
+    <!-- FIX: new goal creation flow - убраны поле "Название цели" + сегмент "По скорости / По сроку".
          Title не нужен (используется дефолтное "Основная цель"). Tempo segment упрощён до прямого
          выбора скорости накопления. После submit показывается выбор сценария "Все в цель / С резервом". -->
-    <p class="new-goal-intro" data-i18n="newGoal.intro">Заполните все поля — Protocol построит план достижения</p>
+    <p class="new-goal-intro" data-i18n="newGoal.intro">Заполните все поля - Protocol построит план достижения</p>
 
     <label data-i18n="newGoal.field.amount">Сумма цели</label>
     <div class="input-wrap">
@@ -1295,7 +1295,7 @@ Protocol анализирует цель…
 
   <div class="stats-body">
 
-    <!-- PORTFOLIO ALLOCATION LOGIC — composition list + progress + add button -->
+    <!-- PORTFOLIO ALLOCATION LOGIC - composition list + progress + add button -->
     <div class="stats-section-label" data-i18n="portfolio.title">Состав портфеля</div>
     <div class="alloc-subtitle" data-i18n="portfolio.subtitle">Распределите накопления по типам хранения</div>
 
@@ -1304,14 +1304,14 @@ Protocol анализирует цель…
     <div class="alloc-progress" id="statsAllocProgress">
       <div class="alloc-progress-bar"><div class="alloc-progress-fill" id="statsAllocProgressFill"></div></div>
       <div class="alloc-progress-meta">
-        <span class="alloc-progress-label" id="statsAllocProgressLabel">—</span>
+        <span class="alloc-progress-label" id="statsAllocProgressLabel">-</span>
         <span class="alloc-progress-value" id="statsAllocProgressValue">0% / 100%</span>
       </div>
     </div>
 
     <button type="button" id="statsAllocAddBtn" class="alloc-add-btn" data-i18n="portfolio.addBtn">+ Добавить тип хранения</button>
 
-    <!-- FUTURE DEPOSITS PER ITEM — global savings-mode toggle removed; the
+    <!-- FUTURE DEPOSITS PER ITEM - global savings-mode toggle removed; the
          decision is now made per allocation via "Пополнять из будущих отложений". -->
 
     <button id="statsSubmit" class="stats-submit-btn" disabled data-i18n="accounts.addStats">Добавить статистику</button>
@@ -1320,7 +1320,7 @@ Protocol анализирует цель…
 
 </div>
 
-<!-- PORTFOLIO ALLOCATION LOGIC — modal for adding/editing a single allocation -->
+<!-- PORTFOLIO ALLOCATION LOGIC - modal for adding/editing a single allocation -->
 <div id="statsAllocOverlay" class="proto-sheet-overlay" style="display:none"></div>
 <div id="statsAllocSheet" class="proto-sheet alloc-sheet" style="display:none">
   <h2 id="statsAllocSheetTitle" data-i18n="portfolio.modal.addTitle">Добавить тип хранения</h2>
@@ -1358,7 +1358,7 @@ Protocol анализирует цель…
       </div>
     </div>
 
-    <!-- MOEX INTEGRATION — stock with RU-only preset list + live MOEX quote card -->
+    <!-- MOEX INTEGRATION - stock with RU-only preset list + live MOEX quote card -->
     <div id="statsStockFields" class="stats-type-fields" style="display:none">
       <div class="input-wrap stats-input-wrap">
         <label data-i18n="stats.field.asset">Актив / ETF</label>
@@ -1376,33 +1376,33 @@ Protocol анализирует цель…
             <option value="ru_polyus"  data-i18n="stats.asset.ru_polyus">Полюс (PLZL)</option>
           </optgroup>
           <optgroup label="ETF на МосБирже" data-i18n-label="stats.assetGroup.etfMoex">
-            <option value="etf_fxrl" data-i18n="stats.asset.etf_fxrl">FXRL — Российские акции</option>
-            <option value="etf_fxit" data-i18n="stats.asset.etf_fxit">FXIT — IT-сектор</option>
-            <option value="etf_fxus" data-i18n="stats.asset.etf_fxus">FXUS — Акции США</option>
-            <option value="etf_tmos" data-i18n="stats.asset.etf_tmos">TMOS — Индекс МосБиржи</option>
-            <option value="etf_sbsp" data-i18n="stats.asset.etf_sbsp">SBSP — S&P 500 (СберИнвестиции)</option>
+            <option value="etf_fxrl" data-i18n="stats.asset.etf_fxrl">FXRL - Российские акции</option>
+            <option value="etf_fxit" data-i18n="stats.asset.etf_fxit">FXIT - IT-сектор</option>
+            <option value="etf_fxus" data-i18n="stats.asset.etf_fxus">FXUS - Акции США</option>
+            <option value="etf_tmos" data-i18n="stats.asset.etf_tmos">TMOS - Индекс МосБиржи</option>
+            <option value="etf_sbsp" data-i18n="stats.asset.etf_sbsp">SBSP - S&P 500 (СберИнвестиции)</option>
           </optgroup>
         </select>
-        <!-- FIX: portfolio UX v2 — logo + name preview for the currently selected stock. -->
+        <!-- FIX: portfolio UX v2 - logo + name preview for the currently selected stock. -->
         <div id="statsStockPreviewRow" class="stock-preview-row" style="display:none">
           <img id="statsStockPreviewLogo" class="alloc-logo" alt="" />
-          <span id="statsStockPreviewName">—</span>
+          <span id="statsStockPreviewName">-</span>
         </div>
         <div id="statsStockReturnHint" class="stats-input-hint"></div>
       </div>
-      <!-- MOEX INTEGRATION — live quote card (filled async after asset change) -->
+      <!-- MOEX INTEGRATION - live quote card (filled async after asset change) -->
       <div id="statsStockMoexBlock" class="moex-quote-card" style="display:none">
         <div class="moex-quote-row">
           <span class="moex-quote-label" data-i18n="stats.moex.price">Текущая цена</span>
-          <span class="moex-quote-price" id="statsStockMoexPrice">—</span>
+          <span class="moex-quote-price" id="statsStockMoexPrice">-</span>
         </div>
         <div class="moex-quote-row">
           <span class="moex-quote-label" data-i18n="stats.moex.change">Изменение за день</span>
-          <span class="moex-quote-change" id="statsStockMoexChange">—</span>
+          <span class="moex-quote-change" id="statsStockMoexChange">-</span>
         </div>
         <div class="moex-quote-source" data-i18n="stats.moex.source">Данные с MOEX ISS</div>
       </div>
-      <!-- FUTURE DEPOSITS PER ITEM — auto-replenishment toggle for the stock allocation. -->
+      <!-- FUTURE DEPOSITS PER ITEM - auto-replenishment toggle for the stock allocation. -->
       <label class="stats-checkbox-wrap">
         <input type="checkbox" id="statsStockReplenish" />
         <span class="stats-checkbox-box"></span>
@@ -1411,9 +1411,9 @@ Protocol анализирует цель…
       <div class="stats-input-hint stats-checkbox-hint" data-i18n="stats.field.acceptsFutureDepositsHint">Будущие отложения (доходы) будут автоматически распределяться в этот тип хранения</div>
     </div>
 
-    <!-- PORTFOLIO ALLOCATION v2 — deposit: base rate + promo period + capitalization -->
+    <!-- PORTFOLIO ALLOCATION v2 - deposit: base rate + promo period + capitalization -->
     <div id="statsDepositFields" class="stats-type-fields" style="display:none">
-      <!-- FIX: dynamic deposit rate label — label flips when promo > 0 (JS) -->
+      <!-- FIX: dynamic deposit rate label - label flips when promo > 0 (JS) -->
       <div class="input-wrap stats-input-wrap">
         <label id="statsDepositRateLabel" data-i18n="stats.field.depositRate">Процентная ставка (% годовых)</label>
         <input type="number" id="statsDepositRate" class="stats-input" inputmode="decimal" min="0" max="100" step="0.1" placeholder="8.5" />
@@ -1423,7 +1423,7 @@ Protocol анализирует цель…
         <input type="number" id="statsDepositTerm" class="stats-input" inputmode="numeric" min="1" max="600" step="1" placeholder="12" />
       </div>
       <div class="input-wrap stats-input-wrap">
-        <!-- FIX: Promo period for deposits — extended to 0–12 months, friendlier hint -->
+        <!-- FIX: Promo period for deposits - extended to 0–12 months, friendlier hint -->
         <label data-i18n="stats.field.promoMonths">Промо-период (мес, 0–12)</label>
         <input type="number" id="statsDepositPromoMonths" class="stats-input" inputmode="numeric" min="0" max="12" step="1" placeholder="0" />
         <div class="stats-input-hint" data-i18n="stats.field.promoMonthsHint">Повышенная ставка на первые месяцы (обычно 1–3 мес, иногда до 6)</div>
@@ -1440,11 +1440,11 @@ Protocol анализирует цель…
           <button type="button" class="stats-segment-btn" data-cap="quarterly" data-i18n="stats.cap.quarterly">Ежеквартально</button>
           <button type="button" class="stats-segment-btn" data-cap="end" data-i18n="stats.cap.end">В конце срока</button>
         </div>
-        <div class="stats-input-hint" data-i18n="stats.cap.hint">Чем чаще начисляются проценты — тем быстрее они «работают» сами на себя и увеличивают итоговую доходность</div>
+        <div class="stats-input-hint" data-i18n="stats.cap.hint">Чем чаще начисляются проценты - тем быстрее они «работают» сами на себя и увеличивают итоговую доходность</div>
       </div>
       <!-- FIX: live effective-rate preview (recomputed on any field change) -->
       <div id="statsDepositEffectivePreview" class="stats-deposit-preview" style="display:none"></div>
-      <!-- FUTURE DEPOSITS PER ITEM — checkbox now drives auto-replenishment from future savings. -->
+      <!-- FUTURE DEPOSITS PER ITEM - checkbox now drives auto-replenishment from future savings. -->
       <label class="stats-checkbox-wrap">
         <input type="checkbox" id="statsDepositReplenish" />
         <span class="stats-checkbox-box"></span>
@@ -1453,7 +1453,7 @@ Protocol анализирует цель…
       <div class="stats-input-hint stats-checkbox-hint" data-i18n="stats.field.acceptsFutureDepositsHint">Будущие отложения (доходы) будут автоматически распределяться в этот тип хранения</div>
     </div>
 
-    <!-- METALS - IN DEVELOPMENT — premium info card replaces all metal inputs -->
+    <!-- METALS - IN DEVELOPMENT - premium info card replaces all metal inputs -->
     <div id="statsMetalsFields" class="stats-type-fields" style="display:none">
       <div class="metals-in-dev">
         <div class="metals-in-dev-icon">⚒️</div>
@@ -1462,14 +1462,14 @@ Protocol анализирует цель…
       </div>
     </div>
 
-    <!-- PORTFOLIO ALLOCATION LOGIC — share of portfolio (always required) -->
+    <!-- PORTFOLIO ALLOCATION LOGIC - share of portfolio (always required) -->
     <!-- FIX: added static hint explaining what the share means -->
     <div class="input-wrap stats-input-wrap alloc-percentage-wrap">
       <label data-i18n="portfolio.percentage">Доля портфеля (%)</label>
       <div class="stats-input-hint alloc-percentage-static-hint" data-i18n="portfolio.percentageHint">Какой процент от всей суммы цели вы планируете хранить в этом типе</div>
       <input type="number" id="statsAllocPercentage" class="stats-input" inputmode="numeric" min="1" max="100" step="1" data-i18n-placeholder="portfolio.percentagePlaceholder" placeholder="например, 40" />
-      <!-- FIX: portfolio UX v2 — live "= XXX ₽" amount for the current %. -->
-      <div id="statsAllocPercentageLive" class="alloc-percentage-live is-zero">—</div>
+      <!-- FIX: portfolio UX v2 - live "= XXX ₽" amount for the current %. -->
+      <div id="statsAllocPercentageLive" class="alloc-percentage-live is-zero">-</div>
       <div id="statsAllocPercentageHint" class="stats-input-hint"></div>
     </div>
 
@@ -1481,14 +1481,14 @@ Protocol анализирует цель…
   </div>
 </div>
 
-<!-- PORTFOLIO ALLOCATION + CARD EXPANSION — per-allocation deep-detail sheet -->
+<!-- PORTFOLIO ALLOCATION + CARD EXPANSION - per-allocation deep-detail sheet -->
 <div id="allocDetailOverlay" class="proto-sheet-overlay" style="display:none"></div>
 <div id="allocDetailSheet" class="proto-sheet alloc-detail-sheet" style="display:none">
   <div class="alloc-detail-header">
     <div class="alloc-detail-header-icon" id="allocDetailHeaderIcon">•</div>
     <div class="alloc-detail-header-text">
-      <h2 id="allocDetailTitle" class="alloc-detail-title">—</h2>
-      <div id="allocDetailSubtitle" class="alloc-detail-subtitle">—</div>
+      <h2 id="allocDetailTitle" class="alloc-detail-title">-</h2>
+      <div id="allocDetailSubtitle" class="alloc-detail-subtitle">-</div>
     </div>
   </div>
 
@@ -1498,7 +1498,7 @@ Protocol анализирует цель…
 </div>
 
 <!-- ===== ADVANCED BUTTON ===== -->
-<!-- PREMIUM SYSTEM — расширенные настройки тоже под замком -->
+<!-- PREMIUM SYSTEM - расширенные настройки тоже под замком -->
 <button id="advancedBtn" class="advanced-btn premium-gate-btn" data-premium-gate="advanced">
   <span>+</span>
   <span class="premium-lock-badge premium-lock-badge--fab" id="lockAdvanced"><span class="premium-lock-lottie" id="lottieAdvanced"></span></span>
@@ -1527,7 +1527,7 @@ Protocol анализирует цель…
     </div>
     <div class="advanced-setting-card" id="advCardPriorities">
       <div class="advanced-setting-title" data-i18n="advanced.priorities">Приоритеты накоплений</div>
-      <div class="advanced-setting-desc" data-i18n="advanced.prioritiesDesc">Определите, какая цель важнее — и перераспределите средства</div>
+      <div class="advanced-setting-desc" data-i18n="advanced.prioritiesDesc">Определите, какая цель важнее - и перераспределите средства</div>
     </div>
   </div>
 
@@ -1651,7 +1651,7 @@ Protocol анализирует цель…
     <div class="input-wrap">
       <input id="unexpectedAmount" inputmode="numeric" placeholder="10.000">
     </div>
-    <!-- FINANCIAL EVENTS - INCOME ONLY (mirror UX for expense) — показываем доступный
+    <!-- FINANCIAL EVENTS - INCOME ONLY (mirror UX for expense) - показываем доступный
          остаток на выбранном счёте (накопления / резерв). Заполняется JS-ом при
          выборе варианта. Это устраняет ситуацию «ввёл больше, чем есть → shake без
          объяснения причины». -->
@@ -1682,9 +1682,9 @@ Protocol анализирует цель…
   <div class="pace-body">
     <div class="pace-info-card card">
       <div class="pace-info-label" data-i18n="pace.current">Текущий темп</div>
-      <div class="pace-info-value" id="paceCurrentMode">—</div>
-      <div class="pace-info-sub"><span data-i18n="pace.currentSaving">Сейчас вы откладываете</span>: <b id="paceCurrentMonthly">—</b> <span class="currency-symbol">₽</span> <span data-i18n="pace.perMonth">/ мес</span></div>
-      <div class="pace-info-sub"><span data-i18n="pace.goalAchieved">Текущая цель будет достигнута за</span>: <b id="paceCurrentMonths">—</b> <span data-i18n="pace.months">мес</span></div>
+      <div class="pace-info-value" id="paceCurrentMode">-</div>
+      <div class="pace-info-sub"><span data-i18n="pace.currentSaving">Сейчас вы откладываете</span>: <b id="paceCurrentMonthly">-</b> <span class="currency-symbol">₽</span> <span data-i18n="pace.perMonth">/ мес</span></div>
+      <div class="pace-info-sub"><span data-i18n="pace.goalAchieved">Текущая цель будет достигнута за</span>: <b id="paceCurrentMonths">-</b> <span data-i18n="pace.months">мес</span></div>
     </div>
 
     <div class="pace-selector-label" data-i18n="pace.selectNew">Выберите новый темп</div>
@@ -1698,8 +1698,8 @@ Protocol анализирует цель…
     <div class="pace-preview-card" id="pacePreviewCard" style="display:none">
       <div id="pacePreviewText" class="pace-preview-text"></div>
       <div class="pace-preview-values">
-        <div class="pace-preview-row"><span data-i18n="pace.newVolume">Новый объём накоплений</span>: <b id="pacePreviewMonthly">—</b> <span class="currency-symbol">₽</span> <span data-i18n="pace.perMonth">/ мес</span></div>
-        <div class="pace-preview-row"><span data-i18n="pace.newTerm">Новый срок</span>: <b id="pacePreviewMonths">—</b> <span data-i18n="pace.months">мес</span></div>
+        <div class="pace-preview-row"><span data-i18n="pace.newVolume">Новый объём накоплений</span>: <b id="pacePreviewMonthly">-</b> <span class="currency-symbol">₽</span> <span data-i18n="pace.perMonth">/ мес</span></div>
+        <div class="pace-preview-row"><span data-i18n="pace.newTerm">Новый срок</span>: <b id="pacePreviewMonths">-</b> <span data-i18n="pace.months">мес</span></div>
       </div>
     </div>
 
@@ -1730,7 +1730,7 @@ Protocol анализирует цель…
       </div>
       <div class="debt-summary-row">
         <span data-i18n="debts.nextPayment">Ближайший платёж</span>
-        <span id="debtSummaryNext">—</span>
+        <span id="debtSummaryNext">-</span>
       </div>
       <div class="debt-summary-status" id="debtSummaryStatus"></div>
     </div>
@@ -1741,7 +1741,7 @@ Protocol анализирует цель…
         <input type="checkbox" id="debtPlanningToggle" class="debt-toggle-input">
         <span class="debt-toggle-slider"></span>
       </label>
-      <div class="debt-planning-hint" id="debtModeHint" data-i18n="debts.planHint">Если включено — ежемесячные платежи по долгам будут уменьшать свободные средства для накоплений</div>
+      <div class="debt-planning-hint" id="debtModeHint" data-i18n="debts.planHint">Если включено - ежемесячные платежи по долгам будут уменьшать свободные средства для накоплений</div>
     </div>
 
     <div id="debtManualRepayBlock" class="debt-manual-repay-block collapsed">
@@ -1829,9 +1829,9 @@ Protocol анализирует цель…
         <label data-i18n="debts.termMonths">Срок, месяцев</label>
         <input id="debtTermMonths" inputmode="numeric" placeholder="60" />
       </div>
-      <!-- FRIENDLY ANNUITY TEXT — упрощённая формулировка вместо банковского термина -->
+      <!-- FRIENDLY ANNUITY TEXT - упрощённая формулировка вместо банковского термина -->
       <div class="debt-form-hint" data-i18n="debts.annuityHint">
-        Платёж равными частями (как в большинстве российских банков). Если не указать свой платёж — приложение рассчитает его автоматически.
+        Платёж равными частями (как в большинстве российских банков). Если не указать свой платёж - приложение рассчитает его автоматически.
       </div>
     </div>
 
@@ -1867,7 +1867,7 @@ Protocol анализирует цель…
         <input id="debtMinPaymentPercent" inputmode="decimal" placeholder="5" />
       </div>
       <div class="debt-form-hint" data-i18n="debts.cardHint">
-        Льготный период обычно 50–120 дней (Сбер, Тинькофф, Альфа). В этот период проценты не начисляются. Минимальный платёж — 5–10% от долга.
+        Льготный период обычно 50–120 дней (Сбер, Тинькофф, Альфа). В этот период проценты не начисляются. Минимальный платёж - 5–10% от долга.
       </div>
     </div>
     <div class="input-wrap">
@@ -1880,10 +1880,10 @@ Protocol анализирует цель…
 </div>
 
 <!-- ===== REPORT PROBLEM SHEET ===== -->
-<!-- NEW: Report problem feature — bottom-sheet модалка в стиле ProtoSheet -->
+<!-- NEW: Report problem feature - bottom-sheet модалка в стиле ProtoSheet -->
 <div id="reportProblemOverlay" class="proto-sheet-overlay"></div>
 <div id="reportProblemSheet" class="proto-sheet proto-sheet--form report-sheet">
-  <!-- PREMIUM PROGRESS ANIMATION — линии + checkmark + particle burst -->
+  <!-- PREMIUM PROGRESS ANIMATION - линии + checkmark + particle burst -->
   <div class="report-progress" aria-hidden="true">
     <span class="report-progress__bar report-progress__bar--left"></span>
     <span class="report-progress__bar report-progress__bar--right"></span>
@@ -1951,7 +1951,7 @@ Protocol анализирует цель…
 <div class="card" id="withBuffer">
 <b data-i18n="scenario.withBuf">С подушкой</b>
 
-<span data-i18n="scenario.withBuf.desc">Часть средств идёт в резерв — защита от непредвиденных расходов.</span>
+<span data-i18n="scenario.withBuf.desc">Часть средств идёт в резерв - защита от непредвиденных расходов.</span>
 </div>
 </div>
 
@@ -2002,7 +2002,7 @@ z-index: 999999;
 </div>
 
 <!-- ===== EVENT EDITOR SHEET ===== -->
-<!-- FINANCIAL EVENTS - INCOME ONLY — модалка теперь фиксирована на «доход».
+<!-- FINANCIAL EVENTS - INCOME ONLY - модалка теперь фиксирована на «доход».
      Toggle типа скрыт (display:none) для обратной совместимости со скриптами;
      selectedEventType всегда = "income". Добавлен поясняющий блок с примерами
      непредсказуемых доходов и enclosing label «Непредсказуемый доход». -->
@@ -2010,7 +2010,7 @@ z-index: 999999;
 <div id="eventEditorSheet" class="proto-sheet proto-sheet--form">
 
   <h2 style="margin-bottom:6px" data-i18n="event.title">Непредсказуемый доход</h2>
-  <!-- FINANCIAL EVENTS - INCOME ONLY — короткое описание под заголовком. -->
+  <!-- FINANCIAL EVENTS - INCOME ONLY - короткое описание под заголовком. -->
   <div class="event-editor-subtitle" data-i18n="event.subtitle">
     Премия, подарок, возврат долга, продажа вещей и т.п.
   </div>
@@ -2037,7 +2037,7 @@ z-index: 999999;
     </div>
   </div>
 
-  <!-- FINANCIAL EVENTS - INCOME ONLY — список примеров под полями. -->
+  <!-- FINANCIAL EVENTS - INCOME ONLY - список примеров под полями. -->
   <div class="event-editor-examples" data-i18n="event.examples">
     💡 Например: премия 50 000, подарок 5 000, возврат долга, продажа техники
   </div>
@@ -2045,13 +2045,13 @@ z-index: 999999;
   <button id="eventSubmit" class="unexpected-confirm-btn" style="margin-top:20px" data-i18n="event.add">Добавить доход</button>
 </div>
 
-<!-- ===== CUSTOM SCHEDULE LOGIC — ручной ввод «Свой график» (форма + предпросмотр отложения) ===== -->
+<!-- ===== CUSTOM SCHEDULE LOGIC - ручной ввод «Свой график» (форма + предпросмотр отложения) ===== -->
 <div id="customScheduleOverlay" class="proto-sheet-overlay"></div>
 <div id="customScheduleSheet" class="proto-sheet proto-sheet--form cs-sheet">
   <!-- Step 1: Form (amount + date) -->
   <div class="cs-step cs-step--form" data-cs-step="form">
     <h2 id="csSheetTitle" data-i18n="cs.modal.title.income">Ручной ввод поступления</h2>
-    <div class="cs-mode-badge" id="csModeBadge">—</div>
+    <div class="cs-mode-badge" id="csModeBadge">-</div>
 
     <div class="input-wrap" style="margin-top:14px">
       <label id="csAmountLabel" data-i18n="cs.field.amount.income">Сумма, которую я получил сейчас</label>
@@ -2066,7 +2066,7 @@ z-index: 999999;
       <input id="csDateInput" type="date" />
     </div>
 
-    <!-- UNIFIED CUSTOM SCHEDULE FLOW — live-preview: показывает, сколько будет отложено
+    <!-- UNIFIED CUSTOM SCHEDULE FLOW - live-preview: показывает, сколько будет отложено
          на цель из введённой суммы. Обновляется в реальном времени при изменении
          поля «Сумма поступления». Виден только для side="income"; для расходов
          блок скрыт (расход не отлагается на цель). -->
@@ -2075,19 +2075,19 @@ z-index: 999999;
         <span class="cs-live-preview-label" data-i18n="cs.preview.willDeposit">Будет отложено на цель</span>
         <strong class="cs-live-preview-amount" id="csLivePreviewAmount">0 ₽</strong>
       </div>
-      <div class="cs-live-preview-mode" id="csLivePreviewMode">—</div>
+      <div class="cs-live-preview-mode" id="csLivePreviewMode">-</div>
     </div>
 
-    <!-- UNIFIED CUSTOM SCHEDULE FLOW — следующая периодичность (бэдж под live-preview).
-         Текст вида «Дальше — каждую неделю» / «… каждые две недели» / «… каждый месяц» /
+    <!-- UNIFIED CUSTOM SCHEDULE FLOW - следующая периодичность (бэдж под live-preview).
+         Текст вида «Дальше - каждую неделю» / «… каждые две недели» / «… каждый месяц» /
          «Каждый ввод вручную». Помогает понять, как именно будут учитываться будущие
          события после этого ввода. -->
-    <div class="cs-next-occurrence" id="csNextOccurrence" style="display:none">—</div>
+    <div class="cs-next-occurrence" id="csNextOccurrence" style="display:none">-</div>
 
     <button type="button" id="csContinueBtn" class="cs-primary-btn" data-i18n="cs.alloc.depositBtn">Отложить на цель</button>
   </div>
 
-  <!-- Step 2: Allocation preview — показывается только для income (не для expense и не при редактировании) -->
+  <!-- Step 2: Allocation preview - показывается только для income (не для expense и не при редактировании) -->
   <div class="cs-step cs-step--alloc" data-cs-step="alloc" style="display:none">
     <div class="cs-alloc-title" data-i18n="cs.alloc.title">График отложений</div>
     <div class="cs-alloc-amount-card">
@@ -2098,9 +2098,9 @@ z-index: 999999;
       </div>
       <div class="cs-alloc-from">
         <span data-i18n="cs.alloc.fromAmount">от суммы</span>
-        <b id="csAllocBase">—</b>
+        <b id="csAllocBase">-</b>
       </div>
-      <!-- CUSTOM SCHEDULE v2 - fix main plan display — строка разбивки: income − expense = free. -->
+      <!-- CUSTOM SCHEDULE v2 - fix main plan display - строка разбивки: income − expense = free. -->
       <div class="cs-alloc-breakdown" id="csAllocBreakdown"></div>
     </div>
     <div class="cs-alloc-mode" id="csAllocMode" data-i18n="cs.alloc.modeLabel">Расчёт от текущего режима накопления</div>
@@ -2148,27 +2148,27 @@ z-index: 999999;
   <button id="advGoalSave" style="margin-top:20px" data-i18n="advGoals.save">Сохранить</button>
 </div>
 
-<!-- ===== PREMIUM GOAL COMPLETION — congrats modal ===== -->
-<!-- Overlay без обработчика клика — mandatory, закрывается только кнопкой "Я молодец!". -->
+<!-- ===== PREMIUM GOAL COMPLETION - congrats modal ===== -->
+<!-- Overlay без обработчика клика - mandatory, закрывается только кнопкой "Я молодец!". -->
 <div id="goalCompleteOverlay" class="proto-sheet-overlay"></div>
 <div id="goalCompleteSheet" class="proto-sheet goal-complete-sheet">
   <div class="goal-complete-emoji" aria-hidden="true">🎉</div>
   <!-- Title: white-space:pre-line + \n в i18n → красивый перенос на 2 строки. -->
-  <!-- FIX: goal completion UI — emoji 🎉 removed (большой сверху достаточно). -->
+  <!-- FIX: goal completion UI - emoji 🎉 removed (большой сверху достаточно). -->
   <h2 class="goal-complete-title" id="goalCompleteTitle" data-i18n="goalComplete.modal.title">Поздравляем!
 Цель выполнена!</h2>
   <!-- Subtitle: сумма + название цели (emerald accent через <b>) -->
-  <div class="goal-complete-subtitle" id="goalCompleteSubtitle"><b>—</b> • «—»</div>
-  <!-- Emotional text — короткая мотивационная фраза. -->
+  <div class="goal-complete-subtitle" id="goalCompleteSubtitle"><b>-</b> • «-»</div>
+  <!-- Emotional text - короткая мотивационная фраза. -->
   <p class="goal-complete-emotional" id="goalCompleteEmotional" data-i18n="goalComplete.modal.emotional">Вы молодец! Вы успешно достигли своей цели.</p>
   <button type="button" id="goalCompleteBtn" class="goal-complete-btn" data-i18n="goalComplete.modal.button">Я молодец!</button>
 </div>
 
-<!-- ===== PREMIUM GOAL COMPLETION — history detail modal ===== -->
+<!-- ===== PREMIUM GOAL COMPLETION - history detail modal ===== -->
 <div id="goalHistoryDetailOverlay" class="proto-sheet-overlay"></div>
 <div id="goalHistoryDetailSheet" class="proto-sheet goal-history-detail">
   <button id="goalHistoryDetailClose" class="report-close-x" type="button" aria-label="Close">&times;</button>
-  <!-- PREMIUM GOAL COMPLETION — circular emerald success badge с анимированным checkmark
+  <!-- PREMIUM GOAL COMPLETION - circular emerald success badge с анимированным checkmark
        заменяет старый 🏆 emoji. SVG stroke-draw + glow дают премиум-индикатор успеха. -->
   <div class="goal-history-detail-badge" aria-hidden="true">
     <svg viewBox="0 0 64 64" class="goal-history-detail-badge-svg">
@@ -2182,25 +2182,25 @@ z-index: 999999;
     </svg>
   </div>
   <div class="goal-history-detail-subtitle" data-i18n="goalHistory.detail.subtitle">Завершённая цель</div>
-  <h2 class="goal-history-detail-title" id="goalHistoryDetailTitle" style="margin:6px 0 18px">—</h2>
+  <h2 class="goal-history-detail-title" id="goalHistoryDetailTitle" style="margin:6px 0 18px">-</h2>
 
   <div class="goal-history-detail-row">
     <span class="goal-history-detail-row-label" data-i18n="goalHistory.detail.amountLabel">Накоплено</span>
-    <span class="goal-history-detail-row-value" id="goalHistoryDetailAmount">—</span>
+    <span class="goal-history-detail-row-value" id="goalHistoryDetailAmount">-</span>
   </div>
   <div class="goal-history-detail-row">
     <span class="goal-history-detail-row-label" data-i18n="goalHistory.detail.periodLabel">Период</span>
-    <span class="goal-history-detail-row-value" id="goalHistoryDetailPeriod">—</span>
+    <span class="goal-history-detail-row-value" id="goalHistoryDetailPeriod">-</span>
   </div>
   <div class="goal-history-detail-row">
     <span class="goal-history-detail-row-label" data-i18n="goalHistory.detail.durationLabel">За сколько</span>
-    <span class="goal-history-detail-row-value" id="goalHistoryDetailDuration">—</span>
+    <span class="goal-history-detail-row-value" id="goalHistoryDetailDuration">-</span>
   </div>
 
   <button type="button" id="goalHistoryDetailCloseBtn" class="goal-history-detail-close-btn" data-i18n="goalHistory.detail.close">Закрыть</button>
 </div>
 
-<!-- PREMIUM MODAL — полноэкранный слайдер премиум-преимуществ.
+<!-- PREMIUM MODAL - полноэкранный слайдер премиум-преимуществ.
      Открывается при нажатии на любую premium-gate-btn при isPremium=false.
      Структура: оверлей → sheet снизу → слайды → кнопка покупки. -->
 <div id="premiumOverlay" class="premium-overlay hidden"></div>
@@ -2216,7 +2216,7 @@ z-index: 999999;
   </div>
 
   <!-- PREMIUM MODAL: fixed swipe stability + layout
-       Индикатор слайдов поднят сюда, сразу под subtitle — раньше был
+       Индикатор слайдов поднят сюда, сразу под subtitle - раньше был
        между slides и CTA. Скрипт обновления .active дотов остался прежним. -->
   <div class="premium-dots" id="premiumDots">
     <span class="premium-dot active" data-dot="0"></span>
@@ -2227,14 +2227,14 @@ z-index: 999999;
   </div>
 
   <!-- Слайды с фичами.
-       PREMIUM SLIDE VIDEOS — каждый слайд теперь содержит зацикленное muted-видео
+       PREMIUM SLIDE VIDEOS - каждый слайд теперь содержит зацикленное muted-видео
        вместо emoji-иконки. Видео preload="metadata" + autoplay через JS только
-       на АКТИВНОМ слайде (см. _updateActiveSlideVideo() в app.js) — это спасает
+       на АКТИВНОМ слайде (см. _updateActiveSlideVideo() в app.js) - это спасает
        батарею iOS, потому что параллельно играет максимум одно видео.
-       Если settings.disableLoadingVideo=true — все эти <video> скрываются
+       Если settings.disableLoadingVideo=true - все эти <video> скрываются
        (та же настройка теперь отвечает за оба места появления видео).
-       playsinline + muted — обязательное условие для inline-autoplay в iOS WebView.
-       disablepictureinpicture — защита от случайного открытия PiP-режима. -->
+       playsinline + muted - обязательное условие для inline-autoplay в iOS WebView.
+       disablepictureinpicture - защита от случайного открытия PiP-режима. -->
   <div class="premium-slides" id="premiumSlides">
 
     <div class="premium-slide" data-slide="0">
@@ -2243,7 +2243,7 @@ z-index: 999999;
              muted loop playsinline preload="none"
              disablepictureinpicture aria-hidden="true"></video>
       <div class="premium-slide-title" data-i18n="premium.f1.title">Управляй темпом</div>
-      <div class="premium-slide-text" data-i18n="premium.f1.text">Выбирай между спокойным, умеренным и агрессивным режимом. Настраивай скорость накоплений под свой ритм жизни — и приходи к цели именно тогда, когда нужно тебе, а не когда позволит план по умолчанию.</div>
+      <div class="premium-slide-text" data-i18n="premium.f1.text">Выбирай между спокойным, умеренным и агрессивным режимом. Настраивай скорость накоплений под свой ритм жизни - и приходи к цели именно тогда, когда нужно тебе, а не когда позволит план по умолчанию.</div>
     </div>
 
     <div class="premium-slide" data-slide="1">
@@ -2252,7 +2252,7 @@ z-index: 999999;
              muted loop playsinline preload="none"
              disablepictureinpicture aria-hidden="true"></video>
       <div class="premium-slide-title" data-i18n="premium.f2.title">Долги под контролем</div>
-      <div class="premium-slide-text" data-i18n="premium.f2.text">Ипотека, кредит, рассрочка, кредитная карта — всё учитывается автоматически. Аннуитетный расчёт, льготный период карт, прогноз переплаты. Перестань терять деньги на процентах — начни гасить долги правильно.</div>
+      <div class="premium-slide-text" data-i18n="premium.f2.text">Ипотека, кредит, рассрочка, кредитная карта - всё учитывается автоматически. Аннуитетный расчёт, льготный период карт, прогноз переплаты. Перестань терять деньги на процентах - начни гасить долги правильно.</div>
     </div>
 
     <div class="premium-slide" data-slide="2">
@@ -2261,7 +2261,7 @@ z-index: 999999;
              muted loop playsinline preload="none"
              disablepictureinpicture aria-hidden="true"></video>
       <div class="premium-slide-title" data-i18n="premium.f3.title">Гибкая модель</div>
-      <div class="premium-slide-text" data-i18n="premium.f3.text">Нерегулярные доходы, сезонные расходы, фриланс, подработки — базовый план не справится. Гибкая модель учитывает реальную жизнь: фиксирует каждую сумму вручную и мгновенно пересчитывает, сколько нужно отложить.</div>
+      <div class="premium-slide-text" data-i18n="premium.f3.text">Нерегулярные доходы, сезонные расходы, фриланс, подработки - базовый план не справится. Гибкая модель учитывает реальную жизнь: фиксирует каждую сумму вручную и мгновенно пересчитывает, сколько нужно отложить.</div>
     </div>
 
     <div class="premium-slide" data-slide="3">
@@ -2270,7 +2270,7 @@ z-index: 999999;
              muted loop playsinline preload="none"
              disablepictureinpicture aria-hidden="true"></video>
       <div class="premium-slide-title" data-i18n="premium.f4.title">Расширенные настройки</div>
-      <div class="premium-slide-text" data-i18n="premium.f4.text">Распределяй накопления по инструментам: акции, облигации, депозиты, наличные. Видь точный состав портфеля, следи за динамикой счёта и принимай решения на основе данных — а не интуиции.</div>
+      <div class="premium-slide-text" data-i18n="premium.f4.text">Распределяй накопления по инструментам: акции, облигации, депозиты, наличные. Видь точный состав портфеля, следи за динамикой счёта и принимай решения на основе данных - а не интуиции.</div>
     </div>
 
     <div class="premium-slide" data-slide="4">
@@ -2279,7 +2279,7 @@ z-index: 999999;
              muted loop playsinline preload="none"
              disablepictureinpicture aria-hidden="true"></video>
       <div class="premium-slide-title" data-i18n="premium.f5.title">Статистика счёта</div>
-      <div class="premium-slide-text" data-i18n="premium.f5.text">Переверни карточку счёта — и увидишь полную картину: сколько уже отложено, динамика пополнений, прогноз на следующий месяц. Знать свои цифры — это и есть контроль над деньгами.</div>
+      <div class="premium-slide-text" data-i18n="premium.f5.text">Переверни карточку счёта - и увидишь полную картину: сколько уже отложено, динамика пополнений, прогноз на следующий месяц. Знать свои цифры - это и есть контроль над деньгами.</div>
     </div>
 
   </div>
@@ -2287,30 +2287,30 @@ z-index: 999999;
   <!-- CTA -->
   <div class="premium-cta-block">
 
-    <!-- SUBSCRIPTION MODEL — статус текущей подписки.
+    <!-- SUBSCRIPTION MODEL - статус текущей подписки.
          Показывается ТОЛЬКО если isPremiumActive()=true (заполняется в
          refreshPremiumStatusBlock() из app.js). Содержит две строки:
            • дата окончания подписки;
            • статус автопродления (вкл/выкл).
-         По умолчанию display:none — JS включает видимость по факту. -->
+         По умолчанию display:none - JS включает видимость по факту. -->
     <div class="premium-status-block" id="premiumStatusBlock" style="display:none">
       <div class="premium-status__row">
         <span class="premium-status__icon">✨</span>
         <span class="premium-status__text">
           <span data-i18n="premium.status.activeUntil">Premium активен до</span>
-          <strong id="premiumStatusUntil">—</strong>
+          <strong id="premiumStatusUntil">-</strong>
         </span>
       </div>
       <div class="premium-status__autorenew is-off" id="premiumStatusAutoRenew"
            data-i18n="premium.status.autoRenewOff">Без автопродления</div>
     </div>
 
-    <!-- SUBSCRIPTION MODEL — чекбокс автопродления (recurring billing).
+    <!-- SUBSCRIPTION MODEL - чекбокс автопродления (recurring billing).
          При checked=true фронт прокидывает auto_renew=true в Edge Function
          create-stars-invoice, та добавляет subscription_period=2592000 в
-         createInvoiceLink — и Telegram сам списывает 150⭐ каждые 30 дней.
+         createInvoiceLink - и Telegram сам списывает 150⭐ каждые 30 дней.
          Дефолт OFF: пользователь должен ЯВНО согласиться на recurring.
-         Отмена подписки — в Telegram Settings → Subscriptions. -->
+         Отмена подписки - в Telegram Settings → Subscriptions. -->
     <label class="premium-auto-renew" for="premiumAutoRenew">
       <input type="checkbox" id="premiumAutoRenew" class="premium-auto-renew__input">
       <span class="premium-auto-renew__box" aria-hidden="true">
@@ -2330,17 +2330,17 @@ z-index: 999999;
 
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 <script src="state-manager.js?v=20041"></script>
-<script src="i18n.js?v=20042"></script>
+<script src="i18n.js?v=20044"></script>
 <script src="financial-events.js?v=20034"></script>
 <script src="cashflow-engine.js?v=20034"></script>
 <script src="graph-engine-svg.js?v=20034"></script>
 <!-- Supabase: после CDN в <head>; замените anon-ключ внутри файла -->
 <script src="supabase.js?v=20034"></script>
-<!-- CLOUD STORAGE SYNC — кросс-устройственная синхронизация через Telegram CloudStorage.
+<!-- CLOUD STORAGE SYNC - кросс-устройственная синхронизация через Telegram CloudStorage.
      Загружаем ПОСЛЕ state-manager (нужен applyState/saveState) и Supabase
-     (для согласованности с серверным sync), но ДО app.js — чтобы хуки
+     (для согласованности с серверным sync), но ДО app.js - чтобы хуки
      CloudSync.scheduleSync() в saveFullState() были доступны на момент init. -->
 <script src="cloud-storage.js?v=20034"></script>
-<script src="app.js?v=20043"></script>
+<script src="app.js?v=20044"></script>
 </body>
 </html>

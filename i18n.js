@@ -1,18 +1,18 @@
 /**
- * Protocol Finance — Global Internationalization Layer
+ * Protocol Finance - Global Internationalization Layer
  *
  * Lightweight i18n system supporting Russian (ru) and English (en).
  * Loaded AFTER state-manager.js, BEFORE app.js.
  *
  * Public API:
- *   t(key, vars?)        — translate key, optional interpolation {var}
- *   getCurrentLanguage()  — returns "ru" | "en"
- *   applyLanguageToDOM()  — applies translations to all [data-i18n] elements
- *   getMonthName(idx)     — localized month name (0-based)
- *   getMonthNameShort(idx) — localized short month name
- *   getMonthNameGenitive(idx) — localized genitive month name (for dates)
- *   fmtAmount(n)          — format number with currency using settings
- *   fmtNum(n)             — format number with thousands separator only
+ *   t(key, vars?)        - translate key, optional interpolation {var}
+ *   getCurrentLanguage()  - returns "ru" | "en"
+ *   applyLanguageToDOM()  - applies translations to all [data-i18n] elements
+ *   getMonthName(idx)     - localized month name (0-based)
+ *   getMonthNameShort(idx) - localized short month name
+ *   getMonthNameGenitive(idx) - localized genitive month name (for dates)
+ *   fmtAmount(n)          - format number with currency using settings
+ *   fmtNum(n)             - format number with thousands separator only
  */
 (function (global) {
   "use strict";
@@ -81,14 +81,14 @@
       "flex.customDays.income": "Выберите дни месяца, когда приходит доход",
       "flex.customDays.expense": "Выберите дни месяца, когда происходят расходы",
       "flex.model.title": "Ваша модель",
-      // FINANCIAL EVENTS - INCOME ONLY — блок переведён исключительно на учёт
+      // FINANCIAL EVENTS - INCOME ONLY - блок переведён исключительно на учёт
       // разовых непредсказуемых доходов. Все тексты обновлены, чтобы пользователь
       // не пытался добавить расход через этот раздел (для расходов есть
       // отдельная кнопка «Непредвиденный расход» на экране с графиком).
       "flex.events.title": "Разовые доходы",
-      // FINANCIAL EVENTS - INCOME ONLY — subtitle теперь directive (куда идти за
+      // FINANCIAL EVENTS - INCOME ONLY - subtitle теперь directive (куда идти за
       // регулярными доходами), а не повтор примеров. Примеры остались только
-      // в одном месте — в блоке cf-event-examples.
+      // в одном месте - в блоке cf-event-examples.
       "flex.events.subtitle": "Регулярные доходы настраиваются в блоках выше",
       "flex.events.hint": "Регулярные доходы настраиваются в блоках выше",
       "flex.events.examples": "Примеры: премия, подарок, возврат долга, продажа вещей, фриланс-подработка",
@@ -96,7 +96,7 @@
       "flex.incomeAmount.placeholder": "Сумма дохода",
       "flex.expenseAmount.placeholder": "Сумма расхода",
 
-      // ── Flexible model — current configuration summary ──
+      // ── Flexible model - current configuration summary ──
       "flex.current.title": "Текущая модель",
       "flex.current.helper": "Эта модель используется для расчёта свободных средств и срока достижения цели.",
       "flex.current.income": "Доход",
@@ -118,12 +118,12 @@
       "flex.current.start": "Начало",
       "flex.current.next": "Следующее",
       "flex.current.startNotSet": "укажите дату старта",
-      "flex.current.editHint": "Измените сумму, частоту или дату старта — прогноз обновится мгновенно",
+      "flex.current.editHint": "Измените сумму, частоту или дату старта - прогноз обновится мгновенно",
       "flex.events.disabledHint": "В фиксированном режиме события добавляются автоматически. Переключитесь в «Нефиксированный», чтобы редактировать график.",
       "flex.events.disabledShort": "Доступно только в нефиксированном режиме",
       "flex.events.disabledTypeShort": "Эта категория настроена как фиксированная",
 
-      // NEW: fixed vs variable 11.05.2026 — read-only summary + variable inputs
+      // NEW: fixed vs variable 11.05.2026 - read-only summary + variable inputs
       "flex.fixedSummary.helper": "Используются данные, введённые при открытии гибкой модели",
       "flex.fixedSummary.empty.income": "Доход не указан. Заполните «Доход» в основной форме.",
       "flex.fixedSummary.empty.expense": "Расходы не указаны. Заполните «Расходы» в основной форме.",
@@ -162,7 +162,7 @@
       "scenario.noBuf": "Без подушки",
       "scenario.noBuf.desc": "Все деньги идут напрямую в цель.",
       "scenario.withBuf": "С подушкой",
-      "scenario.withBuf.desc": "Часть средств идёт в резерв — защита от непредвиденных расходов.",
+      "scenario.withBuf.desc": "Часть средств идёт в резерв - защита от непредвиденных расходов.",
 
       // ── History ──
       "history.title": "История счёта",
@@ -176,8 +176,8 @@
       "accounts.saved": "Накоплено",
       "accounts.reserve": "Резерв",
       "accounts.reserveSub": "Подушка безопасности",
-      "accounts.mainHint": "Этот счёт отражает ваши накопления по плану Protocol. Это может быть банковский или инвестиционный счёт либо наличные — главное, чтобы сумма соответствовала расчётам.",
-      "accounts.reserveHint": "Резерв — это средства для экстренных ситуаций. Эти деньги не участвуют в достижении цели и используются только при необходимости.",
+      "accounts.mainHint": "Этот счёт отражает ваши накопления по плану Protocol. Это может быть банковский или инвестиционный счёт либо наличные - главное, чтобы сумма соответствовала расчётам.",
+      "accounts.reserveHint": "Резерв - это средства для экстренных ситуаций. Эти деньги не участвуют в достижении цели и используются только при необходимости.",
       "accounts.newAccount": "Новый счёт",
       "accounts.newAccountHint": "Здесь будет создание нового счёта.",
       "accounts.statsTitle": "Статистика счёта",
@@ -211,7 +211,7 @@
       "goals.reserveHint": "Эти средства не участвуют в достижении цели и используются как подушка безопасности.",
 
       // ── Goal verdicts ──
-      "verdict.paused": "Цель на паузе — средства не начисляются.",
+      "verdict.paused": "Цель на паузе - средства не начисляются.",
       "verdict.complete": "Цель достигнута. Protocol фиксирует успех.",
       "verdict.almostDone": "Цель близка к завершению. Темп хороший.",
       "verdict.inProgress": "Цель в процессе. Стабильность важнее скорости.",
@@ -228,25 +228,25 @@
       "goalHistory.empty": "Завершённых целей пока нет",
       "goalHistory.achieved": "Достигнута за {n} мес.",
 
-      // ── GOAL COMPLETION FEATURE — congrats modal + empty state + history detail ──
-      // PREMIUM GOAL COMPLETION — title с принудительным переносом (CSS white-space:pre-line).
-      // FIX: goal completion UI — убран маленький 🎉 после "Цель выполнена!"
+      // ── GOAL COMPLETION FEATURE - congrats modal + empty state + history detail ──
+      // PREMIUM GOAL COMPLETION - title с принудительным переносом (CSS white-space:pre-line).
+      // FIX: goal completion UI - убран маленький 🎉 после "Цель выполнена!"
       // (большой эмодзи сверху сохранён). Текст выравнивается по левому краю в CSS.
       "goalComplete.modal.title": "Поздравляем!\nЦель выполнена!",
       "goalComplete.modal.subtitle": "{amount} • «{name}»",
       "goalComplete.modal.emotional": "Вы молодец! Вы успешно достигли своей цели.",
       "goalComplete.modal.text": "Вы молодец! Вы успешно накопили {amount} на «{name}»",
       "goalComplete.modal.button": "Я молодец!",
-      // NEW: Full goal creation flow in Protocol tab — empty-state переехала в Protocol,
+      // NEW: Full goal creation flow in Protocol tab - empty-state переехала в Protocol,
       // кнопка теперь ведёт на отдельный экран создания цели (#screen-new-goal).
       "goalEmpty.title": "У вас пока нет активной цели",
-      "goalEmpty.subtitle": "Поставьте новую цель — Protocol поможет её достичь",
+      "goalEmpty.subtitle": "Поставьте новую цель - Protocol поможет её достичь",
       "goalEmpty.button": "Начать копить на новую цель",
       "goalEmpty.verdict": "Активной цели пока нет. Готовы начать новую?",
-      // NEW: Full goal creation flow in Protocol tab — экран создания новой цели
-      // FIX: new goal creation flow — убраны ключи title / tempo / duration (поля удалены из UI).
+      // NEW: Full goal creation flow in Protocol tab - экран создания новой цели
+      // FIX: new goal creation flow - убраны ключи title / tempo / duration (поля удалены из UI).
       "newGoal.screen.title": "Новая цель",
-      "newGoal.intro": "Заполните все поля — Protocol построит план достижения",
+      "newGoal.intro": "Заполните все поля - Protocol построит план достижения",
       "newGoal.field.amount": "Сумма цели",
       "newGoal.field.amountPlaceholder": "1.000.000",
       "newGoal.field.saved": "Уже накоплено",
@@ -269,7 +269,7 @@
       "goalHistory.detail.durationMonths": "{n} мес.",
       "goalHistory.detail.durationLessMonth": "Меньше месяца",
       "goalHistory.detail.close": "Закрыть",
-      "goalHistory.detail.dateUnknown": "—",
+      "goalHistory.detail.dateUnknown": "-",
 
       // ── Advanced settings ──
       "advanced.title": "Расширенные настройки",
@@ -278,7 +278,7 @@
       "advanced.deadlines": "Управление сроками целей",
       "advanced.deadlinesDesc": "Продлите или сократите срок достижения своих целей",
       "advanced.priorities": "Приоритеты накоплений",
-      "advanced.prioritiesDesc": "Определите, какая цель важнее — и перераспределите средства",
+      "advanced.prioritiesDesc": "Определите, какая цель важнее - и перераспределите средства",
 
       // ── Advanced goals ──
       "advGoals.title": "Ваши цели",
@@ -337,11 +337,11 @@
       "onb.btn.done":        "Готово",
       "onb.btn.skip":        "Пропустить",
       "onb.welcome.title":   "Привет! 👋",
-      "onb.welcome.text":    "Давай я быстро покажу основное — это займёт меньше минуты.",
+      "onb.welcome.text":    "Давай я быстро покажу основное - это займёт меньше минуты.",
       "onb.income.title":    "Доход",
       "onb.income.text":     "Здесь ты добавляешь зарплату и другие регулярные поступления.",
       "onb.expenses.title":  "Расход",
-      "onb.expenses.text":   "Сюда — обязательные ежемесячные траты: аренда, продукты, коммуналка.",
+      "onb.expenses.text":   "Сюда - обязательные ежемесячные траты: аренда, продукты, коммуналка.",
       "onb.goal.title":      "Цель",
       "onb.goal.text":       "Здесь ты ставишь сумму, на которую копишь. Protocol рассчитает план под неё.",
       "onb.continue.title":  "Построим план",
@@ -349,40 +349,40 @@
       "onb.mainAccount.title":"Основной счёт",
       "onb.mainAccount.text": "Здесь видно, сколько у тебя сейчас накоплено всего. Это твой главный финансовый счёт.",
       "onb.reserve.title":   "Резерв",
-      "onb.reserve.text":    "Здесь отображается резерв — деньги, которые ты не тратишь на цели. Это твоя финансовая подушка.",
+      "onb.reserve.text":    "Здесь отображается резерв - деньги, которые ты не тратишь на цели. Это твоя финансовая подушка.",
       "onb.profile.title":   "Premium и профиль",
-      "onb.profile.text":    "В профиле — Premium-функции, статус подписки и тонкие настройки приложения.",
+      "onb.profile.text":    "В профиле - Premium-функции, статус подписки и тонкие настройки приложения.",
       "onb.final.title":     "Готово! 🎉",
       "onb.final.text":      "Теперь ты полностью контролируешь свои финансы. Удачи в накоплениях!",
-      // PREMIUM FEATURE TOURS — короткие мини-онбординги, фирующие при первом
+      // PREMIUM FEATURE TOURS - короткие мини-онбординги, фирующие при первом
       // открытии премиум-функции пользователем с активной подпиской.
       "onb.prem.btn.gotIt":     "Понял",
       "onb.prem.flexible.title":"Гибкая модель",
-      "onb.prem.flexible.text": "Используй, когда доходы и расходы непостоянны — фриланс, подработки, сезонные траты. Фиксируй каждую сумму вручную, и Protocol точно покажет, сколько осталось до цели.",
+      "onb.prem.flexible.text": "Используй, когда доходы и расходы непостоянны - фриланс, подработки, сезонные траты. Фиксируй каждую сумму вручную, и Protocol точно покажет, сколько осталось до цели.",
       "onb.prem.pace.title":    "Темп накоплений",
-      "onb.prem.pace.text":     "Меняй режим — Спокойно / Умеренно / Агрессивно — когда меняется жизненная ситуация. План автоматически пересчитается под новый ритм.",
+      "onb.prem.pace.text":     "Меняй режим - Спокойно / Умеренно / Агрессивно - когда меняется жизненная ситуация. План автоматически пересчитается под новый ритм.",
       "onb.prem.debts.title":   "Кредиты и долги",
       "onb.prem.debts.text":    "Добавляй ипотеку, кредиты, рассрочки и кредитные карты. Protocol учтёт обязательные платежи, льготные периоды и подскажет, когда долг будет погашен.",
       "onb.prem.advanced.title":"Расширенные настройки",
       "onb.prem.advanced.text": "Тонкая настройка плана: добавление нескольких целей, индивидуальная смена сроков любой из целей. Подгони Protocol под себя.",
       "onb.prem.stats.title":   "Статистика счёта",
-      "onb.prem.stats.text":    "Обратная сторона карточки — распределяй накопления по типам: наличные, фондовый рынок, вклад, драгоценные металлы. Получишь точную структуру портфеля.",
+      "onb.prem.stats.text":    "Обратная сторона карточки - распределяй накопления по типам: наличные, фондовый рынок, вклад, драгоценные металлы. Получишь точную структуру портфеля.",
 
       "profile.user": "Пользователь",
-      // PREMIUM PROFILE BADGE — текст изумрудной плашки рядом с именем
+      // PREMIUM PROFILE BADGE - текст изумрудной плашки рядом с именем
       // (показывается, когда isPremiumActive()=true).
       "profile.premiumBadge": "Premium",
       "profile.settings": "⚙️ Настройки",
       "profile.goalHistory": "📋 История целей",
       "profile.resetPlan": "🔄 Сбросить план",
-      // NEW: Full reset button in Profile — финальный текст кнопки "Начать сначала".
+      // NEW: Full reset button in Profile - финальный текст кнопки "Начать сначала".
       "profile.fullReset": "🆕 Начать сначала",
-      // STATISTICS COLLECTION — заголовки блока статистики сообщества
+      // STATISTICS COLLECTION - заголовки блока статистики сообщества
       "profile.stats.title":   "Статистика сообщества",
       "profile.stats.premium": "Пользователей с премиум",
       "profile.stats.free":    "Пользователей без премиум",
       "profile.stats.total":   "Всего",
-      // COMMUNITY STATS — extended admin metrics (Stars + growth)
+      // COMMUNITY STATS - extended admin metrics (Stars + growth)
       "profile.stats.subtitle.revenue":  "Доходы Stars",
       "profile.stats.subtitle.activity": "Активность",
       "profile.stats.starsTotal":   "Заработано Stars всего",
@@ -397,7 +397,7 @@
       "report.modal.send": "Отправить",
       "report.modal.cancel": "Отмена",
       "report.modal.empty": "Пожалуйста, опишите проблему",
-      // COMPACT BUTTONS — короткие варианты помещаются в компактную кнопку
+      // COMPACT BUTTONS - короткие варианты помещаются в компактную кнопку
       "report.modal.sending": "Отправка...",
       "report.toast.success": "Спасибо! Мы посмотрим и ответим как можно скорее",
       "report.toast.failed": "Не удалось отправить отчёт. Попробуйте позже",
@@ -405,7 +405,7 @@
       // NEW: Media attachment in reports
       "report.modal.attachMedia": "📎 Прикрепить фото/видео",
       "report.modal.mediaLimit": "Можно прикрепить до 5 файлов (макс. 25 МБ каждый)",
-      // COMPACT BUTTONS — короткий вариант помещается в компактную кнопку
+      // COMPACT BUTTONS - короткий вариант помещается в компактную кнопку
       "report.modal.uploading": "Загрузка...",
       "report.toast.mediaTooMany": "Максимум 5 файлов",
       "report.toast.mediaTooBig": "Файл слишком большой (макс. 25 МБ): {name}",
@@ -413,14 +413,14 @@
       "report.toast.mediaUploadError": "Не удалось загрузить файл: {name}",
 
       // ── Confirm reset ──
-      // NEW: Full reset button in Profile — усиленный текст, упоминает все категории данных.
+      // NEW: Full reset button in Profile - усиленный текст, упоминает все категории данных.
       "reset.text": "Если вы нажмёте «Начать сначала», будет сброшено всё: текущая цель, накопления, история целей и статистика счетов.",
       "reset.cancel": "Отменить",
       "reset.confirm": "Начать сначала",
 
       // ── Unexpected expense ──
       "unexpected.title": "Непредвиденный расход",
-      // FINANCIAL EVENTS - INCOME ONLY (mirror UX for expense) — индикатор
+      // FINANCIAL EVENTS - INCOME ONLY (mirror UX for expense) - индикатор
       // доступного к списанию остатка под input'ом «Сумма расхода».
       "unexpected.available": "Доступно: {amount}",
       "unexpected.overLimit": "Превышает доступный остаток ({amount})",
@@ -436,36 +436,36 @@
       "unexpected.skipConfirm": "Подтвердить пропуск",
       "unexpected.skipInfo": "Месяц будет пропущен. Срок цели увеличится на 1 месяц.",
 
-      // PREMIUM SYSTEM — тексты премиум-модалки
+      // PREMIUM SYSTEM - тексты премиум-модалки
       "premium.title": "Protocol Premium",
       "premium.subtitle": "Полный контроль над своими финансами",
-      "premium.statsLocked": "Статистика — только в Premium",
+      "premium.statsLocked": "Статистика - только в Premium",
       "premium.f1.title": "Управляй темпом",
-      "premium.f1.text": "Выбирай между спокойным, умеренным и агрессивным режимом. Настраивай скорость накоплений под свой ритм жизни — и приходи к цели именно тогда, когда нужно тебе.",
+      "premium.f1.text": "Выбирай между спокойным, умеренным и агрессивным режимом. Настраивай скорость накоплений под свой ритм жизни - и приходи к цели именно тогда, когда нужно тебе.",
       "premium.f2.title": "Долги под контролем",
-      "premium.f2.text": "Ипотека, кредит, рассрочка, кредитная карта — всё учитывается автоматически. Аннуитетный расчёт, льготный период карт, прогноз переплаты. Перестань терять деньги на процентах.",
+      "premium.f2.text": "Ипотека, кредит, рассрочка, кредитная карта - всё учитывается автоматически. Аннуитетный расчёт, льготный период карт, прогноз переплаты. Перестань терять деньги на процентах.",
       "premium.f3.title": "Гибкая модель",
-      "premium.f3.text": "Нерегулярные доходы, сезонные расходы, фриланс — базовый план не справится. Гибкая модель учитывает реальную жизнь и мгновенно пересчитывает, сколько нужно отложить.",
+      "premium.f3.text": "Нерегулярные доходы, сезонные расходы, фриланс - базовый план не справится. Гибкая модель учитывает реальную жизнь и мгновенно пересчитывает, сколько нужно отложить.",
       "premium.f4.title": "Расширенные настройки",
-      "premium.f4.text": "Распределяй накопления по инструментам: акции, облигации, депозиты, наличные. Видь точный состав портфеля и принимай решения на основе данных.",
+      "premium.f4.text": "Создавай несколько целей одновременно - копи на квартиру, отпуск и подушку безопасности параллельно. Меняй сроки достижения индивидуально для каждой. Protocol адаптирует план под твою реальную жизнь.",
       "premium.f5.title": "Статистика счёта",
-      "premium.f5.text": "Переверни карточку счёта — и увидишь полную картину: сколько уже отложено, динамика пополнений, прогноз на следующий месяц.",
+      "premium.f5.text": "Переверни карточку счёта - и сможешь распределять накопления по инструментам: акции, наличные, вклады. Видь точное отражение своих вложенных накоплений.",
       "premium.buyBtn": "Оформить Premium",
       "premium.price": "150 ⭐ / 30 дней",
       "premium.ctaHint": "Полный доступ ко всем функциям · 30 дней",
 
-      // SUBSCRIPTION MODEL — чекбокс автопродления
+      // SUBSCRIPTION MODEL - чекбокс автопродления
       "premium.autoRenew.label": "Автоматически продлевать каждые 30 дней",
 
-      // SUBSCRIPTION MODEL — блок текущего статуса подписки в премиум-модалке
+      // SUBSCRIPTION MODEL - блок текущего статуса подписки в премиум-модалке
       "premium.status.activeUntil": "Premium активен до",
       "premium.status.autoRenewOn": "🔄 Автопродление включено",
       "premium.status.autoRenewOff": "ℹ️ Без автопродления",
 
-      // TELEGRAM STARS — экраны оплаты
+      // TELEGRAM STARS - экраны оплаты
       "payment.processing": "Открываем оплату Telegram Stars…",
       "payment.success.title": "Premium активирован!",
-      "payment.success.text": "Проверь чат с ботом — там вся информация о подписке",
+      "payment.success.text": "Проверь чат с ботом - там вся информация о подписке",
       "payment.cancelled": "Оплата отменена",
       "payment.failed": "Оплата не прошла. Попробуйте ещё раз",
       "payment.unavailable": "Оплата временно недоступна",
@@ -490,7 +490,7 @@
       "debts.remaining": "Осталось выплатить",
       "debts.nextPayment": "Ближайший платёж",
       "debts.planToggle": "Учитывать долги отдельно в расчёте",
-      "debts.planHint": "Если включено — ежемесячные платежи по долгам будут уменьшать свободные средства для накоплений",
+      "debts.planHint": "Если включено - ежемесячные платежи по долгам будут уменьшать свободные средства для накоплений",
       "debts.accounted": "Платежи учтены в финансовом плане",
       "debts.tracked": "Долги отслеживаются, но не влияют на расчёт",
       "debts.addDebt": "Добавить кредит или долг",
@@ -526,7 +526,7 @@
       "debts.breakdown.toSavings": "→ в накопления",
 
       // ── Event editor ──
-      // FINANCIAL EVENTS - INCOME ONLY — модалка теперь имеет фиксированный
+      // FINANCIAL EVENTS - INCOME ONLY - модалка теперь имеет фиксированный
       // заголовок «Непредсказуемый доход» + поясняющий subtitle и examples-блок.
       "event.title": "Непредсказуемый доход",
       "event.subtitle": "Премия, подарок, возврат долга, продажа вещей и т.п.",
@@ -545,9 +545,9 @@
 
       // ── Engine advice ──
       "engine.noBalance": "Сначала нужно привести расходы и доходы в баланс.",
-      "engine.longTerm": "Цель долгосрочная — подумайте, готовы ли вы ждать так долго.",
+      "engine.longTerm": "Цель долгосрочная - подумайте, готовы ли вы ждать так долго.",
       "engine.aggressive": "Агрессивный режим требует дисциплины и стабильного дохода.",
-      "engine.tooLow": "Вы откладываете слишком мало — цель будет достигаться медленно.",
+      "engine.tooLow": "Вы откладываете слишком мало - цель будет достигаться медленно.",
       "engine.stable": "План выглядит устойчивым и реалистичным.",
 
       // ── Months (nominative) ──
@@ -597,22 +597,22 @@
       "settings.allocation.goal": "Всё в цель",
       "settings.allocation.buffer": "С резервом",
       "settings.allowOverpay": "Разрешить перевыполнение плана",
-      "settings.allowOverpay.on": "Можно откладывать больше плана — лишняя сумма будет учтена в следующих периодах",
+      "settings.allowOverpay.on": "Можно откладывать больше плана - лишняя сумма будет учтена в следующих периодах",
       "settings.allowOverpay.off": "Сумма выше плана не будет переноситься как перевыполнение",
       "settings.section.interface": "Интерфейс",
       "settings.animations": "Анимации",
       "settings.animations.hint": "Управляет плавными анимациями интерфейса",
       "settings.numberFormat": "Формат чисел",
       "settings.numberFormat.hint": "Выберите, как отображать разделители тысяч",
-      // LOADING VIDEO TOGGLE — переключатель в секции «Интерфейс»
+      // LOADING VIDEO TOGGLE - переключатель в секции «Интерфейс»
       "settings.disableLoadingVideo": "Отключить загрузку видео",
-      "settings.disableLoadingVideo.hint": "Отключает фоновые видео на экране загрузки и в премиум-вкладке — экономит трафик и батарею",
+      "settings.disableLoadingVideo.hint": "Отключает фоновые видео на экране загрузки и в премиум-вкладке - экономит трафик и батарею",
       "settings.section.notifications": "Уведомления",
-      // HELP & ONBOARDING — раздел и пункт «Перезапустить подсказки».
+      // HELP & ONBOARDING - раздел и пункт «Перезапустить подсказки».
       "settings.section.help":            "Помощь",
       "settings.restartOnboarding":       "Перезапустить подсказки",
       "settings.restartOnboarding.hint":  "Пройти заново вступительный тур и все премиум-подсказки",
-      "settings.restartOnboarding.toast": "Подсказки сброшены — запускаем тур",
+      "settings.restartOnboarding.toast": "Подсказки сброшены - запускаем тур",
       "settings.notifications": "Напоминания",
       "settings.notifications.hint": "Напоминания помогут не пропускать взносы и выплаты",
       "settings.depositReminder": "Напоминание о внесении",
@@ -659,7 +659,7 @@
       "freq.variablePlural": "нефиксированные",
 
       // ── Goal Edit Warnings ──
-      "goalEdit.warn3x": "Цель увеличена более чем в 3 раза. План станет значительно длиннее — убедитесь, что это осознанное решение.",
+      "goalEdit.warn3x": "Цель увеличена более чем в 3 раза. План станет значительно длиннее - убедитесь, что это осознанное решение.",
       "goalEdit.warn2x": "Цель увеличена в 2 раза. Срок и нагрузка изменятся.",
       "goalEdit.warnIncrease": "Цель заметно увеличена. Protocol пересчитает план.",
 
@@ -740,7 +740,7 @@
 
       // NEW: Storage type fields
       "stats.field.ticker": "Тикер или название (например, SBER, VOO)",
-      "stats.field.tickerHint": "Свободный ввод — используется для подсказки",
+      "stats.field.tickerHint": "Свободный ввод - используется для подсказки",
       "stats.field.expectedReturn": "Ожидаемая годовая доходность (%)",
       "stats.field.depositRate": "Процентная ставка (% годовых)",
       "stats.field.depositTerm": "Срок вклада (месяцев)",
@@ -748,7 +748,7 @@
       "stats.cap.monthly": "Ежемесячно",
       "stats.cap.quarterly": "Ежеквартально",
       "stats.cap.end": "В конце срока",
-      // FUTURE DEPOSITS PER ITEM — per-allocation auto-replenishment toggle.
+      // FUTURE DEPOSITS PER ITEM - per-allocation auto-replenishment toggle.
       "stats.field.acceptsFutureDeposits":       "Пополнять из будущих отложений",
       "stats.field.acceptsFutureDepositsHint":   "Будущие отложения (доходы) будут автоматически распределяться в этот тип хранения",
       "stats.field.acceptsFutureDeposits.short": "Авто-пополнение",
@@ -766,10 +766,10 @@
       "stats.metalInfo": "Драгметалл",
       "stats.stockInfo": "Инструмент",
 
-      // PORTFOLIO ALLOCATION LOGIC — portfolio composition UI
+      // PORTFOLIO ALLOCATION LOGIC - portfolio composition UI
       "portfolio.title": "Состав портфеля",
       "portfolio.subtitle": "Распределите накопления по типам хранения",
-      "portfolio.empty": "Портфель пуст — добавьте первый тип хранения",
+      "portfolio.empty": "Портфель пуст - добавьте первый тип хранения",
       "portfolio.addBtn": "+ Добавить тип хранения",
       "portfolio.allocated": "Распределено",
       "portfolio.remaining": "Осталось распределить",
@@ -780,12 +780,12 @@
       "portfolio.percentagePlaceholder": "например, 40",
       "portfolio.remove": "Удалить",
       "portfolio.edit": "Изменить",
-      // FUTURE DEPOSITS PER ITEM — composition footer chip labels.
+      // FUTURE DEPOSITS PER ITEM - composition footer chip labels.
       "portfolio.futureAccept.none":    "Без авто-пополнения",
       "portfolio.futureAccept.partial": "Авто-пополнение: {n} из {total}",
       "portfolio.futureAccept.all":     "Авто-пополнение во все",
 
-      // FIX: portfolio UX v2 — required fields + soft-disabled add btn + live amount.
+      // FIX: portfolio UX v2 - required fields + soft-disabled add btn + live amount.
       "portfolio.addBtn.fullToast":     "Вы уже используете 100% средств. Чтобы добавить новый тип, уменьшите долю одного из существующих.",
       "portfolio.validation.requiredFields": "Заполните все обязательные поля",
       "portfolio.percentage.liveLabel": "= {amount}",
@@ -799,7 +799,7 @@
       "portfolio.validation.fillFields": "Заполните все обязательные поля",
       "portfolio.validation.percentageInvalid": "Доля должна быть от 1 до 100",
 
-      // MOEX INTEGRATION — preset assets (RU stocks + MOEX ETFs only)
+      // MOEX INTEGRATION - preset assets (RU stocks + MOEX ETFs only)
       "stats.asset.ru_sber":    "Сбер (SBER)",
       "stats.asset.ru_gazprom": "Газпром (GAZP)",
       "stats.asset.ru_yandex":  "Яндекс (YDEX)",
@@ -810,44 +810,44 @@
       "stats.asset.ru_rosneft": "Роснефть (ROSN)",
       "stats.asset.ru_vk":      "VK (VKCO)",
       "stats.asset.ru_polyus":  "Полюс (PLZL)",
-      "stats.asset.etf_fxrl":   "FXRL — Российские акции",
-      "stats.asset.etf_fxit":   "FXIT — IT-сектор",
-      "stats.asset.etf_fxus":   "FXUS — Акции США",
-      "stats.asset.etf_tmos":   "TMOS — Индекс МосБиржи",
-      "stats.asset.etf_sbsp":   "SBSP — S&P 500 (СберИнвестиции)",
+      "stats.asset.etf_fxrl":   "FXRL - Российские акции",
+      "stats.asset.etf_fxit":   "FXIT - IT-сектор",
+      "stats.asset.etf_fxus":   "FXUS - Акции США",
+      "stats.asset.etf_tmos":   "TMOS - Индекс МосБиржи",
+      "stats.asset.etf_sbsp":   "SBSP - S&P 500 (СберИнвестиции)",
       "stats.field.asset": "Актив / ETF",
 
-      // MOEX INTEGRATION — section labels for grouped asset list (RU only)
+      // MOEX INTEGRATION - section labels for grouped asset list (RU only)
       "stats.assetGroup.ru":      "Российские акции",
       "stats.assetGroup.etfMoex": "ETF на МосБирже",
 
-      // MOEX INTEGRATION — live quote card
+      // MOEX INTEGRATION - live quote card
       "stats.moex.price":   "Текущая цена",
       "stats.moex.change":  "Изменение за день",
       "stats.moex.loading": "Загружаем котировки с MOEX…",
       "stats.moex.error":   "Не удалось получить котировки",
       "stats.moex.source":  "Данные с MOEX ISS",
 
-      // METALS - IN DEVELOPMENT — info card
+      // METALS - IN DEVELOPMENT - info card
       "metals.inDev.title": "В разработке",
       "metals.inDev.desc":  "Поддержка золота, серебра и платины появится в одном из ближайших обновлений приложения.",
       "metals.inDev.toast": "Драгоценные металлы пока в разработке",
 
-      // PORTFOLIO ALLOCATION v2 — deposit promo + renamed capitalization
-      // FIX: Promo period for deposits — extended to 0–12 months, clearer hint
+      // PORTFOLIO ALLOCATION v2 - deposit promo + renamed capitalization
+      // FIX: Promo period for deposits - extended to 0–12 months, clearer hint
       // FIX: friendlier capitalization label + hint, replenishable hint, portfolio percentage hint
       "stats.field.capitalization": "Как часто начисляются проценты",
-      "stats.cap.hint": "Чем чаще начисляются проценты — тем быстрее они «работают» сами на себя и увеличивают итоговую доходность",
+      "stats.cap.hint": "Чем чаще начисляются проценты - тем быстрее они «работают» сами на себя и увеличивают итоговую доходность",
       "stats.field.promoMonths": "Промо-период (мес, 0–12)",
       "stats.field.promoMonthsHint": "Повышенная ставка на первые месяцы (обычно 1–3 мес, иногда до 6)",
       "stats.field.promoRate":   "Повышенная ставка на промо-период (% годовых)",
-      // FIX: dynamic deposit rate label — base only / after promo
+      // FIX: dynamic deposit rate label - base only / after promo
       "stats.field.depositRate":     "Процентная ставка (% годовых)",
       "stats.field.depositRateAfterPromo": "Ставка после промо-периода (% годовых)",
       "stats.deposit.effectiveBlended": "Эффективная ставка (промо + база)",
       "stats.deposit.effectivePreview": "Итоговая ожидаемая доходность: {pct}% годовых",
 
-      // PORTFOLIO ALLOCATION v2 — withdraw flow
+      // PORTFOLIO ALLOCATION v2 - withdraw flow
       "portfolio.withdraw":        "Вывести",
       "portfolio.restore":         "Вернуть",
       "portfolio.withdrawConfirm": "Вывести этот тип хранения? Доли активных типов будут пересчитаны автоматически.",
@@ -857,7 +857,7 @@
       "portfolio.rebalanced":      "Доли пересчитаны автоматически",
       "portfolio.composition":     "Состав",
 
-      // PORTFOLIO ALLOCATION + CARD EXPANSION — back-card per-type detail flow
+      // PORTFOLIO ALLOCATION + CARD EXPANSION - back-card per-type detail flow
       "portfolio.detail.viewMore":     "Посмотреть более детально",
       "portfolio.detail.section.params":    "Параметры",
       "portfolio.detail.section.share":     "Доля в портфеле",
@@ -912,9 +912,9 @@
       "timeline.minimum": "Минимум",
       "timeline.customTerm": "Пользовательский срок",
       "timeline.auto": "Авто",
-      "timeline.pausedHint": "Цель на паузе — срок начнёт влиять на расчёт после возобновления",
-      "timeline.unrealisticHint": "Установленный срок стал нереалистичным — используется автоматический расчёт",
-      "timeline.minLimitHint": "Ниже нельзя — срок станет нереалистичным при текущем темпе накоплений",
+      "timeline.pausedHint": "Цель на паузе - срок начнёт влиять на расчёт после возобновления",
+      "timeline.unrealisticHint": "Установленный срок стал нереалистичным - используется автоматический расчёт",
+      "timeline.minLimitHint": "Ниже нельзя - срок станет нереалистичным при текущем темпе накоплений",
       "timeline.saveBtn": "Сохранить сроки",
       "timeline.noChanges": "Сроки целей не были изменены",
       "timeline.saved": "Сроки целей сохранены",
@@ -959,11 +959,11 @@
       "debts.gracePeriodDays": "Льготный период, дней",
       "debts.minPaymentPercent": "Минимальный платёж, %",
       "debts.minPayment": "Минимальный платёж",
-      // FRIENDLY ANNUITY TEXT — заменили банковский термин на дружелюбную формулировку
-      "debts.annuityHint": "Платёж равными частями (как в большинстве российских банков). Если не указать свой платёж — приложение рассчитает его автоматически.",
-      "debts.cardHint": "Льготный период обычно 50–120 дней (Сбер, Тинькофф, Альфа). В этот период проценты не начисляются. Минимальный платёж — 5–10% от долга.",
+      // FRIENDLY ANNUITY TEXT - заменили банковский термин на дружелюбную формулировку
+      "debts.annuityHint": "Платёж равными частями (как в большинстве российских банков). Если не указать свой платёж - приложение рассчитает его автоматически.",
+      "debts.cardHint": "Льготный период обычно 50–120 дней (Сбер, Тинькофф, Альфа). В этот период проценты не начисляются. Минимальный платёж - 5–10% от долга.",
       "debts.graceActive": "До конца льготного периода: {days} дн.",
-      "debts.graceExpired": "Льготный период истёк — начисляются проценты",
+      "debts.graceExpired": "Льготный период истёк - начисляются проценты",
       "debts.alreadyPaid": "Уже выплачено",
       "debts.interestRemaining": "Осталось переплатить",
       "debts.estimatedPayoff": "Примерный срок полного погашения",
@@ -989,7 +989,7 @@
       // ── Misc extra ──
       "misc.defaultGoalTitle": "Основная цель",
 
-      // CUSTOM SCHEDULE LOGIC — ручной ввод «Свой график» (доход / расход)
+      // CUSTOM SCHEDULE LOGIC - ручной ввод «Свой график» (доход / расход)
       "cs.btn.add.income": "+ Записать поступление",
       "cs.btn.add.expense": "+ Записать расход",
       "cs.modal.title.income": "Ручной ввод поступления",
@@ -1000,9 +1000,9 @@
       "cs.field.amount.expense": "Сумма расхода",
       "cs.field.amountHint.income": "Введите реальную сумму, которую вы получили. Приложение сразу рассчитает, сколько от неё нужно отложить на цель.",
       "cs.field.amountHint.expense": "Введите реальную сумму, которую вы потратили. Запись попадёт в историю и учтётся в прогнозе.",
-      // UNIFIED CUSTOM SCHEDULE FLOW — динамическая подсказка под полем суммы,
+      // UNIFIED CUSTOM SCHEDULE FLOW - динамическая подсказка под полем суммы,
       // зависит от выбранной периодичности (weekly / biweekly / monthly / custom).
-      // Текст одинаковый для income/expense — отличается только глагол «получили/потратили».
+      // Текст одинаковый для income/expense - отличается только глагол «получили/потратили».
       "cs.field.amountHint.income.weekly": "Введите сумму. Приложение будет автоматически учитывать её каждую неделю.",
       "cs.field.amountHint.income.biweekly": "Введите сумму. Приложение будет автоматически учитывать её каждые две недели.",
       "cs.field.amountHint.income.monthly": "Введите сумму. Приложение будет автоматически учитывать её каждый месяц.",
@@ -1011,7 +1011,7 @@
       "cs.field.amountHint.expense.biweekly": "Введите сумму. Приложение будет автоматически учитывать её каждые две недели.",
       "cs.field.amountHint.expense.monthly": "Введите сумму. Приложение будет автоматически учитывать её каждый месяц.",
       "cs.field.amountHint.expense.custom": "Введите реальную сумму, которую вы потратили. Запись попадёт в историю и учтётся в прогнозе.",
-      // UNIFIED CUSTOM SCHEDULE FLOW — заголовки модалки с указанием частоты,
+      // UNIFIED CUSTOM SCHEDULE FLOW - заголовки модалки с указанием частоты,
       // чтобы пользователь понимал, что именно настраивает.
       "cs.modal.title.income.weekly": "Доход раз в неделю",
       "cs.modal.title.income.biweekly": "Доход раз в две недели",
@@ -1021,16 +1021,16 @@
       "cs.modal.title.expense.biweekly": "Расход раз в две недели",
       "cs.modal.title.expense.monthly": "Расход раз в месяц",
       "cs.modal.title.expense.custom": "Записать расход",
-      // UNIFIED CUSTOM SCHEDULE FLOW — badge «следующее: ...» внутри модалки.
-      "cs.modal.nextOccurrence.weekly": "Дальше — каждую неделю",
-      "cs.modal.nextOccurrence.biweekly": "Дальше — каждые две недели",
-      "cs.modal.nextOccurrence.monthly": "Дальше — каждый месяц",
+      // UNIFIED CUSTOM SCHEDULE FLOW - badge «следующее: ...» внутри модалки.
+      "cs.modal.nextOccurrence.weekly": "Дальше - каждую неделю",
+      "cs.modal.nextOccurrence.biweekly": "Дальше - каждые две недели",
+      "cs.modal.nextOccurrence.monthly": "Дальше - каждый месяц",
       "cs.modal.nextOccurrence.custom": "Каждый ввод вручную",
-      // UNIFIED CUSTOM SCHEDULE FLOW — live-preview (под полем «Дата»).
+      // UNIFIED CUSTOM SCHEDULE FLOW - live-preview (под полем «Дата»).
       "cs.preview.willDeposit": "Будет отложено на цель",
       "cs.preview.modeHint": "Расчёт от режима «{mode}»",
       "cs.preview.alreadyEnough": "Цель на этот период уже закрыта",
-      "cs.preview.expenseNote": "Расход не идёт на цель — учтётся в прогнозе",
+      "cs.preview.expenseNote": "Расход не идёт на цель - учтётся в прогнозе",
       "cs.field.date": "Дата",
       "cs.modal.continue": "Продолжить",
       "cs.modal.save": "Сохранить",
@@ -1051,17 +1051,17 @@
       "cs.toast.deleted": "Запись удалена",
       "cs.toast.updated": "Запись обновлена",
       "cs.toast.invalidAmount": "Введите корректную сумму",
-      "cs.toast.noGoal": "Сначала создайте цель — иначе не на что откладывать",
+      "cs.toast.noGoal": "Сначала создайте цель - иначе не на что откладывать",
       "cs.reminder.expenses.title": "Не забудьте ввести расходы",
-      "cs.reminder.expenses.subtitle": "Запишите расходы за этот период, если они были — прогноз станет точнее.",
+      "cs.reminder.expenses.subtitle": "Запишите расходы за этот период, если они были - прогноз станет точнее.",
       "cs.reminder.expenses.cta": "Записать расход",
       "cs.reminder.expenses.dismiss": "Позже",
-      // CUSTOM SCHEDULE v2 - fix main plan display — зеркальное напоминание о доходе.
+      // CUSTOM SCHEDULE v2 - fix main plan display - зеркальное напоминание о доходе.
       "cs.reminder.income.title": "Зафиксируйте доход за период",
-      "cs.reminder.income.subtitle": "Если за этот период был доход — впишите его, чтобы план отложений был точнее.",
+      "cs.reminder.income.subtitle": "Если за этот период был доход - впишите его, чтобы план отложений был точнее.",
       "cs.reminder.income.cta": "Записать поступление",
       "cs.reminder.income.dismiss": "Позже",
-      // CUSTOM SCHEDULE v2 - fix main plan display — кастомный экран «Текущий план».
+      // CUSTOM SCHEDULE v2 - fix main plan display - кастомный экран «Текущий план».
       "cs.plan.title": "Нужно отложить",
       "cs.plan.fromLast": "от последней суммы ({amount})",
       "cs.plan.fromLast.income": "от последнего поступления ({amount})",
@@ -1081,7 +1081,7 @@
       "cs.alloc.breakdown": "{income} − {expense} = свободные {free}",
       "cs.alloc.subTitle.income": "от поступления {amount}",
       "cs.alloc.subTitle.expense": "после расхода {amount}",
-      // FIX: custom schedule accumulation + counters update — аккумулированные ключи.
+      // FIX: custom schedule accumulation + counters update - аккумулированные ключи.
       "cs.plan.totalIncome": "Накоплено дохода",
       "cs.plan.totalExpense": "Расходы за период",
       "cs.plan.free": "Свободно",
@@ -1094,7 +1094,7 @@
       "cs.toast.alreadyDeposited": "Уже всё отложено по этим записям",
       "cs.summary.last.income": "Последнее поступление",
       "cs.summary.last.expense": "Последний расход",
-      // FIX: custom schedule accumulation + counters update — итоговые суммы.
+      // FIX: custom schedule accumulation + counters update - итоговые суммы.
       "cs.summary.total.income": "Накоплено за период",
       "cs.summary.total.expense": "Расходы за период",
       "cs.summary.deposited": "Отложено",
@@ -1178,11 +1178,11 @@
       "flex.customDays.income": "Select the days you receive income",
       "flex.customDays.expense": "Select the days expenses occur",
       "flex.model.title": "Your model",
-      // FINANCIAL EVENTS - INCOME ONLY — section is now exclusively for one-off
+      // FINANCIAL EVENTS - INCOME ONLY - section is now exclusively for one-off
       // unpredictable income (bonus, gift, debt repayment, sales, etc.). Expenses
       // are handled by a separate «Unexpected expense» button on the graph screen.
       "flex.events.title": "One-off income",
-      // FINANCIAL EVENTS - INCOME ONLY — subtitle is now a directive, not a
+      // FINANCIAL EVENTS - INCOME ONLY - subtitle is now a directive, not a
       // repetition of the examples. Examples live only in cf-event-examples.
       "flex.events.subtitle": "Recurring income is configured in the blocks above",
       "flex.events.hint": "Recurring income is configured in the blocks above",
@@ -1191,7 +1191,7 @@
       "flex.incomeAmount.placeholder": "Income amount",
       "flex.expenseAmount.placeholder": "Expense amount",
 
-      // ── Flexible model — current configuration summary ──
+      // ── Flexible model - current configuration summary ──
       "flex.current.title": "Current model",
       "flex.current.helper": "This model is used to calculate free cash flow and goal timing.",
       "flex.current.income": "Income",
@@ -1213,12 +1213,12 @@
       "flex.current.start": "Start",
       "flex.current.next": "Next",
       "flex.current.startNotSet": "set a start date",
-      "flex.current.editHint": "Change amount, frequency or start date — the forecast updates instantly",
+      "flex.current.editHint": "Change amount, frequency or start date - the forecast updates instantly",
       "flex.events.disabledHint": "In fixed mode events are added automatically. Switch to «Variable» to edit the schedule.",
       "flex.events.disabledShort": "Available only in variable mode",
       "flex.events.disabledTypeShort": "This category is set to fixed",
 
-      // NEW: fixed vs variable 11.05.2026 — read-only summary + variable inputs
+      // NEW: fixed vs variable 11.05.2026 - read-only summary + variable inputs
       "flex.fixedSummary.helper": "Using the values you entered when opening the flexible model",
       "flex.fixedSummary.empty.income": "Income is not set. Fill in «Income» on the main form.",
       "flex.fixedSummary.empty.expense": "Expenses are not set. Fill in «Expenses» on the main form.",
@@ -1257,7 +1257,7 @@
       "scenario.noBuf": "No cushion",
       "scenario.noBuf.desc": "All money goes directly toward the goal.",
       "scenario.withBuf": "With cushion",
-      "scenario.withBuf.desc": "Part of the funds goes to a reserve — protection against unexpected expenses.",
+      "scenario.withBuf.desc": "Part of the funds goes to a reserve - protection against unexpected expenses.",
 
       // ── History ──
       "history.title": "Account History",
@@ -1271,7 +1271,7 @@
       "accounts.saved": "Saved",
       "accounts.reserve": "Reserve",
       "accounts.reserveSub": "Emergency fund",
-      "accounts.mainHint": "This account reflects your savings under the Protocol plan. It can be a bank account, investment account, or cash — as long as the amount matches your calculations.",
+      "accounts.mainHint": "This account reflects your savings under the Protocol plan. It can be a bank account, investment account, or cash - as long as the amount matches your calculations.",
       "accounts.reserveHint": "The reserve is for emergencies. These funds are not used toward your goal and are only touched when necessary.",
       "accounts.newAccount": "New Account",
       "accounts.newAccountHint": "New account creation will be here.",
@@ -1306,7 +1306,7 @@
       "goals.reserveHint": "These funds are not used toward the goal and serve as an emergency cushion.",
 
       // ── Goal verdicts ──
-      "verdict.paused": "Goal is paused — no funds are being allocated.",
+      "verdict.paused": "Goal is paused - no funds are being allocated.",
       "verdict.complete": "Goal achieved. Protocol records your success.",
       "verdict.almostDone": "Goal is nearly complete. You're on track.",
       "verdict.inProgress": "Goal in progress. Consistency matters more than speed.",
@@ -1323,9 +1323,9 @@
       "goalHistory.empty": "No completed goals yet",
       "goalHistory.achieved": "Achieved in {n} mo.",
 
-      // ── GOAL COMPLETION FEATURE — congrats modal + empty state + history detail ──
-      // PREMIUM GOAL COMPLETION — title с принудительным переносом (CSS white-space:pre-line).
-      // FIX: goal completion UI — small 🎉 removed; big emoji on top kept.
+      // ── GOAL COMPLETION FEATURE - congrats modal + empty state + history detail ──
+      // PREMIUM GOAL COMPLETION - title с принудительным переносом (CSS white-space:pre-line).
+      // FIX: goal completion UI - small 🎉 removed; big emoji on top kept.
       "goalComplete.modal.title": "Congrats!\nGoal completed!",
       "goalComplete.modal.subtitle": "{amount} \u2022 \u201C{name}\u201D",
       "goalComplete.modal.emotional": "Well done! You've successfully reached your goal.",
@@ -1337,7 +1337,7 @@
       "goalEmpty.button": "Start saving for a new goal",
       "goalEmpty.verdict": "No active goal yet. Ready to start a new one?",
       // NEW: Full goal creation flow in Protocol tab
-      // FIX: new goal creation flow — title / tempo / duration keys removed (fields dropped).
+      // FIX: new goal creation flow - title / tempo / duration keys removed (fields dropped).
       "newGoal.screen.title": "New Goal",
       "newGoal.intro": "Fill in all fields \u2014 Protocol will build your savings plan",
       "newGoal.field.amount": "Goal amount",
@@ -1362,7 +1362,7 @@
       "goalHistory.detail.durationMonths": "{n} mo.",
       "goalHistory.detail.durationLessMonth": "Less than a month",
       "goalHistory.detail.close": "Close",
-      "goalHistory.detail.dateUnknown": "—",
+      "goalHistory.detail.dateUnknown": "-",
 
       // ── Advanced settings ──
       "advanced.title": "Advanced Settings",
@@ -1430,28 +1430,28 @@
       "onb.btn.done":        "Done",
       "onb.btn.skip":        "Skip",
       "onb.welcome.title":   "Hi there! 👋",
-      "onb.welcome.text":    "Let me quickly show you the basics — it will take less than a minute.",
+      "onb.welcome.text":    "Let me quickly show you the basics - it will take less than a minute.",
       "onb.income.title":    "Income",
       "onb.income.text":     "Add your salary and other regular sources of income here.",
       "onb.expenses.title":  "Expenses",
       "onb.expenses.text":   "Mandatory monthly spending goes here: rent, groceries, utilities.",
       "onb.goal.title":      "Goal",
-      "onb.goal.text":       "Set the amount you're saving toward — Protocol will build a plan to reach it.",
+      "onb.goal.text":       "Set the amount you're saving toward - Protocol will build a plan to reach it.",
       "onb.continue.title":  "Build the plan",
       "onb.continue.text":   "Tap «Continue» – you'll see the chart, expenses and history tracking.",
       "onb.mainAccount.title":"Main account",
-      "onb.mainAccount.text": "This shows your total savings — your main financial account in Protocol.",
+      "onb.mainAccount.text": "This shows your total savings - your main financial account in Protocol.",
       "onb.reserve.title":   "Reserve",
-      "onb.reserve.text":    "Your reserve — money set aside, separate from goals. Your financial safety cushion.",
+      "onb.reserve.text":    "Your reserve - money set aside, separate from goals. Your financial safety cushion.",
       "onb.profile.title":   "Premium & Profile",
-      "onb.profile.text":    "Inside the profile — Premium features, subscription status and fine-grained settings.",
+      "onb.profile.text":    "Inside the profile - Premium features, subscription status and fine-grained settings.",
       "onb.final.title":     "All set! 🎉",
       "onb.final.text":      "You now have full control over your finances. Good luck saving!",
-      // PREMIUM FEATURE TOURS — short mini-onboardings shown on first open of
+      // PREMIUM FEATURE TOURS - short mini-onboardings shown on first open of
       // each premium feature by a paid user.
       "onb.prem.btn.gotIt":     "Got it",
       "onb.prem.flexible.title":"Flexible Model",
-      "onb.prem.flexible.text": "Use it when income and expenses vary — freelance, side gigs, seasonal spending. Log each amount manually, and Protocol will precisely show how much is left to your goal.",
+      "onb.prem.flexible.text": "Use it when income and expenses vary - freelance, side gigs, seasonal spending. Log each amount manually, and Protocol will precisely show how much is left to your goal.",
       "onb.prem.pace.title":    "Savings Pace",
       "onb.prem.pace.text":     "Switch between Calm / Moderate / Aggressive when life changes. The plan recalculates automatically to match your new rhythm.",
       "onb.prem.debts.title":   "Debts & Credits",
@@ -1459,10 +1459,10 @@
       "onb.prem.advanced.title":"Advanced Settings",
       "onb.prem.advanced.text": "Fine-tune your plan: add multiple goals and customize deadlines for any of them. Make Protocol fit your style.",
       "onb.prem.stats.title":   "Account Statistics",
-      "onb.prem.stats.text":    "The back of the card — split savings across cash, stocks, deposits, precious metals. See the exact structure of your portfolio.",
+      "onb.prem.stats.text":    "The back of the card - split savings across cash, stocks, deposits, precious metals. See the exact structure of your portfolio.",
 
       "profile.user": "User",
-      // PREMIUM PROFILE BADGE — label of the emerald badge next to the name
+      // PREMIUM PROFILE BADGE - label of the emerald badge next to the name
       // (visible when isPremiumActive()=true).
       "profile.premiumBadge": "Premium",
       "profile.settings": "⚙️ Settings",
@@ -1470,12 +1470,12 @@
       "profile.resetPlan": "🔄 Reset Plan",
       // NEW: Full reset button in Profile
       "profile.fullReset": "🆕 Start Over",
-      // STATISTICS COLLECTION — community stats block headings
+      // STATISTICS COLLECTION - community stats block headings
       "profile.stats.title":   "Community Stats",
       "profile.stats.premium": "Premium users",
       "profile.stats.free":    "Free users",
       "profile.stats.total":   "Total",
-      // COMMUNITY STATS — extended admin metrics (Stars + growth)
+      // COMMUNITY STATS - extended admin metrics (Stars + growth)
       "profile.stats.subtitle.revenue":  "Stars revenue",
       "profile.stats.subtitle.activity": "Activity",
       "profile.stats.starsTotal":   "Total Stars earned",
@@ -1490,7 +1490,7 @@
       "report.modal.send": "Send",
       "report.modal.cancel": "Cancel",
       "report.modal.empty": "Please describe the problem",
-      // COMPACT BUTTONS — короткие варианты помещаются в компактную кнопку
+      // COMPACT BUTTONS - короткие варианты помещаются в компактную кнопку
       "report.modal.sending": "Sending...",
       "report.toast.success": "Thanks! We'll look into it and reply as soon as possible",
       "report.toast.failed": "Could not send the report. Please try again later",
@@ -1498,7 +1498,7 @@
       // NEW: Media attachment in reports
       "report.modal.attachMedia": "📎 Attach photo/video",
       "report.modal.mediaLimit": "You can attach up to 5 files (max 25 MB each)",
-      // COMPACT BUTTONS — короткий вариант помещается в компактную кнопку
+      // COMPACT BUTTONS - короткий вариант помещается в компактную кнопку
       "report.modal.uploading": "Uploading...",
       "report.toast.mediaTooMany": "Maximum 5 files",
       "report.toast.mediaTooBig": "File too large (max 25 MB): {name}",
@@ -1506,14 +1506,14 @@
       "report.toast.mediaUploadError": "Could not upload file: {name}",
 
       // ── Confirm reset ──
-      // NEW: Full reset button in Profile — beefed-up wording listing all reset categories.
+      // NEW: Full reset button in Profile - beefed-up wording listing all reset categories.
       "reset.text": "If you press \u201CStart over\u201D, everything will be reset: current goal, savings, goal history and account statistics.",
       "reset.cancel": "Cancel",
       "reset.confirm": "Start over",
 
       // ── Unexpected expense ──
       "unexpected.title": "Unexpected Expense",
-      // FINANCIAL EVENTS - INCOME ONLY (mirror UX for expense) — available-balance hint.
+      // FINANCIAL EVENTS - INCOME ONLY (mirror UX for expense) - available-balance hint.
       "unexpected.available": "Available: {amount}",
       "unexpected.overLimit": "Exceeds available balance ({amount})",
       "unexpected.desc": "This records unplanned expenses. After confirmation, Protocol will recalculate your financial plan, adjust the goal timeline, and update analytics.",
@@ -1528,36 +1528,36 @@
       "unexpected.skipConfirm": "Confirm skip",
       "unexpected.skipInfo": "This month will be skipped. Goal timeline extends by 1 month.",
 
-      // PREMIUM SYSTEM — premium modal texts (EN)
+      // PREMIUM SYSTEM - premium modal texts (EN)
       "premium.title": "Protocol Premium",
       "premium.subtitle": "Full control over your finances",
-      "premium.statsLocked": "Statistics — Premium only",
+      "premium.statsLocked": "Statistics - Premium only",
       "premium.f1.title": "Control your pace",
-      "premium.f1.text": "Choose between calm, moderate, and aggressive saving modes. Set the speed that fits your lifestyle — and reach your goal exactly when you want.",
+      "premium.f1.text": "Choose between calm, moderate, and aggressive saving modes. Set the speed that fits your lifestyle - and reach your goal exactly when you want.",
       "premium.f2.title": "Debts under control",
-      "premium.f2.text": "Mortgage, loan, installment, credit card — all accounted for automatically. Annuity calculation, grace periods, overpayment forecast. Stop losing money on interest.",
+      "premium.f2.text": "Mortgage, loan, installment, credit card - all accounted for automatically. Annuity calculation, grace periods, overpayment forecast. Stop losing money on interest.",
       "premium.f3.title": "Flexible model",
-      "premium.f3.text": "Irregular income, seasonal expenses, freelance — a basic plan won't cut it. The flexible model adapts to real life and instantly recalculates how much you need to save.",
+      "premium.f3.text": "Irregular income, seasonal expenses, freelance - a basic plan won't cut it. The flexible model adapts to real life and instantly recalculates how much you need to save.",
       "premium.f4.title": "Advanced settings",
-      "premium.f4.text": "Allocate savings across instruments: stocks, bonds, deposits, cash. See your exact portfolio composition and make data-driven decisions.",
+      "premium.f4.text": "Create multiple goals at once - save for a home, vacation and emergency fund in parallel. Adjust deadlines individually for each goal. Protocol adapts the plan to your real life.",
       "premium.f5.title": "Account statistics",
-      "premium.f5.text": "Flip the account card to see the full picture: how much you've saved, deposit dynamics, and next-month forecast.",
+      "premium.f5.text": "Flip the account card - and you'll be able to allocate savings across instruments: stocks, cash, deposits. See an accurate breakdown of your invested savings.",
       "premium.buyBtn": "Get Premium",
       "premium.price": "150 ⭐ / 30 days",
       "premium.ctaHint": "Full access to all features · 30 days",
 
-      // SUBSCRIPTION MODEL — auto-renew checkbox
+      // SUBSCRIPTION MODEL - auto-renew checkbox
       "premium.autoRenew.label": "Auto-renew every 30 days",
 
-      // SUBSCRIPTION MODEL — current subscription status block in premium modal
+      // SUBSCRIPTION MODEL - current subscription status block in premium modal
       "premium.status.activeUntil": "Premium active until",
       "premium.status.autoRenewOn": "🔄 Auto-renewal is ON",
       "premium.status.autoRenewOff": "ℹ️ No auto-renewal",
 
-      // TELEGRAM STARS — payment screens
+      // TELEGRAM STARS - payment screens
       "payment.processing": "Opening Telegram Stars payment…",
       "payment.success.title": "Premium activated!",
-      "payment.success.text": "Check your chat with the bot — all subscription details are there",
+      "payment.success.text": "Check your chat with the bot - all subscription details are there",
       "payment.cancelled": "Payment cancelled",
       "payment.failed": "Payment failed. Please try again",
       "payment.unavailable": "Payment is temporarily unavailable",
@@ -1618,7 +1618,7 @@
       "debts.breakdown.toSavings": "→ to savings",
 
       // ── Event editor ──
-      // FINANCIAL EVENTS - INCOME ONLY — fixed «Unexpected income» modal title.
+      // FINANCIAL EVENTS - INCOME ONLY - fixed «Unexpected income» modal title.
       "event.title": "Unexpected income",
       "event.subtitle": "Bonus, gift, debt repayment, sale of items, etc.",
       "event.examples": "💡 E.g.: bonus $500, gift $50, debt repayment, gear sale",
@@ -1636,9 +1636,9 @@
 
       // ── Engine advice ──
       "engine.noBalance": "First, you need to balance your income and expenses.",
-      "engine.longTerm": "This is a long-term goal — consider whether you're ready for the wait.",
+      "engine.longTerm": "This is a long-term goal - consider whether you're ready for the wait.",
       "engine.aggressive": "Aggressive mode requires discipline and stable income.",
-      "engine.tooLow": "You're saving too little — goal progress will be very slow.",
+      "engine.tooLow": "You're saving too little - goal progress will be very slow.",
       "engine.stable": "The plan looks sustainable and realistic.",
 
       // ── Months (nominative) ──
@@ -1655,7 +1655,7 @@
       "month.10": "November",
       "month.11": "December",
 
-      // ── Months (genitive — same in English) ──
+      // ── Months (genitive - same in English) ──
       "monthGen.0": "January",
       "monthGen.1": "February",
       "monthGen.2": "March",
@@ -1688,22 +1688,22 @@
       "settings.allocation.goal": "All to goal",
       "settings.allocation.buffer": "With reserve",
       "settings.allowOverpay": "Allow overpayment",
-      "settings.allowOverpay.on": "You can save more than planned — excess will count in future periods",
+      "settings.allowOverpay.on": "You can save more than planned - excess will count in future periods",
       "settings.allowOverpay.off": "Amounts above the plan will not carry forward",
       "settings.section.interface": "Interface",
       "settings.animations": "Animations",
       "settings.animations.hint": "Controls smooth UI animations",
       "settings.numberFormat": "Number format",
       "settings.numberFormat.hint": "Choose how to display thousand separators",
-      // LOADING VIDEO TOGGLE — Interface section toggle
+      // LOADING VIDEO TOGGLE - Interface section toggle
       "settings.disableLoadingVideo": "Disable video loading",
-      "settings.disableLoadingVideo.hint": "Disables background videos on the loading screen and in the Premium tab — saves traffic and battery",
+      "settings.disableLoadingVideo.hint": "Disables background videos on the loading screen and in the Premium tab - saves traffic and battery",
       "settings.section.notifications": "Notifications",
-      // HELP & ONBOARDING — section and «Restart onboarding tips» row.
+      // HELP & ONBOARDING - section and «Restart onboarding tips» row.
       "settings.section.help":            "Help",
       "settings.restartOnboarding":       "Restart onboarding tips",
       "settings.restartOnboarding.hint":  "Replay the intro tour and all premium feature hints",
-      "settings.restartOnboarding.toast": "Tips reset — launching the tour",
+      "settings.restartOnboarding.toast": "Tips reset - launching the tour",
       "settings.notifications": "Reminders",
       "settings.notifications.hint": "Reminders help you stay on track with deposits and payments",
       "settings.depositReminder": "Deposit reminder",
@@ -1750,7 +1750,7 @@
       "freq.variablePlural": "variable",
 
       // ── Goal Edit Warnings ──
-      "goalEdit.warn3x": "Goal increased by more than 3x. The plan will take significantly longer — make sure this is intentional.",
+      "goalEdit.warn3x": "Goal increased by more than 3x. The plan will take significantly longer - make sure this is intentional.",
       "goalEdit.warn2x": "Goal doubled. Timeline and effort will change.",
       "goalEdit.warnIncrease": "Goal increased noticeably. Protocol will recalculate the plan.",
 
@@ -1831,7 +1831,7 @@
 
       // NEW: Storage type fields
       "stats.field.ticker": "Ticker or name (e.g. SBER, VOO)",
-      "stats.field.tickerHint": "Free text — used as a reference",
+      "stats.field.tickerHint": "Free text - used as a reference",
       "stats.field.expectedReturn": "Expected annual return (%)",
       "stats.field.depositRate": "Interest rate (% annual)",
       "stats.field.depositTerm": "Deposit term (months)",
@@ -1839,7 +1839,7 @@
       "stats.cap.monthly": "Monthly",
       "stats.cap.quarterly": "Quarterly",
       "stats.cap.end": "At the end",
-      // FUTURE DEPOSITS PER ITEM — per-allocation auto-replenishment toggle.
+      // FUTURE DEPOSITS PER ITEM - per-allocation auto-replenishment toggle.
       "stats.field.acceptsFutureDeposits":       "Auto-replenish from future savings",
       "stats.field.acceptsFutureDepositsHint":   "Future savings (income) will be automatically allocated into this storage type",
       "stats.field.acceptsFutureDeposits.short": "Auto top-ups",
@@ -1857,10 +1857,10 @@
       "stats.metalInfo": "Metal",
       "stats.stockInfo": "Instrument",
 
-      // PORTFOLIO ALLOCATION LOGIC — portfolio composition UI
+      // PORTFOLIO ALLOCATION LOGIC - portfolio composition UI
       "portfolio.title": "Portfolio composition",
       "portfolio.subtitle": "Split your savings across storage types",
-      "portfolio.empty": "Portfolio is empty — add your first storage type",
+      "portfolio.empty": "Portfolio is empty - add your first storage type",
       "portfolio.addBtn": "+ Add storage type",
       "portfolio.allocated": "Allocated",
       "portfolio.remaining": "Left to allocate",
@@ -1871,12 +1871,12 @@
       "portfolio.percentagePlaceholder": "e.g. 40",
       "portfolio.remove": "Remove",
       "portfolio.edit": "Edit",
-      // FUTURE DEPOSITS PER ITEM — composition footer chip labels.
+      // FUTURE DEPOSITS PER ITEM - composition footer chip labels.
       "portfolio.futureAccept.none":    "No auto top-ups",
       "portfolio.futureAccept.partial": "Auto top-ups: {n} of {total}",
       "portfolio.futureAccept.all":     "Auto top-ups in all",
 
-      // FIX: portfolio UX v2 — required fields + soft-disabled add btn + live amount.
+      // FIX: portfolio UX v2 - required fields + soft-disabled add btn + live amount.
       "portfolio.addBtn.fullToast":     "You're already using 100% of your funds. To add a new type, reduce the share of an existing one.",
       "portfolio.validation.requiredFields": "Please fill in all required fields",
       "portfolio.percentage.liveLabel": "= {amount}",
@@ -1890,7 +1890,7 @@
       "portfolio.validation.fillFields": "Please fill in all required fields",
       "portfolio.validation.percentageInvalid": "Share must be between 1 and 100",
 
-      // MOEX INTEGRATION — preset assets (RU stocks + MOEX ETFs only)
+      // MOEX INTEGRATION - preset assets (RU stocks + MOEX ETFs only)
       "stats.asset.ru_sber":    "Sber (SBER)",
       "stats.asset.ru_gazprom": "Gazprom (GAZP)",
       "stats.asset.ru_yandex":  "Yandex (YDEX)",
@@ -1901,44 +1901,44 @@
       "stats.asset.ru_rosneft": "Rosneft (ROSN)",
       "stats.asset.ru_vk":      "VK (VKCO)",
       "stats.asset.ru_polyus":  "Polyus (PLZL)",
-      "stats.asset.etf_fxrl":   "FXRL — Russian equities",
-      "stats.asset.etf_fxit":   "FXIT — IT sector",
-      "stats.asset.etf_fxus":   "FXUS — US equities",
-      "stats.asset.etf_tmos":   "TMOS — MOEX Index",
-      "stats.asset.etf_sbsp":   "SBSP — S&P 500 (SberInvest)",
+      "stats.asset.etf_fxrl":   "FXRL - Russian equities",
+      "stats.asset.etf_fxit":   "FXIT - IT sector",
+      "stats.asset.etf_fxus":   "FXUS - US equities",
+      "stats.asset.etf_tmos":   "TMOS - MOEX Index",
+      "stats.asset.etf_sbsp":   "SBSP - S&P 500 (SberInvest)",
       "stats.field.asset": "Asset / ETF",
 
-      // MOEX INTEGRATION — section labels for grouped asset list (RU only)
+      // MOEX INTEGRATION - section labels for grouped asset list (RU only)
       "stats.assetGroup.ru":      "Russian stocks",
       "stats.assetGroup.etfMoex": "MOEX ETFs",
 
-      // MOEX INTEGRATION — live quote card
+      // MOEX INTEGRATION - live quote card
       "stats.moex.price":   "Current price",
       "stats.moex.change":  "Change today",
       "stats.moex.loading": "Loading MOEX quotes…",
       "stats.moex.error":   "Failed to load quotes",
       "stats.moex.source":  "Data from MOEX ISS",
 
-      // METALS - IN DEVELOPMENT — info card
+      // METALS - IN DEVELOPMENT - info card
       "metals.inDev.title": "Coming soon",
       "metals.inDev.desc":  "Support for gold, silver and platinum will arrive in one of the upcoming app updates.",
       "metals.inDev.toast": "Precious metals are coming soon",
 
-      // PORTFOLIO ALLOCATION v2 — deposit promo + renamed capitalization
-      // FIX: Promo period for deposits — extended to 0–12 months, clearer hint
+      // PORTFOLIO ALLOCATION v2 - deposit promo + renamed capitalization
+      // FIX: Promo period for deposits - extended to 0–12 months, clearer hint
       // FIX: friendlier capitalization label + hint, replenishable hint, portfolio percentage hint
       "stats.field.capitalization": "How often interest is credited",
       "stats.cap.hint": "The more often interest is credited, the more it compounds and grows your final yield",
       "stats.field.promoMonths": "Promo period (months, 0–12)",
       "stats.field.promoMonthsHint": "Higher rate for the first months (usually 1–3, sometimes up to 6)",
       "stats.field.promoRate":   "Promo rate (% annual)",
-      // FIX: dynamic deposit rate label — base only / after promo
+      // FIX: dynamic deposit rate label - base only / after promo
       "stats.field.depositRate":     "Interest rate (% annual)",
       "stats.field.depositRateAfterPromo": "Rate after promo (% annual)",
       "stats.deposit.effectiveBlended": "Effective rate (promo + base)",
       "stats.deposit.effectivePreview": "Estimated annual yield: {pct}% p.a.",
 
-      // PORTFOLIO ALLOCATION v2 — withdraw flow
+      // PORTFOLIO ALLOCATION v2 - withdraw flow
       "portfolio.withdraw":        "Withdraw",
       "portfolio.restore":         "Restore",
       "portfolio.withdrawConfirm": "Withdraw this storage type? Active shares will be recalculated automatically.",
@@ -1948,7 +1948,7 @@
       "portfolio.rebalanced":      "Shares rebalanced automatically",
       "portfolio.composition":     "Composition",
 
-      // PORTFOLIO ALLOCATION + CARD EXPANSION — back-card per-type detail flow
+      // PORTFOLIO ALLOCATION + CARD EXPANSION - back-card per-type detail flow
       "portfolio.detail.viewMore":     "View more details",
       "portfolio.detail.section.params":    "Parameters",
       "portfolio.detail.section.share":     "Share of portfolio",
@@ -2003,9 +2003,9 @@
       "timeline.minimum": "Minimum",
       "timeline.customTerm": "Custom term",
       "timeline.auto": "Auto",
-      "timeline.pausedHint": "Goal is paused — the timeline will apply once resumed",
-      "timeline.unrealisticHint": "The set term has become unrealistic — automatic calculation is used",
-      "timeline.minLimitHint": "Cannot go lower — term would be unrealistic at current pace",
+      "timeline.pausedHint": "Goal is paused - the timeline will apply once resumed",
+      "timeline.unrealisticHint": "The set term has become unrealistic - automatic calculation is used",
+      "timeline.minLimitHint": "Cannot go lower - term would be unrealistic at current pace",
       "timeline.saveBtn": "Save timelines",
       "timeline.noChanges": "Goal timelines were not changed",
       "timeline.saved": "Goal timelines saved",
@@ -2051,10 +2051,10 @@
       "debts.minPaymentPercent": "Minimum payment, %",
       "debts.minPayment": "Minimum payment",
       // FRIENDLY ANNUITY TEXT
-      "debts.annuityHint": "Equal-installment payment (as in most Russian banks). If you don't enter your own payment — the app will calculate it for you.",
+      "debts.annuityHint": "Equal-installment payment (as in most Russian banks). If you don't enter your own payment - the app will calculate it for you.",
       "debts.cardHint": "Grace period is typically 50–120 days (Sber, Tinkoff, Alfa). No interest accrues during this period. Minimum payment is 5–10% of the balance.",
       "debts.graceActive": "Grace period ends in: {days} d.",
-      "debts.graceExpired": "Grace period expired — interest is being charged",
+      "debts.graceExpired": "Grace period expired - interest is being charged",
       "debts.alreadyPaid": "Already paid",
       "debts.interestRemaining": "Interest remaining",
       "debts.estimatedPayoff": "Estimated full payoff",
@@ -2080,7 +2080,7 @@
       // ── Misc extra ──
       "misc.defaultGoalTitle": "Main Goal",
 
-      // CUSTOM SCHEDULE LOGIC — manual entry flow (income / expense)
+      // CUSTOM SCHEDULE LOGIC - manual entry flow (income / expense)
       "cs.btn.add.income": "+ Record income",
       "cs.btn.add.expense": "+ Record expense",
       "cs.modal.title.income": "Record income",
@@ -2091,7 +2091,7 @@
       "cs.field.amount.expense": "Expense amount",
       "cs.field.amountHint.income": "Enter the real amount you received. The app will instantly calculate how much of it should go toward your goal.",
       "cs.field.amountHint.expense": "Enter the real amount you spent. The entry will be saved in history and factored into the forecast.",
-      // UNIFIED CUSTOM SCHEDULE FLOW — dynamic hint under the amount field,
+      // UNIFIED CUSTOM SCHEDULE FLOW - dynamic hint under the amount field,
       // changes with the chosen frequency (weekly / biweekly / monthly / custom).
       "cs.field.amountHint.income.weekly": "Enter the amount. The app will automatically count it every week.",
       "cs.field.amountHint.income.biweekly": "Enter the amount. The app will automatically count it every two weeks.",
@@ -2101,7 +2101,7 @@
       "cs.field.amountHint.expense.biweekly": "Enter the amount. The app will automatically count it every two weeks.",
       "cs.field.amountHint.expense.monthly": "Enter the amount. The app will automatically count it every month.",
       "cs.field.amountHint.expense.custom": "Enter the real amount you spent. The entry will be saved in history and factored into the forecast.",
-      // UNIFIED CUSTOM SCHEDULE FLOW — frequency-aware modal titles
+      // UNIFIED CUSTOM SCHEDULE FLOW - frequency-aware modal titles
       "cs.modal.title.income.weekly": "Weekly income",
       "cs.modal.title.income.biweekly": "Bi-weekly income",
       "cs.modal.title.income.monthly": "Monthly income",
@@ -2110,16 +2110,16 @@
       "cs.modal.title.expense.biweekly": "Bi-weekly expense",
       "cs.modal.title.expense.monthly": "Monthly expense",
       "cs.modal.title.expense.custom": "Record expense",
-      // UNIFIED CUSTOM SCHEDULE FLOW — badge «next: ...»
+      // UNIFIED CUSTOM SCHEDULE FLOW - badge «next: ...»
       "cs.modal.nextOccurrence.weekly": "Repeats every week",
       "cs.modal.nextOccurrence.biweekly": "Repeats every two weeks",
       "cs.modal.nextOccurrence.monthly": "Repeats every month",
       "cs.modal.nextOccurrence.custom": "Manual entries only",
-      // UNIFIED CUSTOM SCHEDULE FLOW — live-preview labels
+      // UNIFIED CUSTOM SCHEDULE FLOW - live-preview labels
       "cs.preview.willDeposit": "Will allocate to goal",
       "cs.preview.modeHint": "Based on «{mode}» mode",
       "cs.preview.alreadyEnough": "Goal target for this period is already covered",
-      "cs.preview.expenseNote": "Expenses don't go to the goal — only factored into the forecast",
+      "cs.preview.expenseNote": "Expenses don't go to the goal - only factored into the forecast",
       "cs.field.date": "Date",
       "cs.modal.continue": "Continue",
       "cs.modal.save": "Save",
@@ -2140,17 +2140,17 @@
       "cs.toast.deleted": "Entry deleted",
       "cs.toast.updated": "Entry updated",
       "cs.toast.invalidAmount": "Enter a valid amount",
-      "cs.toast.noGoal": "Create a goal first — there's nothing to save toward yet",
+      "cs.toast.noGoal": "Create a goal first - there's nothing to save toward yet",
       "cs.reminder.expenses.title": "Don't forget your expenses",
-      "cs.reminder.expenses.subtitle": "Record this period's expenses if there were any — the forecast will be more accurate.",
+      "cs.reminder.expenses.subtitle": "Record this period's expenses if there were any - the forecast will be more accurate.",
       "cs.reminder.expenses.cta": "Record expense",
       "cs.reminder.expenses.dismiss": "Later",
-      // CUSTOM SCHEDULE v2 - fix main plan display — mirrored prompt for income.
+      // CUSTOM SCHEDULE v2 - fix main plan display - mirrored prompt for income.
       "cs.reminder.income.title": "Record this period's income",
-      "cs.reminder.income.subtitle": "If you had any income this period — record it so the allocation plan is more accurate.",
+      "cs.reminder.income.subtitle": "If you had any income this period - record it so the allocation plan is more accurate.",
       "cs.reminder.income.cta": "Record income",
       "cs.reminder.income.dismiss": "Later",
-      // CUSTOM SCHEDULE v2 - fix main plan display — custom-mode plan header.
+      // CUSTOM SCHEDULE v2 - fix main plan display - custom-mode plan header.
       "cs.plan.title": "You should save",
       "cs.plan.fromLast": "of the last amount ({amount})",
       "cs.plan.fromLast.income": "of the last income ({amount})",
@@ -2170,7 +2170,7 @@
       "cs.alloc.breakdown": "{income} − {expense} = free {free}",
       "cs.alloc.subTitle.income": "from income {amount}",
       "cs.alloc.subTitle.expense": "after expense {amount}",
-      // FIX: custom schedule accumulation + counters update — accumulated keys.
+      // FIX: custom schedule accumulation + counters update - accumulated keys.
       "cs.plan.totalIncome": "Period income",
       "cs.plan.totalExpense": "Period expenses",
       "cs.plan.free": "Free",
@@ -2183,7 +2183,7 @@
       "cs.toast.alreadyDeposited": "All entries are already allocated",
       "cs.summary.last.income": "Last income",
       "cs.summary.last.expense": "Last expense",
-      // FIX: custom schedule accumulation + counters update — accumulated totals.
+      // FIX: custom schedule accumulation + counters update - accumulated totals.
       "cs.summary.total.income": "Period income",
       "cs.summary.total.expense": "Period expenses",
       "cs.summary.deposited": "Allocated",
