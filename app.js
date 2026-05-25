@@ -3803,64 +3803,6 @@ if (goalHistoryBack) {
     });
   }
 
-  // HELP & ONBOARDING - перезапуск всех подсказок (основной тур + premium-туры).
-  // Сбрасывает оба флага в state, сохраняет, закрывает экран настроек и
-  // запускает startOnboarding() с небольшой задержкой под screen-transition.
-  var restartOnbBtn = document.getElementById("settingsRestartOnboarding");
-  if (restartOnbBtn) {
-    restartOnbBtn.addEventListener("click", function () {
-      if (typeof haptic === "function") { try { haptic("light"); } catch (_e) {} }
-      try {
-        // Сбрасываем флаги. Используем updateState() для immutable update'а -
-        // он автоматически дёрнет saveState() через хук в state-manager.
-        if (typeof updateState === "function") {
-          updateState({
-            onboardingCompleted: false,
-            premiumOnboardingCompleted: {}
-          });
-        } else if (window.appState) {
-          window.appState.onboardingCompleted = false;
-          window.appState.premiumOnboardingCompleted = {};
-        }
-        // Дублируем saveFullState() - он гарантирует push в storage layer
-        // (localStorage + Supabase + Cloud Storage). Безопасно вызывать
-        // даже если updateState уже сохранил - saveFullState идемпотентна.
-        if (typeof saveFullState === "function") saveFullState();
-      } catch (_e) { /* noop */ }
-
-      // Toast-feedback пользователю (короткий, чтобы не мешать туру).
-      if (typeof showToast === "function") {
-        try { showToast(t("settings.restartOnboarding.toast"), "success"); }
-        catch (_e) { /* noop */ }
-      }
-
-      // Закрываем настройки → переходим на calc → запускаем тур.
-      // startOnboarding() сам переключит screen если потребуется, но
-      // явный openScreen('calc') даёт более плавный visual flow
-      // (settings → calc → highlight на welcome shown).
-      try {
-        var calcNavBtn = document.querySelector('.bottom-nav .nav-btn[data-screen="calc"]');
-        if (typeof openScreen === "function") openScreen("calc", calcNavBtn || null);
-        if (isInitialized && typeof showBottomNav === "function") showBottomNav();
-      } catch (_e) { /* noop */ }
-
-      // Задержка 400ms - даём screen-transition + iOS-keyboard scroll-up
-      // завершиться, чтобы tour измерил getBoundingClientRect по итоговому
-      // layout'у. force:true обходит и defensive-фильтр _userHasMeaningfulData
-      // (у пользователя точно есть данные, раз он жмёт «перезапустить»),
-      // и проверку флага onboardingCompleted.
-      setTimeout(function () {
-        try {
-          if (typeof startTour === "function") {
-            startTour("firstLaunch", { force: true });
-          } else if (typeof startOnboarding === "function") {
-            startOnboarding();
-          }
-        } catch (_e) { /* noop */ }
-      }, 400);
-    });
-  }
-
   // Apply persisted settings on load
   var s = getState().settings || {};
   document.body.classList.toggle("reduce-motion", !s.animationsEnabled);

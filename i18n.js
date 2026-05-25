@@ -451,7 +451,7 @@
       "premium.f5.title": "Статистика счёта",
       "premium.f5.text": "Переверни карточку счёта - и сможешь распределять накопления по инструментам: акции, наличные, вклады. Видь точное отражение своих вложенных накоплений.",
       "premium.buyBtn": "Оформить Premium",
-      "premium.price": "150 ⭐ / 30 дней",
+      "premium.price": "400 ⭐ / 30 дней",
       "premium.ctaHint": "Полный доступ ко всем функциям · 30 дней",
 
       // SUBSCRIPTION MODEL - чекбокс автопродления
@@ -608,11 +608,6 @@
       "settings.disableLoadingVideo": "Отключить загрузку видео",
       "settings.disableLoadingVideo.hint": "Отключает фоновые видео на экране загрузки и в премиум-вкладке - экономит трафик и батарею",
       "settings.section.notifications": "Уведомления",
-      // HELP & ONBOARDING - раздел и пункт «Перезапустить подсказки».
-      "settings.section.help":            "Помощь",
-      "settings.restartOnboarding":       "Перезапустить подсказки",
-      "settings.restartOnboarding.hint":  "Пройти заново вступительный тур и все премиум-подсказки",
-      "settings.restartOnboarding.toast": "Подсказки сброшены - запускаем тур",
       "settings.notifications": "Напоминания",
       "settings.notifications.hint": "Напоминания помогут не пропускать взносы и выплаты",
       "settings.depositReminder": "Напоминание о внесении",
@@ -1543,7 +1538,7 @@
       "premium.f5.title": "Account statistics",
       "premium.f5.text": "Flip the account card - and you'll be able to allocate savings across instruments: stocks, cash, deposits. See an accurate breakdown of your invested savings.",
       "premium.buyBtn": "Get Premium",
-      "premium.price": "150 ⭐ / 30 days",
+      "premium.price": "400 ⭐ / 30 days",
       "premium.ctaHint": "Full access to all features · 30 days",
 
       // SUBSCRIPTION MODEL - auto-renew checkbox
@@ -1699,11 +1694,6 @@
       "settings.disableLoadingVideo": "Disable video loading",
       "settings.disableLoadingVideo.hint": "Disables background videos on the loading screen and in the Premium tab - saves traffic and battery",
       "settings.section.notifications": "Notifications",
-      // HELP & ONBOARDING - section and «Restart onboarding tips» row.
-      "settings.section.help":            "Help",
-      "settings.restartOnboarding":       "Restart onboarding tips",
-      "settings.restartOnboarding.hint":  "Replay the intro tour and all premium feature hints",
-      "settings.restartOnboarding.toast": "Tips reset - launching the tour",
       "settings.notifications": "Reminders",
       "settings.notifications.hint": "Reminders help you stay on track with deposits and payments",
       "settings.depositReminder": "Deposit reminder",
