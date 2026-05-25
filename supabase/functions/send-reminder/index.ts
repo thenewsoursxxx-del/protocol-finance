@@ -216,12 +216,25 @@ Deno.serve(async (req) => {
 
   const nowMs = Date.now();
 
+  // Опциональный body: { force_telegram_id?: number, dry_run?: boolean }
+  // force_telegram_id - обрабатывает только этого юзера и обходит проверку часа
+  //                     (для ручного тестирования). Гейты notificationsEnabled
+  //                     и isInitialized остаются.
+  // dry_run - всё считает, но не шлёт.
+  let body: any = {};
+  try { body = await req.json(); } catch { /* GET / пустое тело - ok */ }
+  const forceTgId: number | null = Number.isFinite(Number(body?.force_telegram_id))
+    ? Number(body.force_telegram_id) : null;
+  const dryRun = body?.dry_run === true;
+
   // ── 1. Достаём пользователей: users (chat_id) + user_state.data ──
   // Language лежит в user_state.data.settings.language - в users его нет.
-  const { data: users, error: usersErr } = await supabase
+  let usersQuery = supabase
     .from("users")
     .select("telegram_id, chat_id")
     .not("chat_id", "is", null);
+  if (forceTgId) usersQuery = usersQuery.eq("telegram_id", forceTgId);
+  const { data: users, error: usersErr } = await usersQuery;
 
   if (usersErr) {
     console.error("[reminder] users query failed:", usersErr);
@@ -260,12 +273,16 @@ Deno.serve(async (req) => {
     // Гейт 3: opt-out от любых рассылок (broadcast use only, но тоже уважаем).
     if (s.notifications_opt_out === true) { skipped++; continue; }
 
-    // Гейт 4: попадаем ли в "час напоминаний" пользователя?
     const tzOffset = Number(settings.tzOffsetMinutes);
     const tz = Number.isFinite(tzOffset) ? tzOffset : 180; // дефолт UTC+3 (МСК)
-    const reminderHour = parseReminderHour(settings.reminderTime);
-    const localHour = userLocalHour(nowMs, tz);
-    if (localHour !== reminderHour) { skipped++; continue; }
+
+    // Гейт 4: попадаем ли в "час напоминаний" пользователя?
+    // force_telegram_id обходит эту проверку (для ручного теста).
+    if (!forceTgId) {
+      const reminderHour = parseReminderHour(settings.reminderTime);
+      const localHour = userLocalHour(nowMs, tz);
+      if (localHour !== reminderHour) { skipped++; continue; }
+    }
 
     const lang = pickLang(settings.language);
     const reply_markup = openProtocolButton(lang);
@@ -364,17 +381,25 @@ Deno.serve(async (req) => {
       const debts: any[] = Array.isArray(s.debts) ? s.debts : [];
       const dueSoon: { title: string; amount: string; date: string }[] = [];
 
+      // Считаем "сегодня" в локальной TZ пользователя, а не в UTC.
+      // Иначе для МСК-юзера долг на "завтра" пропадает, когда UTC-полночь
+      // уже наступила а локально ещё вчера.
+      const userLocalNowMs = nowMs + tz * 60 * 1000;
+      const todayDateStr = new Date(userLocalNowMs).toISOString().slice(0, 10);
+      const todayLocalMidnightMs = Date.parse(todayDateStr + "T00:00:00Z");
+
       for (const d of debts) {
         if (!d || d.isActive === false) continue;
         const remaining = Number(d.remainingAmount);
         if (!Number.isFinite(remaining) || remaining <= 0) continue;
         const nextStr = d.nextPaymentDate;
         if (typeof nextStr !== "string" || !nextStr) continue;
-        const nextMs = Date.parse(nextStr + "T00:00:00Z");
-        if (!Number.isFinite(nextMs)) continue;
+        const nextLocalMidnightMs = Date.parse(nextStr + "T00:00:00Z");
+        if (!Number.isFinite(nextLocalMidnightMs)) continue;
 
-        const msUntil = nextMs - nowMs;
-        if (msUntil <= 0 || msUntil > 3 * DAY_MS) continue;
+        // daysUntil: 0 = сегодня, 1 = завтра, ... Считаем в локальных днях.
+        const daysUntil = Math.round((nextLocalMidnightMs - todayLocalMidnightMs) / DAY_MS);
+        if (daysUntil < 0 || daysUntil > 3) continue;
 
         const paid = Number(d.paidInCurrentPeriod) || 0;
         const monthly = Number(d.monthlyPayment) || 0;
@@ -392,7 +417,7 @@ Deno.serve(async (req) => {
       }
 
       if (dueSoon.length > 0) {
-        const aggKey = `debt_agg:${isoDate(new Date(nowMs))}`;
+        const aggKey = `debt_agg:${todayDateStr}`;
         remindersToSend.push({
           type: "debt_agg",
           period_key: aggKey,
@@ -403,6 +428,13 @@ Deno.serve(async (req) => {
 
     // ── Шлём с rate limit и дедупом через UNIQUE ──────────────────────────
     for (const r of remindersToSend) {
+      // dry_run - ничего не пишем, ничего не шлём, просто считаем.
+      if (dryRun) {
+        sent++;
+        errors.push({ tg: tgId, reason: `DRY: ${r.type} / ${r.period_key}` });
+        continue;
+      }
+
       // Сначала пытаемся атомарно записать в лог (UNIQUE поймает дубль).
       const { error: logErr } = await supabase
         .from("reminder_log")
