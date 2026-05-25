@@ -1399,3 +1399,43 @@ window.saveUserChatId = async (chatId) => {
     console.error('[ChatID] Ошибка:', e);
   }
 };
+
+// REMINDERS — стирает reminder_log пользователя при "Начать сначала".
+// Вызывается из app.js confirmYes.onclick.
+//
+// Серверная RPC clear_user_reminder_log(p_telegram_id) проверяет, что вызывающий
+// = владелец строк (через claim telegram_id в JWT). service_role обходит.
+window.clearUserReminderLog = async () => {
+  const telegramId =
+    window.tgUserId ||
+    window.Telegram?.WebApp?.initDataUnsafe?.user?.id;
+
+  if (!telegramId) {
+    console.warn('[clearReminderLog] telegram_id не найден, пропускаем.');
+    return { ok: false, reason: 'no_telegram_id' };
+  }
+
+  if (!initSupabaseClient()) {
+    console.warn('[clearReminderLog] Supabase-клиент не инициализирован');
+    return { ok: false, reason: 'no_client' };
+  }
+  if (!(await ensureAuthenticated())) {
+    console.warn('[clearReminderLog] нет авторизации, пропускаем.');
+    return { ok: false, reason: 'no_auth' };
+  }
+
+  try {
+    const { data, error } = await supabaseClient.rpc('clear_user_reminder_log', {
+      p_telegram_id: telegramId
+    });
+    if (error) {
+      console.warn('[clearReminderLog] RPC error:', error.message);
+      return { ok: false, reason: error.message };
+    }
+    console.log('[clearReminderLog] cleared rows:', data);
+    return { ok: true, deleted: data };
+  } catch (e) {
+    console.warn('[clearReminderLog] Ошибка:', e);
+    return { ok: false, reason: String(e?.message || e) };
+  }
+};

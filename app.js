@@ -2356,6 +2356,32 @@ loadFullState();
   }
 })();
 
+// REMINDERS — детект timezone браузера и запись в settings.tzOffsetMinutes.
+// Это нужно Edge Function send-reminder чтобы понять, когда у пользователя
+// наступает "час напоминаний" (settings.reminderTime - локальное время юзера).
+// Запускаем после небольшой задержки, чтобы state уже был загружен с диска.
+(function initTimezoneOffset() {
+  function detect() {
+    try {
+      if (typeof getState !== "function" || typeof updateState !== "function") return;
+      var s = getState();
+      if (!s || !s.settings) return;
+      var browserTz = -new Date().getTimezoneOffset(); // минуты к востоку от UTC (МСК = +180)
+      if (!Number.isFinite(browserTz)) return;
+      var saved = Number(s.settings.tzOffsetMinutes);
+      if (saved === browserTz) return; // уже совпадает - ничего не делаем
+      updateState({
+        settings: Object.assign({}, s.settings, { tzOffsetMinutes: browserTz })
+      });
+    } catch (e) { /* noop - не критично */ }
+  }
+  if (document.readyState === "complete") {
+    setTimeout(detect, 1200);
+  } else {
+    window.addEventListener("load", function () { setTimeout(detect, 1200); });
+  }
+})();
+
 // Убираем зависший экран «Protocol анализирует данные…» (при повторном входе и при возврате без перезагрузки)
 function repairAdviceScreenIfStuck() {
   const adviceScreen = document.getElementById("screen-advice");
@@ -3397,6 +3423,15 @@ confirmYes.onclick = () => {
   } catch (e) {
     console.warn("[Reset] saveFullState after performFullReset:", e);
   }
+  // REMINDERS — стираем reminder_log пользователя в Supabase, чтобы после
+  // "Начать сначала" напоминания снова срабатывали с чистого листа (иначе
+  // период_key уже был бы в логе и новые пинги бы скипнулись по дедупу).
+  // Best-effort: ошибки тихо проглатываем, на UX это не должно влиять.
+  try {
+    if (typeof window.clearUserReminderLog === "function") {
+      Promise.resolve(window.clearUserReminderLog()).catch(function () { /* noop */ });
+    }
+  } catch (e) { /* noop */ }
 };
 
 /* ===== PROFILE ===== */

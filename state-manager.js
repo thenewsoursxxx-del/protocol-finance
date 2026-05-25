@@ -157,10 +157,19 @@ function getDefaultState() {
       carryOverEnabled: true,
       allocationMode: "goal",
       allowOverpay: true,
-      notificationsEnabled: false,
-      depositReminderEnabled: false,
-      debtReminderEnabled: false,
+      // REMINDERS — по умолчанию включены, чтобы новые пользователи сразу
+      // получали полезные пинги (раз в период / о платежах по долгам).
+      // Существующие пользователи сохраняют свои настройки благодаря deep merge
+      // в applyState (defaults фоллбэк только для отсутствующих ключей).
+      notificationsEnabled: true,
+      depositReminderEnabled: true,
+      debtReminderEnabled: true,
       reminderTime: "12:00",
+      // tzOffsetMinutes — смещение локального времени относительно UTC, в минутах.
+      // Заполняется автоматически в app.js на старте через
+      // -new Date().getTimezoneOffset(). Edge Function send-reminder использует
+      // это поле чтобы понять, когда у пользователя наступило время напоминаний.
+      tzOffsetMinutes: 180,
       animationsEnabled: true,
       numberFormat: "spaces",
       language: "ru",

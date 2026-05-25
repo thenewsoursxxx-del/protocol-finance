@@ -30,8 +30,8 @@
 
 const BOT_TOKEN = Deno.env.get("TELEGRAM_BOT_TOKEN") || "";
 
-// Цена временно 150 ⭐ (вместо 450 ⭐). Premium на 30 дней.
-const STARS_PRICE = 150;
+// Цена: 400 ⭐ за Premium на 30 дней.
+const STARS_PRICE = 400;
 // 30 дней в секундах. ЕДИНСТВЕННОЕ значение, которое Telegram Stars
 // принимает для subscription_period в createInvoiceLink на 2026 год.
 const SUBSCRIPTION_PERIOD_SEC = 2592000;
@@ -133,7 +133,7 @@ Deno.serve(async (req) => {
   };
 
   // RECURRING BILLING — ключевое поле для subscription-invoice'а.
-  // Telegram автоматически списывает 150⭐ каждые 2592000 секунд (30 дней)
+  // Telegram автоматически списывает 400⭐ каждые 2592000 секунд (30 дней)
   // и отправляет нам очередной successful_payment update.
   if (autoRenew) {
     invoiceBody.subscription_period = SUBSCRIPTION_PERIOD_SEC;
