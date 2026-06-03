@@ -4494,8 +4494,12 @@ function computeMonthlyStatus() {
   var previousRequired = monthsBefore * monthlyRequired;
   var currentActual = Math.max(0, totalContributed - previousRequired);
 
-  // carryOverEnabled: if ON, surplus from past months carries into current period
-  // If OFF, only count deposits from the current month
+  // carryOverEnabled: когда ВЫКЛ, учитываются только пополнения текущего
+  // месяца — накопленный остаток прошлых периодов не переносится.
+  // allowOverpay: когда ВЫКЛ, излишек сверх месячного плана не должен
+  // накапливаться и переноситься в будущие периоды, поэтому вклад каждого
+  // месяца ограничивается планом ещё до суммирования (а не только обрезается
+  // отображаемая цифра текущего месяца).
   if (!settings.carryOverEnabled) {
     var currentMonthDeposits = 0;
     mainDeposits.forEach(function (f) {
@@ -4504,9 +4508,22 @@ function computeMonthlyStatus() {
       if (mk === currentMK) currentMonthDeposits += f.value;
     });
     currentActual = currentMonthDeposits;
+  } else if (!settings.allowOverpay) {
+    var cappedByMonth = {};
+    mainDeposits.forEach(function (f) {
+      var d = new Date(f.date);
+      var mk = d.getFullYear() * 12 + d.getMonth();
+      cappedByMonth[mk] = (cappedByMonth[mk] || 0) + f.value;
+    });
+    var cappedTotal = 0;
+    Object.keys(cappedByMonth).forEach(function (mk) {
+      cappedTotal += Math.min(cappedByMonth[mk], monthlyRequired);
+    });
+    currentActual = Math.max(0, cappedTotal - previousRequired);
   }
 
-  // allowOverpay: if OFF, cap the actual at the required amount
+  // allowOverpay ВЫКЛ: финальный потолок на случай переплаты в текущем месяце
+  // (актуально, когда перенос остатка отключён).
   if (!settings.allowOverpay && currentActual > monthlyRequired) {
     currentActual = monthlyRequired;
   }
