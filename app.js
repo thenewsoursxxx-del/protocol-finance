@@ -2640,6 +2640,14 @@ if (navScreens.includes(name) && isInitialized) {
 
 if (name === "advice") syncFlexibleUI();
 
+// BUGFIX: при переходе на график граф НЕ всегда перерисовывается (только если
+// в DOM остался #fakeScreen). Поэтому видимость поля факта / кнопок «Записать
+// доход/расход» нужно синхронизировать здесь явно - иначе после настройки
+// гибкой модели кнопки появлялись только после перезагрузки приложения.
+if (name === "advice" && typeof updateFactInputVisibility === "function") {
+  try { updateFactInputVisibility(); } catch (e) { /* noop */ }
+}
+
 // NEW: Full goal creation flow in Protocol tab - синхронизируем empty-state на Protocol
 if (name === "advice" && typeof window._syncProtocolEmptyState === "function") {
   try { window._syncProtocolEmptyState(); } catch (e) { /* noop */ }
@@ -3059,8 +3067,8 @@ style="width:52px;height:52px;border-radius:50%">
 <!-- Гибкая модель: вместо ручного поля «Сколько вы отложили» - кнопки записи
      дохода/расхода. Видимость управляется updateFactInputVisibility(). -->
 <div id="cashflowRecordRow" class="cashflow-record-row" style="display:none">
-<button id="recordIncomeBtn" class="cs-add-record-btn" type="button">${t("graph.recordIncome")}</button>
-<button id="recordExpenseBtn" class="cs-add-record-btn cs-add-record-btn--expense" type="button">${t("graph.recordExpense")}</button>
+<button id="recordIncomeBtn" class="cs-add-record-btn" type="button" data-side="income">${t("graph.recordIncome")}</button>
+<button id="recordExpenseBtn" class="cs-add-record-btn cs-add-record-btn--expense" type="button" data-side="expense">${t("graph.recordExpense")}</button>
 <div id="cashflowRecordHint" class="cashflow-record-hint">${t("graph.recordHint")}</div>
 </div>
 <div id="brainMessageContainer"></div>
@@ -3092,22 +3100,10 @@ style="width:52px;height:52px;border-radius:50%">
   const applyBtn = document.getElementById("applyFact");
 
   // Гибкая модель: кнопки «Записать доход / расход» открывают то же окно записи,
-  // что и «+ Записать поступление» в карточке гибкой модели. Логику отложения
-  // не дублируем - переиспользуем openCustomScheduleSheet.
-  var recordIncomeBtn = document.getElementById("recordIncomeBtn");
-  var recordExpenseBtn = document.getElementById("recordExpenseBtn");
-  if (recordIncomeBtn) {
-    recordIncomeBtn.onclick = function () {
-      haptic("light");
-      if (typeof window.openCustomScheduleSheet === "function") window.openCustomScheduleSheet("income");
-    };
-  }
-  if (recordExpenseBtn) {
-    recordExpenseBtn.onclick = function () {
-      haptic("light");
-      if (typeof window.openCustomScheduleSheet === "function") window.openCustomScheduleSheet("expense");
-    };
-  }
+  // что и «+ Записать поступление» в карточке гибкой модели. Клики
+  // обрабатываются единым делегированным хендлером по классу .cs-add-record-btn
+  // (читает data-side). Отдельный onclick здесь НЕ вешаем - иначе срабатывали
+  // бы оба обработчика и «Записать расход» открывал бы доход.
 
   if (factInput) {
     factInput.addEventListener("input", e => {
@@ -7461,6 +7457,24 @@ initCashflowSettings();
     }
   }
 
+  // BUGFIX: после записи факта/отложения нужно полностью пересобрать график
+  // (как это делает applyFact в простой модели) - иначе линия и точка факта не
+  // отрисовываются. Делаем это только если активен экран графика, чтобы не
+  // дёргать nav-состояние при записи с экрана расчёта.
+  function _refreshGraphAfterRecord() {
+    var sc = document.querySelector(".screen.active");
+    var onAdvice = sc && sc.id === "screen-advice";
+    if (onAdvice && typeof renderProtocolAdviceGraph === "function") {
+      renderProtocolAdviceGraph();
+      if (typeof factHistory !== "undefined" && factHistory && factHistory.length &&
+          typeof runBrain === "function") {
+        runBrain();
+      }
+    } else if (typeof updatePlanHeader === "function") {
+      updatePlanHeader();
+    }
+  }
+
   // ── Events: Continue / Deposit / Skip / History clicks ────────────────────
 
   if (continueBtn) {
@@ -7619,7 +7633,8 @@ initCashflowSettings();
         window.renderCustomSchedule("income");
         window.renderCustomSchedule("expense");
       }
-      if (typeof updatePlanHeader === "function") updatePlanHeader();
+      // BUGFIX: перерисовываем график, чтобы линия и точка факта появились.
+      _refreshGraphAfterRecord();
     });
   }
 
@@ -7716,7 +7731,7 @@ initCashflowSettings();
       // сразу после клика, не дожидаясь следующего естественного recalcPlan.
       if (typeof recalcPlan === "function") recalcPlan();
       if (typeof window.renderCustomSchedule === "function") window.renderCustomSchedule();
-      if (typeof updatePlanHeader === "function") updatePlanHeader();
+      _refreshGraphAfterRecord();
     });
   }
 
@@ -7840,7 +7855,7 @@ initCashflowSettings();
         // FIX: custom schedule accumulation + counters update - force-render
         // history и main-plan сразу после inline-deposit.
         if (typeof window.renderCustomSchedule === "function") window.renderCustomSchedule();
-        if (typeof updatePlanHeader === "function") updatePlanHeader();
+        _refreshGraphAfterRecord();
         return;
       }
     }
