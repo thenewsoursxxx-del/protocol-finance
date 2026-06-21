@@ -4052,12 +4052,17 @@ body.flip-fix-pending .flip-wrapper {
 }
 
 .frequency-selector.visible {
-  max-height: 380px;
+  /* FIX: ранее max-height:380px + overflow:hidden обрезали контент режима
+     «Свой график» (карточка-напоминание, кнопка и история поступлений
+     «проваливались» за обрезку). Снимаем ограничение по высоте и клип —
+     селектор показывается только в нефиксированном режиме (через display),
+     поэтому max-height-анимация здесь и так не используется. */
+  max-height: none;
   opacity: 1;
   margin-top: 8px;
   padding-top: 16px;
   border-top: 1px solid rgba(255, 255, 255, 0.05);
-  overflow: hidden;
+  overflow: visible;
 }
 
 .freq-grid {
@@ -9671,6 +9676,13 @@ body.reduce-motion .settings-seg-btn {
   font-size: 16px;
   line-height: 1;
   cursor: pointer;
+  /* FIX: центрируем глиф «×» внутри кружка — раньше он сидел не по центру
+     из-за дефолтного потока текста, кружок и крестик выглядели «вразнобой». */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  text-align: center;
 }
 
 /* Modal sheet (.cs-sheet) — двушаговый flow ─────────────────────────────── */
