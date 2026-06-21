@@ -66,6 +66,19 @@
       "plan.remaining": "Осталось",
       "plan.thisMonthOngoing": "в этом месяце · далее {ongoing}/мес",
       "plan.thisMonthTag": "в этом месяце",
+      "plan.expensePaidNote": "в этом месяце уже оплачен",
+      "plan.expensePartialNote": "оплачено {paid} в этом месяце",
+
+      // ── Неполный стартовый месяц: плашка про расход ──
+      "cs.partialExpense.title": "Уточните расход за этот месяц",
+      "cs.partialExpense.q": "До конца месяца осталось {days} дн. Расход {amount}, который вы указали в гибкой модели, в этом месяце уже потрачен?",
+      "cs.partialExpense.yes": "Да, уже потрачен",
+      "cs.partialExpense.no": "Нет, ещё предстоит",
+      "cs.partialExpense.partial": "Потрачен частично",
+      "cs.partialExpense.partialLabel": "Сколько уже потрачено в этом месяце?",
+      "cs.partialExpense.partialPlaceholder": "Сумма",
+      "cs.partialExpense.save": "Сохранить",
+      "cs.partialExpense.hint": "Это нужно один раз — чтобы точно посчитать, сколько отложить в неполном первом месяце.",
 
       // ── Flexible model ──
       "flex.toggle": "Гибкая финансовая модель",
@@ -1172,6 +1185,18 @@
       "plan.forecastExpense": "Forecast expenses",
       "plan.thisMonthOngoing": "this month · then {ongoing}/mo",
       "plan.thisMonthTag": "this month",
+      "plan.expensePaidNote": "already paid this month",
+      "plan.expensePartialNote": "{paid} paid this month",
+
+      "cs.partialExpense.title": "Clarify this month's expense",
+      "cs.partialExpense.q": "{days} days left this month. The expense {amount} you set in the flexible model — has it already been spent this month?",
+      "cs.partialExpense.yes": "Yes, already spent",
+      "cs.partialExpense.no": "No, still due",
+      "cs.partialExpense.partial": "Partially spent",
+      "cs.partialExpense.partialLabel": "How much has been spent this month?",
+      "cs.partialExpense.partialPlaceholder": "Amount",
+      "cs.partialExpense.save": "Save",
+      "cs.partialExpense.hint": "One-time question — so we accurately compute how much to set aside in the partial first month.",
       "plan.accumulated": "Accumulated",
       "plan.remaining": "Remaining",
 

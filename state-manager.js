@@ -72,6 +72,16 @@ function getDefaultState() {
     incomeStartDate: "",
     expenseStartDate: "",
 
+    // NEW (v16): дата (ISO) первой активации гибкой (cashflow) модели. Нужна,
+    // чтобы понять, начал ли пользователь копить в середине месяца (день ≥ 2)
+    // и показать ему один раз плашку «расход уже потрачен?». Ставится один раз.
+    cashflowStartedAt: "",
+    // NEW (v16): ответ пользователя на плашку про расход в неполном (стартовом)
+    // месяце. { monthKey:number, status:"yes"|"no"|"partial", paidAmount:number }.
+    // monthKey = year*12+month ответа; если месяц сменился — ответ считается
+    // неактуальным (новый месяц полный, плашка не нужна).
+    partialExpense: null,
+
     // ── Premium (v4 → v14: subscription model) ──
     isPremium: false,
 

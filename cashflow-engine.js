@@ -134,7 +134,11 @@
       expenses: Number(bc.expenses) || 0,
       saved: Number(bc.saved) || 0,
       mode: bc.mode || "calm",
-      hasReserve: !!bc.hasReserve
+      hasReserve: !!bc.hasReserve,
+      // Phase 2: ответ на плашку «расход уже потрачен?» в неполном стартовом месяце.
+      // null/"no" → расход целиком; "yes" → 0; "partial" → минус paidAmount.
+      currentMonthExpenseStatus: (bc.currentMonthExpenseStatus === "yes" || bc.currentMonthExpenseStatus === "no" || bc.currentMonthExpenseStatus === "partial") ? bc.currentMonthExpenseStatus : null,
+      currentMonthExpensePaidAmount: Number(bc.currentMonthExpensePaidAmount) || 0
     };
 
     this.events = Array.isArray(opts.events)
@@ -457,7 +461,21 @@
     // усреднённому ×4.33. monthlySave/free выше (steady) остаются для будущих
     // месяцев и базы ETA - текущие значения добавляются отдельно (additive).
     var cmForecast = this._getCurrentMonthForecast();
-    var cmFree = cmForecast.income - cmForecast.expense;
+
+    // Phase 2: остаток расхода в текущем месяце уточняется ответом пользователя
+    // на плашку «расход уже потрачен?» (currentMonthExpenseStatus):
+    //   "yes"     → расход в этом месяце уже оплачен → остаток 0;
+    //   "partial" → остаток = расход − уже потрачено (currentMonthExpensePaidAmount);
+    //   "no"/null → расход ещё предстоит целиком (без изменений).
+    var cmExpenseRemaining = cmForecast.expense;
+    var cmExpStatus = bc.currentMonthExpenseStatus;
+    if (cmExpStatus === "yes") {
+      cmExpenseRemaining = 0;
+    } else if (cmExpStatus === "partial") {
+      cmExpenseRemaining = Math.max(0, cmForecast.expense - (bc.currentMonthExpensePaidAmount || 0));
+    }
+
+    var cmFree = cmForecast.income - cmExpenseRemaining;
     var cmSave = cmFree > 0 ? Math.round(cmFree * pace) : 0;
 
     var toGoal = monthlySave;
@@ -467,11 +485,26 @@
       toGoal = monthlySave - toReserve;
     }
 
+    // Phase 2: вклад текущего (возможно неполного) месяца в цель — по тем же
+    // правилам резерва, что и полный toGoal.
+    var cmToGoal = cmSave;
+    if (bc.hasReserve && cmSave > 0) {
+      cmToGoal = cmSave - Math.round(cmSave * 0.1);
+    }
+
     var remaining = Math.max(0, bc.goal - balances.goalBalance);
 
+    // Phase 2: ETA с учётом неполного первого месяца. Первый календарный месяц
+    // добавляет частичный cmToGoal, последующие — полный toGoal. Для ПОЛНОГО
+    // месяца (cmToGoal === toGoal) формула тождественна старой Math.ceil(remaining/toGoal),
+    // поэтому established-пользователи и полные месяцы не затрагиваются.
     var monthsLeft = 0;
-    if (remaining > 0 && toGoal > 0) {
-      monthsLeft = Math.ceil(remaining / toGoal) + balances.totalSkips;
+    if (remaining > 0) {
+      if (cmToGoal >= remaining) {
+        monthsLeft = 1 + balances.totalSkips;
+      } else if (toGoal > 0) {
+        monthsLeft = 1 + Math.ceil((remaining - cmToGoal) / toGoal) + balances.totalSkips;
+      }
     }
 
     var hasSufficientData = forecast.hasIncomeData;
@@ -497,11 +530,15 @@
       averageMonthlyContribution: toGoal,
       forecastIncome: forecast.monthlyIncome,
       forecastExpense: forecast.monthlyExpense,
-      // Phase 1: значения текущего (возможно неполного) календарного месяца.
+      // Phase 1/2: значения текущего (возможно неполного) календарного месяца.
+      // currentMonthExpense — ОСТАТОК расхода после ответа на плашку.
       currentMonthIncome: cmForecast.income,
-      currentMonthExpense: cmForecast.expense,
+      currentMonthExpense: cmExpenseRemaining,
+      currentMonthExpenseFull: cmForecast.expense,
       currentMonthFree: cmFree,
       currentMonthSave: cmSave,
+      currentMonthToGoal: cmToGoal,
+      isPartialMonth: cmSave !== monthlySave,
       hasIncomeData: forecast.hasIncomeData,
       hasExpenseData: forecast.hasExpenseData,
       timeline: null

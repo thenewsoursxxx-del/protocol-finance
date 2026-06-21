@@ -1268,6 +1268,13 @@ function computeGraphState() {
   var minVisible = (goalMonths > 0 && goalMonths <= 3) ? Math.max(2, goalMonths) : 3;
   visibleMonths = Math.max(minVisible, visibleMonths);
 
+  // Phase 2: доля вклада неполного первого месяца относительно полного месяца —
+  // для косметического «надлома» линии плана (только основная цель, гибкая модель).
+  var firstMonthRatio = 1;
+  if (activeGoalIndex === 0 && lastCalc.isPartialMonth && activeMonthly > 0 && lastCalc.currentMonthToGoal != null) {
+    firstMonthRatio = Math.max(0, Math.min(1, lastCalc.currentMonthToGoal / activeMonthly));
+  }
+
   return {
     factBalance: factBalance,
     goalMonths: goalMonths,
@@ -1275,6 +1282,7 @@ function computeGraphState() {
     actualMonths: actualMonths,
     visibleMonths: visibleMonths,
     plannedMonthly: activeMonthly,
+    firstMonthRatio: firstMonthRatio,
     goal: goalValue
   };
 }
@@ -1784,6 +1792,78 @@ function applyAutoDebtRepayment(amount) {
   return { applied: totalApplied, details: details };
 }
 
+// ─── Phase 2: неполный (стартовый) месяц ──────────────────────────────
+// Ключ месяца: год*12 + индекс месяца (0-11). Удобно сравнивать «тот же месяц».
+function _monthKey(d) {
+  return d.getFullYear() * 12 + d.getMonth();
+}
+
+// Ответ пользователя про расход — ТОЛЬКО если он относится к текущему
+// календарному месяцу. Иначе { status:null } — расход считается полным.
+function _partialExpenseForNow() {
+  var pe = state.partialExpense;
+  if (!pe || pe.status == null) return { status: null, paidAmount: 0 };
+  if (pe.monthKey !== _monthKey(new Date())) return { status: null, paidAmount: 0 };
+  return { status: pe.status, paidAmount: Number(pe.paidAmount) || 0 };
+}
+
+// true, если гибкая модель начата В ТЕКУЩЕМ месяце и со 2-го числа или позже
+// (месяц неполный) — условие показа плашки про расход в стартовом месяце.
+function _startedMidCurrentMonth() {
+  var iso = state.cashflowStartedAt;
+  if (!iso) return false;
+  var d = new Date(iso);
+  if (isNaN(d.getTime())) return false;
+  return _monthKey(d) === _monthKey(new Date()) && d.getDate() >= 2;
+}
+
+// Сохраняет ответ пользователя на плашку про расход и пересчитывает план/график.
+function _savePartialExpense(status, paidAmount) {
+  updateState({
+    partialExpense: {
+      monthKey: _monthKey(new Date()),
+      status: status,
+      paidAmount: Number(paidAmount) || 0
+    }
+  });
+  if (typeof saveFullState === "function") saveFullState();
+  if (typeof recalcPlan === "function") recalcPlan();
+  if (typeof renderProtocolAdviceGraph === "function") renderProtocolAdviceGraph();
+}
+window._savePartialExpense = _savePartialExpense;
+
+// Показ/скрытие плашки «расход уже потрачен?» на экране графика. Показывается
+// только: гибкая модель + старт со 2-го числа текущего месяца + есть месячный
+// расход + ещё не отвечено в этом месяце.
+function updatePartialExpenseBanner() {
+  var banner = document.getElementById("csPartialExpenseBanner");
+  if (!banner) return;
+  var s = (typeof getState === "function") ? getState() : state;
+  var isCashflow = (s.financialModel === "cashflow");
+  var answered = _partialExpenseForNow().status !== null;
+  var expFull = (lastCalc && lastCalc.currentMonthExpenseFull) || 0;
+  var onPrimaryGoal = (typeof activeGoalIndex === "undefined") || activeGoalIndex === 0;
+  var show = isCashflow && onPrimaryGoal && _startedMidCurrentMonth() && expFull > 0 && !answered;
+
+  if (!show) { banner.style.display = "none"; return; }
+
+  var now = new Date();
+  var lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  var daysLeft = Math.max(0, lastDay - now.getDate());
+  var cs = (typeof getCurrencySymbol === "function") ? getCurrencySymbol() : "₽";
+  var qEl = document.getElementById("csPartialExpenseQ");
+  if (qEl) {
+    qEl.textContent = t("cs.partialExpense.q", {
+      days: daysLeft,
+      amount: ((typeof fmtNum === "function") ? fmtNum(expFull) : expFull) + " " + cs
+    });
+  }
+  var pw = document.getElementById("csPartialExpensePartialWrap");
+  if (pw) pw.style.display = "none";
+  banner.style.display = "";
+}
+window.updatePartialExpenseBanner = updatePartialExpenseBanner;
+
 function recalcPlan() {
   // ── Engine recalculation (когда план активен) ──
   if (isInitialized && chosenPlan && typeof CashflowEngine !== "undefined") {
@@ -1801,6 +1881,19 @@ function recalcPlan() {
 
     var canRecalc = goalVal > 0 && (incomeVal > expensesVal || modelType === "cashflow");
     if (canRecalc) {
+      // Phase 2: фиксируем дату старта гибкой модели (один раз), чтобы понимать
+      // неполный стартовый месяц для плашки про расход и ETA.
+      // ВАЖНО: ставим только для НОВОГО старта (нет истории отложений), иначе
+      // существующие пользователи при апгрейде получили бы дату «сегодня» и им
+      // ошибочно показалась бы плашка. У уже копящих факт-история не пуста →
+      // дату не ставим → плашка им не показывается. После «Начать сначала»
+      // история очищается, поэтому новый неполный месяц учитывается корректно.
+      var _noFactYet = !Array.isArray(factHistory) || factHistory.length === 0;
+      if (modelType === "cashflow" && !state.cashflowStartedAt && _noFactYet) {
+        updateState({ cashflowStartedAt: new Date().toISOString() });
+      }
+      var _pe = _partialExpenseForNow();
+
       var events = assembleCashflowEvents();
       var engine = new CashflowEngine({
         modelType: modelType,
@@ -1810,7 +1903,10 @@ function recalcPlan() {
           expenses: expensesVal,
           saved: initialBalance,
           mode: saveMode,
-          hasReserve: chosenPlan === "buffer"
+          hasReserve: chosenPlan === "buffer",
+          // Phase 2: ответ на плашку «расход уже потрачен?» в стартовом месяце.
+          currentMonthExpenseStatus: _pe.status,
+          currentMonthExpensePaidAmount: _pe.paidAmount
         },
         events: events
       });
@@ -1832,6 +1928,10 @@ function recalcPlan() {
         lastCalc.currentMonthExpense = (derived.currentMonthExpense != null) ? derived.currentMonthExpense : 0;
         lastCalc.currentMonthFree = (derived.currentMonthFree != null) ? derived.currentMonthFree : 0;
         lastCalc.currentMonthSave = (derived.currentMonthSave != null) ? derived.currentMonthSave : 0;
+        // Phase 2: вклад неполного месяца в цель + флаг неполного месяца (для графика/срока).
+        lastCalc.currentMonthToGoal = (derived.currentMonthToGoal != null) ? derived.currentMonthToGoal : 0;
+        lastCalc.currentMonthExpenseFull = (derived.currentMonthExpenseFull != null) ? derived.currentMonthExpenseFull : 0;
+        lastCalc.isPartialMonth = !!derived.isPartialMonth;
 
         accounts.main = derived.currentGoalBalance;
         accounts.reserve = derived.reserveBalance;
@@ -2652,6 +2752,9 @@ if (name === "advice") syncFlexibleUI();
 if (name === "advice" && typeof updateFactInputVisibility === "function") {
   try { updateFactInputVisibility(); } catch (e) { /* noop */ }
 }
+if (name === "advice" && typeof updatePartialExpenseBanner === "function") {
+  try { updatePartialExpenseBanner(); } catch (e) { /* noop */ }
+}
 
 // NEW: Full goal creation flow in Protocol tab - синхронизируем empty-state на Protocol
 if (name === "advice" && typeof window._syncProtocolEmptyState === "function") {
@@ -3060,6 +3163,28 @@ ${adviceBlockHtml}
 <button id="timelineBackBtn" class="timeline-back-btn" type="button" style="display:none">← ${t("misc.overview")}</button>
 </div>
 <div class="chart-card"></div>
+<!-- Неполный стартовый месяц: один раз уточняем, оплачен ли уже месячный расход,
+     чтобы точно посчитать отложения в этом месяце. Видимость — updatePartialExpenseBanner(). -->
+<div id="csPartialExpenseBanner" class="cs-partial-expense" style="display:none">
+<div class="cs-partial-expense-head">
+<span class="cs-partial-expense-icon" aria-hidden="true">🗓️</span>
+<span class="cs-partial-expense-title">${t("cs.partialExpense.title")}</span>
+</div>
+<div class="cs-partial-expense-q" id="csPartialExpenseQ"></div>
+<div class="cs-partial-expense-opts">
+<button type="button" class="cs-pe-opt" data-pe="yes">${t("cs.partialExpense.yes")}</button>
+<button type="button" class="cs-pe-opt" data-pe="no">${t("cs.partialExpense.no")}</button>
+<button type="button" class="cs-pe-opt" data-pe="partial">${t("cs.partialExpense.partial")}</button>
+</div>
+<div class="cs-partial-expense-partial" id="csPartialExpensePartialWrap" style="display:none">
+<label class="cs-pe-label" for="csPartialExpenseInput">${t("cs.partialExpense.partialLabel")}</label>
+<div class="cs-pe-input-row">
+<input id="csPartialExpenseInput" inputmode="numeric" placeholder="${t("cs.partialExpense.partialPlaceholder")}" />
+<button type="button" class="cs-pe-save" id="csPartialExpenseSave">${t("cs.partialExpense.save")}</button>
+</div>
+</div>
+<div class="cs-partial-expense-hint">${t("cs.partialExpense.hint")}</div>
+</div>
 <div class="fact-input-row">
 <input id="factInput" inputmode="numeric"
 placeholder="${t("calc.factPlaceholder")}"
@@ -3098,6 +3223,7 @@ style="width:52px;height:52px;border-radius:50%">
   moveIndicator(buttons[1]);
   updatePlanHeader();
   if (typeof updateFactInputVisibility === "function") updateFactInputVisibility();
+  if (typeof updatePartialExpenseBanner === "function") updatePartialExpenseBanner();
   if (typeof updateGraphGoalIndicator === "function") updateGraphGoalIndicator();
   if (typeof updateAccountsLocalNav === "function") updateAccountsLocalNav();
 
@@ -5379,7 +5505,10 @@ if (goalMonthlySave > 0 && _incFreqNow === "weekly") {
 // простой модели и доп. целей поведение прежнее.
 var _useCM = !hasMultiGoals && isCashflow && (lastCalc.currentMonthIncome != null);
 var _dispInc = _useCM ? (lastCalc.currentMonthIncome || 0) : (lastCalc.forecastIncome || 0);
-var _dispExp = _useCM ? (lastCalc.currentMonthExpense || 0) : (lastCalc.forecastExpense || 0);
+// Расход в шапке — это РЕАЛЬНЫЙ счёт за месяц (полная сумма наступлений),
+// а не остаток после ответа на плашку. То, что часть уже оплачена, отражается
+// в «Свободно/Откладываете» + пометке, чтобы не показывать «0 ₽».
+var _dispExp = _useCM ? (lastCalc.currentMonthExpenseFull || 0) : (lastCalc.forecastExpense || 0);
 var _dispFree = _useCM ? (lastCalc.currentMonthFree || 0) : (lastCalc.free || 0);
 var _dispSave = _useCM ? (lastCalc.currentMonthSave || 0) : goalMonthlySave;
 var _incPartial = _useCM && (_dispInc !== (lastCalc.forecastIncome || 0));
@@ -5393,6 +5522,14 @@ var _expLine = t("plan.forecastExpense") + ": " + fmtNum(_dispExp) + " " + _cs2
   + (_expPartial
       ? " " + t("plan.thisMonthOngoing", { ongoing: fmtNum(lastCalc.forecastExpense || 0) + " " + _cs2 })
       : " " + t("pace.perMonth"));
+// Пометка о том, что месячный расход уже оплачен (полностью/частично) в этом
+// месяце — объясняет, почему «Свободно» больше, чем доход минус расход.
+var _peNow = (typeof _partialExpenseForNow === "function") ? _partialExpenseForNow() : { status: null, paidAmount: 0 };
+if (_useCM && _peNow.status === "yes") {
+  _expLine += " · " + t("plan.expensePaidNote");
+} else if (_useCM && _peNow.status === "partial") {
+  _expLine += " · " + t("plan.expensePartialNote", { paid: fmtNum(_peNow.paidAmount) + " " + _cs2 });
+}
 // «Откладываете»: в неполном месяце показываем сумму текущего месяца + пометку.
 var _youSaveStrFinal = _incPartial
   ? (fmtNum(_dispSave) + " " + _cs2 + " " + t("plan.thisMonthTag"))
@@ -7809,6 +7946,34 @@ initCashflowSettings();
   // ── Wire up «+ Записать ...» buttons + history actions (event delegation) ──
 
   document.addEventListener("click", function (e) {
+    // Phase 2: плашка «расход уже потрачен?» в неполном стартовом месяце.
+    var peOpt = e.target.closest(".cs-pe-opt");
+    if (peOpt) {
+      var peVal = peOpt.getAttribute("data-pe");
+      if (typeof haptic === "function") haptic("light");
+      if (peVal === "partial") {
+        var pw = document.getElementById("csPartialExpensePartialWrap");
+        var opts = peOpt.parentElement;
+        if (opts) opts.querySelectorAll(".cs-pe-opt").forEach(function (b) { b.classList.toggle("active", b === peOpt); });
+        if (pw) {
+          pw.style.display = "";
+          var inp = document.getElementById("csPartialExpenseInput");
+          if (inp) { try { inp.focus(); } catch (e2) {} }
+        }
+      } else if (typeof window._savePartialExpense === "function") {
+        window._savePartialExpense(peVal, 0);
+      }
+      return;
+    }
+    var peSave = e.target.closest("#csPartialExpenseSave");
+    if (peSave) {
+      var peInp = document.getElementById("csPartialExpenseInput");
+      var paid = peInp ? parseNumber(peInp.value || "0") : 0;
+      if (typeof haptic === "function") haptic("light");
+      if (typeof window._savePartialExpense === "function") window._savePartialExpense("partial", paid);
+      return;
+    }
+
     var addBtn = e.target.closest(".cs-add-record-btn");
     if (addBtn) {
       var side = addBtn.getAttribute("data-side") || "income";
@@ -12540,6 +12705,7 @@ function goalSwipeToIndex(idx, goLeft) {
 
     var s = getState();
     var events = assembleCashflowEvents();
+    var _pePace = (typeof _partialExpenseForNow === "function") ? _partialExpenseForNow() : { status: null, paidAmount: 0 };
     var engine = new CashflowEngine({
       modelType: s.financialModel || "simple",
       baseConfig: {
@@ -12548,7 +12714,9 @@ function goalSwipeToIndex(idx, goLeft) {
         expenses: expensesVal,
         saved: initialBalance,
         mode: mode,
-        hasReserve: chosenPlan === "buffer"
+        hasReserve: chosenPlan === "buffer",
+        currentMonthExpenseStatus: _pePace.status,
+        currentMonthExpensePaidAmount: _pePace.paidAmount
       },
       events: events
     });
