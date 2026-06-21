@@ -64,6 +64,8 @@
       "plan.forecastExpense": "Прогноз расходов",
       "plan.accumulated": "Накоплено",
       "plan.remaining": "Осталось",
+      "plan.thisMonthOngoing": "в этом месяце · далее {ongoing}/мес",
+      "plan.thisMonthTag": "в этом месяце",
 
       // ── Flexible model ──
       "flex.toggle": "Гибкая финансовая модель",
@@ -1168,6 +1170,8 @@
       "plan.goalReachedIn": "Goal will be reached in approx.",
       "plan.forecastIncome": "Forecast income",
       "plan.forecastExpense": "Forecast expenses",
+      "plan.thisMonthOngoing": "this month · then {ongoing}/mo",
+      "plan.thisMonthTag": "this month",
       "plan.accumulated": "Accumulated",
       "plan.remaining": "Remaining",
 

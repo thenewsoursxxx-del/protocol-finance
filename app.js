@@ -1080,7 +1080,7 @@ function assembleCashflowEvents() {
         amount: incFixedAmt,
         frequency: "monthly",
         startDate: nowIso,
-        meta: { kind: "periodic", source: "flexModel", side: "income", origin: "simple" }
+        meta: { kind: "periodic", source: "flexModel", side: "income", origin: "simple", anchorDate: nowIso }
       }));
     }
   } else {
@@ -1103,14 +1103,14 @@ function assembleCashflowEvents() {
           frequency: "once",
           startDate: ceInc.date || nowIso,
           // userCreated: true → cashflow-engine включает one-time события в forecast.
-          meta: { kind: "manual", source: "customSchedule", side: "income", userCreated: true, csId: ceInc.id }
+          meta: { kind: "manual", source: "customSchedule", side: "income", userCreated: true, csId: ceInc.id, anchorDate: ceInc.date || nowIso }
         }));
       }
     } else {
       var incVarAmt = parseFlexAmount(s.fixedIncomeAmount);
       if (incVarAmt > 0) {
         var incStart = s.incomeStartDate || nowIso;
-        var incMeta = { kind: "periodic", source: "flexModel", side: "income", origin: "variable" };
+        var incMeta = { kind: "periodic", source: "flexModel", side: "income", origin: "variable", anchorDate: incStart };
         events.push(H.normalizeEvent({
           type: H.EVENT_TYPE.INCOME,
           amount: incVarAmt,
@@ -1131,7 +1131,7 @@ function assembleCashflowEvents() {
         amount: expFixedAmt,
         frequency: "monthly",
         startDate: nowIso,
-        meta: { kind: "periodic", source: "flexModel", side: "expense", origin: "simple" }
+        meta: { kind: "periodic", source: "flexModel", side: "expense", origin: "simple", anchorDate: nowIso }
       }));
     }
   } else {
@@ -1150,14 +1150,14 @@ function assembleCashflowEvents() {
           amount: ceAmtE,
           frequency: "once",
           startDate: ceExp.date || nowIso,
-          meta: { kind: "manual", source: "customSchedule", side: "expense", userCreated: true, csId: ceExp.id }
+          meta: { kind: "manual", source: "customSchedule", side: "expense", userCreated: true, csId: ceExp.id, anchorDate: ceExp.date || nowIso }
         }));
       }
     } else {
       var expVarAmt = parseFlexAmount(s.fixedExpenseAmount);
       if (expVarAmt > 0) {
         var expStart = s.expenseStartDate || nowIso;
-        var expMeta = { kind: "periodic", source: "flexModel", side: "expense", origin: "variable" };
+        var expMeta = { kind: "periodic", source: "flexModel", side: "expense", origin: "variable", anchorDate: expStart };
         events.push(H.normalizeEvent({
           type: H.EVENT_TYPE.EXPENSE,
           amount: expVarAmt,
@@ -1827,6 +1827,11 @@ function recalcPlan() {
         lastCalc.effectiveGoal = Math.max(0, derived.remainingGoal);
         lastCalc.forecastIncome = derived.forecastIncome || 0;
         lastCalc.forecastExpense = derived.forecastExpense || 0;
+        // Phase 1: значения текущего (неполного) календарного месяца.
+        lastCalc.currentMonthIncome = (derived.currentMonthIncome != null) ? derived.currentMonthIncome : null;
+        lastCalc.currentMonthExpense = (derived.currentMonthExpense != null) ? derived.currentMonthExpense : 0;
+        lastCalc.currentMonthFree = (derived.currentMonthFree != null) ? derived.currentMonthFree : 0;
+        lastCalc.currentMonthSave = (derived.currentMonthSave != null) ? derived.currentMonthSave : 0;
 
         accounts.main = derived.currentGoalBalance;
         accounts.reserve = derived.reserveBalance;
@@ -5368,11 +5373,35 @@ if (goalMonthlySave > 0 && _incFreqNow === "weekly") {
     + " (≈ " + fmtNum(Math.round(goalMonthlySave / 2.16)) + " " + _cs2 + " " + t("misc.perBiweek") + ")";
 }
 
+// PHASE 1 — календарно-точный текущий месяц. Для гибкой модели (одна цель)
+// показываем фактические суммы ТЕКУЩЕГО месяца (число реальных поступлений),
+// а рядом - ongoing-ставку «полного» месяца (×4.33 для недельного). Для
+// простой модели и доп. целей поведение прежнее.
+var _useCM = !hasMultiGoals && isCashflow && (lastCalc.currentMonthIncome != null);
+var _dispInc = _useCM ? (lastCalc.currentMonthIncome || 0) : (lastCalc.forecastIncome || 0);
+var _dispExp = _useCM ? (lastCalc.currentMonthExpense || 0) : (lastCalc.forecastExpense || 0);
+var _dispFree = _useCM ? (lastCalc.currentMonthFree || 0) : (lastCalc.free || 0);
+var _dispSave = _useCM ? (lastCalc.currentMonthSave || 0) : goalMonthlySave;
+var _incPartial = _useCM && (_dispInc !== (lastCalc.forecastIncome || 0));
+var _expPartial = _useCM && (_dispExp !== (lastCalc.forecastExpense || 0));
+
+var _incLine = t("plan.forecastIncome") + ": " + fmtNum(_dispInc) + " " + _cs2
+  + (_incPartial
+      ? " " + t("plan.thisMonthOngoing", { ongoing: fmtNum(lastCalc.forecastIncome || 0) + " " + _cs2 })
+      : " " + t("pace.perMonth"));
+var _expLine = t("plan.forecastExpense") + ": " + fmtNum(_dispExp) + " " + _cs2
+  + (_expPartial
+      ? " " + t("plan.thisMonthOngoing", { ongoing: fmtNum(lastCalc.forecastExpense || 0) + " " + _cs2 })
+      : " " + t("pace.perMonth"));
+// «Откладываете»: в неполном месяце показываем сумму текущего месяца + пометку.
+var _youSaveStrFinal = _incPartial
+  ? (fmtNum(_dispSave) + " " + _cs2 + " " + t("plan.thisMonthTag"))
+  : _youSaveStr;
+
 var explainText = lastCalc.ok
-  ? (isCashflow ? t("plan.forecastIncome") + ": " + fmtNum(lastCalc.forecastIncome || 0) + " " + _cs2 + " " + t("pace.perMonth") + "\n"
-      + t("plan.forecastExpense") + ": " + fmtNum(lastCalc.forecastExpense || 0) + " " + _cs2 + " " + t("pace.perMonth") + "\n" : "")
-    + t("plan.freePerMonth") + ": " + fmtNum(lastCalc.free || 0) + " " + _cs2 + "\n"
-    + t("plan.youSave") + ": " + _youSaveStr + "\n"
+  ? (isCashflow ? _incLine + "\n" + _expLine + "\n" : "")
+    + t("plan.freePerMonth") + ": " + fmtNum(_dispFree) + " " + _cs2 + "\n"
+    + t("plan.youSave") + ": " + _youSaveStrFinal + "\n"
     + t("plan.paceOfFree", { pct: pctVal }) + "\n"
     + t("plan.goalReachedIn") + " " + goalMonthsLeft + " " + t("misc.monthShort")
   : t("engine.noBalance");
