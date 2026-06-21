@@ -14092,28 +14092,64 @@ function renderFlexModelSummary() {
     return str.charAt(0).toUpperCase() + str.slice(1);
   }
 
+  // Сумма ручных записей одной стороны за период (customScheduleEntries).
+  // Используется как источник суммы для VARIABLE + freq="custom" вместо
+  // удалённого поля fixedXxxAmount.
+  function sumCustomEntries(side) {
+    var entries = Array.isArray(s.customScheduleEntries) ? s.customScheduleEntries : [];
+    var total = 0;
+    for (var i = 0; i < entries.length; i++) {
+      var e = entries[i];
+      if (!e || e.side !== side) continue;
+      total += Number(e.amount) || 0;
+    }
+    return total;
+  }
+  function countCustomEntries(side) {
+    var entries = Array.isArray(s.customScheduleEntries) ? s.customScheduleEntries : [];
+    var n = 0;
+    for (var i = 0; i < entries.length; i++) {
+      if (entries[i] && entries[i].side === side) n++;
+    }
+    return n;
+  }
+
   function sideConfig(side) {
     // NEW: логика fixed vs variable 11.05.2026 -
     //   • FIXED   → amount sourced from the SIMPLE-model field (s.income / s.expenses),
     //               frequency is implicitly monthly, no start-date meta.
-    //   • VARIABLE → amount sourced from the user-entered fixedXxxAmount, frequency &
-    //               start date come from the dedicated schedule controls.
+    //   • VARIABLE → amount sourced from manual entries (customScheduleEntries):
+    //               для freq="custom" - сумма всех ручных записей стороны;
+    //               для остальных частот - последнее значение fixedXxxAmount,
+    //               которое модалка «Записать поступление» пишет автоматически.
     if (side === "income") {
       var incType = s.incomeType || "fixed";
+      var incFreq = incType === "fixed" ? "monthly" : (s.incomeFrequency || "monthly");
+      var incAmount;
+      if (incType === "fixed") incAmount = s.income;
+      else if (incFreq === "custom") incAmount = sumCustomEntries("income");
+      else incAmount = s.fixedIncomeAmount;
       return {
         type:      incType,
-        freq:      incType === "fixed" ? "monthly" : (s.incomeFrequency || "monthly"),
-        amount:    incType === "fixed" ? s.income : s.fixedIncomeAmount,
+        freq:      incFreq,
+        amount:    incAmount,
         days:      Array.isArray(s.incomeMonthDays) ? s.incomeMonthDays : [],
+        entries:   incType === "variable" && incFreq === "custom" ? countCustomEntries("income") : 0,
         startDate: incType === "fixed" ? "" : (s.incomeStartDate || "")
       };
     }
     var expType = s.expenseType || "fixed";
+    var expFreq = expType === "fixed" ? "monthly" : (s.expenseFrequency || "monthly");
+    var expAmount;
+    if (expType === "fixed") expAmount = s.expenses;
+    else if (expFreq === "custom") expAmount = sumCustomEntries("expense");
+    else expAmount = s.fixedExpenseAmount;
     return {
       type:      expType,
-      freq:      expType === "fixed" ? "monthly" : (s.expenseFrequency || "monthly"),
-      amount:    expType === "fixed" ? s.expenses : s.fixedExpenseAmount,
+      freq:      expFreq,
+      amount:    expAmount,
       days:      Array.isArray(s.expenseMonthDays) ? s.expenseMonthDays : [],
+      entries:   expType === "variable" && expFreq === "custom" ? countCustomEntries("expense") : 0,
       startDate: expType === "fixed" ? "" : (s.expenseStartDate || "")
     };
   }
@@ -14188,7 +14224,7 @@ function renderFlexModelSummary() {
     }
     freqText = capitalize(freqLabel(c.freq));
     if (c.type === "variable" && c.freq === "custom") {
-      freqText += " \u00B7 " + datesCountText(c.days.length);
+      freqText += " \u00B7 " + t("flex.current.byEvents");
     }
 
     // NEW: Start + Next occurrence meta - only for VARIABLE side (the schedule the
@@ -14271,7 +14307,7 @@ function renderFlexModelSummary() {
 
     var freqText = capitalize(freqLabel(c.freq));
     if (c.freq === "custom") {
-      freqText += " \u00B7 " + datesCountText(c.days.length);
+      freqText += " \u00B7 " + t("flex.current.byEvents");
     }
     parts.push(freqText);
 
@@ -14318,13 +14354,14 @@ function renderFlexModelSummary() {
       if (amt <= 0) return { text: t("flex.current.chip.notSet"), muted: true };
       return { text: capitalize(t("freq.fixed")), muted: false };
     }
-    if (c.freq === "custom" && !c.days.length) {
-      return { text: t("flex.current.chip.notSet"), muted: true };
+    // VARIABLE + «Свой график» → сумма формируется из ручных записей. Показываем
+    // «По событиям», когда записи есть (amt > 0); иначе «не настроено».
+    if (c.freq === "custom") {
+      if (amt <= 0) return { text: t("flex.current.chip.notSet"), muted: true };
+      return { text: t("flex.current.byEvents"), muted: false };
     }
     if (amt <= 0) return { text: t("flex.current.chip.notSet"), muted: true };
-    var freqStr = capitalize(freqLabel(c.freq));
-    if (c.freq === "custom") freqStr += " \u00B7 " + datesCountText(c.days.length);
-    return { text: freqStr, muted: false };
+    return { text: capitalize(freqLabel(c.freq)), muted: false };
   }
 
   function applyChip(elId, chip) {
