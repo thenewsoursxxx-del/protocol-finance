@@ -3056,6 +3056,13 @@ style="width:52px;height:52px;border-radius:50%">
 ➜
 </button>
 </div>
+<!-- Гибкая модель: вместо ручного поля «Сколько вы отложили» - кнопки записи
+     дохода/расхода. Видимость управляется updateFactInputVisibility(). -->
+<div id="cashflowRecordRow" class="cashflow-record-row" style="display:none">
+<button id="recordIncomeBtn" class="cs-add-record-btn" type="button">${t("graph.recordIncome")}</button>
+<button id="recordExpenseBtn" class="cs-add-record-btn cs-add-record-btn--expense" type="button">${t("graph.recordExpense")}</button>
+<div id="cashflowRecordHint" class="cashflow-record-hint">${t("graph.recordHint")}</div>
+</div>
 <div id="brainMessageContainer"></div>
 </div>
 
@@ -3083,6 +3090,24 @@ style="width:52px;height:52px;border-radius:50%">
 
   const factInput = document.getElementById("factInput");
   const applyBtn = document.getElementById("applyFact");
+
+  // Гибкая модель: кнопки «Записать доход / расход» открывают то же окно записи,
+  // что и «+ Записать поступление» в карточке гибкой модели. Логику отложения
+  // не дублируем - переиспользуем openCustomScheduleSheet.
+  var recordIncomeBtn = document.getElementById("recordIncomeBtn");
+  var recordExpenseBtn = document.getElementById("recordExpenseBtn");
+  if (recordIncomeBtn) {
+    recordIncomeBtn.onclick = function () {
+      haptic("light");
+      if (typeof window.openCustomScheduleSheet === "function") window.openCustomScheduleSheet("income");
+    };
+  }
+  if (recordExpenseBtn) {
+    recordExpenseBtn.onclick = function () {
+      haptic("light");
+      if (typeof window.openCustomScheduleSheet === "function") window.openCustomScheduleSheet("expense");
+    };
+  }
 
   if (factInput) {
     factInput.addEventListener("input", e => {
@@ -5332,11 +5357,26 @@ var s = getState();
 var isCashflow = (s.financialModel === "cashflow");
 
 var pctVal = Math.round(goalPace * 100);
+
+// Темп накоплений в движке всегда месячный (goalMonthlySave). Но если доход
+// поступает раз в неделю / раз в 2 недели, показываем рядом эквивалент за
+// выбранный период - так пользователю с недельным доходом понятнее, сколько
+// откладывать за раз (зеркало summaryFreqHint на экране расчёта).
+var _incFreqNow = isCashflow ? (s.incomeFrequency || "") : "";
+var _youSaveStr = fmtNum(goalMonthlySave) + " " + _cs2;
+if (goalMonthlySave > 0 && _incFreqNow === "weekly") {
+  _youSaveStr += " " + t("plan.perMonth")
+    + " (≈ " + fmtNum(Math.round(goalMonthlySave / 4.33)) + " " + _cs2 + " " + t("misc.perWeek") + ")";
+} else if (goalMonthlySave > 0 && _incFreqNow === "biweekly") {
+  _youSaveStr += " " + t("plan.perMonth")
+    + " (≈ " + fmtNum(Math.round(goalMonthlySave / 2.16)) + " " + _cs2 + " " + t("misc.perBiweek") + ")";
+}
+
 var explainText = lastCalc.ok
   ? (isCashflow ? t("plan.forecastIncome") + ": " + fmtNum(lastCalc.forecastIncome || 0) + " " + _cs2 + " " + t("pace.perMonth") + "\n"
       + t("plan.forecastExpense") + ": " + fmtNum(lastCalc.forecastExpense || 0) + " " + _cs2 + " " + t("pace.perMonth") + "\n" : "")
     + t("plan.freePerMonth") + ": " + fmtNum(lastCalc.free || 0) + " " + _cs2 + "\n"
-    + t("plan.youSave") + ": " + fmtNum(goalMonthlySave) + " " + _cs2 + "\n"
+    + t("plan.youSave") + ": " + _youSaveStr + "\n"
     + t("plan.paceOfFree", { pct: pctVal }) + "\n"
     + t("plan.goalReachedIn") + " " + goalMonthsLeft + " " + t("misc.monthShort")
   : t("engine.noBalance");
@@ -6341,6 +6381,13 @@ function initCashflowSettings() {
     var freq = btn.dataset.freq;
     var forIncome = block && block.getAttribute("data-for") === "income";
     var sideLabel = forIncome ? "income" : "expense";
+    // Захватываем прежний прогноз ДО мутации - нужен для defence от
+    // повторного ввода той же суммы/частоты в configure-режиме.
+    var _sPrev = (typeof getState === "function") ? getState() : {};
+    var prevFreq = forIncome ? (_sPrev.incomeFrequency || "") : (_sPrev.expenseFrequency || "");
+    var prevAmount = forIncome
+      ? (Number(_sPrev.fixedIncomeAmount) || 0)
+      : (Number(_sPrev.fixedExpenseAmount) || 0);
     if (forIncome) {
       incomeFrequency = freq;
       updateState({ incomeFrequency: freq });
@@ -6356,17 +6403,27 @@ function initCashflowSettings() {
     recalcPlan();
     saveFullState();
 
-    // UNIFIED CUSTOM SCHEDULE FLOW - после смены частоты сразу открываем единую
-    // модалку «Записать поступление / расход». Это даёт пользователю общий flow
-    // для всех периодичностей: weekly / biweekly / monthly / custom - одно и то
-    // же окно с динамической подсказкой и кнопкой «Отложить на цель».
+    // После смены частоты открываем единую модалку. Поведение зависит от freq:
+    //   • non-custom (monthly/weekly/biweekly) - CONFIGURE-режим: настраиваем
+    //     прогноз (сумма + частота), без записи факта и без отложения. Повтор
+    //     той же суммы при той же частоте - отклоняется с подсказкой.
+    //   • custom («свой график») - record-режим: добавление отдельного события.
     if (typeof window.openCustomScheduleSheet === "function") {
       // Открываем модалку только если type=variable (для variable-side ввод имеет
       // смысл; для fixed-side частота меняется через свои элементы UI).
       var sNow = (typeof getState === "function") ? getState() : {};
       var sideType = forIncome ? (sNow.incomeType || "fixed") : (sNow.expenseType || "fixed");
       if (sideType === "variable") {
-        window.openCustomScheduleSheet(sideLabel, { frequency: freq });
+        if (freq === "custom") {
+          window.openCustomScheduleSheet(sideLabel, { frequency: freq });
+        } else {
+          window.openCustomScheduleSheet(sideLabel, {
+            frequency: freq,
+            configure: true,
+            prevFreq: prevFreq,
+            prevAmount: prevAmount
+          });
+        }
       }
     }
   }
@@ -6700,7 +6757,14 @@ initCashflowSettings();
     pendingDeposit: 0,
     baseAmount: 0,
     entryDate: "",
-    frequency: "custom"
+    frequency: "custom",
+    // CONFIGURE vs RECORD режим. configure=true открывается из кнопок
+    // периодичности гибкой модели и НАСТРАИВАЕТ прогноз (сумма + частота),
+    // без записи факта и без отложения. record (default) - запись факта
+    // + авто-отложение (кнопки на графике, «+ Записать», reminder'ы).
+    configure: false,
+    prevAmount: 0,
+    prevFreq: ""
   };
 
   // ── Helpers ───────────────────────────────────────────────────────────────
@@ -7131,12 +7195,15 @@ initCashflowSettings();
   // «дальше - каждую неделю / две недели / месяц / вручную». Кнопка primary
   // унифицирована: для income всегда «Отложить на цель», для expense - «Сохранить
   // запись»; для редактирования - «Сохранить».
-  function _applySheetTextsForSide(side, isEdit, freq) {
+  function _applySheetTextsForSide(side, isEdit, freq, configure) {
     var freqKey = freq || "custom";
 
     if (titleEl) {
       if (isEdit) {
         titleEl.textContent = t("cs.modal.title.edit." + side);
+      } else if (configure) {
+        // CONFIGURE-режим: «Настроить доход / расход».
+        titleEl.textContent = t("cs.modal.configTitle." + side);
       } else {
         // Сначала пробуем freq-aware ключ, потом фолбэк на общий.
         var tFreq = t("cs.modal.title." + side + "." + freqKey);
@@ -7147,15 +7214,21 @@ initCashflowSettings();
     }
     if (amountLabelEl) amountLabelEl.textContent = t("cs.field.amount." + side);
     if (amountHintEl) {
-      // Динамическая подсказка - главное визуальное отличие при разных freq.
-      var hintKey = "cs.field.amountHint." + side + "." + freqKey;
-      var hintTr = t(hintKey);
-      var hintFallback = t("cs.field.amountHint." + side);
-      amountHintEl.textContent = (hintTr && hintTr !== hintKey) ? hintTr : hintFallback;
+      if (configure) {
+        // CONFIGURE-режим: подсказка про настройку прогноза (не запись факта).
+        amountHintEl.textContent = t("cs.modal.configHint." + side);
+      } else {
+        // Динамическая подсказка - главное визуальное отличие при разных freq.
+        var hintKey = "cs.field.amountHint." + side + "." + freqKey;
+        var hintTr = t(hintKey);
+        var hintFallback = t("cs.field.amountHint." + side);
+        amountHintEl.textContent = (hintTr && hintTr !== hintKey) ? hintTr : hintFallback;
+      }
     }
     if (modeBadgeEl) {
       modeBadgeEl.textContent = _modeLabel();
-      modeBadgeEl.style.display = side === "income" ? "" : "none";
+      // В configure-режиме отложения нет - бейдж режима не показываем.
+      modeBadgeEl.style.display = (side === "income" && !configure) ? "" : "none";
     }
     if (nextOccurrenceEl) {
       // Скрываем бейдж в режиме редактирования (это не первая настройка).
@@ -7171,6 +7244,9 @@ initCashflowSettings();
     if (continueBtn) {
       if (isEdit) {
         continueBtn.textContent = t("cs.modal.save");
+      } else if (configure) {
+        // CONFIGURE-режим: настраиваем план, не откладываем.
+        continueBtn.textContent = t("cs.modal.configBtn");
       } else if (side === "income") {
         // Single-step flow - главная кнопка сразу «Отложить на цель».
         continueBtn.textContent = t("cs.alloc.depositBtn");
@@ -7190,8 +7266,9 @@ initCashflowSettings();
     var isExpense = ctx.side === "expense";
     var isEdit = !!ctx.editId;
 
-    // Для expense и режима редактирования прячем preview.
-    if (isExpense || isEdit) {
+    // Для expense, режима редактирования и configure-режима прячем preview
+    // (в configure деньги не откладываются - превью «уйдёт на цель» неуместно).
+    if (isExpense || isEdit || ctx.configure) {
       livePreviewEl.style.display = "none";
       return;
     }
@@ -7245,6 +7322,10 @@ initCashflowSettings();
     ctx.pendingDeposit = 0;
     ctx.baseAmount = 0;
     ctx.entryDate = "";
+    // CONFIGURE-режим: меняем только прогноз (без факта/отложения).
+    ctx.configure = !!opts.configure;
+    ctx.prevAmount = Number(opts.prevAmount) || 0;
+    ctx.prevFreq = opts.prevFreq || "";
 
     // Определяем frequency: явный opts.frequency > текущий state > "custom" как safe default.
     var _s = (typeof getState === "function") ? getState() : {};
@@ -7253,7 +7334,7 @@ initCashflowSettings();
       : (_s.expenseFrequency || "monthly");
     ctx.frequency = opts.frequency || stateFreq || "custom";
 
-    _applySheetTextsForSide(ctx.side, isEdit, ctx.frequency);
+    _applySheetTextsForSide(ctx.side, isEdit, ctx.frequency, ctx.configure);
     _showStep("form");
 
     // Заполняем поля. Для редактирования - текущие значения, иначе чистая форма.
@@ -7408,33 +7489,71 @@ initCashflowSettings();
         return;
       }
 
-      // UNIFIED CUSTOM SCHEDULE FLOW - single-step flow. После клика «Отложить
-      // на цель» (или «Сохранить запись» для расхода) приложение:
-      //   1. Фиксирует периодичность (incomeFrequency / expenseFrequency).
-      //   2. Для non-custom freq: сохраняет fixedIncomeAmount/fixedExpenseAmount
-      //      + startDate, чтобы engine начал генерировать будущие periodic-события
-      //      автоматически.
-      //   3. Добавляет запись в customScheduleEntries (история ручных вводов).
-      //   4. Для income: считает deposit и сразу делает commit (откладывает).
-      //   5. Показывает toast + поднимает reminder противоположной стороны.
-      //   6. Закрывает модалку.
+      // ── CONFIGURE-режим (кнопки периодичности гибкой модели) ───────────────
+      // Только настройка прогноза: сумма + частота → пересчёт плана. Без записи
+      // в историю и без отложения (фактические поступления - через кнопки на
+      // графике). Защита от дубля: та же частота И та же сумма = ничего не
+      // меняем, показываем подсказку.
+      if (ctx.configure) {
+        var cfgFreq = ctx.frequency || "monthly";
+        var cfgPrevFreq = ctx.prevFreq || "";
+        var cfgPrevAmount = Number(ctx.prevAmount) || 0;
+        var nothingChanged = (cfgFreq === cfgPrevFreq) && (rawAmount === cfgPrevAmount);
+        if (nothingChanged) {
+          if (typeof haptic === "function") haptic("error");
+          if (amountInput) {
+            amountInput.classList.add("error", "shake");
+            setTimeout(function () { amountInput.classList.remove("error", "shake"); }, 400);
+          }
+          if (typeof showToast === "function") {
+            showToast(t("cs.toast.noChange." + ctx.side), "info");
+          }
+          return; // модалку оставляем открытой - пользователь может скорректировать
+        }
+        var cfgPatch = {};
+        if (ctx.side === "income") {
+          cfgPatch.incomeFrequency = cfgFreq;
+          cfgPatch.fixedIncomeAmount = rawAmount;
+          cfgPatch.incomeStartDate = dateVal;
+        } else {
+          cfgPatch.expenseFrequency = cfgFreq;
+          cfgPatch.fixedExpenseAmount = rawAmount;
+          cfgPatch.expenseStartDate = dateVal;
+        }
+        if (typeof updateState === "function") updateState(cfgPatch);
+        if (typeof saveFullState === "function") saveFullState();
+        if (typeof showToast === "function") {
+          showToast(t("cs.toast.planUpdated." + ctx.side), "success");
+        }
+        closeCustomScheduleSheet();
+        if (typeof recalcPlan === "function") recalcPlan();
+        if (typeof window.renderCustomSchedule === "function") {
+          window.renderCustomSchedule("income");
+          window.renderCustomSchedule("expense");
+        }
+        if (typeof updatePlanHeader === "function") updatePlanHeader();
+        return;
+      }
+
+      // RECORD-режим (кнопки на графике «Записать доход/расход», «+ Записать»,
+      // reminder'ы). Записываем ФАКТ и откладываем. Прогноз (fixedIncomeAmount/
+      // fixedExpenseAmount + startDate) здесь НЕ трогаем - он настраивается
+      // только через configure-режим (кнопки периодичности). Иначе запись
+      // фактического дохода затирала бы ожидаемую сумму в плане.
+      //   1. Гарантируем, что периодичность зафиксирована.
+      //   2. Добавляет запись в customScheduleEntries (история ручных вводов).
+      //   3. Для income: считает deposit и сразу делает commit (откладывает).
+      //   4. Показывает toast + поднимает reminder противоположной стороны.
+      //   5. Закрывает модалку.
       var sBefore = (typeof getState === "function") ? getState() : {};
       var freqNow = ctx.frequency || "custom";
 
-      // ── 1+2. Сохраняем периодичность и фиксированную сумму для non-custom freq.
+      // ── 1. Фиксируем только периодичность (без перезаписи прогноза-суммы).
       var patch = {};
       if (ctx.side === "income") {
         patch.incomeFrequency = freqNow;
-        if (freqNow !== "custom") {
-          patch.fixedIncomeAmount = rawAmount;
-          patch.incomeStartDate = dateVal;
-        }
       } else {
         patch.expenseFrequency = freqNow;
-        if (freqNow !== "custom") {
-          patch.fixedExpenseAmount = rawAmount;
-          patch.expenseStartDate = dateVal;
-        }
       }
       if (Object.keys(patch).length > 0 && typeof updateState === "function") {
         updateState(patch);
@@ -10126,8 +10245,35 @@ document.addEventListener("click", function (e) {
 
   function updateFactInputVisibility() {
     var factRow = document.querySelector(".fact-input-row");
-    if (!factRow) return;
-    factRow.style.display = (activeGoalIndex > 0) ? "none" : "";
+    var recordRow = document.getElementById("cashflowRecordRow");
+
+    // Доп. цели (activeGoalIndex>0): прячем и поле факта, и кнопки записи (как было).
+    if (activeGoalIndex > 0) {
+      if (factRow) factRow.style.display = "none";
+      if (recordRow) recordRow.style.display = "none";
+      return;
+    }
+
+    var s = (typeof getState === "function") ? getState() : {};
+    var isCashflow = (s.financialModel === "cashflow");
+    var incomeVar = (s.incomeType || "fixed") === "variable";
+    var expenseVar = (s.expenseType || "fixed") === "variable";
+    // В гибкой модели (хотя бы одна сторона «Нефиксированный») показываем кнопки
+    // записи вместо ручного поля «Сколько вы отложили». В простом режиме - поле.
+    var showRecords = isCashflow && (incomeVar || expenseVar);
+
+    if (showRecords && recordRow) {
+      if (factRow) factRow.style.display = "none";
+      recordRow.style.display = "";
+      var incBtn = document.getElementById("recordIncomeBtn");
+      var expBtn = document.getElementById("recordExpenseBtn");
+      // Кнопка только для стороны, которая в режиме «Нефиксированный».
+      if (incBtn) incBtn.style.display = incomeVar ? "" : "none";
+      if (expBtn) expBtn.style.display = expenseVar ? "" : "none";
+    } else {
+      if (factRow) factRow.style.display = "";
+      if (recordRow) recordRow.style.display = "none";
+    }
   }
 
   function setActiveGoal(index) {

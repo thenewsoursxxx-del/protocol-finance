@@ -9495,6 +9495,33 @@ body.reduce-motion .settings-seg-btn {
   background: linear-gradient(180deg, rgba(16, 185, 129, 0.3) 0%, rgba(16, 185, 129, 0.15) 100%);
 }
 
+/* Красная (accent-red) модификация для кнопки «Записать расход» - зеркало
+   изумрудной income-кнопки, чтобы доход/расход визуально различались. */
+.cs-add-record-btn--expense {
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  background: linear-gradient(180deg, rgba(239, 68, 68, 0.2) 0%, rgba(239, 68, 68, 0.09) 100%);
+  color: #fecaca;
+}
+.cs-add-record-btn--expense:active {
+  background: linear-gradient(180deg, rgba(239, 68, 68, 0.28) 0%, rgba(239, 68, 68, 0.14) 100%);
+}
+
+/* Блок кнопок записи дохода/расхода на экране графика (гибкая модель) -
+   занимает место поля «Сколько вы отложили». */
+.cashflow-record-row {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 14px;
+}
+.cashflow-record-hint {
+  font-size: 12px;
+  line-height: 1.4;
+  opacity: 0.6;
+  text-align: center;
+  margin-top: 2px;
+}
+
 .cs-history-title {
   font-size: 12px;
   font-weight: 600;
