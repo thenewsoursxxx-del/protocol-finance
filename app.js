@@ -3357,6 +3357,24 @@ saveFullState();
 resetBtn.onclick = () => confirmReset.style.display = "block";
 confirmNo.onclick = () => confirmReset.style.display = "none";
 function performFullReset() {
+  // PREMIUM SYSTEM - сброс касается ТОЛЬКО плана/цели, а не статуса подписки.
+  // clearState() ниже обнуляет appState к дефолту (isPremium=false), из-за чего
+  // премиум-функции блокировались бы на 15-30с, пока syncUserAccessFlagsFromDB
+  // не перечитает флаги из БД. Поэтому снимаем account-level премиум-поля заранее
+  // и восстанавливаем их сразу после clearState().
+  var _preservedPremium = null;
+  try {
+    var _sPrev = (typeof getState === "function") ? getState() : null;
+    if (_sPrev) {
+      _preservedPremium = {
+        isPremium:          _sPrev.isPremium === true,
+        premiumUntil:       _sPrev.premiumUntil || null,
+        autoRenew:          _sPrev.autoRenew === true,
+        showCommunityStats: _sPrev.showCommunityStats === true
+      };
+    }
+  } catch (e) { _preservedPremium = null; }
+
   chosenPlan = null;
   isInitialized = false;
   lastCalc = {};
@@ -3382,6 +3400,13 @@ function performFullReset() {
   goalMeta.title = t("goals.default");
 
   clearState();
+
+  // PREMIUM SYSTEM - возвращаем сохранённый премиум-статус, чтобы гейт не
+  // блокировал функции после сброса (источник истины - users-таблица в БД,
+  // эти значения с ней совпадают; следующий синк лишь подтвердит их).
+  if (_preservedPremium && typeof updateState === "function") {
+    try { updateState(_preservedPremium); } catch (e) { /* graceful */ }
+  }
 
   var flexContent = document.getElementById("flexibleContent");
   var flexToggle = document.getElementById("flexibleToggle");
@@ -6157,8 +6182,11 @@ function initCashflowSettings() {
   var currentState = getState();
   var incomeType = currentState.incomeType || "fixed";
   var expenseType = currentState.expenseType || "fixed";
-  var incomeFrequency = currentState.incomeFrequency || "monthly";
-  var expenseFrequency = currentState.expenseFrequency || "monthly";
+  // Частота может быть "" (не выбрана) - тогда ни одна кнопка периодичности не
+  // подсвечивается. НЕ дефолтим в "monthly", иначе «Ежемесячно» выглядела бы
+  // предвыбранной при переходе в «Нефиксированный».
+  var incomeFrequency = currentState.incomeFrequency || "";
+  var expenseFrequency = currentState.expenseFrequency || "";
 
   applyPremiumUI(true);
 
@@ -14237,6 +14265,34 @@ function renderFlexModelSummary() {
         var nextD = (typeof calculateNextOccurrence === "function")
           ? calculateNextOccurrence(c.startDate, c.freq, c.days)
           : null;
+        // FIX: «Следующее» - это occurrence ПОСЛЕ даты старта. Когда старт сегодня
+        // или в будущем, calculateNextOccurrence возвращает САМ старт (первое
+        // событие), из-за чего «Начало» и «Следующее» совпадали. Сдвигаем на один
+        // период вперёд по выбранной частоте.
+        if (nextD && startD && !isNaN(startD.getTime())) {
+          var _s0 = new Date(startD.getFullYear(), startD.getMonth(), startD.getDate());
+          var _n0 = new Date(nextD.getFullYear(), nextD.getMonth(), nextD.getDate());
+          if (_n0.getTime() <= _s0.getTime()) {
+            var _adv = new Date(_s0);
+            if (c.freq === "weekly") {
+              _adv.setDate(_adv.getDate() + 7);
+              nextD = _adv;
+            } else if (c.freq === "biweekly") {
+              _adv.setDate(_adv.getDate() + 14);
+              nextD = _adv;
+            } else if (c.freq === "custom") {
+              // «Свой график» - событийный режим без фиксированного шага: оставляем как есть.
+            } else {
+              // monthly и дефолт: +1 месяц с зажатием дня под длину месяца.
+              var _dd = _adv.getDate();
+              _adv.setDate(1);
+              _adv.setMonth(_adv.getMonth() + 1);
+              var _dim = new Date(_adv.getFullYear(), _adv.getMonth() + 1, 0).getDate();
+              _adv.setDate(Math.min(_dd, _dim));
+              nextD = _adv;
+            }
+          }
+        }
         if (nextD) nextStr = formatHumanDate(nextD);
       }
 

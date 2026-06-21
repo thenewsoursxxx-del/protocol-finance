@@ -58,8 +58,13 @@ function getDefaultState() {
     incomeType: "fixed",
     expenseType: "fixed",
     frequency: "monthly",
-    incomeFrequency: "monthly",
-    expenseFrequency: "monthly",
+    // Частота периодичности изначально НЕ выбрана (""), чтобы при переключении
+    // на «Нефиксированный» ни одна кнопка не была подсвечена - пользователь
+    // выбирает сам. Расчётные пути используют запасной "monthly" (|| "monthly"),
+    // поэтому пустое значение безопасно. Существующие пользователи сохраняют
+    // свою сохранённую частоту (deep-merge в applyState).
+    incomeFrequency: "",
+    expenseFrequency: "",
     fixedIncomeAmount: "",
     fixedExpenseAmount: "",
     // NEW (v11): start date for periodic ("fixed") mode — YYYY-MM-DD or "".
