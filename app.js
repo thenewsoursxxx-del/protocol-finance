@@ -7605,19 +7605,73 @@ initCashflowSettings();
     periodDate.setDate(1);
     periodDate.setHours(0, 0, 0, 0);
 
-    if (typeof factHistory !== "undefined" && Array.isArray(factHistory)) {
-      factHistory.push({
-        value: depositAmount,
-        date: periodDate,
-        to: "main",
-        timestamp: realTimestamp
-      });
-    }
-    if (typeof accounts !== "undefined" && accounts) {
-      accounts.main = (Number(accounts.main) || 0) + depositAmount;
+    // ── MULTI-GOAL: распределяем отложение по приоритету целей ──────────────
+    // Зеркало applyFact (простая модель): сперва резерв (план «буфер» = 10%),
+    // затем остаток делится между активными целями по весам приоритета.
+    // Доля основной цели идёт в factHistory("main"), доли вторичных целей —
+    // в g.saved. Раньше всё уходило только на основной счёт, поэтому вторые
+    // цели не пополнялись из гибкой модели.
+    var toReserve = 0;
+    var distributable = depositAmount;
+    if (typeof chosenPlan !== "undefined" && chosenPlan === "buffer") {
+      toReserve = Math.round(distributable * 0.1);
+      distributable = distributable - toReserve;
     }
 
-    // Обновим запись в журнале.
+    var goals = (typeof getGoals === "function") ? getGoals() : null;
+    var alloc = (goals && typeof allocateFactByPriority === "function")
+      ? allocateFactByPriority(goals, distributable)
+      : null;
+
+    var allocatedAny = false;
+    if (alloc && alloc.length) {
+      alloc.forEach(function (a) {
+        if (!a || a.amount <= 0) return;
+        var g = (typeof getGoalById === "function") ? getGoalById(a.goalId) : null;
+        if (!g) return;
+        allocatedAny = true;
+        var isPrimary = (g.priority === 1) || (goals.indexOf(g) === 0);
+        if (isPrimary) {
+          if (typeof factHistory !== "undefined" && Array.isArray(factHistory)) {
+            factHistory.push({ value: a.amount, date: periodDate, to: "main", timestamp: realTimestamp });
+          }
+          if (typeof accounts !== "undefined" && accounts) {
+            accounts.main = (Number(accounts.main) || 0) + a.amount;
+          }
+        } else {
+          g.saved = (Number(g.saved) || 0) + a.amount;
+        }
+      });
+      if (allocatedAny) {
+        if (typeof computeGoalsAllocation === "function") {
+          computeGoalsAllocation(goals, plannedMonthly || 0);
+        }
+        if (typeof persistGoals === "function") persistGoals(goals);
+      }
+    }
+
+    // Fallback: целей через getGoals нет (или распределить не удалось) —
+    // прежнее поведение: весь распределяемый остаток на основной счёт.
+    if (!allocatedAny) {
+      if (typeof factHistory !== "undefined" && Array.isArray(factHistory)) {
+        factHistory.push({ value: distributable, date: periodDate, to: "main", timestamp: realTimestamp });
+      }
+      if (typeof accounts !== "undefined" && accounts) {
+        accounts.main = (Number(accounts.main) || 0) + distributable;
+      }
+    }
+
+    if (toReserve > 0) {
+      if (typeof factHistory !== "undefined" && Array.isArray(factHistory)) {
+        factHistory.push({ value: toReserve, date: periodDate, to: "reserve", timestamp: realTimestamp });
+      }
+      if (typeof accounts !== "undefined" && accounts) {
+        accounts.reserve = (Number(accounts.reserve) || 0) + toReserve;
+      }
+    }
+
+    // Обновим запись в журнале (deposited = полная сумма отложения за период,
+    // включая доли вторичных целей и резерв).
     var arr = _entries();
     for (var i = 0; i < arr.length; i++) {
       if (arr[i].id === entry.id) {
@@ -7663,6 +7717,12 @@ initCashflowSettings();
     } else if (typeof updatePlanHeader === "function") {
       updatePlanHeader();
     }
+    // MULTI-GOAL: после отложения вторичные цели меняют saved/monthlyShare —
+    // обновляем карточки целей и счетов, чтобы прогресс был виден сразу.
+    if (typeof renderGoals === "function") { try { renderGoals(); } catch (e) {} }
+    if (typeof renderAccountsUI === "function") { try { renderAccountsUI(); } catch (e) {} }
+    if (typeof updateAccountsLocalNav === "function") { try { updateAccountsLocalNav(); } catch (e) {} }
+    if (typeof updateGraphGoalIndicator === "function") { try { updateGraphGoalIndicator(); } catch (e) {} }
   }
 
   // ── Events: Continue / Deposit / Skip / History clicks ────────────────────
