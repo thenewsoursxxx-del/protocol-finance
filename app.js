@@ -1801,7 +1801,10 @@ function _monthKey(d) {
 // Ответ пользователя про расход — ТОЛЬКО если он относится к текущему
 // календарному месяцу. Иначе { status:null } — расход считается полным.
 function _partialExpenseForNow() {
-  var pe = state.partialExpense;
+  // ВАЖНО: cashflowStartedAt / partialExpense живут в appState (state-manager),
+  // а локальный const state хранит только UI-поля (goalTotal и т.п.). Читаем
+  // через getState(), иначе значение всегда undefined и плашка не работает.
+  var pe = (typeof getState === "function") ? getState().partialExpense : null;
   if (!pe || pe.status == null) return { status: null, paidAmount: 0 };
   if (pe.monthKey !== _monthKey(new Date())) return { status: null, paidAmount: 0 };
   return { status: pe.status, paidAmount: Number(pe.paidAmount) || 0 };
@@ -1810,7 +1813,8 @@ function _partialExpenseForNow() {
 // true, если гибкая модель начата В ТЕКУЩЕМ месяце и со 2-го числа или позже
 // (месяц неполный) — условие показа плашки про расход в стартовом месяце.
 function _startedMidCurrentMonth() {
-  var iso = state.cashflowStartedAt;
+  // см. _partialExpenseForNow: читаем из appState, не из локального const state.
+  var iso = (typeof getState === "function") ? getState().cashflowStartedAt : "";
   if (!iso) return false;
   var d = new Date(iso);
   if (isNaN(d.getTime())) return false;
@@ -1889,7 +1893,10 @@ function recalcPlan() {
       // дату не ставим → плашка им не показывается. После «Начать сначала»
       // история очищается, поэтому новый неполный месяц учитывается корректно.
       var _noFactYet = !Array.isArray(factHistory) || factHistory.length === 0;
-      if (modelType === "cashflow" && !state.cashflowStartedAt && _noFactYet) {
+      // Читаем из appState (getState), а не из локального const state — иначе
+      // условие всегда истинно и дата старта перезаписывалась на каждом пересчёте.
+      var _alreadyStarted = (typeof getState === "function") ? getState().cashflowStartedAt : "";
+      if (modelType === "cashflow" && !_alreadyStarted && _noFactYet) {
         updateState({ cashflowStartedAt: new Date().toISOString() });
       }
       var _pe = _partialExpenseForNow();
@@ -3558,6 +3565,13 @@ function performFullReset() {
   // эти значения с ней совпадают; следующий синк лишь подтвердит их).
   if (_preservedPremium && typeof updateState === "function") {
     try { updateState(_preservedPremium); } catch (e) { /* graceful */ }
+  }
+
+  // Полный сброс гибкой модели (переменные замыкания + state + DOM). clearState()
+  // обнуляет appState, но переменные incomeType/частоты внутри initCashflowSettings
+  // остаются устаревшими — поэтому синхронизируем их явно.
+  if (typeof window._resetFlexibleModelUI === "function") {
+    try { window._resetFlexibleModelUI(); } catch (e) { /* graceful */ }
   }
 
   var flexContent = document.getElementById("flexibleContent");
@@ -6697,6 +6711,52 @@ function initCashflowSettings() {
     var btns = block.querySelectorAll(".freq-btn");
     for (var i = 0; i < btns.length; i++) btns[i].classList.toggle("active", btns[i].dataset.freq === value);
   }
+
+  // GOAL COMPLETION / RESET: полный сброс гибкой модели — переменные замыкания
+  // (incomeType/expenseType/частоты), поля state И DOM. Нужен, чтобы новая цель
+  // после завершения предыдущей стартовала с чистой моделью (баг: данные гибкой
+  // модели «протекали» в новую цель), а плашка про неполный месяц снова
+  // показывалась (сбрасываем cashflowStartedAt + partialExpense).
+  window._resetFlexibleModelUI = function () {
+    incomeType = "fixed";
+    expenseType = "fixed";
+    incomeFrequency = "";
+    expenseFrequency = "";
+    if (typeof updateState === "function") {
+      updateState({
+        incomeType: "fixed",
+        expenseType: "fixed",
+        incomeFrequency: "",
+        expenseFrequency: "",
+        fixedIncomeAmount: "",
+        fixedExpenseAmount: "",
+        incomeStartDate: "",
+        expenseStartDate: "",
+        incomeMonthDays: [],
+        expenseMonthDays: [],
+        financialModel: "simple",
+        cashflowEvents: [],
+        customScheduleEntries: [],
+        customScheduleExpensePrompt: false,
+        customScheduleIncomePrompt: false,
+        cashflowStartedAt: "",
+        partialExpense: null
+      });
+    }
+    syncToggleUI(incomeToggle, "fixed");
+    syncToggleUI(expenseToggle, "fixed");
+    syncSideUIVisibility("fixed", "fixed");
+    syncFreqUIBlock(incomeFreqBlock, "");
+    syncFreqUIBlock(expenseFreqBlock, "");
+    if (fixedIncomeInput) fixedIncomeInput.value = "";
+    if (fixedExpenseInput) fixedExpenseInput.value = "";
+    if (incomeStartDateInput) incomeStartDateInput.value = "";
+    if (expenseStartDateInput) expenseStartDateInput.value = "";
+    updateMonthDaysVisibility("", "income");
+    updateMonthDaysVisibility("", "expense");
+    if (flexContent) flexContent.classList.remove("open");
+    if (flexToggle) flexToggle.classList.remove("open");
+  };
 }
 
 /* ===== EVENT EDITOR ===== */
@@ -15929,6 +15989,13 @@ function renderFlexModelSummary() {
         chosenPlan: null,
         isInitialized: false
       });
+    }
+
+    // ── 3c) Сброс гибкой (cashflow) модели — иначе её данные «протекают» в новую
+    // цель (тип/частоты/суммы дохода-расхода) и плашка про неполный месяц больше
+    // не показывается (остаются старые cashflowStartedAt/partialExpense). ──
+    if (typeof window._resetFlexibleModelUI === "function") {
+      try { window._resetFlexibleModelUI(); } catch (e) { /* graceful */ }
     }
 
     // ── 4) Закрываем модалку с анимацией + полный refresh UI ──
