@@ -1849,7 +1849,16 @@ function updatePartialExpenseBanner() {
   var onPrimaryGoal = (typeof activeGoalIndex === "undefined") || activeGoalIndex === 0;
   var show = isCashflow && onPrimaryGoal && _startedMidCurrentMonth() && expFull > 0 && !answered;
 
+  // Плашка занимает место кнопок «Записать доход/расход»: пока вопрос не решён,
+  // прячем строку записи и поле факта. После ответа renderProtocolAdviceGraph()
+  // перерисует экран → плашка скроется (answered), а кнопки появятся снова.
+  var recordRow = document.getElementById("cashflowRecordRow");
+  var factRow = document.querySelector(".fact-input-row");
+
   if (!show) { banner.style.display = "none"; return; }
+
+  if (recordRow) recordRow.style.display = "none";
+  if (factRow) factRow.style.display = "none";
 
   var now = new Date();
   var lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
@@ -1862,6 +1871,8 @@ function updatePartialExpenseBanner() {
       amount: ((typeof fmtNum === "function") ? fmtNum(expFull) : expFull) + " " + cs
     });
   }
+  var curEl = document.getElementById("csPartialExpenseCur");
+  if (curEl) curEl.textContent = cs;
   var pw = document.getElementById("csPartialExpensePartialWrap");
   if (pw) pw.style.display = "none";
   banner.style.display = "";
@@ -3185,10 +3196,11 @@ ${adviceBlockHtml}
 </div>
 <div class="cs-partial-expense-partial" id="csPartialExpensePartialWrap" style="display:none">
 <label class="cs-pe-label" for="csPartialExpenseInput">${t("cs.partialExpense.partialLabel")}</label>
-<div class="cs-pe-input-row">
+<div class="cs-pe-field">
 <input id="csPartialExpenseInput" inputmode="numeric" placeholder="${t("cs.partialExpense.partialPlaceholder")}" />
-<button type="button" class="cs-pe-save" id="csPartialExpenseSave">${t("cs.partialExpense.save")}</button>
+<span class="cs-pe-field-cur" id="csPartialExpenseCur">₽</span>
 </div>
+<button type="button" class="cs-pe-save" id="csPartialExpenseSave">${t("cs.partialExpense.save")}</button>
 </div>
 <div class="cs-partial-expense-hint">${t("cs.partialExpense.hint")}</div>
 </div>
@@ -3252,6 +3264,15 @@ style="width:52px;height:52px;border-radius:50%">
 
     factInput.addEventListener("focus", () => {
       factInput.classList.remove("error", "shake");
+    });
+  }
+
+  // Плашка про неполный месяц: форматируем сумму в поле «потрачено частично»
+  // (разряды через пробел), чтобы крупное значение читалось премиально.
+  var peInput = document.getElementById("csPartialExpenseInput");
+  if (peInput) {
+    peInput.addEventListener("input", e => {
+      e.target.value = formatNumber(e.target.value);
     });
   }
 
