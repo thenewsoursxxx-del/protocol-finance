@@ -4631,7 +4631,16 @@ function computeMonthlyStatus() {
     return { required: 0, actual: 0, complete: false, show: false };
   }
 
+  // MULTI-GOAL: карточка основного счёта относится к ОСНОВНОЙ цели (factHistory
+  // "main" = goals[0]). Поэтому месячная норма здесь = доля основной цели, а не
+  // суммарный пул всех целей (plannedMonthly). Иначе «Внесено X / Y» показывало
+  // бы взносы основной цели против общего пула и никогда не «выполнено».
+  var _goalsMS = (typeof getGoals === "function") ? getGoals() : [];
+  var _isMultiMS = _goalsMS && _goalsMS.length > 1;
   var monthlyRequired = plannedMonthly || 0;
+  if (_isMultiMS && _goalsMS[0] && _goalsMS[0].monthlyShare != null) {
+    monthlyRequired = _goalsMS[0].monthlyShare || 0;
+  }
   if (monthlyRequired <= 0) {
     return { required: 0, actual: 0, complete: false, show: true };
   }
@@ -4640,8 +4649,9 @@ function computeMonthlyStatus() {
   // месячной нормы. «Внесено X / цель» и признак выполнения считаем по ней,
   // а внутреннюю кросс-месячную математику (previousRequired/кэпы прошлых
   // месяцев) оставляем на полной норме monthlyRequired, чтобы не ломать перенос.
+  // Для мульти-целей частичную логику не применяем (она для одной цели).
   var currentMonthRequired = monthlyRequired;
-  if (lastCalc && lastCalc.isPartialMonth
+  if (!_isMultiMS && lastCalc && lastCalc.isPartialMonth
       && lastCalc.currentMonthToGoal != null && lastCalc.currentMonthToGoal > 0) {
     currentMonthRequired = lastCalc.currentMonthToGoal;
   }
@@ -7613,6 +7623,17 @@ initCashflowSettings();
     // цели не пополнялись из гибкой модели.
     var toReserve = 0;
     var distributable = depositAmount;
+    // DEBT PARITY: как в applyFact — если включён режим погашения долгов, сначала
+    // автопогашение, затем остаток в резерв/цели. Раньше гибкая модель долги
+    // игнорировала, поэтому простая и гибкая модели расходились.
+    var debtRepaid = 0;
+    var repayResult = null;
+    var _csD = (typeof getState === "function") ? getState() : {};
+    if (_csD && _csD.debtPlanningMode && typeof applyAutoDebtRepayment === "function") {
+      repayResult = applyAutoDebtRepayment(distributable);
+      debtRepaid = (repayResult && repayResult.applied) || 0;
+      distributable = distributable - debtRepaid;
+    }
     if (typeof chosenPlan !== "undefined" && chosenPlan === "buffer") {
       toReserve = Math.round(distributable * 0.1);
       distributable = distributable - toReserve;
@@ -7652,7 +7673,9 @@ initCashflowSettings();
 
     // Fallback: целей через getGoals нет (или распределить не удалось) —
     // прежнее поведение: весь распределяемый остаток на основной счёт.
-    if (!allocatedAny) {
+    // distributable может быть 0, если всё ушло на долги/резерв — тогда ничего
+    // не пишем в журнал основного счёта.
+    if (!allocatedAny && distributable > 0) {
       if (typeof factHistory !== "undefined" && Array.isArray(factHistory)) {
         factHistory.push({ value: distributable, date: periodDate, to: "main", timestamp: realTimestamp });
       }
@@ -7668,6 +7691,26 @@ initCashflowSettings();
       if (typeof accounts !== "undefined" && accounts) {
         accounts.reserve = (Number(accounts.reserve) || 0) + toReserve;
       }
+    }
+
+    // DEBT PARITY: журналируем автопогашение и обновляем UI долгов (как applyFact).
+    if (debtRepaid > 0) {
+      var _savingsPart = depositAmount - debtRepaid;
+      if (repayResult && repayResult.details && typeof addDebtPaymentRecord === "function") {
+        repayResult.details.forEach(function (d) {
+          addDebtPaymentRecord({
+            debtId: d.debtId,
+            amount: d.amount,
+            source: "auto",
+            totalInput: depositAmount,
+            savingsPart: _savingsPart
+          });
+        });
+      }
+      if (typeof renderDebtSummaryGlobal === "function") renderDebtSummaryGlobal();
+      if (typeof renderDebtListGlobal === "function") renderDebtListGlobal();
+      if (typeof showToast === "function") showToast(t("toast.debtRepaid"), "success");
+      if (typeof showDebtBreakdown === "function") showDebtBreakdown(depositAmount, debtRepaid, _savingsPart);
     }
 
     // Обновим запись в журнале (deposited = полная сумма отложения за период,
@@ -7706,6 +7749,28 @@ initCashflowSettings();
   // отрисовываются. Делаем это только если активен экран графика, чтобы не
   // дёргать nav-состояние при записи с экрана расчёта.
   function _refreshGraphAfterRecord() {
+    // MULTI-GOAL: завершение целей после отложения из гибкой модели — зеркало
+    // applyFact (простая модель). Основная цель → модалка завершения; вторичные
+    // (saved >= amount) → архивируются через checkGoalCompletion. Раньше из
+    // гибкой модели цель достигалась, но не закрывалась и модалка не появлялась.
+    try {
+      var _goalTotal = (typeof parseNumber === "function" && typeof goalInput !== "undefined" && goalInput)
+        ? parseNumber(goalInput.value || "0") : 0;
+      if (typeof goalCompleted !== "undefined" && !goalCompleted && _goalTotal > 0
+          && typeof accounts !== "undefined" && accounts && (accounts.main || 0) >= _goalTotal) {
+        goalCompleted = true;
+        var _snap = {
+          name: (typeof goalMeta !== "undefined" && goalMeta && goalMeta.title) ? goalMeta.title : t("misc.defaultGoalTitle"),
+          amount: _goalTotal,
+          saved: accounts.main
+        };
+        if (typeof showGoalCompletionModal === "function") {
+          setTimeout(function () { showGoalCompletionModal(_snap); }, 350);
+        }
+      }
+      if (typeof checkGoalCompletion === "function") checkGoalCompletion();
+    } catch (e) { /* graceful */ }
+
     var sc = document.querySelector(".screen.active");
     var onAdvice = sc && sc.id === "screen-advice";
     if (onAdvice && typeof renderProtocolAdviceGraph === "function") {
