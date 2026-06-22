@@ -4636,6 +4636,16 @@ function computeMonthlyStatus() {
     return { required: 0, actual: 0, complete: false, show: true };
   }
 
+  // Phase 2: цель ТЕКУЩЕГО месяца в неполном (стартовом) месяце меньше полной
+  // месячной нормы. «Внесено X / цель» и признак выполнения считаем по ней,
+  // а внутреннюю кросс-месячную математику (previousRequired/кэпы прошлых
+  // месяцев) оставляем на полной норме monthlyRequired, чтобы не ломать перенос.
+  var currentMonthRequired = monthlyRequired;
+  if (lastCalc && lastCalc.isPartialMonth
+      && lastCalc.currentMonthToGoal != null && lastCalc.currentMonthToGoal > 0) {
+    currentMonthRequired = lastCalc.currentMonthToGoal;
+  }
+
   var settings = (getState().settings) || {};
 
   var mainDeposits = [];
@@ -4651,7 +4661,7 @@ function computeMonthlyStatus() {
   mainDeposits.forEach(function (f) { totalContributed += f.value; });
 
   if (mainDeposits.length === 0) {
-    return { required: monthlyRequired, actual: 0, complete: false, show: true };
+    return { required: currentMonthRequired, actual: 0, complete: false, show: true };
   }
 
   var now = new Date();
@@ -4697,15 +4707,15 @@ function computeMonthlyStatus() {
   }
 
   // allowOverpay ВЫКЛ: финальный потолок на случай переплаты в текущем месяце
-  // (актуально, когда перенос остатка отключён).
-  if (!settings.allowOverpay && currentActual > monthlyRequired) {
-    currentActual = monthlyRequired;
+  // (актуально, когда перенос остатка отключён). Кэп по цели ТЕКУЩЕГО месяца.
+  if (!settings.allowOverpay && currentActual > currentMonthRequired) {
+    currentActual = currentMonthRequired;
   }
 
-  var complete = currentActual >= monthlyRequired;
+  var complete = currentActual >= currentMonthRequired;
 
   return {
-    required: monthlyRequired,
+    required: currentMonthRequired,
     actual: Math.round(currentActual),
     complete: complete,
     show: true
@@ -5477,8 +5487,22 @@ var goalMonthsLeft = hasMultiGoals ? (activeGoal.monthsLeft || 0) : (lastCalc.mo
 var goalPace = (lastCalc.free && lastCalc.free > 0) ? (goalMonthlySave / lastCalc.free) : (lastCalc.pace || 0);
 
 var _cs2 = getCurrencySymbol();
-monthlyEl.innerText =
-  t("plan.current") + ": " + fmtConverted(goalMonthly) + " " + _cs2 + " " + t("plan.perMonth");
+// Phase 2: в неполном (стартовом) месяце «Текущий план» показывает цель ТЕКУЩЕГО
+// месяца (меньше полной), а рядом - полную месячную ставку. Так заголовок и
+// карточка счёта согласуются с «Откладываете … в этом месяце».
+var _planCmToGoal = (!hasMultiGoals
+  && (getState().financialModel === "cashflow")
+  && lastCalc.isPartialMonth
+  && lastCalc.currentMonthToGoal != null
+  && lastCalc.currentMonthToGoal > 0)
+  ? lastCalc.currentMonthToGoal : null;
+if (_planCmToGoal != null) {
+  monthlyEl.innerText = t("plan.current") + ": " + fmtConverted(_planCmToGoal) + " " + _cs2 + " "
+    + t("plan.thisMonthOngoing", { ongoing: fmtConverted(goalMonthly) + " " + _cs2 });
+} else {
+  monthlyEl.innerText =
+    t("plan.current") + ": " + fmtConverted(goalMonthly) + " " + _cs2 + " " + t("plan.perMonth");
+}
 
 var s = getState();
 var isCashflow = (s.financialModel === "cashflow");

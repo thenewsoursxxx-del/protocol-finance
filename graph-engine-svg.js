@@ -86,7 +86,13 @@ var ProtocolGraph = (function () {
     renderWatermark(svg, W, H);
 
     if (goalMonths > 0 && monthly > 0 && !svg.querySelector(".plan-line")) {
-      renderPlanLine(svg, defs, W, H, drawW, drawH, gs.firstMonthRatio, vMonths);
+      // Phase 2: значение цели за первый (возможно неполный) месяц в тех же
+      // единицах, что и линия факта (maxValue-шкала), чтобы точка факта честно
+      // сравнивалась с планом. По умолчанию - полный месячный взнос.
+      var firstMonthVal = (typeof gs.firstMonthRatio === "number" && gs.firstMonthRatio < 0.98)
+        ? gs.firstMonthRatio * monthly
+        : monthly;
+      renderPlanLine(svg, defs, W, H, drawW, drawH, firstMonthVal, monthly, maxValue, vMonths);
     }
 
     if (hasFact && goalMonths > 0 && actualMonths > 0) {
@@ -179,7 +185,7 @@ var ProtocolGraph = (function () {
     }, g);
   }
 
-  function renderPlanLine(svg, defs, W, H, drawW, drawH, firstMonthRatio, visibleMonths) {
+  function renderPlanLine(svg, defs, W, H, drawW, drawH, firstMonthValue, monthly, maxValue, visibleMonths) {
     var x1 = PAD_X;
     var y1 = H - PAD_BOT;
     var x2 = W - PAD_X;
@@ -190,17 +196,20 @@ var ProtocolGraph = (function () {
     el("stop", { offset: "0%", "stop-color": "#3a7bfd" }, grad);
     el("stop", { offset: "100%", "stop-color": "#60a5fa" }, grad);
 
-    // Phase 2: косметический «надлом» под неполный первый месяц. Если вклад
-    // первого месяца меньше полного (firstMonthRatio < 1), первый сегмент идёт
-    // более полого: к концу 1-го месяца линия поднимается лишь на долю обычного
-    // месячного шага, дальше — прямо к цели. Для полного месяца линия прямая.
+    // Phase 2: «надлом» под неполный первый месяц. К концу 1-го месяца линия
+    // плана поднимается на ФАКТИЧЕСКУЮ цель этого месяца (firstMonthValue) в той
+    // же maxValue-шкале, что и линия факта - тогда точка факта корректно
+    // сравнивается с планом. Дальше линия идёт к цели (правый верхний угол).
+    // Для полного месяца (firstMonthValue ≈ monthly) надлома нет.
     var d, totalLen;
-    var ratio = (typeof firstMonthRatio === "number") ? firstMonthRatio : 1;
     var vM = (typeof visibleMonths === "number" && visibleMonths >= 2) ? visibleMonths : 0;
-    if (ratio < 0.98 && vM >= 2) {
-      var xk = x1 + drawW / vM;                       // конец первого месяца по X
-      var fullStepY = (y1 - y2) / vM;                 // обычный месячный подъём по Y
-      var yk = y1 - ratio * fullStepY;                // частичный подъём за неполный месяц
+    var partial = (typeof firstMonthValue === "number" && typeof monthly === "number"
+      && monthly > 0 && firstMonthValue < monthly * 0.98 && maxValue > 0);
+    if (partial && vM >= 2) {
+      var xk = x1 + drawW / vM;                            // конец первого месяца по X
+      var yk = y1 - (firstMonthValue / maxValue) * drawH;  // подъём по реальной шкале
+      if (yk > y1) yk = y1;
+      if (yk < y2) yk = y2;
       d = "M" + x1 + "," + y1 + " L" + xk.toFixed(1) + "," + yk.toFixed(1) + " L" + x2 + "," + y2;
       totalLen = Math.sqrt(Math.pow(xk - x1, 2) + Math.pow(yk - y1, 2))
         + Math.sqrt(Math.pow(x2 - xk, 2) + Math.pow(y2 - yk, 2));
