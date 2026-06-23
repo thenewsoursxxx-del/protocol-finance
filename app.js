@@ -2655,7 +2655,11 @@ window.ProtoSheet = {
     sheetEl.classList.remove("open");
     setTimeout(function () {
       if (overlayEl) overlayEl.style.display = "none";
-      showBottomNav();
+      // Навбар возвращаем ТОЛЬКО на основных вкладках. На экранах «Профиль»,
+      // «Настройки», «Расширенные» и пр. его быть не должно - иначе при закрытии
+      // шита (напр. «Сообщить о проблеме» из профиля) навбар ошибочно всплывал.
+      var _act = document.querySelector(".screen.active");
+      if (_act && SCREEN_TO_NAV_INDEX.hasOwnProperty(_act.id)) showBottomNav();
       if (opts.onClosed) opts.onClosed();
     }, 500);
   },
@@ -14131,14 +14135,55 @@ function goalSwipeToIndex(idx, goLeft) {
     return { key: last.key, name: t("cat." + last.key), color: last.color };
   }
 
-  function getMonthlyExpenseLimit() {
-    var inp = document.getElementById("expenses");
-    if (!inp || !inp.value) {
-      var s = getState();
-      if (s.expenses) return Number(String(s.expenses).replace(/\./g, "")) || 0;
-      return 0;
+  // Возвращает { limit, configured }:
+  //   • limit       — месячный лимит расходов (число для сравнения с тратами);
+  //   • configured  — задан ли лимит вообще. Нужен отдельно от limit, т.к. в
+  //                   гибкой модели лимит может стать 0 (расход уже полностью
+  //                   потрачен в неполном месяце) — это «лимит исчерпан», а не
+  //                   «лимит не задан».
+  function getExpenseLimitInfo() {
+    var s = getState();
+    // ── Гибкая модель ──────────────────────────────────────────────────────
+    // В гибком режиме нефиксированный расход хранится не в поле простой модели
+    // (#expenses / state.expenses), а в карточках периодичности. Лимит берём из
+    // того, что движок уже посчитал:
+    //   • неполный стартовый месяц → currentMonthExpense — расход именно этого
+    //     месяца, пропорциональный числу наступлений И уменьшенный ответом на
+    //     плашку «расход уже потрачен?» (yes→0, partial→остаток, no→полный);
+    //   • обычный (полный) месяц → forecastExpense (месячный расход, нормализованный).
+    if (s.financialModel === "cashflow") {
+      var ds = s.derivedState;
+      if (ds) {
+        var full = Number(ds.currentMonthExpenseFull) || 0;
+        var steady = Number(ds.forecastExpense) || 0;
+        if (ds.isPartialMonth && full > 0) {
+          var rem = Number(ds.currentMonthExpense);
+          if (isNaN(rem) || rem < 0) rem = full;
+          return { limit: rem, configured: true };
+        }
+        if (steady > 0) return { limit: steady, configured: true };
+        if (full > 0) return { limit: full, configured: true };
+      }
+      // Запасной вариант: фиксированный месячный расход лежит в state.expenses.
+      if ((s.expenseType || "fixed") === "fixed") {
+        var fx = Number(String(s.expenses || "").replace(/\./g, "")) || 0;
+        if (fx > 0) return { limit: fx, configured: true };
+      }
+      return { limit: 0, configured: false };
     }
-    return Number(inp.value.replace(/\./g, "")) || 0;
+    // ── Простая модель ─────────────────────────────────────────────────────
+    var inp = document.getElementById("expenses");
+    var lim;
+    if (!inp || !inp.value) {
+      lim = s.expenses ? (Number(String(s.expenses).replace(/\./g, "")) || 0) : 0;
+    } else {
+      lim = Number(inp.value.replace(/\./g, "")) || 0;
+    }
+    return { limit: lim, configured: lim > 0 };
+  }
+
+  function getMonthlyExpenseLimit() {
+    return getExpenseLimitInfo().limit;
   }
 
   function getCurrentMonthKey() {
@@ -14271,7 +14316,9 @@ function goalSwipeToIndex(idx, goLeft) {
   window.renderExpensesScreen = function () {
     var entries = getMonthExpenses();
     var data = calcCategoryTotals(entries);
-    var limit = getMonthlyExpenseLimit();
+    var limitInfo = getExpenseLimitInfo();
+    var limit = limitInfo.limit;
+    var hasLimit = limitInfo.configured;
     var spent = data.totalSpent;
     var remaining = limit - spent;
 
@@ -14304,7 +14351,7 @@ function goalSwipeToIndex(idx, goLeft) {
     if (elAddBtn) elAddBtn.style.display = "";
 
     if (elSpent) elSpent.textContent = fmtConverted(spent);
-    if (elLimit) elLimit.textContent = limit > 0 ? fmtConverted(limit) : "-";
+    if (elLimit) elLimit.textContent = hasLimit ? fmtConverted(limit) : "-";
 
     if (remaining >= 0) {
       if (elRemaining) elRemaining.textContent = fmtConverted(remaining);
@@ -14312,17 +14359,17 @@ function goalSwipeToIndex(idx, goLeft) {
       if (elRemaining) elRemaining.textContent = "−" + fmtConverted(Math.abs(remaining));
     }
 
-    var pct = limit > 0 ? Math.min((spent / limit) * 100, 100) : 0;
+    var pct = limit > 0 ? Math.min((spent / limit) * 100, 100) : (hasLimit && spent > 0 ? 100 : 0);
     if (elProgress) {
       elProgress.style.width = pct + "%";
       elProgress.classList.remove("warn", "over");
-      if (limit > 0 && spent > limit) elProgress.classList.add("over");
+      if (hasLimit && spent > limit) elProgress.classList.add("over");
       else if (limit > 0 && pct >= 80) elProgress.classList.add("warn");
     }
 
     if (elStatus) {
       elStatus.classList.remove("status-ok", "status-warn", "status-over");
-      if (limit <= 0) {
+      if (!hasLimit) {
         elStatus.textContent = t("expenses.noLimit");
         elStatus.classList.add("status-warn");
       } else if (spent > limit) {
@@ -14566,18 +14613,20 @@ function goalSwipeToIndex(idx, goLeft) {
     for (var k = 0; k < allMonth.length; k++) totalAllSpent += allMonth[k].amount;
     var pctOfTotal = totalAllSpent > 0 ? Math.round((catTotal / totalAllSpent) * 100) : 0;
 
-    var limit = getMonthlyExpenseLimit();
+    var catLimitInfo = getExpenseLimitInfo();
+    var limit = catLimitInfo.limit;
+    var hasLimit = catLimitInfo.configured;
     if (metaEl) {
       var metaParts = [];
       metaParts.push(t("expenses.pctOfAll", { pct: pctOfTotal }));
-      if (limit > 0) metaParts.push(t("expenses.ofTotal", { amount: fmtConverted(catTotal), limit: fmtConverted(limit), sym: getCurrencySymbol() }));
+      if (hasLimit) metaParts.push(t("expenses.ofTotal", { amount: fmtConverted(catTotal), limit: fmtConverted(limit), sym: getCurrencySymbol() }));
       metaEl.textContent = metaParts.join("  ·  ");
     }
 
     if (progressWrap && progressFill) {
-      if (limit > 0) {
+      if (hasLimit) {
         progressWrap.style.display = "";
-        var pctBar = Math.min((catTotal / limit) * 100, 100);
+        var pctBar = limit > 0 ? Math.min((catTotal / limit) * 100, 100) : (catTotal > 0 ? 100 : 0);
         progressFill.style.width = "0%";
         progressFill.style.background = cat.color;
         requestAnimationFrame(function () {
