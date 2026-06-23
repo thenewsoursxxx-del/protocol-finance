@@ -5615,16 +5615,33 @@ if (_useCM && _peNow.status === "yes") {
 } else if (_useCM && _peNow.status === "partial") {
   _expLine += " · " + t("plan.expensePartialNote", { paid: fmtNum(_peNow.paidAmount) + " " + _cs2 });
 }
-// «Откладываете»: в неполном месяце показываем сумму текущего месяца + пометку.
-var _youSaveStrFinal = _incPartial
-  ? (fmtNum(_dispSave) + " " + _cs2 + " " + t("plan.thisMonthTag"))
-  : _youSaveStr;
+// «Откладываете»:
+//  • Гибкая модель + недельный / 2-недельный доход → показываем сумму ЗА ПЕРИОД
+//    (сколько отложить с каждого поступления), а месячную - в скобках.
+//    goalMonthlySave уже учитывает темп (pace); резерв - часть этой суммы.
+//  • Иначе (месячный доход / простая модель) - прежнее поведение
+//    (в неполном месяце - сумма текущего месяца + пометка).
+var _youSaveStrFinal;
+if (isCashflow && goalMonthlySave > 0 && (_incFreqNow === "weekly" || _incFreqNow === "biweekly")) {
+  var _ppMult = _incFreqNow === "weekly" ? 4.33 : 2.16;
+  var _ppLabel = _incFreqNow === "weekly" ? t("misc.perWeek") : t("misc.perBiweek");
+  var _ppAmount = Math.round(goalMonthlySave / _ppMult);
+  _youSaveStrFinal = fmtNum(_ppAmount) + " " + _cs2 + " " + _ppLabel
+    + " (" + fmtNum(goalMonthlySave) + " " + _cs2 + " " + t("pace.perMonth") + ")";
+} else {
+  _youSaveStrFinal = _incPartial
+    ? (fmtNum(_dispSave) + " " + _cs2 + " " + t("plan.thisMonthTag"))
+    : _youSaveStr;
+}
 
+// Гибкая модель: по просьбе убираем строки «Свободно в месяц» и
+// «Это ~X% от свободных средств» (меньше текста, фокус на «за период»).
+// В простой модели обе строки сохраняются.
 var explainText = lastCalc.ok
   ? (isCashflow ? _incLine + "\n" + _expLine + "\n" : "")
-    + t("plan.freePerMonth") + ": " + fmtNum(_dispFree) + " " + _cs2 + "\n"
+    + (isCashflow ? "" : (t("plan.freePerMonth") + ": " + fmtNum(_dispFree) + " " + _cs2 + "\n"))
     + t("plan.youSave") + ": " + _youSaveStrFinal + "\n"
-    + t("plan.paceOfFree", { pct: pctVal }) + "\n"
+    + (isCashflow ? "" : (t("plan.paceOfFree", { pct: pctVal }) + "\n"))
     + t("plan.goalReachedIn") + " " + goalMonthsLeft + " " + t("misc.monthShort")
   : t("engine.noBalance");
 explainEl.innerHTML = explainText.replace(/\n/g, "<br>");
