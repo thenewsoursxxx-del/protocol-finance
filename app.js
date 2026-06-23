@@ -1809,6 +1809,9 @@ function _partialExpenseForNow() {
   if (pe.monthKey !== _monthKey(new Date())) return { status: null, paidAmount: 0 };
   return { status: pe.status, paidAmount: Number(pe.paidAmount) || 0 };
 }
+// Экспортируем для модуля «Свой график» (custom schedule IIFE), чтобы расчёт
+// свободных средств учитывал тот же ответ про неполный месяц, что и движок.
+window._partialExpenseForNow = _partialExpenseForNow;
 
 // true, если гибкая модель начата В ТЕКУЩЕМ месяце и со 2-го числа или позже
 // (месяц неполный) — условие показа плашки про расход в стартовом месяце.
@@ -1820,6 +1823,7 @@ function _startedMidCurrentMonth() {
   if (isNaN(d.getTime())) return false;
   return _monthKey(d) === _monthKey(new Date()) && d.getDate() >= 2;
 }
+window._startedMidCurrentMonth = _startedMidCurrentMonth;
 
 // Сохраняет ответ пользователя на плашку про расход и пересчитывает план/график.
 function _savePartialExpense(status, paidAmount) {
@@ -1846,6 +1850,17 @@ function updatePartialExpenseBanner() {
   var isCashflow = (s.financialModel === "cashflow");
   var answered = _partialExpenseForNow().status !== null;
   var expFull = (lastCalc && lastCalc.currentMonthExpenseFull) || 0;
+  // Fallback: у «своего графика» (доход custom) движок не наполняет
+  // currentMonthExpenseFull, пока нет данных о доходе - поэтому берём
+  // фиксированный месячный расход напрямую из state. Вопрос про неполный месяц
+  // относится к РЕГУЛЯРНОМУ расходу (fixed / variable-periodic), а не к custom.
+  var _expIsCustom = (s.expenseType === "variable") && ((s.expenseFrequency || "monthly") === "custom");
+  if (!expFull && !_expIsCustom) {
+    var _pf = (typeof parseFlexAmount === "function") ? parseFlexAmount : Number;
+    expFull = ((s.expenseType || "fixed") === "fixed")
+      ? (_pf(s.expenses) || 0)
+      : (_pf(s.fixedExpenseAmount) || 0);
+  }
   var onPrimaryGoal = (typeof activeGoalIndex === "undefined") || activeGoalIndex === 0;
   var show = isCashflow && onPrimaryGoal && _startedMidCurrentMonth() && expFull > 0 && !answered;
 
@@ -7185,13 +7200,23 @@ initCashflowSettings();
       expenseKind = totalExpense > 0 ? "customTotal" : "none";
     } else {
       var eType = s.expenseType || "fixed";
-      if (eType === "fixed") {
-        totalExpense = parser(s.expenses);
-        expenseKind = totalExpense > 0 ? "fixed" : "none";
-      } else {
-        totalExpense = parser(s.fixedExpenseAmount);
-        expenseKind = totalExpense > 0 ? "variablePeriodic" : "none";
+      var _fullExp = (eType === "fixed") ? parser(s.expenses) : parser(s.fixedExpenseAmount);
+      // Неполный стартовый месяц: учитываем ответ на плашку «расход уже
+      // потрачен?» (паритет с CashflowEngine): yes → 0, partial → остаток,
+      // no / нет ответа → полный расход. Так «Свой график» считает свободные
+      // средства так же, как регулярные частоты.
+      totalExpense = _fullExp;
+      var _smFn = window._startedMidCurrentMonth;
+      if (typeof _smFn === "function" && _smFn()) {
+        var _peFn = window._partialExpenseForNow;
+        var _pe = (typeof _peFn === "function") ? _peFn() : { status: null, paidAmount: 0 };
+        if (_pe.status === "yes") {
+          totalExpense = 0;
+        } else if (_pe.status === "partial") {
+          totalExpense = Math.max(0, _fullExp - (Number(_pe.paidAmount) || 0));
+        }
       }
+      expenseKind = totalExpense > 0 ? (eType === "fixed" ? "fixed" : "variablePeriodic") : "none";
     }
 
     var free = Math.max(0, totalIncome - totalExpense);
