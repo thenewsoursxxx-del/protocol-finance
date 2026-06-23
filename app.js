@@ -6256,21 +6256,14 @@ function syncFlexibleUI() {
 
   if (typeof renderFlexModelSummary === "function") renderFlexModelSummary();
 
-  // CUSTOM SCHEDULE LOGIC - синхронизируем видимость нового блока «Свой график»
-  // и перерендериваем его сводку/историю (сюда попадаем из recalcPlan на любое
-  // изменение state, поэтому summary всегда актуален: последняя сумма, отложено,
-  // примерный срок до цели).
-  var sCustom = (typeof getState === "function") ? getState() : {};
+  // CUSTOM SCHEDULE LOGIC - карточка «Накоплено/История поступлений» в экране
+  // настройки УБРАНА: запись нерегулярных поступлений «Свой график» теперь
+  // полностью на вкладке с графиком (кнопки «Записать доход/расход»). Поэтому
+  // в настройке блок всегда скрыт - чтобы не дублировать ввод и не путать.
   var incCb = document.getElementById("incomeCustomBlock");
   var expCb = document.getElementById("expenseCustomBlock");
-  var incIsCustom = (sCustom.incomeType === "variable") && ((sCustom.incomeFrequency || "monthly") === "custom");
-  var expIsCustom = (sCustom.expenseType === "variable") && ((sCustom.expenseFrequency || "monthly") === "custom");
-  if (incCb) incCb.style.display = incIsCustom ? "flex" : "none";
-  if (expCb) expCb.style.display = expIsCustom ? "flex" : "none";
-  if (typeof window.renderCustomSchedule === "function") {
-    if (incIsCustom) window.renderCustomSchedule("income");
-    if (expIsCustom) window.renderCustomSchedule("expense");
-  }
+  if (incCb) incCb.style.display = "none";
+  if (expCb) expCb.style.display = "none";
 }
 
 /**
@@ -6638,23 +6631,23 @@ function initCashflowSettings() {
     //   • non-custom (monthly/weekly/biweekly) - CONFIGURE-режим: настраиваем
     //     прогноз (сумма + частота), без записи факта и без отложения. Повтор
     //     той же суммы при той же частоте - отклоняется с подсказкой.
-    //   • custom («свой график») - record-режим: добавление отдельного события.
-    if (typeof window.openCustomScheduleSheet === "function") {
+    //   • custom («свой график») - модалку НЕ открываем. Это нерегулярный доход
+    //     без фиксированной суммы и дат: пользователь записывает каждое
+    //     поступление (дата + сумма) на вкладке с графиком кнопкой «Записать
+    //     доход/расход», а приложение строит предположительный прогноз по этим
+    //     ручным вводам. Здесь только фиксируем выбор периодичности.
+    if (freq !== "custom" && typeof window.openCustomScheduleSheet === "function") {
       // Открываем модалку только если type=variable (для variable-side ввод имеет
       // смысл; для fixed-side частота меняется через свои элементы UI).
       var sNow = (typeof getState === "function") ? getState() : {};
       var sideType = forIncome ? (sNow.incomeType || "fixed") : (sNow.expenseType || "fixed");
       if (sideType === "variable") {
-        if (freq === "custom") {
-          window.openCustomScheduleSheet(sideLabel, { frequency: freq });
-        } else {
-          window.openCustomScheduleSheet(sideLabel, {
-            frequency: freq,
-            configure: true,
-            prevFreq: prevFreq,
-            prevAmount: prevAmount
-          });
-        }
+        window.openCustomScheduleSheet(sideLabel, {
+          frequency: freq,
+          configure: true,
+          prevFreq: prevFreq,
+          prevAmount: prevAmount
+        });
       }
     }
   }
@@ -6688,28 +6681,16 @@ function initCashflowSettings() {
 
   function updateMonthDaysVisibility(freq, type) {
     var wrap = type === "income" ? incomeMonthDaysWrap : expenseMonthDaysWrap;
-    var sideType = type === "income"
-      ? (getState().incomeType || "fixed")
-      : (getState().expenseType || "fixed");
-    // UNIFIED CUSTOM SCHEDULE FLOW - блок ручного ввода `.custom-schedule-block`
-    // теперь виден для ВСЕХ variable-периодичностей (weekly / biweekly / monthly
-    // / custom), потому что единая модалка «Записать поступление» создаёт запись
-    // в customScheduleEntries при любой частоте. Так пользователь видит полную
-    // историю вводов и reminder'ы независимо от выбранного freq.
-    var shouldShow = (sideType === "variable");
-    // CUSTOM SCHEDULE LOGIC - старый picker дней месяца полностью заменён
-    // блоком ручного ввода `.custom-schedule-block`. Прежний wrap скрыт всегда,
-    // чтобы не путать пользователя двумя UI одновременно. Сам элемент оставлен
-    // в DOM для обратной совместимости с прежними listener'ами setupMonthDaysDateInput.
+    // CUSTOM SCHEDULE LOGIC - старый picker дней месяца полностью заменён;
+    // прежний wrap скрыт всегда. Сам элемент оставлен в DOM для совместимости
+    // с прежними listener'ами setupMonthDaysDateInput.
     if (wrap) wrap.style.display = "none";
+    // CUSTOM SCHEDULE LOGIC - карточка ручного ввода/истории в экране настройки
+    // больше не показывается: запись поступлений «Свой график» перенесена на
+    // вкладку с графиком. Здесь всегда скрываем блок.
     var customBlockId = type === "income" ? "incomeCustomBlock" : "expenseCustomBlock";
     var customBlock = document.getElementById(customBlockId);
-    if (customBlock) {
-      customBlock.style.display = shouldShow ? "flex" : "none";
-      if (shouldShow && typeof window.renderCustomSchedule === "function") {
-        window.renderCustomSchedule(type);
-      }
-    }
+    if (customBlock) customBlock.style.display = "none";
   }
 
   // NEW: логика fixed vs variable 11.05.2026 - thin wrapper around the module-level

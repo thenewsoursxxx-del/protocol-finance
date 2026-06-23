@@ -190,15 +190,10 @@ viewport-fit=cover" />
         <div class="cf-fixed-hint-line" id="incomeFixedHintLine"></div>
         <div class="cf-fixed-hint-helper" data-i18n="flex.fixedSummary.helper">Используются данные, введённые при открытии гибкой модели</div>
       </div>
-      <!-- Сумма дохода вводится через карточку «+ Записать поступление» ниже -
-           отдельное поле суммы убрано, чтобы не дублировать ввод. В non-fixed
-           режиме здесь остаётся только дата старта периодического дохода. -->
-      <div id="fixedIncomeWrap" class="cf-fixed-amount-wrap cf-nonfixed-wrap" style="display:none">
-        <div class="cf-startdate-row">
-          <label for="incomeStartDate" class="cf-startdate-label" data-i18n="flex.variable.startDate.income">Дата первого поступления</label>
-          <input id="incomeStartDate" type="date" class="cf-startdate-input" data-i18n-placeholder="flex.start.placeholder" />
-        </div>
-      </div>
+      <!-- Поле «Дата первого поступления» убрано: дата старта расписания
+           выбирается прямо в окне настройки частоты (ежемесячно/раз в неделю/
+           раз в 2 нед.), поэтому отдельное поле здесь дублировало ввод. Для
+           «Свой график» дата берётся из каждого конкретного поступления. -->
       <div id="incomeFrequencySelector" class="frequency-selector" data-for="income">
         <div class="cf-freq-label" data-i18n="flex.freq.label.income">Как часто вы получаете доход?</div>
         <div class="freq-grid">
@@ -260,15 +255,9 @@ viewport-fit=cover" />
         <div class="cf-fixed-hint-line" id="expenseFixedHintLine"></div>
         <div class="cf-fixed-hint-helper" data-i18n="flex.fixedSummary.helper">Используются данные, введённые при открытии гибкой модели</div>
       </div>
-      <!-- Сумма расхода вводится через карточку «+ Записать расход» ниже -
-           отдельное поле суммы убрано, чтобы не дублировать ввод. В non-fixed
-           режиме здесь остаётся только дата старта периодического расхода. -->
-      <div id="fixedExpenseWrap" class="cf-fixed-amount-wrap cf-nonfixed-wrap" style="display:none">
-        <div class="cf-startdate-row">
-          <label for="expenseStartDate" class="cf-startdate-label" data-i18n="flex.variable.startDate.expense">Дата первого расхода</label>
-          <input id="expenseStartDate" type="date" class="cf-startdate-input" data-i18n-placeholder="flex.start.placeholder" />
-        </div>
-      </div>
+      <!-- Поле «Дата первого расхода» убрано: дата старта расписания выбирается
+           в окне настройки частоты, отдельное поле здесь дублировало ввод. Для
+           «Свой график» дата берётся из каждого конкретного расхода. -->
       <div id="expenseFrequencySelector" class="frequency-selector" data-for="expense">
         <div class="cf-freq-label" data-i18n="flex.freq.label.expense">Как часто вы тратите деньги?</div>
         <div class="freq-grid">
