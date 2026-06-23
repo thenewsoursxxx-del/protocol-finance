@@ -5395,8 +5395,10 @@ if (_cpInfo && _cpInfo.anyCustomActive) {
   // «Уже отложено полностью».
   var _showPending = _cpInfo.pendingDeposit > 0 ? _cpInfo.pendingDeposit : _cpInfo.targetDeposit;
   var _showFormatted = _cpInfo.pendingDeposit > 0 ? _cpInfo.pendingFormatted : _cpInfo.targetFormatted;
+  // fmtAmount/_amount уже добавляют символ валюты - второй раз _csSym не клеим
+  // (иначе в шапке дублировались «7 920 ₽ ₽»).
   monthlyEl.innerHTML =
-    t("cs.plan.title") + ': <b>' + _showFormatted + ' ' + _csSym + '</b>';
+    t("cs.plan.title") + ': <b>' + _showFormatted + '</b>';
 
   // Подсказка про counterpart (что было учтено в free).
   var _cp = _cpInfo.counterpart || { amount: 0, kind: "none" };
@@ -5433,28 +5435,27 @@ if (_cpInfo && _cpInfo.anyCustomActive) {
   // primary row: «Накоплено дохода» - главная сумма-источник.
   rowsHtml += '<div class="plan-cs-row plan-cs-row--primary">' +
                 '<span>' + t("cs.plan.totalIncome") + '</span>' +
-                '<b>' + _cpInfo.totalIncomeFormatted + ' ' + _csSym + '</b>' +
+                '<b>' + _cpInfo.totalIncomeFormatted + '</b>' +
               '</div>';
   rowsHtml += '<div class="plan-cs-counterpart">' + _cpLine + '</div>';
 
   if (_cpInfo.totalExpense > 0) {
     rowsHtml += '<div class="plan-cs-row">' +
                   '<span>' + t("cs.plan.totalExpense") + '</span>' +
-                  '<b>' + _cpInfo.totalExpenseFormatted + ' ' + _csSym + '</b>' +
+                  '<b>' + _cpInfo.totalExpenseFormatted + '</b>' +
                 '</div>';
     rowsHtml += '<div class="plan-cs-row">' +
                   '<span>' + t("cs.plan.free") + '</span>' +
-                  '<b>' + _cpInfo.freeFormatted + ' ' + _csSym + '</b>' +
+                  '<b>' + _cpInfo.freeFormatted + '</b>' +
                 '</div>';
   }
 
-  rowsHtml += '<div class="plan-cs-row">' +
-                '<span>' + t("cs.plan.depositedFromTotal") + '</span>' +
-                '<b>' + _cpInfo.alreadyFormatted + ' ' + _csSym + '</b>' +
-              '</div>';
+  // «Отложено от этой суммы» убрано: в большинстве случаев совпадает с
+  // «Отложено на цель» и путало. Оставляем один понятный счётчик — сколько
+  // всего на цели.
   rowsHtml += '<div class="plan-cs-row">' +
                 '<span>' + t("cs.plan.deposited") + '</span>' +
-                '<b>' + _cpInfo.goalSavedFormatted + ' ' + _csSym + '</b>' +
+                '<b>' + _cpInfo.goalSavedFormatted + '</b>' +
               '</div>';
   rowsHtml += '<div class="plan-cs-row">' +
                 '<span>' + t("cs.plan.term") + '</span>' +

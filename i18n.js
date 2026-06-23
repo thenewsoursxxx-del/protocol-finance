@@ -1041,7 +1041,7 @@
       "cs.modal.nextOccurrence.monthly": "Дальше - каждый месяц",
       "cs.modal.nextOccurrence.custom": "Каждый ввод вручную",
       // UNIFIED CUSTOM SCHEDULE FLOW - live-preview (под полем «Дата»).
-      "cs.preview.willDeposit": "Будет отложено на цель",
+      "cs.preview.willDeposit": "Отложите на вашу цель",
       "cs.preview.modeHint": "Расчёт от режима «{mode}»",
       "cs.preview.alreadyEnough": "Цель на этот период уже закрыта",
       "cs.preview.expenseNote": "Расход не идёт на цель - учтётся в прогнозе",
@@ -2153,7 +2153,7 @@
       "cs.modal.nextOccurrence.monthly": "Repeats every month",
       "cs.modal.nextOccurrence.custom": "Manual entries only",
       // UNIFIED CUSTOM SCHEDULE FLOW - live-preview labels
-      "cs.preview.willDeposit": "Will allocate to goal",
+      "cs.preview.willDeposit": "Set aside for your goal",
       "cs.preview.modeHint": "Based on «{mode}» mode",
       "cs.preview.alreadyEnough": "Goal target for this period is already covered",
       "cs.preview.expenseNote": "Expenses don't go to the goal - only factored into the forecast",
