@@ -2798,6 +2798,12 @@ if (name === "advice" && typeof window._syncProtocolEmptyState === "function") {
   try { window._syncProtocolEmptyState(); } catch (e) { /* noop */ }
 }
 
+// EARLY BIRDS - карточка акции «первые 500 = 15 дней Premium» (Фаза 1).
+// Показывается один раз за сессию новым пользователям при заходе на Protocol.
+if (name === "advice" && typeof maybeShowEarlyBirdCard === "function") {
+  try { maybeShowEarlyBirdCard(); } catch (e) { /* noop */ }
+}
+
 // FIX: goal completion UI - обновляем app-lock после смены экрана
 //   (на #screen-new-goal лок снимается; на любом другом экране при пустой цели - включается)
 if (typeof window._updateAppLock === "function") {
@@ -4640,6 +4646,130 @@ function showToast(message, type, opts) {
     }, 300);
   }, duration);
 }
+
+/* ============================================================================
+   EARLY BIRDS — карточка акции «первые 500 пользователей = 15 дней Premium».
+   ----------------------------------------------------------------------------
+   ФАЗА 1 (сейчас): счётчик косметический (статично 500/500), глобальный лимит
+   500 НЕ enforced на сервере (TEST_MODE=true в Edge Function). Грант премиума —
+   настоящий (15 дней). Источник правды «уже активировал» — таблица
+   early_bird_activations (удалив свою строку, можно протестировать повторно).
+   Показ один раз за сессию; перезапуск приложения снова попробует показать,
+   если активации нет.
+   ============================================================================ */
+var _earlyBirdShownThisSession = false;
+var _earlyBirdWired = false;
+
+function _closeEarlyBirdModal() {
+  var ov = document.getElementById("earlyBirdOverlay");
+  var md = document.getElementById("earlyBirdModal");
+  if (md) md.classList.remove("open");
+  if (ov) ov.classList.remove("open");
+  setTimeout(function () {
+    if (md) md.classList.add("hidden");
+    if (ov) ov.classList.add("hidden");
+    // Protocol — основная вкладка: возвращаем навбар, если она ещё активна.
+    if (typeof showBottomNav === "function") {
+      var act = document.querySelector(".screen.active");
+      if (act && act.id === "screen-advice") showBottomNav();
+    }
+  }, 340);
+}
+
+function _wireEarlyBird() {
+  if (_earlyBirdWired) return;
+  var md = document.getElementById("earlyBirdModal");
+  var actBtn = document.getElementById("earlyBirdActivateBtn");
+  var contBtn = document.getElementById("earlyBirdContinueBtn");
+  if (!md || !actBtn) return;
+  _earlyBirdWired = true;
+
+  actBtn.addEventListener("click", function () {
+    if (typeof haptic === "function") haptic("success");
+    actBtn.disabled = true;
+    var prevText = actBtn.textContent;
+    actBtn.textContent = t("earlyBird.activating");
+    Promise.resolve(
+      (typeof window.activateEarlyBird === "function")
+        ? window.activateEarlyBird()
+        : { ok: false }
+    ).then(function (r) {
+      if (r && r.ok) {
+        // Обновляем premium-статус из БД → разблокирует premium-UI.
+        if (typeof window.syncUserAccessFlagsFromDB === "function") {
+          window.syncUserAccessFlagsFromDB();
+        }
+        md.classList.add("eb-modal--activated");
+        if (typeof haptic === "function") haptic("success");
+      } else {
+        actBtn.disabled = false;
+        actBtn.textContent = prevText;
+        if (typeof showToast === "function") showToast(t("earlyBird.error"), "error");
+      }
+    }).catch(function () {
+      actBtn.disabled = false;
+      actBtn.textContent = prevText;
+      if (typeof showToast === "function") showToast(t("earlyBird.error"), "error");
+    });
+  });
+
+  if (contBtn) {
+    contBtn.addEventListener("click", function () {
+      if (typeof haptic === "function") haptic("light");
+      _closeEarlyBirdModal();
+    });
+  }
+
+  // Safety valve: тап по фону закрывает карточку (нет залипания навбара, если
+  // активация не удалась). Полноценной кнопки «Позже» при этом нет.
+  var ov = document.getElementById("earlyBirdOverlay");
+  if (ov) {
+    ov.addEventListener("click", function () { _closeEarlyBirdModal(); });
+  }
+}
+
+function _openEarlyBirdModal() {
+  var ov = document.getElementById("earlyBirdOverlay");
+  var md = document.getElementById("earlyBirdModal");
+  if (!ov || !md) return;
+  _wireEarlyBird();
+
+  // Сброс в дефолтное состояние (на случай повторного открытия в сессии).
+  md.classList.remove("eb-modal--activated");
+  var actBtn = document.getElementById("earlyBirdActivateBtn");
+  if (actBtn) { actBtn.disabled = false; actBtn.textContent = t("earlyBird.cta"); }
+  // ФАЗА 1: счётчик косметический — статично «500 / 500».
+  var cnt = document.getElementById("earlyBirdCounter");
+  if (cnt) cnt.textContent = t("earlyBird.counter", { n: 500, total: 500 });
+
+  ov.classList.remove("hidden");
+  md.classList.remove("hidden");
+  if (typeof hideBottomNav === "function") hideBottomNav();
+  requestAnimationFrame(function () {
+    ov.classList.add("open");
+    md.classList.add("open");
+  });
+  if (typeof haptic === "function") haptic("light");
+}
+
+function maybeShowEarlyBirdCard() {
+  try {
+    if (_earlyBirdShownThisSession) return;
+    if (!isInitialized || !chosenPlan) return;
+    var goals = (typeof getGoals === "function") ? getGoals() : [];
+    if (!goals || goals.length < 1) return;
+    if (typeof window.getEarlyBirdStatus !== "function") return;
+    window.getEarlyBirdStatus().then(function (st) {
+      // null = не авторизованы / нет данных → не показываем (попробуем позже).
+      if (!st) return;
+      if (st.activated) return;
+      if (_earlyBirdShownThisSession) return;
+      _earlyBirdShownThisSession = true;
+      _openEarlyBirdModal();
+    }).catch(function () { /* noop */ });
+  } catch (e) { /* noop */ }
+}
+window.maybeShowEarlyBirdCard = maybeShowEarlyBirdCard;
 
 function showFactTooltip({ value, onHide }) {
   const container = document.getElementById("factTooltipContainer");
