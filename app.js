@@ -4705,17 +4705,19 @@ function _fireEarlyBirdConfetti() {
       _ebConfettiFn = window.confetti.create(c, { resize: true, useWorker: true });
     }
     var common = {
-      spread: 62,
-      startVelocity: 42,
+      spread: 68,
+      startVelocity: 44,
       gravity: 0.9,
       decay: 0.9,
-      ticks: 150,
-      scalar: 1.0,
+      ticks: 160,
+      scalar: 1.05,
       shapes: ["square", "circle"],
       colors: EMERALD_CONFETTI_COLORS
     };
-    _ebConfettiFn(Object.assign({}, common, { particleCount: 34, angle: 65, origin: { x: 0.04, y: 0.62 } }));
-    _ebConfettiFn(Object.assign({}, common, { particleCount: 34, angle: 115, origin: { x: 0.96, y: 0.62 } }));
+    _ebConfettiFn(Object.assign({}, common, { particleCount: 55, angle: 65, origin: { x: 0.04, y: 0.62 } }));
+    _ebConfettiFn(Object.assign({}, common, { particleCount: 55, angle: 115, origin: { x: 0.96, y: 0.62 } }));
+    // Лёгкий центральный «пшик» вверх — добавляет объёма, оставаясь одним залпом.
+    _ebConfettiFn(Object.assign({}, common, { particleCount: 24, angle: 90, spread: 90, origin: { x: 0.5, y: 0.66 } }));
   } catch (e) { /* noop */ }
 }
 
@@ -4738,7 +4740,26 @@ function _wireEarlyBird() {
         : { ok: false }
     ).then(function (r) {
       if (r && r.ok) {
-        // Обновляем premium-статус из БД → разблокирует premium-UI.
+        // Оптимистично включаем premium ЛОКАЛЬНО сразу (как в stars-flow),
+        // иначе premium-функции остаются заблокированными, пока асинхронный
+        // syncUserAccessFlagsFromDB (сетевой запрос) не завершится/не упадёт.
+        var until = r.premium_until ||
+          new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString();
+        if (typeof updateState === "function") {
+          updateState({ isPremium: true, premiumUntil: until, autoRenew: false });
+        } else if (window.appState) {
+          window.appState.isPremium = true;
+          window.appState.premiumUntil = until;
+          window.appState.autoRenew = false;
+        }
+        if (typeof saveFullState === "function") {
+          try { saveFullState(); } catch (e) { /* graceful */ }
+        }
+        // Мгновенно перерисовываем premium-UI (снимает локи).
+        if (typeof window._syncPremiumUI === "function") window._syncPremiumUI();
+        if (typeof renderAccountBackCards === "function") renderAccountBackCards();
+        if (typeof refreshProfileStats === "function") refreshProfileStats();
+        // Затем подтверждаем canonical-значения из БД.
         if (typeof window.syncUserAccessFlagsFromDB === "function") {
           window.syncUserAccessFlagsFromDB();
         }
