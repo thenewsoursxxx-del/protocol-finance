@@ -4660,6 +4660,16 @@ function showToast(message, type, opts) {
 var _earlyBirdShownThisSession = false;
 var _earlyBirdWired = false;
 
+function _restoreNavAfterEarlyBird() {
+  // Возвращаем навбар только на основных вкладках (как в ProtoSheet.close).
+  if (typeof showBottomNav !== "function") return;
+  var act = document.querySelector(".screen.active");
+  if (act && typeof SCREEN_TO_NAV_INDEX !== "undefined" &&
+      SCREEN_TO_NAV_INDEX.hasOwnProperty(act.id)) {
+    showBottomNav();
+  }
+}
+
 function _closeEarlyBirdModal() {
   var ov = document.getElementById("earlyBirdOverlay");
   var md = document.getElementById("earlyBirdModal");
@@ -4668,12 +4678,45 @@ function _closeEarlyBirdModal() {
   setTimeout(function () {
     if (md) md.classList.add("hidden");
     if (ov) ov.classList.add("hidden");
-    // Protocol — основная вкладка: возвращаем навбар, если она ещё активна.
-    if (typeof showBottomNav === "function") {
-      var act = document.querySelector(".screen.active");
-      if (act && act.id === "screen-advice") showBottomNav();
-    }
+    _restoreNavAfterEarlyBird();
+    // Повторный вызов добивает гонку с syncUserAccessFlagsFromDB, который
+    // после активации премиума перерисовывает premium-UI.
+    setTimeout(_restoreNavAfterEarlyBird, 700);
   }, 340);
+}
+
+// EARLY BIRDS — одиночный изумрудный залп конфетти (слева и справа) на success.
+// Не путать с праздником выполнения цели: тут один короткий выстрел, только
+// оттенки изумрудного. Своя канва с z-index выше модалки (иначе глобальная
+// confetti-канва z-index ~100 ушла бы за оверлей акции, z-index 4000).
+var _ebConfettiFn = null;
+function _fireEarlyBirdConfetti() {
+  try {
+    if (typeof isAnimationsEnabled === "function" && !isAnimationsEnabled()) return;
+    if (!window.confetti || typeof window.confetti.create !== "function") return;
+    if (!_ebConfettiFn) {
+      var c = document.getElementById("eb-confetti-canvas");
+      if (!c) {
+        c = document.createElement("canvas");
+        c.id = "eb-confetti-canvas";
+        c.style.cssText = "position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:4002;";
+        document.body.appendChild(c);
+      }
+      _ebConfettiFn = window.confetti.create(c, { resize: true, useWorker: true });
+    }
+    var common = {
+      spread: 62,
+      startVelocity: 42,
+      gravity: 0.9,
+      decay: 0.9,
+      ticks: 150,
+      scalar: 1.0,
+      shapes: ["square", "circle"],
+      colors: EMERALD_CONFETTI_COLORS
+    };
+    _ebConfettiFn(Object.assign({}, common, { particleCount: 34, angle: 65, origin: { x: 0.04, y: 0.62 } }));
+    _ebConfettiFn(Object.assign({}, common, { particleCount: 34, angle: 115, origin: { x: 0.96, y: 0.62 } }));
+  } catch (e) { /* noop */ }
 }
 
 function _wireEarlyBird() {
@@ -4701,6 +4744,7 @@ function _wireEarlyBird() {
         }
         md.classList.add("eb-modal--activated");
         if (typeof haptic === "function") haptic("success");
+        _fireEarlyBirdConfetti();
       } else {
         actBtn.disabled = false;
         actBtn.textContent = prevText;

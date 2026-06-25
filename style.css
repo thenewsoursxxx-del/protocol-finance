@@ -11328,6 +11328,9 @@ body.reduce-motion .settings-seg-btn {
   z-index: 4001;
   left: 50%;
   top: 50%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   width: calc(100% - 40px);
   max-width: 380px;
   max-height: calc(var(--tg-vh, 100vh) - 48px);
@@ -11335,7 +11338,7 @@ body.reduce-motion .settings-seg-btn {
   -webkit-overflow-scrolling: touch;
   transform: translate(-50%, -46%) scale(0.94);
   opacity: 0;
-  padding: 26px 22px 22px;
+  padding: 28px 22px;
   border-radius: 26px;
   text-align: center;
   background:
@@ -11351,7 +11354,9 @@ body.reduce-motion .settings-seg-btn {
 .eb-modal.open { transform: translate(-50%, -50%) scale(1); opacity: 1; }
 .eb-modal.hidden { display: none; }
 
-/* Мягкое свечение за карточкой */
+/* Мягкое свечение за карточкой. ВАЖНО: оно absolute и НЕ должно попадать под
+   общее правило позиционирования контента — иначе займёт 220px в потоке и
+   создаст пустоту сверху карточки. */
 .eb-glow {
   position: absolute;
   top: -40px;
@@ -11364,7 +11369,8 @@ body.reduce-motion .settings-seg-btn {
   pointer-events: none;
   z-index: 0;
 }
-.eb-modal > * { position: relative; z-index: 1; }
+/* z-index только для контента (вьюх), чтобы не трогать absolute-свечение. */
+.eb-view { position: relative; z-index: 1; }
 
 /* Переключение default ↔ success */
 .eb-view--success { display: none; }
