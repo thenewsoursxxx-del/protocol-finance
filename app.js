@@ -4790,11 +4790,16 @@ function _wireEarlyBird() {
     });
   }
 
-  // Safety valve: тап по фону закрывает карточку (нет залипания навбара, если
-  // активация не удалась). Полноценной кнопки «Позже» при этом нет.
+  // Пространство за краями карточки НЕ кликабельно — закрыть акцию можно только
+  // через кнопки внутри карточки (активировать → продолжить). Оверлей лишь
+  // перехватывает тапы, чтобы они не проходили на UI под ним, но сам ничего
+  // не закрывает.
   var ov = document.getElementById("earlyBirdOverlay");
   if (ov) {
-    ov.addEventListener("click", function () { _closeEarlyBirdModal(); });
+    ov.addEventListener("click", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    });
   }
 }
 
