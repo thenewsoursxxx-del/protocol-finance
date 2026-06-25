@@ -3555,6 +3555,11 @@ loader.classList.add("hidden");
 hideSplashVideo();
 renderProtocolAdviceGraph();
 saveFullState();
+// EARLY BIRDS — показываем карточку акции ТОЛЬКО после завершения фейк-загрузки
+// и fade-out сплеша (~450мс), а не поверх неё.
+if (typeof maybeShowEarlyBirdCard === "function") {
+  setTimeout(function () { try { maybeShowEarlyBirdCard(); } catch (e) { /* noop */ } }, 600);
+}
 }, 6000);
 }
 
@@ -4817,21 +4822,59 @@ function _openEarlyBirdModal() {
   if (typeof haptic === "function") haptic("light");
 }
 
-function maybeShowEarlyBirdCard() {
+// Идёт ли сейчас фейк-загрузка/сплеш на экране Protocol. Карточку акции НЕЛЬЗЯ
+// показывать поверх неё — только после того, как загрузка завершится и график
+// отрисуется.
+function _isProtocolLoading() {
+  try {
+    if (typeof loader !== "undefined" && loader && !loader.classList.contains("hidden")) return true;
+    var sp = document.getElementById("splashVideoOverlay");
+    if (sp && !sp.classList.contains("hidden")) return true;
+    var card = document.getElementById("adviceCard");
+    if (card && card.querySelector("#fakeScreen")) return true;
+  } catch (e) { /* noop */ }
+  return false;
+}
+
+// Показ карточки Early Bird. Самовосстанавливающийся: повторяет попытку, если
+// (а) идёт фейк-загрузка, (б) auth/сеть ещё не готовы (status === null).
+// Это гарантирует, что КАЖДЫЙ подходящий пользователь увидит акцию, а не
+// «иногда не показалось». Идемпотентно: _earlyBirdShownThisSession + проверка
+// внутри .then не дают открыть модалку дважды.
+function maybeShowEarlyBirdCard(attempt) {
+  attempt = attempt || 1;
   try {
     if (_earlyBirdShownThisSession) return;
     if (!isInitialized || !chosenPlan) return;
     var goals = (typeof getGoals === "function") ? getGoals() : [];
     if (!goals || goals.length < 1) return;
+
+    // Не показываем поверх фейк-загрузки — ждём её завершения.
+    if (_isProtocolLoading()) {
+      if (attempt < 14) setTimeout(function () { maybeShowEarlyBirdCard(attempt + 1); }, 800);
+      return;
+    }
+
     if (typeof window.getEarlyBirdStatus !== "function") return;
     window.getEarlyBirdStatus().then(function (st) {
-      // null = не авторизованы / нет данных → не показываем (попробуем позже).
-      if (!st) return;
-      if (st.activated) return;
       if (_earlyBirdShownThisSession) return;
+      // null = auth/сеть ещё не готовы → повторим (до 4 раз), чтобы у каждого
+      // пользователя акция всё-таки показалась, а не пропала из-за гонки auth.
+      if (st === null) {
+        if (attempt < 5) setTimeout(function () { maybeShowEarlyBirdCard(attempt + 1); }, 1500);
+        return;
+      }
+      if (st.activated) return;
+      // Загрузка могла начаться, пока шёл запрос — перепроверяем.
+      if (_isProtocolLoading()) {
+        if (attempt < 14) setTimeout(function () { maybeShowEarlyBirdCard(attempt + 1); }, 800);
+        return;
+      }
       _earlyBirdShownThisSession = true;
       _openEarlyBirdModal();
-    }).catch(function () { /* noop */ });
+    }).catch(function () {
+      if (attempt < 5) setTimeout(function () { maybeShowEarlyBirdCard(attempt + 1); }, 1500);
+    });
   } catch (e) { /* noop */ }
 }
 window.maybeShowEarlyBirdCard = maybeShowEarlyBirdCard;
