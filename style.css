@@ -782,6 +782,14 @@ gap: 10px;
   height: 20px;
   flex-shrink: 0;
 }
+/* Форсируем outline-рендер: некоторые WebView (Telegram iOS) игнорируют
+   presentation-атрибут fill="none" и заливают путь currentColor (получались
+   сплошные квадраты). CSS перебивает атрибуты, поэтому задаём явно. */
+.profile-btn-icon,
+.profile-btn-icon * {
+  fill: none !important;
+  stroke: currentColor;
+}
 
 .profile-btn.danger {
 border-color: #442;
@@ -11438,6 +11446,11 @@ body.reduce-motion .settings-seg-btn {
   width: 38px;
   height: 38px;
   color: #6ee7b7;
+}
+.eb-party-icon,
+.eb-party-icon * {
+  fill: none !important;
+  stroke: currentColor;
 }
 @keyframes ebBadgePop {
   0% { transform: scale(0.6); opacity: 0; }
