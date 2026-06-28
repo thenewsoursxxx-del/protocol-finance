@@ -773,37 +773,14 @@ justify-content: center;
 gap: 10px;
 }
 
-/* Иконки в кнопках профиля. SVG-исходники со stroke="#000" на тёмном фоне не
-   видны, поэтому красим через CSS-маску: background-color подхватывает цвет
-   текста кнопки (currentColor), а сама форма берётся из альфа-канала svg. */
+/* Иконки в кнопках профиля — инлайн-SVG со stroke="currentColor": цвет
+   подхватывается от текста кнопки (белый / красный у «Начать сначала» /
+   мятный у «Сообщить о проблеме»). Инлайн надёжнее mask/img в Telegram WebView. */
 .profile-btn-icon {
   display: block;
   width: 20px;
   height: 20px;
   flex-shrink: 0;
-  background-color: currentColor;
-  -webkit-mask-repeat: no-repeat;
-  mask-repeat: no-repeat;
-  -webkit-mask-position: center;
-  mask-position: center;
-  -webkit-mask-size: contain;
-  mask-size: contain;
-}
-.profile-btn-icon--settings {
-  -webkit-mask-image: url("assets/icons/Setting.svg");
-  mask-image: url("assets/icons/Setting.svg");
-}
-.profile-btn-icon--history {
-  -webkit-mask-image: url("assets/icons/Document.svg");
-  mask-image: url("assets/icons/Document.svg");
-}
-.profile-btn-icon--report {
-  -webkit-mask-image: url("assets/icons/Danger.svg");
-  mask-image: url("assets/icons/Danger.svg");
-}
-.profile-btn-icon--reset {
-  -webkit-mask-image: url("assets/icons/Swap.svg");
-  mask-image: url("assets/icons/Swap.svg");
 }
 
 .profile-btn.danger {
@@ -11454,21 +11431,13 @@ body.reduce-motion .settings-seg-btn {
   display: block;
 }
 
-/* Иконка салюта (Party.svg) в success-виде. Красим маской в светлый мятный
-   тон — контрастно на изумрудном круге бейджа. */
-.eb-badge-icon--party {
+/* Иконка салюта (Party) в success-виде — инлайн-SVG, светлый мятный тон
+   контрастно на изумрудном круге бейджа. */
+.eb-party-icon {
   display: block;
-  width: 36px;
-  height: 36px;
-  background-color: #6ee7b7;
-  -webkit-mask-image: url("assets/icons/Party.svg");
-  mask-image: url("assets/icons/Party.svg");
-  -webkit-mask-repeat: no-repeat;
-  mask-repeat: no-repeat;
-  -webkit-mask-position: center;
-  mask-position: center;
-  -webkit-mask-size: contain;
-  mask-size: contain;
+  width: 38px;
+  height: 38px;
+  color: #6ee7b7;
 }
 @keyframes ebBadgePop {
   0% { transform: scale(0.6); opacity: 0; }
