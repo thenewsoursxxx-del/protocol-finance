@@ -767,6 +767,43 @@ margin-top: 12px;
 background: #111;
 color: #fff;
 border: 1px solid #333;
+display: flex;
+align-items: center;
+justify-content: center;
+gap: 10px;
+}
+
+/* Иконки в кнопках профиля. SVG-исходники со stroke="#000" на тёмном фоне не
+   видны, поэтому красим через CSS-маску: background-color подхватывает цвет
+   текста кнопки (currentColor), а сама форма берётся из альфа-канала svg. */
+.profile-btn-icon {
+  display: block;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  background-color: currentColor;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+.profile-btn-icon--settings {
+  -webkit-mask-image: url("assets/icons/Setting.svg");
+  mask-image: url("assets/icons/Setting.svg");
+}
+.profile-btn-icon--history {
+  -webkit-mask-image: url("assets/icons/Document.svg");
+  mask-image: url("assets/icons/Document.svg");
+}
+.profile-btn-icon--report {
+  -webkit-mask-image: url("assets/icons/Danger.svg");
+  mask-image: url("assets/icons/Danger.svg");
+}
+.profile-btn-icon--reset {
+  -webkit-mask-image: url("assets/icons/Swap.svg");
+  mask-image: url("assets/icons/Swap.svg");
 }
 
 .profile-btn.danger {
@@ -11404,6 +11441,35 @@ body.reduce-motion .settings-seg-btn {
   animation: ebBadgePop 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 .eb-badge-icon { font-size: 34px; line-height: 1; }
+
+/* Контейнер под Lottie-корону (king1.json) в дефолтном виде плашки. */
+.eb-crown-lottie {
+  width: 52px;
+  height: 52px;
+  pointer-events: none;
+}
+.eb-crown-lottie svg {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}
+
+/* Иконка салюта (Party.svg) в success-виде. Красим маской в светлый мятный
+   тон — контрастно на изумрудном круге бейджа. */
+.eb-badge-icon--party {
+  display: block;
+  width: 36px;
+  height: 36px;
+  background-color: #6ee7b7;
+  -webkit-mask-image: url("assets/icons/Party.svg");
+  mask-image: url("assets/icons/Party.svg");
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
 @keyframes ebBadgePop {
   0% { transform: scale(0.6); opacity: 0; }
   100% { transform: scale(1); opacity: 1; }

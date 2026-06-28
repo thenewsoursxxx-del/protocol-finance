@@ -4803,11 +4803,41 @@ function _wireEarlyBird() {
   }
 }
 
+// EARLY BIRDS — анимированная корона (Lottie king1.json) в дефолтном виде.
+// Грузим JSON один раз и инициализируем инстанс лениво при первом открытии.
+var _ebCrownData = null;
+var _ebCrownPromise = null;
+var _ebCrownInstance = null;
+function _ensureEarlyBirdCrown() {
+  if (_ebCrownInstance) return;
+  var el = document.getElementById("earlyBirdCrown");
+  if (!el || typeof lottie === "undefined") return;
+  if (!_ebCrownPromise) {
+    _ebCrownPromise = fetch("./assets/animation/king1.json")
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) { _ebCrownData = j; return j; })
+      .catch(function () { return null; });
+  }
+  _ebCrownPromise.then(function (data) {
+    if (!data || _ebCrownInstance) return;
+    try {
+      _ebCrownInstance = lottie.loadAnimation({
+        container: el,
+        renderer: "svg",
+        loop: true,
+        autoplay: true,
+        animationData: data
+      });
+    } catch (e) { /* graceful */ }
+  });
+}
+
 function _openEarlyBirdModal() {
   var ov = document.getElementById("earlyBirdOverlay");
   var md = document.getElementById("earlyBirdModal");
   if (!ov || !md) return;
   _wireEarlyBird();
+  _ensureEarlyBirdCrown();
 
   // Сброс в дефолтное состояние (на случай повторного открытия в сессии).
   md.classList.remove("eb-modal--activated");

@@ -730,16 +730,16 @@ Protocol анализирует цель…
 </span>
 </div>
 
-<button id="settingsBtn" class="profile-btn" data-i18n="profile.settings">⚙️ Настройки</button>
-<button id="goalHistoryBtn" class="profile-btn" data-i18n="profile.goalHistory">📋 История целей</button>
+<button id="settingsBtn" class="profile-btn"><span class="profile-btn-icon profile-btn-icon--settings" aria-hidden="true"></span><span class="profile-btn-label" data-i18n="profile.settings">Настройки</span></button>
+<button id="goalHistoryBtn" class="profile-btn"><span class="profile-btn-icon profile-btn-icon--history" aria-hidden="true"></span><span class="profile-btn-label" data-i18n="profile.goalHistory">История целей</span></button>
 <!-- NEW: Report problem feature - кнопка "Сообщить о проблеме" в стиле emerald accent -->
-<button id="reportProblemBtn" class="profile-btn profile-btn--report" data-i18n="profile.reportProblem">🐞 Сообщить о проблеме</button>
+<button id="reportProblemBtn" class="profile-btn profile-btn--report"><span class="profile-btn-icon profile-btn-icon--report" aria-hidden="true"></span><span class="profile-btn-label" data-i18n="profile.reportProblem">Сообщить о проблеме</span></button>
 <!-- NEW: Full reset button in Profile - переименовано из "Сбросить план" для большей ясности.
      Кнопка переиспользует существующий #confirmReset → confirmYes → performFullReset(),
      который через clearState() обнуляет ВСЁ: текущую цель, накопления, factHistory,
      completedGoals (история целей), accountStats (статистика счетов). После сброса
      приложение возвращается в начальное состояние (как при первом запуске). -->
-<button id="profileResetPlan" class="profile-btn danger" data-i18n="profile.fullReset">🆕 Начать сначала</button>
+<button id="profileResetPlan" class="profile-btn danger"><span class="profile-btn-icon profile-btn-icon--reset" aria-hidden="true"></span><span class="profile-btn-label" data-i18n="profile.fullReset">Начать сначала</span></button>
 
 <!-- STATISTICS COLLECTION - публичная статистика пользователей: premium / free / total.
      Подтягивается из таблицы users через getPremiumStats() в app.js.
@@ -2167,7 +2167,7 @@ z-index: 999999;
   <!-- DEFAULT (предложение активировать) -->
   <div class="eb-view eb-view--default">
     <div class="eb-counter" id="earlyBirdCounter">500 / 500</div>
-    <div class="eb-badge"><span class="eb-badge-icon">👑</span></div>
+    <div class="eb-badge eb-badge--crown"><div class="eb-crown-lottie" id="earlyBirdCrown" aria-hidden="true"></div></div>
     <h2 class="eb-title" id="earlyBirdTitle" data-i18n="earlyBird.title">Поздравляем! Вы в числе первых 500 пользователей</h2>
     <p class="eb-subtitle" data-i18n="earlyBird.subtitle">Вам доступны 15 дней Premium бесплатно</p>
     <ul class="eb-benefits">
@@ -2182,7 +2182,7 @@ z-index: 999999;
 
   <!-- SUCCESS (подтверждение) -->
   <div class="eb-view eb-view--success">
-    <div class="eb-badge eb-badge--success"><span class="eb-badge-icon">🎉</span></div>
+    <div class="eb-badge eb-badge--success"><span class="eb-badge-icon eb-badge-icon--party" aria-hidden="true"></span></div>
     <h2 class="eb-title" data-i18n="earlyBird.success.title">Premium активирован!</h2>
     <p class="eb-subtitle" id="earlyBirdSuccessText" data-i18n="earlyBird.success.text">15 дней Premium уже у вас — откройте все возможности приложения.</p>
     <button id="earlyBirdContinueBtn" class="eb-cta" type="button" data-i18n="earlyBird.success.cta">Продолжить</button>
