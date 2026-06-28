@@ -3573,6 +3573,12 @@ function performFullReset() {
   // не перечитает флаги из БД. Поэтому снимаем account-level премиум-поля заранее
   // и восстанавливаем их сразу после clearState().
   var _preservedPremium = null;
+  // ONBOARDING - флаги «уже проходил тур» НЕ относятся к плану/цели, а к самому
+  // пользователю/устройству. «Начать сначала» обнуляет план, но пользователь
+  // НЕ становится новым — поэтому сохраняем эти флаги перед clearState() и
+  // восстанавливаем после, чтобы основной тур и per-feature премиум-туры не
+  // показывались по кругу после каждого сброса.
+  var _preservedOnboarding = null;
   try {
     var _sPrev = (typeof getState === "function") ? getState() : null;
     if (_sPrev) {
@@ -3582,8 +3588,15 @@ function performFullReset() {
         autoRenew:          _sPrev.autoRenew === true,
         showCommunityStats: _sPrev.showCommunityStats === true
       };
+      _preservedOnboarding = {
+        onboardingCompleted: _sPrev.onboardingCompleted === true,
+        premiumOnboardingCompleted:
+          (_sPrev.premiumOnboardingCompleted && typeof _sPrev.premiumOnboardingCompleted === "object")
+            ? Object.assign({}, _sPrev.premiumOnboardingCompleted)
+            : {}
+      };
     }
-  } catch (e) { _preservedPremium = null; }
+  } catch (e) { _preservedPremium = null; _preservedOnboarding = null; }
 
   chosenPlan = null;
   isInitialized = false;
@@ -3616,6 +3629,13 @@ function performFullReset() {
   // эти значения с ней совпадают; следующий синк лишь подтвердит их).
   if (_preservedPremium && typeof updateState === "function") {
     try { updateState(_preservedPremium); } catch (e) { /* graceful */ }
+  }
+
+  // ONBOARDING - восстанавливаем флаги пройденных туров (см. _preservedOnboarding
+  // выше). Без этого clearState() сбросил бы их в false/{} и тур первого запуска
+  // + премиум-туры показались бы заново после «Начать сначала».
+  if (_preservedOnboarding && typeof updateState === "function") {
+    try { updateState(_preservedOnboarding); } catch (e) { /* graceful */ }
   }
 
   // Полный сброс гибкой модели (переменные замыкания + state + DOM). clearState()
@@ -4894,6 +4914,14 @@ function maybeShowEarlyBirdCard(attempt) {
       : !!(window.appState && window.appState.isPremium);
     if (_hasActivePremium) { _earlyBirdShownThisSession = true; return; }
 
+    // Не показываем поверх активного онбординг-тура (основного или премиум) —
+    // иначе акция и подсказки наложатся друг на друга. Ждём завершения тура и
+    // пробуем снова. #onboardingRoot живёт в DOM только пока тур идёт.
+    if (document.getElementById("onboardingRoot")) {
+      if (attempt < 20) setTimeout(function () { maybeShowEarlyBirdCard(attempt + 1); }, 800);
+      return;
+    }
+
     // Не показываем поверх фейк-загрузки — ждём её завершения.
     if (_isProtocolLoading()) {
       if (attempt < 14) setTimeout(function () { maybeShowEarlyBirdCard(attempt + 1); }, 800);
@@ -4910,7 +4938,11 @@ function maybeShowEarlyBirdCard(attempt) {
         return;
       }
       if (st.activated) return;
-      // Загрузка могла начаться, пока шёл запрос — перепроверяем.
+      // Тур или загрузка могли начаться, пока шёл запрос — перепроверяем оба.
+      if (document.getElementById("onboardingRoot")) {
+        if (attempt < 20) setTimeout(function () { maybeShowEarlyBirdCard(attempt + 1); }, 800);
+        return;
+      }
       if (_isProtocolLoading()) {
         if (attempt < 14) setTimeout(function () { maybeShowEarlyBirdCard(attempt + 1); }, 800);
         return;
@@ -16719,6 +16751,19 @@ function startTour(tourId, opts) {
     return;
   }
   var isForce = !!(opts && opts.force);
+
+  // Не запускаем тур поверх открытой модалки акции «15 дней премиума» —
+  // иначе подсказки и акция наложатся. Исключение: force (ручной перезапуск
+  // подсказок из настроек). Для премиум-туров это естественно: премиум
+  // активируется именно через эту модалку, так что тур дождётся её закрытия.
+  if (!isForce) {
+    var _ebModal = document.getElementById("earlyBirdModal");
+    var _ebOverlay = document.getElementById("earlyBirdOverlay");
+    if ((_ebModal && _ebModal.classList.contains("open")) ||
+        (_ebOverlay && _ebOverlay.classList.contains("open"))) {
+      return;
+    }
+  }
 
   // Premium-туры: гейт по активной подписке.
   if (tour.requirePremium && !_isPremiumActiveForOnboarding()) return;
