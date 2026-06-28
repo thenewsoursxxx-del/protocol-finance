@@ -1070,8 +1070,31 @@ async function activateEarlyBird() {
   }
 }
 
+// getEarlyBirdRemaining() → number | null
+//   Сколько слотов акции ещё свободно (из 500). Считается на сервере через
+//   SECURITY DEFINER функцию early_bird_remaining() (клиент по RLS видит только
+//   свою строку, поэтому COUNT(*) с клиента не сработал бы).
+//   null = не удалось узнать (сеть/доступ) → UI откатывается к нейтральному.
+async function getEarlyBirdRemaining() {
+  try {
+    if (!initSupabaseClient()) return null;
+    if (!(await ensureAuthenticated())) return null;
+    var res = await supabaseClient.rpc("early_bird_remaining");
+    if (res.error) {
+      console.warn("[EarlyBird] getEarlyBirdRemaining ошибка:", res.error.message, res.error.code || "");
+      return null;
+    }
+    var n = Number(res.data);
+    return isFinite(n) ? n : null;
+  } catch (e) {
+    console.warn("[EarlyBird] getEarlyBirdRemaining exception:", e && e.message);
+    return null;
+  }
+}
+
 window.getEarlyBirdStatus = getEarlyBirdStatus;
 window.activateEarlyBird = activateEarlyBird;
+window.getEarlyBirdRemaining = getEarlyBirdRemaining;
 
 /**
  * STATISTICS COLLECTION — публичная статистика премиум/не-премиум пользователей.

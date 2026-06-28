@@ -4792,9 +4792,22 @@ function _wireEarlyBird() {
         if (typeof haptic === "function") haptic("success");
         _fireEarlyBirdConfetti();
       } else {
-        actBtn.disabled = false;
-        actBtn.textContent = prevText;
-        if (typeof showToast === "function") showToast(t("earlyBird.error"), "error");
+        var err = (r && r.error) || "";
+        // Терминальные отказы (повтор не поможет): акция кончилась / не для этого
+        // юзера / уже есть премиум → сообщаем и закрываем карточку.
+        if (err === "limit_reached" || err === "not_eligible" ||
+            err === "already_premium" || err === "promo_disabled") {
+          var msgKey = (err === "limit_reached" || err === "promo_disabled")
+            ? "earlyBird.ended"
+            : "earlyBird.notEligible";
+          if (typeof showToast === "function") showToast(t(msgKey), "info");
+          setTimeout(function () { _closeEarlyBirdModal(); }, 1400);
+        } else {
+          // Транзиентная ошибка (сеть/БД) → даём повторить.
+          actBtn.disabled = false;
+          actBtn.textContent = prevText;
+          if (typeof showToast === "function") showToast(t("earlyBird.error"), "error");
+        }
       }
     }).catch(function () {
       actBtn.disabled = false;
@@ -4863,9 +4876,20 @@ function _openEarlyBirdModal() {
   md.classList.remove("eb-modal--activated");
   var actBtn = document.getElementById("earlyBirdActivateBtn");
   if (actBtn) { actBtn.disabled = false; actBtn.textContent = t("earlyBird.cta"); }
-  // ФАЗА 1: счётчик косметический — статично «500 / 500».
+  // Реальный счётчик: показываем нейтральные 500/500, затем подменяем живым
+  // числом свободных слотов с сервера (early_bird_remaining). Если запрос не
+  // удался — остаётся 500/500 (не блокирует активацию: лимит финально проверит
+  // сервер при клике).
   var cnt = document.getElementById("earlyBirdCounter");
-  if (cnt) cnt.textContent = t("earlyBird.counter", { n: 500, total: 500 });
+  if (cnt) {
+    cnt.textContent = t("earlyBird.counter", { n: 500, total: 500 });
+    if (typeof window.getEarlyBirdRemaining === "function") {
+      window.getEarlyBirdRemaining().then(function (rem) {
+        if (rem == null) return;
+        cnt.textContent = t("earlyBird.counter", { n: Math.max(0, rem), total: 500 });
+      }).catch(function () { /* оставляем 500/500 */ });
+    }
+  }
 
   ov.classList.remove("hidden");
   md.classList.remove("hidden");
@@ -4947,8 +4971,26 @@ function maybeShowEarlyBirdCard(attempt) {
         if (attempt < 14) setTimeout(function () { maybeShowEarlyBirdCard(attempt + 1); }, 800);
         return;
       }
-      _earlyBirdShownThisSession = true;
-      _openEarlyBirdModal();
+      // Акция кончилась (0 свободных слотов) → карточку не показываем.
+      // Fail-open: если число узнать не удалось (null) — показываем, финальный
+      // лимит проверит сервер при активации.
+      var _gate = (typeof window.getEarlyBirdRemaining === "function")
+        ? window.getEarlyBirdRemaining()
+        : Promise.resolve(null);
+      Promise.resolve(_gate).then(function (rem) {
+        if (_earlyBirdShownThisSession) return;
+        if (typeof rem === "number" && rem <= 0) return; // мест нет
+        if (document.getElementById("onboardingRoot")) {
+          if (attempt < 20) setTimeout(function () { maybeShowEarlyBirdCard(attempt + 1); }, 800);
+          return;
+        }
+        if (_isProtocolLoading()) {
+          if (attempt < 14) setTimeout(function () { maybeShowEarlyBirdCard(attempt + 1); }, 800);
+          return;
+        }
+        _earlyBirdShownThisSession = true;
+        _openEarlyBirdModal();
+      });
     }).catch(function () {
       if (attempt < 5) setTimeout(function () { maybeShowEarlyBirdCard(attempt + 1); }, 1500);
     });

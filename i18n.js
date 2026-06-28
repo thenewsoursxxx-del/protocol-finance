@@ -423,6 +423,8 @@
       "earlyBird.success.text": "15 дней Premium уже у вас — откройте все возможности приложения.",
       "earlyBird.success.cta": "Продолжить",
       "earlyBird.error": "Не удалось активировать. Попробуйте ещё раз.",
+      "earlyBird.ended": "Акция завершена — все 500 мест уже заняты.",
+      "earlyBird.notEligible": "Акция доступна только новым пользователям без Premium.",
       // NEW: Report problem feature
       "profile.reportProblem": "Сообщить о проблеме",
       "report.modal.title": "Сообщить о проблеме",
@@ -1554,6 +1556,8 @@
       "earlyBird.success.text": "15 days of Premium are now yours — unlock everything.",
       "earlyBird.success.cta": "Continue",
       "earlyBird.error": "Activation failed. Please try again.",
+      "earlyBird.ended": "Promo ended — all 500 spots are taken.",
+      "earlyBird.notEligible": "The promo is available to new users without Premium only.",
       // NEW: Report problem feature
       "profile.reportProblem": "Report a problem",
       "report.modal.title": "Report a problem",
