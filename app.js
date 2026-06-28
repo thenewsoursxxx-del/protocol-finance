@@ -4884,6 +4884,16 @@ function maybeShowEarlyBirdCard(attempt) {
     var goals = (typeof getGoals === "function") ? getGoals() : [];
     if (!goals || goals.length < 1) return;
 
+    // Уже есть активный premium (активировал акцию ранее ИЛИ купил подписку) →
+    // акция не нужна, карточку не показываем. Надёжнее RLS-проверки
+    // getEarlyBirdStatus: даже если клиент не видит свою строку активации
+    // (из-за claim/RLS), premium-флаг всё равно скрывает карточку и убирает
+    // повторные показы «получи 15 дней».
+    var _hasActivePremium = (typeof window.isPremiumActive === "function")
+      ? window.isPremiumActive()
+      : !!(window.appState && window.appState.isPremium);
+    if (_hasActivePremium) { _earlyBirdShownThisSession = true; return; }
+
     // Не показываем поверх фейк-загрузки — ждём её завершения.
     if (_isProtocolLoading()) {
       if (attempt < 14) setTimeout(function () { maybeShowEarlyBirdCard(attempt + 1); }, 800);
