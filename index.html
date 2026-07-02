@@ -592,19 +592,12 @@ Protocol анализирует цель…
 <!-- Expenses Tracker Content -->
 <div class="exp-tracker" id="expTracker">
 
-  <!-- A) Top Summary -->
-  <div class="exp-summary-card" id="expSummaryCard">
-    <div class="exp-summary-row">
+  <!-- A) Top Summary — только «Потрачено» за текущий календарный месяц -->
+  <div class="exp-summary-card exp-summary-card--spent" id="expSummaryCard">
+    <div class="exp-summary-row exp-summary-row--spent">
       <span class="exp-summary-label" data-i18n="expenses.spent">Потрачено</span>
-      <span class="exp-summary-value"><span id="expSpent">0</span> <span class="currency-symbol">₽</span> / <span id="expLimit">0</span> <span class="currency-symbol">₽</span></span>
+      <span class="exp-summary-value exp-summary-value--spent"><span id="expSpent">0</span> <span class="currency-symbol">₽</span></span>
     </div>
-    <div class="exp-summary-remaining">
-      <span data-i18n="expenses.remaining">Осталось</span>: <span id="expRemaining">0</span> <span class="currency-symbol">₽</span>
-    </div>
-    <div class="exp-progress-track">
-      <div class="exp-progress-fill" id="expProgressFill"></div>
-    </div>
-    <div class="exp-status" id="expStatus" data-i18n="expenses.addPrompt">Добавьте расход</div>
   </div>
 
   <!-- B) Donut Chart -->
@@ -685,9 +678,15 @@ Protocol анализирует цель…
       <label data-i18n="expenses.date">Дата</label>
       <input id="expenseDate" type="date" />
     </div>
-    <div class="input-wrap" style="margin-top:8px">
-      <label data-i18n="expenses.note">Заметка (необязательно)</label>
-      <input id="expenseNote" data-i18n-placeholder="expenses.notePlaceholder" placeholder="Комментарий" />
+    <div class="exp-plan-toggle-row" style="margin-top:16px">
+      <div class="exp-plan-toggle-info">
+        <div class="exp-plan-toggle-label" data-i18n="expenses.countInPlan">Учитывать расходы в плане</div>
+        <div class="exp-plan-toggle-hint" data-i18n="expenses.countInPlanHint">Расход уменьшит, сколько можно отложить на цель в этом месяце. Выключите, если он не должен влиять на план.</div>
+      </div>
+      <label class="settings-toggle">
+        <input type="checkbox" id="expenseCountInPlan" class="settings-toggle-input" checked>
+        <span class="settings-toggle-slider"></span>
+      </label>
     </div>
   </div>
 

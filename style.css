@@ -8041,6 +8041,47 @@ body.app-locked .account-block * {
   letter-spacing: -0.02em;
 }
 
+/* Карточка «Потрачено» без лимита — компактная строка label + сумма. */
+.exp-summary-card--spent {
+  margin-bottom: 16px;
+}
+.exp-summary-row--spent {
+  margin-bottom: 0;
+  align-items: center;
+}
+.exp-summary-value--spent {
+  font-size: 22px;
+}
+
+/* Тумблер «Учитывать в плане» в шторке нового расхода. */
+.exp-plan-toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  justify-content: space-between;
+}
+.exp-plan-toggle-info {
+  flex: 1;
+  min-width: 0;
+}
+.exp-plan-toggle-label {
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+}
+.exp-plan-toggle-hint {
+  font-size: 12px;
+  line-height: 1.4;
+  color: rgba(255,255,255,0.5);
+  margin-top: 4px;
+}
+
+/* Метка «вне плана» под суммой в детальной шторке категории. */
+.exp-detail-entry-note--offplan {
+  color: rgba(255,255,255,0.45);
+  font-style: italic;
+}
+
 .exp-summary-remaining {
   font-size: 14px;
   color: rgba(255,255,255,0.55);

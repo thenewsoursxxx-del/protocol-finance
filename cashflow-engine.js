@@ -138,7 +138,12 @@
       // Phase 2: ответ на плашку «расход уже потрачен?» в неполном стартовом месяце.
       // null/"no" → расход целиком; "yes" → 0; "partial" → минус paidAmount.
       currentMonthExpenseStatus: (bc.currentMonthExpenseStatus === "yes" || bc.currentMonthExpenseStatus === "no" || bc.currentMonthExpenseStatus === "partial") ? bc.currentMonthExpenseStatus : null,
-      currentMonthExpensePaidAmount: Number(bc.currentMonthExpensePaidAmount) || 0
+      currentMonthExpensePaidAmount: Number(bc.currentMonthExpensePaidAmount) || 0,
+      // Трекер расходов: сумма записанных за ТЕКУЩИЙ календарный месяц расходов
+      // с включённым тумблером «Учитывать в плане». Это «сверхплановые» траты —
+      // они уменьшают, сколько можно отложить на цель именно в этом месяце
+      // (базовые запланированные расходы income/expenses не трогаются).
+      extraMonthExpense: Math.max(0, Number(bc.extraMonthExpense) || 0)
     };
 
     this.events = Array.isArray(opts.events)
@@ -411,9 +416,20 @@
     var balances = this._computeBalances();
     var remaining = Math.max(0, bc.goal - balances.goalBalance);
 
+    // Трекер расходов: сверхплановые траты этого месяца уменьшают вклад в цель
+    // именно за текущий месяц (не трогая steady-ставку будущих месяцев).
+    var extra = bc.extraMonthExpense || 0;
+    var firstMonthToGoal = Math.max(0, planned.toGoal - extra);
+
+    // ETA учитывает уменьшенный первый месяц. При extra=0 formula тождественна
+    // старой Math.ceil(remaining / toGoal), поэтому существующие расчёты не меняются.
     var monthsLeft = 0;
     if (remaining > 0 && planned.toGoal > 0) {
-      monthsLeft = Math.ceil(remaining / planned.toGoal) + balances.totalSkips;
+      if (firstMonthToGoal >= remaining) {
+        monthsLeft = 1 + balances.totalSkips;
+      } else {
+        monthsLeft = 1 + Math.ceil((remaining - firstMonthToGoal) / planned.toGoal) + balances.totalSkips;
+      }
     }
 
     var ok = planned.free > 0 && bc.goal > 0;
@@ -436,6 +452,10 @@
         ? (function () { var d = new Date(); d.setMonth(d.getMonth() + monthsLeft); return d; })()
         : null,
       averageMonthlyContribution: planned.toGoal,
+      // Вклад ТЕКУЩЕГО месяца в цель с учётом сверхплановых трат (для шапки/графика).
+      planFirstMonthToGoal: firstMonthToGoal,
+      planFirstMonthReduced: extra > 0 && firstMonthToGoal < planned.toGoal,
+      extraMonthExpense: extra,
       timeline: null
     };
 
@@ -494,16 +514,22 @@
 
     var remaining = Math.max(0, bc.goal - balances.goalBalance);
 
+    // Трекер расходов: сверхплановые траты этого месяца дополнительно уменьшают
+    // вклад в цель за текущий месяц (поверх возможного неполного стартового месяца).
+    var extra = bc.extraMonthExpense || 0;
+    var firstMonthToGoal = Math.max(0, cmToGoal - extra);
+
     // Phase 2: ETA с учётом неполного первого месяца. Первый календарный месяц
-    // добавляет частичный cmToGoal, последующие — полный toGoal. Для ПОЛНОГО
-    // месяца (cmToGoal === toGoal) формула тождественна старой Math.ceil(remaining/toGoal),
-    // поэтому established-пользователи и полные месяцы не затрагиваются.
+    // добавляет частичный firstMonthToGoal (cmToGoal минус сверхплановые траты),
+    // последующие — полный toGoal. Для ПОЛНОГО месяца без сверхтрат
+    // (firstMonthToGoal === toGoal) формула тождественна старой
+    // Math.ceil(remaining/toGoal), поэтому established-пользователи не затрагиваются.
     var monthsLeft = 0;
     if (remaining > 0) {
-      if (cmToGoal >= remaining) {
+      if (firstMonthToGoal >= remaining) {
         monthsLeft = 1 + balances.totalSkips;
       } else if (toGoal > 0) {
-        monthsLeft = 1 + Math.ceil((remaining - cmToGoal) / toGoal) + balances.totalSkips;
+        monthsLeft = 1 + Math.ceil((remaining - firstMonthToGoal) / toGoal) + balances.totalSkips;
       }
     }
 
@@ -539,6 +565,11 @@
       currentMonthSave: cmSave,
       currentMonthToGoal: cmToGoal,
       isPartialMonth: cmSave !== monthlySave,
+      // Вклад ТЕКУЩЕГО месяца в цель с учётом сверхплановых трат трекера
+      // (объединяет неполный стартовый месяц + записанные расходы «в плане»).
+      planFirstMonthToGoal: firstMonthToGoal,
+      planFirstMonthReduced: firstMonthToGoal < toGoal,
+      extraMonthExpense: extra,
       hasIncomeData: forecast.hasIncomeData,
       hasExpenseData: forecast.hasExpenseData,
       timeline: null

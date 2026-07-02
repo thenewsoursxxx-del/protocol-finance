@@ -1268,11 +1268,12 @@ function computeGraphState() {
   var minVisible = (goalMonths > 0 && goalMonths <= 3) ? Math.max(2, goalMonths) : 3;
   visibleMonths = Math.max(minVisible, visibleMonths);
 
-  // Phase 2: доля вклада неполного первого месяца относительно полного месяца —
-  // для косметического «надлома» линии плана (только основная цель, гибкая модель).
+  // Phase 2 + трекер расходов: доля вклада первого месяца относительно полного —
+  // для «надлома» линии плана. Объединяет неполный стартовый месяц (обе модели)
+  // и сверхплановые траты трекера «в плане» через planFirstMonthToGoal.
   var firstMonthRatio = 1;
-  if (activeGoalIndex === 0 && lastCalc.isPartialMonth && activeMonthly > 0 && lastCalc.currentMonthToGoal != null) {
-    firstMonthRatio = Math.max(0, Math.min(1, lastCalc.currentMonthToGoal / activeMonthly));
+  if (activeGoalIndex === 0 && activeMonthly > 0 && lastCalc.planFirstMonthReduced && lastCalc.planFirstMonthToGoal != null) {
+    firstMonthRatio = Math.max(0, Math.min(1, lastCalc.planFirstMonthToGoal / activeMonthly));
   }
 
   return {
@@ -1894,6 +1895,30 @@ function updatePartialExpenseBanner() {
 }
 window.updatePartialExpenseBanner = updatePartialExpenseBanner;
 
+// Трекер расходов → план. Сумма записанных за ТЕКУЩИЙ календарный месяц
+// расходов с включённым тумблером «Учитывать в плане» (countInPlan !== false).
+// Суммы в expensesLog хранятся в базовой валюте (как income/expenses движка),
+// поэтому значение можно передавать в движок напрямую. Записи с countInPlan
+// === false — только личный трекинг, на план не влияют.
+function getPlanTrackedExpenseThisMonth() {
+  try {
+    var s = (typeof getState === "function") ? getState() : (typeof appState !== "undefined" ? appState : null);
+    var log = (s && Array.isArray(s.expensesLog)) ? s.expensesLog : [];
+    var now = new Date();
+    var y = now.getFullYear();
+    var m = now.getMonth();
+    var sum = 0;
+    for (var i = 0; i < log.length; i++) {
+      var e = log[i];
+      if (!e || e.countInPlan === false) continue;
+      var d = new Date(e.date);
+      if (isNaN(d.getTime())) continue;
+      if (d.getFullYear() === y && d.getMonth() === m) sum += (Number(e.amount) || 0);
+    }
+    return Math.max(0, Math.round(sum));
+  } catch (_e) { return 0; }
+}
+
 function recalcPlan() {
   // ── Engine recalculation (когда план активен) ──
   if (isInitialized && chosenPlan && typeof CashflowEngine !== "undefined") {
@@ -1939,7 +1964,9 @@ function recalcPlan() {
           hasReserve: chosenPlan === "buffer",
           // Phase 2: ответ на плашку «расход уже потрачен?» в стартовом месяце.
           currentMonthExpenseStatus: _pe.status,
-          currentMonthExpensePaidAmount: _pe.paidAmount
+          currentMonthExpensePaidAmount: _pe.paidAmount,
+          // Трекер расходов: сверхплановые траты текущего месяца («в плане»).
+          extraMonthExpense: getPlanTrackedExpenseThisMonth()
         },
         events: events
       });
@@ -1965,6 +1992,10 @@ function recalcPlan() {
         lastCalc.currentMonthToGoal = (derived.currentMonthToGoal != null) ? derived.currentMonthToGoal : 0;
         lastCalc.currentMonthExpenseFull = (derived.currentMonthExpenseFull != null) ? derived.currentMonthExpenseFull : 0;
         lastCalc.isPartialMonth = !!derived.isPartialMonth;
+        // Трекер расходов: вклад текущего месяца после сверхплановых трат + флаг.
+        lastCalc.planFirstMonthToGoal = (derived.planFirstMonthToGoal != null) ? derived.planFirstMonthToGoal : null;
+        lastCalc.planFirstMonthReduced = !!derived.planFirstMonthReduced;
+        lastCalc.extraMonthExpense = derived.extraMonthExpense || 0;
 
         accounts.main = derived.currentGoalBalance;
         accounts.reserve = derived.reserveBalance;
@@ -5909,15 +5940,15 @@ var goalMonthsLeft = hasMultiGoals ? (activeGoal.monthsLeft || 0) : (lastCalc.mo
 var goalPace = (lastCalc.free && lastCalc.free > 0) ? (goalMonthlySave / lastCalc.free) : (lastCalc.pace || 0);
 
 var _cs2 = getCurrencySymbol();
-// Phase 2: в неполном (стартовом) месяце «Текущий план» показывает цель ТЕКУЩЕГО
-// месяца (меньше полной), а рядом - полную месячную ставку. Так заголовок и
-// карточка счёта согласуются с «Откладываете … в этом месяце».
+// Phase 2 + трекер расходов: в неполном стартовом месяце ИЛИ при сверхплановых
+// тратах «в плане» «Текущий план» показывает вклад ТЕКУЩЕГО месяца (меньше
+// полного), а рядом - полную месячную ставку. Работает для обеих моделей через
+// planFirstMonthToGoal (объединяет неполный месяц + записанные расходы трекера).
 var _planCmToGoal = (!hasMultiGoals
-  && (getState().financialModel === "cashflow")
-  && lastCalc.isPartialMonth
-  && lastCalc.currentMonthToGoal != null
-  && lastCalc.currentMonthToGoal > 0)
-  ? lastCalc.currentMonthToGoal : null;
+  && lastCalc.planFirstMonthReduced
+  && lastCalc.planFirstMonthToGoal != null
+  && lastCalc.planFirstMonthToGoal < goalMonthly)
+  ? lastCalc.planFirstMonthToGoal : null;
 if (_planCmToGoal != null) {
   monthlyEl.innerText = t("plan.current") + ": " + fmtConverted(_planCmToGoal) + " " + _cs2 + " "
     + t("plan.thisMonthOngoing", { ongoing: fmtConverted(goalMonthly) + " " + _cs2 });
@@ -14673,17 +14704,9 @@ function goalSwipeToIndex(idx, goLeft) {
   window.renderExpensesScreen = function () {
     var entries = getMonthExpenses();
     var data = calcCategoryTotals(entries);
-    var limitInfo = getExpenseLimitInfo();
-    var limit = limitInfo.limit;
-    var hasLimit = limitInfo.configured;
     var spent = data.totalSpent;
-    var remaining = limit - spent;
 
     var elSpent = document.getElementById("expSpent");
-    var elLimit = document.getElementById("expLimit");
-    var elRemaining = document.getElementById("expRemaining");
-    var elProgress = document.getElementById("expProgressFill");
-    var elStatus = document.getElementById("expStatus");
     var elDonutTotal = document.getElementById("expDonutTotal");
     var elEmpty = document.getElementById("expEmpty");
     var elSummary = document.getElementById("expSummaryCard");
@@ -14707,40 +14730,9 @@ function goalSwipeToIndex(idx, goLeft) {
     if (elCats) elCats.style.display = "";
     if (elAddBtn) elAddBtn.style.display = "";
 
+    // Только «Потрачено» — сумма всех записей текущего календарного месяца
+    // (лимит/прогресс/остаток убраны).
     if (elSpent) elSpent.textContent = fmtConverted(spent);
-    if (elLimit) elLimit.textContent = hasLimit ? fmtConverted(limit) : "-";
-
-    if (remaining >= 0) {
-      if (elRemaining) elRemaining.textContent = fmtConverted(remaining);
-    } else {
-      if (elRemaining) elRemaining.textContent = "−" + fmtConverted(Math.abs(remaining));
-    }
-
-    var pct = limit > 0 ? Math.min((spent / limit) * 100, 100) : (hasLimit && spent > 0 ? 100 : 0);
-    if (elProgress) {
-      elProgress.style.width = pct + "%";
-      elProgress.classList.remove("warn", "over");
-      if (hasLimit && spent > limit) elProgress.classList.add("over");
-      else if (limit > 0 && pct >= 80) elProgress.classList.add("warn");
-    }
-
-    if (elStatus) {
-      elStatus.classList.remove("status-ok", "status-warn", "status-over");
-      if (!hasLimit) {
-        elStatus.textContent = t("expenses.noLimit");
-        elStatus.classList.add("status-warn");
-      } else if (spent > limit) {
-        elStatus.textContent = t("expenses.limitExceeded", {amount: fmtConverted(Math.abs(remaining)) + " " + getCurrencySymbol()});
-        elStatus.classList.add("status-over");
-      } else if (pct >= 80) {
-        elStatus.textContent = t("expenses.limitAlmost");
-        elStatus.classList.add("status-warn");
-      } else {
-        elStatus.textContent = t("expenses.withinLimit");
-        elStatus.classList.add("status-ok");
-      }
-    }
-
     if (elDonutTotal) elDonutTotal.textContent = fmtConverted(spent) + " " + getCurrencySymbol();
 
     drawDonut(data.categories, data.totalSpent);
@@ -14781,9 +14773,10 @@ function goalSwipeToIndex(idx, goLeft) {
     _expSelectedCat = null;
     var amtInput = document.getElementById("expenseAmount");
     var dateInput = document.getElementById("expenseDate");
-    var noteInput = document.getElementById("expenseNote");
+    var planToggle = document.getElementById("expenseCountInPlan");
     if (amtInput) amtInput.value = "";
-    if (noteInput) noteInput.value = "";
+    // Тумблер «Учитывать в плане» по умолчанию включён при каждом открытии шторки.
+    if (planToggle) planToggle.checked = true;
     if (dateInput) {
       var now = new Date();
       dateInput.value = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0") + "-" + String(now.getDate()).padStart(2, "0");
@@ -14840,9 +14833,11 @@ function goalSwipeToIndex(idx, goLeft) {
       }
 
       var dateInput = document.getElementById("expenseDate");
-      var noteInput = document.getElementById("expenseNote");
+      var planToggle = document.getElementById("expenseCountInPlan");
       var dateVal = dateInput ? dateInput.value : "";
-      var noteVal = noteInput ? noteInput.value.trim() : "";
+      // Тумблер: включён → расход влияет на план (сверхплановая трата месяца);
+      // выключен → только личный трекинг, план не трогаем.
+      var countInPlan = planToggle ? !!planToggle.checked : true;
 
       if (!dateVal) {
         var now = new Date();
@@ -14854,17 +14849,20 @@ function goalSwipeToIndex(idx, goLeft) {
         category: _expSelectedCat,
         amount: amount,
         date: dateVal,
-        note: noteVal
+        countInPlan: countInPlan
       };
 
       var s = getState();
       var log = Array.isArray(s.expensesLog) ? s.expensesLog.slice() : [];
       log.push(entry);
       updateState({ expensesLog: log });
-      saveFullState();
 
       closeExpenseSheet();
       renderExpensesScreen();
+      // Пересчитываем план: расход «в плане» за текущий месяц уменьшает вклад
+      // текущего месяца (шапка + график). recalcPlan сам сохраняет состояние.
+      if (typeof recalcPlan === "function") recalcPlan();
+      else saveFullState();
 
       showToast(t("expenses.added"), "success");
     });
@@ -14970,29 +14968,13 @@ function goalSwipeToIndex(idx, goLeft) {
     for (var k = 0; k < allMonth.length; k++) totalAllSpent += allMonth[k].amount;
     var pctOfTotal = totalAllSpent > 0 ? Math.round((catTotal / totalAllSpent) * 100) : 0;
 
-    var catLimitInfo = getExpenseLimitInfo();
-    var limit = catLimitInfo.limit;
-    var hasLimit = catLimitInfo.configured;
+    // Лимит убран: показываем только долю от всех расходов месяца.
     if (metaEl) {
-      var metaParts = [];
-      metaParts.push(t("expenses.pctOfAll", { pct: pctOfTotal }));
-      if (hasLimit) metaParts.push(t("expenses.ofTotal", { amount: fmtConverted(catTotal), limit: fmtConverted(limit), sym: getCurrencySymbol() }));
-      metaEl.textContent = metaParts.join("  ·  ");
+      metaEl.textContent = t("expenses.pctOfAll", { pct: pctOfTotal });
     }
 
-    if (progressWrap && progressFill) {
-      if (hasLimit) {
-        progressWrap.style.display = "";
-        var pctBar = limit > 0 ? Math.min((catTotal / limit) * 100, 100) : (catTotal > 0 ? 100 : 0);
-        progressFill.style.width = "0%";
-        progressFill.style.background = cat.color;
-        requestAnimationFrame(function () {
-          progressFill.style.width = pctBar + "%";
-        });
-      } else {
-        progressWrap.style.display = "none";
-      }
-    }
+    // Полоса «от лимита» больше не нужна — прячем всегда.
+    if (progressWrap) progressWrap.style.display = "none";
 
     if (!entries.length) {
       if (listEl) listEl.innerHTML = "";
@@ -15003,9 +14985,17 @@ function goalSwipeToIndex(idx, goLeft) {
       for (var j = 0; j < entries.length; j++) {
         var e = entries[j];
         var delay = Math.min(j * 40, 300);
-        var noteHtml = e.note
-          ? '<div class="exp-detail-entry-note">' + e.note.replace(/</g, "&lt;") + '</div>'
-          : '<div class="exp-detail-entry-note muted">' + t("expenses.noNote") + '</div>';
+        // Метка под суммой: расходы «вне плана» (тумблер выключен) помечаем,
+        // чтобы было видно, что они не влияют на план. Legacy-заметка (если есть)
+        // показывается как раньше.
+        var noteHtml;
+        if (e.note) {
+          noteHtml = '<div class="exp-detail-entry-note">' + e.note.replace(/</g, "&lt;") + '</div>';
+        } else if (e.countInPlan === false) {
+          noteHtml = '<div class="exp-detail-entry-note exp-detail-entry-note--offplan">' + t("expenses.outOfPlan") + '</div>';
+        } else {
+          noteHtml = '';
+        }
 
         html += '<div class="exp-detail-entry" style="animation-delay:' + delay + 'ms">' +
           '<div class="exp-detail-entry-dot" style="background:' + cat.color + '"></div>' +
