@@ -11720,6 +11720,52 @@ body.reduce-motion .settings-seg-btn {
 .faq-item-body-inner p:last-child {
   margin-bottom: 0;
 }
+.faq-item-body-inner h4 {
+  margin: 16px 0 8px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.96);
+}
+.faq-item-body-inner h4:first-child {
+  margin-top: 0;
+}
+.faq-item-body-inner ul {
+  margin: 0 0 10px;
+  padding-left: 18px;
+  list-style: none;
+}
+.faq-item-body-inner ul li {
+  position: relative;
+  margin: 0 0 7px;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.78);
+}
+.faq-item-body-inner ul li::before {
+  content: "";
+  position: absolute;
+  left: -14px;
+  top: 8px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent, #34d399);
+}
+.faq-item-body-inner ul li b,
+.faq-item-body-inner p b {
+  color: rgba(255, 255, 255, 0.95);
+  font-weight: 600;
+}
+.faq-item-body-inner p.faq-example {
+  margin: 0 0 10px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(52, 211, 153, 0.08);
+  border: 1px solid rgba(52, 211, 153, 0.18);
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.82);
+}
 .faq-item-img {
   display: block;
   width: 100%;
