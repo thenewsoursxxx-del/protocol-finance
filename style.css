@@ -11608,3 +11608,133 @@ body.reduce-motion .settings-seg-btn {
 .eb-cta:disabled { opacity: 0.65; cursor: default; box-shadow: none; }
 
 
+/* ===================== FAQ / KNOWLEDGE BASE ===================== */
+
+/* Кнопка входа в FAQ в правом верхнем углу карточки плана. */
+.faq-entry-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid rgba(16, 185, 129, 0.45);
+  background: rgba(16, 185, 129, 0.14);
+  color: #d1fae5;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 2;
+  transition: transform 0.15s ease, background 0.2s ease;
+}
+.faq-entry-btn:active {
+  transform: scale(0.92);
+  background: rgba(16, 185, 129, 0.24);
+}
+
+/* Экран FAQ. */
+#screen-faq {
+  padding-bottom: 40px;
+}
+.faq-intro {
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.62);
+  margin: 4px 2px 18px;
+}
+.faq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.faq-section-label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(16, 185, 129, 0.85);
+  margin: 10px 2px 2px;
+}
+
+/* Раскрывающийся раздел (аккордеон). */
+.faq-item {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  overflow: hidden;
+}
+.faq-item-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 15px 16px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  color: #fff;
+}
+.faq-item-title {
+  font-size: 14.5px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+.faq-item-chevron {
+  flex: 0 0 auto;
+  font-size: 13px;
+  color: rgba(16, 185, 129, 0.9);
+  transition: transform 0.28s ease;
+}
+.faq-item.open .faq-item-chevron {
+  transform: rotate(180deg);
+}
+
+/* Плавное раскрытие через grid 0fr → 1fr (работает при любой высоте контента). */
+.faq-item-body {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.28s ease;
+}
+.faq-item.open .faq-item-body {
+  grid-template-rows: 1fr;
+}
+.faq-item-body-inner {
+  min-height: 0;
+  overflow: hidden;
+}
+.faq-item.open .faq-item-body-inner {
+  padding: 0 16px 16px;
+}
+.faq-item-body-inner p {
+  margin: 0 0 10px;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.78);
+}
+.faq-item-body-inner p:last-child {
+  margin-bottom: 0;
+}
+.faq-item-img {
+  display: block;
+  width: 100%;
+  max-height: 220px;
+  object-fit: contain;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 14px;
+  margin: 4px 0 10px;
+}
+.faq-item-caption {
+  font-size: 12px !important;
+  color: rgba(255, 255, 255, 0.5) !important;
+  font-style: italic;
+}
+
+

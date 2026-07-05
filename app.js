@@ -4129,6 +4129,78 @@ if (goalHistoryBack) {
     });
   }
 
+  /* ===== FAQ / KNOWLEDGE BASE ===== */
+  // FAQ — отдельный экран, открывается из карточки плана и из профиля.
+  // Запоминаем, откуда пришли, чтобы кнопка «назад» вернула туда же.
+  var faqBackBtn = document.getElementById("faqBack");
+  var faqEntryBtn = document.getElementById("faqEntryBtn");
+  var faqProfileBtn = document.getElementById("faqProfileBtn");
+  var faqList = document.getElementById("faqList");
+  var _faqReturn = null;
+
+  function openFaq() {
+    if (typeof haptic === "function") haptic("light");
+    var active = document.querySelector(".screen.active");
+    var activeId = active ? active.id.replace("screen-", "") : "calc";
+    if (activeId === "profile") {
+      _faqReturn = { type: "profile" };
+    } else {
+      var navBtn = null;
+      try {
+        navBtn = Array.prototype.slice.call(buttons).filter(function (b) {
+          return b && b.dataset && b.dataset.screen === activeId;
+        })[0] || null;
+      } catch (e) { navBtn = null; }
+      _faqReturn = { type: "screen", screen: activeId, btn: navBtn };
+    }
+    if (confirmReset) confirmReset.style.display = "none";
+    document.body.classList.remove("advanced-active");
+    document.querySelectorAll(".screen").forEach(function (s) { s.classList.remove("active"); });
+    var faqScreen = document.getElementById("screen-faq");
+    if (faqScreen) faqScreen.classList.add("active");
+    if (buttons && buttons.forEach) buttons.forEach(function (b) { b.classList.remove("active"); });
+    if (typeof hideBottomNav === "function") hideBottomNav();
+    if (typeof moveProfileToActiveHeader === "function") moveProfileToActiveHeader();
+    window.scrollTo(0, 0);
+  }
+
+  function faqBack() {
+    if (typeof haptic === "function") haptic("light");
+    if (_faqReturn && _faqReturn.type === "profile") {
+      document.querySelectorAll(".screen").forEach(function (s) { s.classList.remove("active"); });
+      var prof = document.getElementById("screen-profile");
+      if (prof) prof.classList.add("active");
+      if (buttons && buttons.forEach) buttons.forEach(function (b) { b.classList.remove("active"); });
+      if (typeof moveProfileToActiveHeader === "function") moveProfileToActiveHeader();
+      window.scrollTo(0, 0);
+    } else {
+      var scr = (_faqReturn && _faqReturn.screen) ? _faqReturn.screen : "calc";
+      var b = (_faqReturn && _faqReturn.btn) ? _faqReturn.btn : (buttons ? buttons[0] : null);
+      openScreen(scr, b);
+      if (isInitialized) {
+        if (typeof showBottomNav === "function") showBottomNav();
+      } else {
+        if (typeof hideBottomNav === "function") hideBottomNav();
+      }
+    }
+  }
+
+  if (faqBackBtn) faqBackBtn.addEventListener("click", faqBack);
+  if (faqEntryBtn) faqEntryBtn.addEventListener("click", openFaq);
+  if (faqProfileBtn) faqProfileBtn.addEventListener("click", openFaq);
+
+  // Аккордеон: раскрытие/сворачивание разделов по клику на заголовок.
+  if (faqList) {
+    faqList.addEventListener("click", function (e) {
+      var header = e.target.closest(".faq-item-header");
+      if (!header) return;
+      var item = header.closest(".faq-item");
+      if (!item) return;
+      if (typeof haptic === "function") haptic("light");
+      item.classList.toggle("open");
+    });
+  }
+
   // Apply persisted settings on load
   var s = getState().settings || {};
   document.body.classList.toggle("reduce-motion", !s.animationsEnabled);

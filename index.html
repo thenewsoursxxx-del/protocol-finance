@@ -16,7 +16,7 @@ viewport-fit=cover" />
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
 
-<link rel="stylesheet" href="style.css?v=20047">
+<link rel="stylesheet" href="style.css?v=20050">
 
 <!-- Базовая инициализация Telegram Mini App (ранний вызов ready - рекомендация Telegram) -->
 <script>
@@ -124,7 +124,8 @@ viewport-fit=cover" />
 <!-- ===== PLAN SUMMARY (HIDDEN BY DEFAULT) ===== -->
 <div id="planSummary" style="display:none">
 
-<div class="card">
+<div class="card" style="position:relative">
+<button id="faqEntryBtn" class="faq-entry-btn" type="button" aria-label="FAQ" data-i18n-title="faq.title" title="База знаний">?</button>
 <div style="font-size:14px;opacity:.7" data-i18n="plan.current">Текущий план</div>
 
 <div style="margin-top:8px;font-size:18px;font-weight:600">
@@ -731,6 +732,8 @@ Protocol анализирует цель…
 
 <button id="settingsBtn" class="profile-btn"><svg class="profile-btn-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><g transform="translate(2.5,1.5)" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18.3066362,6.12356982 L17.6842106,5.04347829 C17.1576365,4.12955711 15.9906873,3.8142761 15.0755149,4.33867279 C14.6398815,4.59529992 14.1200613,4.66810845 13.6306859,4.54104256 C13.1413105,4.41397667 12.7225749,4.09747295 12.4668193,3.66132725 C12.3022855,3.38410472 12.2138742,3.06835005 12.2105264,2.74599544 C12.2253694,2.22917739 12.030389,1.72835784 11.6700024,1.3576252 C11.3096158,0.986892553 10.814514,0.777818938 10.2974829,0.778031878 L9.04347831,0.778031878 C8.53694532,0.778031878 8.05129106,0.97987004 7.69397811,1.33890085 C7.33666515,1.69793166 7.13715288,2.18454839 7.13958814,2.69107553 C7.12457503,3.73688099 6.27245786,4.57676682 5.22654465,4.57665906 C4.90419003,4.57331126 4.58843537,4.48489995 4.31121284,4.32036615 C3.39604054,3.79596946 2.22909131,4.11125048 1.70251717,5.02517165 L1.03432495,6.12356982 C0.508388616,7.03634945 0.819378585,8.20256183 1.72997713,8.73226549 C2.32188101,9.07399614 2.68650982,9.70554694 2.68650982,10.3890161 C2.68650982,11.0724852 2.32188101,11.704036 1.72997713,12.0457667 C0.820534984,12.5718952 0.509205679,13.7352837 1.03432495,14.645309 L1.6659039,15.7345539 C1.9126252,16.1797378 2.3265816,16.5082503 2.81617164,16.6473969 C3.30576167,16.7865435 3.83061824,16.7248517 4.27459956,16.4759726 C4.71105863,16.2212969 5.23116727,16.1515203 5.71931837,16.2821523 C6.20746948,16.4127843 6.62321383,16.7330005 6.87414191,17.1716248 C7.03867571,17.4488473 7.12708702,17.764602 7.13043482,18.0869566 C7.13043482,19.1435014 7.98693356,20.0000001 9.04347831,20.0000001 L10.2974829,20.0000001 C11.3504633,20.0000001 12.2054882,19.1490783 12.2105264,18.0961099 C12.2080776,17.5879925 12.4088433,17.0999783 12.7681408,16.7406809 C13.1274382,16.3813834 13.6154524,16.1806176 14.1235699,16.1830664 C14.4451523,16.1916732 14.7596081,16.2797208 15.0389017,16.4393593 C15.9516813,16.9652957 17.1178937,16.6543057 17.6475973,15.7437072 L18.3066362,14.645309 C18.5617324,14.2074528 18.6317479,13.6859659 18.5011783,13.1963297 C18.3706086,12.7066935 18.0502282,12.2893121 17.6109841,12.0366133 C17.17174,11.7839145 16.8513595,11.3665332 16.7207899,10.876897 C16.5902202,10.3872608 16.6602358,9.86577384 16.9153319,9.42791767 C17.0812195,9.13829096 17.3213574,8.89815312 17.6109841,8.73226549 C18.5161253,8.20284891 18.8263873,7.04344892 18.3066362,6.13272314 Z"/><circle cx="9.67505726" cy="10.3890161" r="2.63615562"/></g></svg><span class="profile-btn-label" data-i18n="profile.settings">Настройки</span></button>
 <button id="goalHistoryBtn" class="profile-btn"><svg class="profile-btn-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><g transform="translate(3,2)" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12.7162" y1="14.2234" x2="5.4962" y2="14.2234"/><line x1="12.7162" y1="10.0369" x2="5.4962" y2="10.0369"/><line x1="8.2513" y1="5.8601" x2="5.4963" y2="5.8601"/><path d="M12.9086,0.7498 C12.9086,0.7498 5.2316,0.7538 5.2196,0.7538 C2.4596,0.7708 0.7506,2.5868 0.7506,5.3568 L0.7506,14.5528 C0.7506,17.3368 2.4726,19.1598 5.2566,19.1598 C5.2566,19.1598 12.9326,19.1568 12.9456,19.1568 C15.7056,19.1398 17.4156,17.3228 17.4156,14.5528 L17.4156,5.3568 C17.4156,2.5728 15.6926,0.7498 12.9086,0.7498 Z"/></g></svg><span class="profile-btn-label" data-i18n="profile.goalHistory">История целей</span></button>
+<!-- FAQ / knowledge base entry -->
+<button id="faqProfileBtn" class="profile-btn"><svg class="profile-btn-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><g transform="translate(3,2)" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="8.25"/><path d="M6.7 6.9c0-1.3 1.05-2.3 2.35-2.3s2.35 1 2.35 2.3c0 1.85-2.35 1.6-2.35 3.4"/><line x1="9.05" y1="13.3" x2="9.06" y2="13.3" stroke-width="2"/></g></svg><span class="profile-btn-label" data-i18n="faq.title">База знаний</span></button>
 <!-- NEW: Report problem feature - кнопка "Сообщить о проблеме" в стиле emerald accent -->
 <button id="reportProblemBtn" class="profile-btn profile-btn--report"><svg class="profile-btn-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><g transform="translate(2,2)" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M10.0001,0.7501 C15.1081,0.7501 19.2501,4.8911 19.2501,10.0001 C19.2501,15.1081 15.1081,19.2501 10.0001,19.2501 C4.8911,19.2501 0.7501,15.1081 0.7501,10.0001 C0.7501,4.8911 4.8911,0.7501 10.0001,0.7501 Z" stroke-width="1.5"/><line x1="9.9952" y1="6.2042" x2="9.9952" y2="10.6232" stroke-width="1.5"/><line x1="9.995" y1="13.7961" x2="10.005" y2="13.7961" stroke-width="2"/></g></svg><span class="profile-btn-label" data-i18n="profile.reportProblem">Сообщить о проблеме</span></button>
 <!-- NEW: Full reset button in Profile - переименовано из "Сбросить план" для большей ясности.
@@ -826,6 +829,61 @@ Protocol анализирует цель…
       <path d="M3 5.4A2.4 2.4 0 0 1 5.4 3h13.2A2.4 2.4 0 0 1 21 5.4v13.2a2.4 2.4 0 0 1-2.4 2.4H5.4A2.4 2.4 0 0 1 3 18.6V5.4Zm2.7.6L12 11.05 18.3 6H5.7Zm13.5 1.45-6.6 5.28a1 1 0 0 1-1.2 0L4.8 7.45V18a.6.6 0 0 0 .6.6h13.2a.6.6 0 0 0 .6-.6V7.45Z"/>
     </svg>
   </a>
+</div>
+</div>
+
+<!-- ===== FAQ / KNOWLEDGE BASE SCREEN ===== -->
+<div class="screen" id="screen-faq">
+
+<div class="profile-header">
+<button id="faqBack">←</button>
+<div class="profile-title" data-i18n="faq.title">База знаний</div>
+</div>
+
+<div class="faq-intro" data-i18n="faq.intro">Короткие материалы и ответы на частые вопросы о личных финансах и инвестициях. Нажмите на раздел, чтобы раскрыть его.</div>
+
+<div class="faq-list" id="faqList">
+
+  <div class="faq-section-label" data-i18n="faq.section.dividends">Дивиденды</div>
+
+  <div class="faq-item">
+    <button class="faq-item-header" type="button">
+      <span class="faq-item-title" data-i18n="faq.dividends.what.q">Что такое дивиденды?</span>
+      <span class="faq-item-chevron" aria-hidden="true">▾</span>
+    </button>
+    <div class="faq-item-body">
+      <div class="faq-item-body-inner">
+        <p data-i18n="faq.dividends.what.a">Дивиденды — это часть прибыли компании, которую она выплачивает своим акционерам. Покупая акцию, вы становитесь совладельцем бизнеса, и если компания решает распределить прибыль, вы получаете выплату пропорционально числу ваших акций.</p>
+        <img class="faq-item-img" src="logo.svg" alt="" loading="lazy">
+        <p class="faq-item-caption" data-i18n="faq.dividends.what.caption">Пример: у вас 100 акций, дивиденд — 5 ₽ на акцию → вы получите 500 ₽.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="faq-item">
+    <button class="faq-item-header" type="button">
+      <span class="faq-item-title" data-i18n="faq.dividends.freq.q">Как часто выплачивают дивиденды?</span>
+      <span class="faq-item-chevron" aria-hidden="true">▾</span>
+    </button>
+    <div class="faq-item-body">
+      <div class="faq-item-body-inner">
+        <p data-i18n="faq.dividends.freq.a">Периодичность зависит от компании и страны. Чаще всего дивиденды платят раз в год, раз в полгода или раз в квартал. Некоторые компании не платят дивиденды вовсе, а направляют прибыль на развитие бизнеса.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="faq-item">
+    <button class="faq-item-header" type="button">
+      <span class="faq-item-title" data-i18n="faq.dividends.reinvest.q">Что такое реинвестирование дивидендов?</span>
+      <span class="faq-item-chevron" aria-hidden="true">▾</span>
+    </button>
+    <div class="faq-item-body">
+      <div class="faq-item-body-inner">
+        <p data-i18n="faq.dividends.reinvest.a">Реинвестирование — это когда полученные дивиденды вы снова вкладываете в покупку акций, а не тратите. Со временем это работает как сложный процент: доход приносит новый доход, и капитал растёт быстрее.</p>
+      </div>
+    </div>
+  </div>
+
 </div>
 </div>
 
@@ -2351,7 +2409,7 @@ z-index: 999999;
 
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 <script src="state-manager.js?v=20046"></script>
-<script src="i18n.js?v=20049"></script>
+<script src="i18n.js?v=20050"></script>
 <script src="financial-events.js?v=20034"></script>
 <script src="cashflow-engine.js?v=20034"></script>
 <script src="graph-engine-svg.js?v=20034"></script>
@@ -2362,6 +2420,6 @@ z-index: 999999;
      (для согласованности с серверным sync), но ДО app.js - чтобы хуки
      CloudSync.scheduleSync() в saveFullState() были доступны на момент init. -->
 <script src="cloud-storage.js?v=20034"></script>
-<script src="app.js?v=20048"></script>
+<script src="app.js?v=20050"></script>
 </body>
 </html>
