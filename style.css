@@ -1567,7 +1567,7 @@ color: #f55;
   align-items: center;
 }
 
-#profileBack {
+#profileBack, #faqBack {
   width: auto;
   padding: 6px 10px;
   font-size: 22px;
@@ -11687,8 +11687,8 @@ body.reduce-motion .settings-seg-btn {
 }
 .faq-item-chevron {
   flex: 0 0 auto;
-  font-size: 13px;
-  color: rgba(16, 185, 129, 0.9);
+  font-size: 18px;
+  color: rgba(16, 185, 129, 0.95);
   transition: transform 0.28s ease;
 }
 .faq-item.open .faq-item-chevron {
