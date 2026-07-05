@@ -684,7 +684,7 @@ Protocol анализирует цель…
         <div class="exp-plan-toggle-hint" data-i18n="expenses.countInPlanHint">Расход уменьшит, сколько можно отложить на цель в этом месяце. Выключите, если он не должен влиять на план.</div>
       </div>
       <label class="settings-toggle">
-        <input type="checkbox" id="expenseCountInPlan" class="settings-toggle-input" checked>
+        <input type="checkbox" id="expenseCountInPlan" class="settings-toggle-input">
         <span class="settings-toggle-slider"></span>
       </label>
     </div>
@@ -2085,6 +2085,19 @@ z-index: 999999;
   <button type="button" id="csMethodInfoClose" class="cs-primary-btn" data-i18n="cs.method.gotIt">Понятно</button>
 </div>
 
+<!-- ===== ПОДСКАЗКА: «Расходы» + «Свой график» (защита от двойного учёта) ===== -->
+<div id="expPlanHintOverlay" class="proto-sheet-overlay"></div>
+<div id="expPlanHintSheet" class="proto-sheet cs-method-info-sheet">
+  <h2 data-i18n="expenses.planHint.title">У вас включён «Свой график»</h2>
+  <div class="cs-method-info-body">
+    <div class="cs-method-info-row">
+      <span class="cs-method-info-num">!</span>
+      <span data-i18n="expenses.planHint.body">В «Своём графике» расходы вы записываете прямо на графике. Если включить этот тумблер, расход отсюда тоже уменьшит сумму, которую можно отложить на цель в этом месяце. Чтобы один и тот же расход не учитывался дважды, ведите расходы в чём-то одном - либо на графике, либо здесь.</span>
+    </div>
+  </div>
+  <button type="button" id="expPlanHintClose" class="cs-primary-btn" data-i18n="cs.method.gotIt">Понятно</button>
+</div>
+
 <!-- Иконка профиля: фиксирована справа сверху, выровнена по высоте с названием вкладки -->
 <div class="top-profile-fixed">
 <button id="profileBtn" type="button" class="top-profile">
@@ -2338,7 +2351,7 @@ z-index: 999999;
 
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 <script src="state-manager.js?v=20046"></script>
-<script src="i18n.js?v=20047"></script>
+<script src="i18n.js?v=20049"></script>
 <script src="financial-events.js?v=20034"></script>
 <script src="cashflow-engine.js?v=20034"></script>
 <script src="graph-engine-svg.js?v=20034"></script>
@@ -2349,6 +2362,6 @@ z-index: 999999;
      (для согласованности с серверным sync), но ДО app.js - чтобы хуки
      CloudSync.scheduleSync() в saveFullState() были доступны на момент init. -->
 <script src="cloud-storage.js?v=20034"></script>
-<script src="app.js?v=20047"></script>
+<script src="app.js?v=20048"></script>
 </body>
 </html>

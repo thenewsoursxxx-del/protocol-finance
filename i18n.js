@@ -343,6 +343,8 @@
       "expenses.notePlaceholder": "Комментарий",
       "expenses.countInPlan": "Учитывать расходы в плане",
       "expenses.countInPlanHint": "Расход уменьшит, сколько можно отложить на цель в этом месяце. Выключите, если он не должен влиять на план.",
+      "expenses.planHint.title": "У вас включён «Свой график»",
+      "expenses.planHint.body": "В «Своём графике» расходы вы записываете прямо на графике. Если включить этот тумблер, расход отсюда тоже уменьшит сумму, которую можно отложить на цель в этом месяце. Чтобы один и тот же расход не учитывался дважды, ведите расходы в чём-то одном - либо на графике, либо здесь.",
       "expenses.outOfPlan": "Вне плана",
       "expenses.saveExpense": "Сохранить расход",
       "expenses.emptyCategory": "Здесь пока нет расходов",
@@ -1134,6 +1136,7 @@
       // FIX: custom schedule accumulation + counters update - аккумулированные ключи.
       "cs.plan.totalIncome": "Накоплено дохода",
       "cs.plan.totalExpense": "Расходы за период",
+      "cs.plan.trackedExtra": "Расходы из вкладки",
       "cs.plan.free": "Свободно",
       "cs.plan.depositedFromTotal": "Отложено от этой суммы",
       "cs.plan.counterpart.totalIncome": "учтён ручной доход {amount}",
@@ -1486,6 +1489,8 @@
       "expenses.notePlaceholder": "Comment",
       "expenses.countInPlan": "Count expenses in the plan",
       "expenses.countInPlanHint": "This expense will reduce how much you can save toward the goal this month. Turn off if it shouldn't affect the plan.",
+      "expenses.planHint.title": "You're using “Your schedule”",
+      "expenses.planHint.body": "In “Your schedule” you log expenses right on the graph. If you turn this toggle on, an expense from here will also reduce how much you can set aside for your goal this month. To avoid counting the same expense twice, track your expenses in one place - either on the graph or here.",
       "expenses.outOfPlan": "Not in plan",
       "expenses.saveExpense": "Save expense",
       "expenses.emptyCategory": "No expenses here yet",
@@ -2273,6 +2278,7 @@
       // FIX: custom schedule accumulation + counters update - accumulated keys.
       "cs.plan.totalIncome": "Period income",
       "cs.plan.totalExpense": "Period expenses",
+      "cs.plan.trackedExtra": "Expenses from tracker",
       "cs.plan.free": "Free",
       "cs.plan.depositedFromTotal": "Allocated from this amount",
       "cs.plan.counterpart.totalIncome": "incl. manual income {amount}",

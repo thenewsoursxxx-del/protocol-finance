@@ -5852,6 +5852,16 @@ if (_cpInfo && _cpInfo.anyCustomActive) {
                   '<span>' + t("cs.plan.totalExpense") + '</span>' +
                   '<b>' + _cpInfo.totalExpenseFormatted + '</b>' +
                 '</div>';
+  }
+  // Расходы из вкладки «Расходы» («в плане») - отдельной строкой, чтобы было
+  // прозрачно, что уменьшило «свободно» помимо расходов на графике.
+  if (_cpInfo.trackedExtra > 0) {
+    rowsHtml += '<div class="plan-cs-row">' +
+                  '<span>' + t("cs.plan.trackedExtra") + '</span>' +
+                  '<b>' + _cpInfo.trackedExtraFormatted + '</b>' +
+                '</div>';
+  }
+  if (_cpInfo.totalExpense > 0 || _cpInfo.trackedExtra > 0) {
     rowsHtml += '<div class="plan-cs-row">' +
                   '<span>' + t("cs.plan.free") + '</span>' +
                   '<b>' + _cpInfo.freeFormatted + '</b>' +
@@ -7680,7 +7690,14 @@ initCashflowSettings();
       expenseKind = totalExpense > 0 ? (eType === "fixed" ? "fixed" : "variablePeriodic") : "none";
     }
 
-    var free = Math.max(0, totalIncome - totalExpense);
+    // Расходы из вкладки «Расходы» с тумблером «Учитывать в плане» (текущий
+    // месяц) тоже уменьшают «свободно» в «своём графике». Это связывает трекер
+    // расходов с custom-моделью. Двойной учёт предотвращается на уровне UX:
+    // при включении тумблера в режиме «свой график» показываем подсказку не
+    // дублировать повседневные расходы ещё и на графике.
+    var trackedExtra = (typeof window.getPlanTrackedExpenseThisMonth === "function")
+      ? (Number(window.getPlanTrackedExpenseThisMonth()) || 0) : 0;
+    var free = Math.max(0, totalIncome - totalExpense - trackedExtra);
     var targetDeposit = Math.round(free * _paceFraction());
     // Model B: «уже отложено» тоже считаем за текущий календарный месяц.
     var alreadyDeposited = _alreadyDepositedThisMonth();
@@ -7700,6 +7717,7 @@ initCashflowSettings();
       alreadyDeposited: alreadyDeposited,
       totalIncome: totalIncome,
       totalExpense: totalExpense,
+      trackedExtra: trackedExtra,
       free: free,
       counterpart: counterpart
     };
@@ -8907,6 +8925,7 @@ initCashflowSettings();
       entry: last,
       totalIncome: calc.totalIncome,
       totalExpense: calc.totalExpense,
+      trackedExtra: calc.trackedExtra || 0,
       free: calc.free,
       targetDeposit: calc.targetDeposit,
       alreadyDeposited: calc.alreadyDeposited,
@@ -8916,6 +8935,7 @@ initCashflowSettings();
       // fmt-хелперы для рендера в main-plan-header.
       totalIncomeFormatted: _amount(calc.totalIncome),
       totalExpenseFormatted: _amount(calc.totalExpense),
+      trackedExtraFormatted: _amount(calc.trackedExtra || 0),
       freeFormatted: _amount(calc.free),
       targetFormatted: _amount(calc.targetDeposit),
       alreadyFormatted: _amount(calc.alreadyDeposited),
@@ -14908,8 +14928,9 @@ function goalSwipeToIndex(idx, goLeft) {
     var dateInput = document.getElementById("expenseDate");
     var planToggle = document.getElementById("expenseCountInPlan");
     if (amtInput) amtInput.value = "";
-    // Тумблер «Учитывать в плане» по умолчанию включён при каждом открытии шторки.
-    if (planToggle) planToggle.checked = true;
+    // Тумблер «Учитывать в плане» по умолчанию ВЫКЛючен: вкладка «Расходы» — это
+    // прежде всего трекер. Влияние на план пользователь включает осознанно.
+    if (planToggle) planToggle.checked = false;
     if (dateInput) {
       var now = new Date();
       dateInput.value = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0") + "-" + String(now.getDate()).padStart(2, "0");
@@ -14929,6 +14950,30 @@ function goalSwipeToIndex(idx, goLeft) {
       closeExpenseSheet();
     });
   }
+
+  /* ── Подсказка «Расходы» + «Свой график»: при ВКЛючении тумблера в режиме
+        «свой график» предупреждаем о возможном двойном учёте. ── */
+  (function _wireExpPlanHint() {
+    var toggleEl = document.getElementById("expenseCountInPlan");
+    var hintOverlay = document.getElementById("expPlanHintOverlay");
+    var hintSheet = document.getElementById("expPlanHintSheet");
+    var hintClose = document.getElementById("expPlanHintClose");
+    function _closeHint() {
+      if (typeof haptic === "function") haptic("light");
+      if (typeof ProtoSheet !== "undefined") ProtoSheet.close(hintSheet, hintOverlay);
+    }
+    if (toggleEl) {
+      toggleEl.addEventListener("change", function () {
+        if (!toggleEl.checked) return;
+        var cp = (typeof window.getCustomPlanInfo === "function") ? window.getCustomPlanInfo() : null;
+        if (cp && cp.anyCustomActive && hintSheet && typeof ProtoSheet !== "undefined") {
+          ProtoSheet.open(hintSheet, hintOverlay);
+        }
+      });
+    }
+    if (hintClose) hintClose.addEventListener("click", _closeHint);
+    if (hintOverlay) hintOverlay.addEventListener("click", _closeHint);
+  })();
 
   /* ── Validation ── */
 
@@ -14969,8 +15014,8 @@ function goalSwipeToIndex(idx, goLeft) {
       var planToggle = document.getElementById("expenseCountInPlan");
       var dateVal = dateInput ? dateInput.value : "";
       // Тумблер: включён → расход влияет на план (сверхплановая трата месяца);
-      // выключен → только личный трекинг, план не трогаем.
-      var countInPlan = planToggle ? !!planToggle.checked : true;
+      // выключен → только личный трекинг, план не трогаем. По умолчанию выключен.
+      var countInPlan = planToggle ? !!planToggle.checked : false;
 
       if (!dateVal) {
         var now = new Date();
