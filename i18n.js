@@ -48,7 +48,14 @@
       // ── Cashflow record buttons (на экране графика, гибкая модель) ──
       "graph.recordIncome": "Записать доход",
       "graph.recordExpense": "Записать расход",
+      "graph.recordDeposit": "Отложить",
       "graph.recordHint": "Записывайте доходы и расходы по мере поступления - Protocol сам отложит на цель. Чтобы сменить периодичность или сумму, откройте гибкую модель.",
+      "cs.method.title": "Как работает «Свой график»",
+      "cs.method.step1": "Записывайте доход, когда деньги пришли, и расходы, когда потратили - в любом порядке и сколько угодно раз.",
+      "cs.method.step2": "Приложение считает за календарный месяц: свободно = доход − расход, и подсказывает, сколько отложить на цель.",
+      "cs.method.step3": "Деньги уходят на цель только когда вы нажимаете «Отложить» - ничего не откладывается автоматически.",
+      "cs.method.step4": "В начале нового месяца счётчики месяца обнуляются, а уже отложенное на цель остаётся.",
+      "cs.method.gotIt": "Понятно",
       "plan.current": "Текущий план",
       "plan.perMonth": "/ месяц",
       "plan.approx": "Примерно",
@@ -1187,7 +1194,14 @@
       // ── Cashflow record buttons (graph screen, flexible model) ──
       "graph.recordIncome": "Record income",
       "graph.recordExpense": "Record expense",
+      "graph.recordDeposit": "Set aside",
       "graph.recordHint": "Log income and expenses as they happen - Protocol sets aside toward your goal automatically. To change the frequency or amount, open the flexible model.",
+      "cs.method.title": "How “Your schedule” works",
+      "cs.method.step1": "Log income when money arrives and expenses when you spend - in any order, as many times as you like.",
+      "cs.method.step2": "The app counts per calendar month: free = income − expenses, and suggests how much to set aside toward your goal.",
+      "cs.method.step3": "Money moves to your goal only when you tap “Set aside” - nothing is set aside automatically.",
+      "cs.method.step4": "At the start of a new month the monthly counters reset, while what you already set aside toward the goal stays.",
+      "cs.method.gotIt": "Got it",
 
       // ── Plan summary ──
       "plan.current": "Current plan",

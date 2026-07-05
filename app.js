@@ -3274,6 +3274,7 @@ style="width:52px;height:52px;border-radius:50%">
 <div id="cashflowRecordRow" class="cashflow-record-row" style="display:none">
 <button id="recordIncomeBtn" class="cs-add-record-btn" type="button" data-side="income">${t("graph.recordIncome")}</button>
 <button id="recordExpenseBtn" class="cs-add-record-btn cs-add-record-btn--expense" type="button" data-side="expense">${t("graph.recordExpense")}</button>
+<button id="recordDepositBtn" class="cs-add-record-btn cs-add-record-btn--deposit" type="button" style="display:none">${t("graph.recordDeposit")}</button>
 <div id="cashflowRecordHint" class="cashflow-record-hint">${t("graph.recordHint")}</div>
 </div>
 <div id="brainMessageContainer"></div>
@@ -7074,8 +7075,34 @@ function initCashflowSettings() {
           prevAmount: prevAmount
         });
       }
+    } else if (freq === "custom" && prevFreq !== "custom") {
+      // MODEL B: при выборе «свой график» показываем поясняющую карточку о том,
+      // как работает этот режим накопления (только для variable-стороны и только
+      // при реальном переключении на custom, чтобы не мозолить при повторных кликах).
+      var sNowC = (typeof getState === "function") ? getState() : {};
+      var sideTypeC = forIncome ? (sNowC.incomeType || "fixed") : (sNowC.expenseType || "fixed");
+      if (sideTypeC === "variable") _showCustomScheduleInfo();
     }
   }
+
+  // MODEL B: поясняющая карточка режима «свой график».
+  function _showCustomScheduleInfo() {
+    var sheet = document.getElementById("csMethodInfoSheet");
+    var overlay = document.getElementById("csMethodInfoOverlay");
+    if (!sheet || typeof ProtoSheet === "undefined") return;
+    ProtoSheet.open(sheet, overlay);
+  }
+  (function _wireCsMethodInfo() {
+    var closeBtn = document.getElementById("csMethodInfoClose");
+    var overlay = document.getElementById("csMethodInfoOverlay");
+    var sheet = document.getElementById("csMethodInfoSheet");
+    function _close() {
+      if (typeof haptic === "function") haptic("light");
+      if (typeof ProtoSheet !== "undefined") ProtoSheet.close(sheet, overlay);
+    }
+    if (closeBtn) closeBtn.addEventListener("click", _close);
+    if (overlay) overlay.addEventListener("click", _close);
+  })();
 
   if (incomeFreqBlock) incomeFreqBlock.addEventListener("click", function (e) { onFreqClick(incomeFreqBlock, e); });
   if (expenseFreqBlock) expenseFreqBlock.addEventListener("click", function (e) { onFreqClick(expenseFreqBlock, e); });
@@ -7503,6 +7530,30 @@ initCashflowSettings();
     }, 0);
   }
 
+  // MODEL B (свой график): период = КАЛЕНДАРНЫЙ месяц. Хелперы ниже считают
+  // суммы только по записям текущего месяца, чтобы рекомендация «нужно отложить»
+  // и «уже отложено» относились к текущему периоду и обнулялись на новый месяц.
+  // Уже отложенные на цель деньги при этом остаются на счёте (accounts.main) —
+  // сбрасывается только счётчик текущего месяца.
+  function _isThisMonth(dateStr) {
+    var d = new Date(dateStr);
+    if (isNaN(d.getTime())) return false;
+    var now = new Date();
+    return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+  }
+
+  function _periodTotalThisMonth(side) {
+    return _entriesBySide(side).reduce(function (sum, e) {
+      return _isThisMonth(e && e.date) ? sum + (Number(e.amount) || 0) : sum;
+    }, 0);
+  }
+
+  function _alreadyDepositedThisMonth() {
+    return _entries().reduce(function (sum, e) {
+      return (e && _isThisMonth(e.date)) ? sum + (Number(e.deposited) || 0) : sum;
+    }, 0);
+  }
+
   // FIX: custom schedule accumulation + counters update - counterpart другой
   // стороны. Для custom-стороны возвращаем СУММУ всех записей (а не последнюю),
   // что критично для корректного расчёта «Нужно отложить» при нескольких
@@ -7526,9 +7577,10 @@ initCashflowSettings();
       var fixedAmt = parser(s[simpleField]);
       return { amount: fixedAmt > 0 ? fixedAmt : 0, kind: fixedAmt > 0 ? "fixed" : "none" };
     }
-    // variable + freq="custom" → сумма всех ручных записей этой стороны.
+    // variable + freq="custom" → сумма ручных записей этой стороны за ТЕКУЩИЙ
+    // календарный месяц (Model B: период = календарный месяц).
     if (freq === "custom") {
-      var sumCustom = _periodTotal(otherSide);
+      var sumCustom = _periodTotalThisMonth(otherSide);
       return { amount: sumCustom, kind: sumCustom > 0 ? "customTotal" : "none" };
     }
     var vAmt = parser(s[varField]);
@@ -7590,7 +7642,7 @@ initCashflowSettings();
 
     var totalIncome, incomeKind;
     if (incomeIsCustom) {
-      totalIncome = _periodTotal("income");
+      totalIncome = _periodTotalThisMonth("income");
       incomeKind = totalIncome > 0 ? "customTotal" : "none";
     } else {
       var iType = s.incomeType || "fixed";
@@ -7605,7 +7657,7 @@ initCashflowSettings();
 
     var totalExpense, expenseKind;
     if (expenseIsCustom) {
-      totalExpense = _periodTotal("expense");
+      totalExpense = _periodTotalThisMonth("expense");
       expenseKind = totalExpense > 0 ? "customTotal" : "none";
     } else {
       var eType = s.expenseType || "fixed";
@@ -7630,7 +7682,8 @@ initCashflowSettings();
 
     var free = Math.max(0, totalIncome - totalExpense);
     var targetDeposit = Math.round(free * _paceFraction());
-    var alreadyDeposited = _alreadyDepositedTotal();
+    // Model B: «уже отложено» тоже считаем за текущий календарный месяц.
+    var alreadyDeposited = _alreadyDepositedThisMonth();
     var pendingDeposit = Math.max(0, targetDeposit - alreadyDeposited);
 
     // Для совместимости - какой counterpart актуален для side="income"|"expense".
@@ -8241,6 +8294,50 @@ initCashflowSettings();
     }
   }
 
+  // MODEL B (свой график): явное отложение агрегированного pending за текущий
+  // календарный месяц. Вызывается кнопкой «Отложить» на графике. Атрибуцию
+  // deposited вешаем на самую свежую income-запись текущего месяца (как это
+  // делает depositBtn/inline-↑), чтобы бейджи истории работали корректно.
+  function _commitCustomPending() {
+    var goalVal = 0;
+    try {
+      var gi = document.getElementById("goal");
+      goalVal = gi ? (typeof parseNumber === "function" ? parseNumber(gi.value || "0") : Number(gi.value) || 0) : 0;
+    } catch (er) { goalVal = 0; }
+    if (goalVal <= 0) {
+      if (typeof showToast === "function") showToast(t("cs.toast.noGoal"), "info");
+      return;
+    }
+    var calc = _computeDepositForEntry("income");
+    var dep = calc.deposit;
+    if (dep <= 0) {
+      if (typeof showToast === "function") showToast(t("cs.toast.alreadyDeposited"), "info");
+      return;
+    }
+    var incomeEntries = _entriesBySide("income")
+      .filter(function (e) { return _isThisMonth(e && e.date); })
+      .sort(function (a, b) {
+        var dCmp = String(b.date).localeCompare(String(a.date));
+        if (dCmp !== 0) return dCmp;
+        return String(b.createdAt || "").localeCompare(String(a.createdAt || ""));
+      });
+    var target = incomeEntries[0];
+    if (!target) {
+      if (typeof showToast === "function") showToast(t("cs.toast.alreadyDeposited"), "info");
+      return;
+    }
+    if (typeof haptic === "function") haptic("success");
+    _commitDeposit(target, dep);
+    if (typeof showToast === "function") {
+      showToast(t("cs.toast.deposited", { amount: _amount(dep) }), "success");
+    }
+    if (typeof recalcPlan === "function") recalcPlan();
+    if (typeof window.renderCustomSchedule === "function") window.renderCustomSchedule();
+    _refreshGraphAfterRecord();
+    if (typeof window.updateFactInputVisibility === "function") window.updateFactInputVisibility();
+  }
+  window._commitCustomPending = _commitCustomPending;
+
   // BUGFIX: после записи факта/отложения нужно полностью пересобрать график
   // (как это делает applyFact в простой модели) - иначе линия и точка факта не
   // отрисовываются. Делаем это только если активен экран графика, чтобы не
@@ -8285,6 +8382,8 @@ initCashflowSettings();
     if (typeof renderAccountsUI === "function") { try { renderAccountsUI(); } catch (e) {} }
     if (typeof updateAccountsLocalNav === "function") { try { updateAccountsLocalNav(); } catch (e) {} }
     if (typeof updateGraphGoalIndicator === "function") { try { updateGraphGoalIndicator(); } catch (e) {} }
+    // MODEL B: держим кнопку «Отложить» (свой график) в синхроне с pending.
+    if (typeof window.updateFactInputVisibility === "function") { try { window.updateFactInputVisibility(); } catch (e) {} }
   }
 
   // ── Events: Continue / Deposit / Skip / History clicks ────────────────────
@@ -8396,9 +8495,15 @@ initCashflowSettings();
       var calc = _computeDepositForEntry(ctx.side, rawAmount);
       ctx.pendingDeposit = calc.deposit;
 
-      // ── 5. Для INCOME с положительным deposit - сразу делаем commit.
-      //      Для EXPENSE - просто записываем (расход не идёт на цель напрямую).
-      if (ctx.side === "income" && calc.deposit > 0) {
+      // ── 5. Отложение.
+      //  • MODEL B (свой график, freq=custom): доход и расход ТОЛЬКО записываются
+      //    в журнал; деньги на цель уходят исключительно по явной кнопке
+      //    «Отложить». Так исчезает рассинхрон «доход сразу отложился, а расход
+      //    его не откорректировал» — порядок ввода дохода/расхода больше не важен.
+      //  • Регулярные частоты (monthly/weekly/biweekly) — прежнее поведение:
+      //    INCOME с положительным deposit сразу коммитится (per-entry).
+      var recIsCustom = (ctx.frequency === "custom");
+      if (ctx.side === "income" && !recIsCustom && calc.deposit > 0) {
         // Проверяем, что есть цель - иначе откладывать не на что.
         var goalVal = 0;
         try {
@@ -8415,7 +8520,7 @@ initCashflowSettings();
           if (typeof showToast === "function") showToast(t("cs.toast.added.income"), "success");
         }
       } else if (ctx.side === "income") {
-        // Доход добавлен, но откладывать нечего (deposit=0).
+        // Custom-режим ИЛИ deposit=0: доход только записан, без отложения.
         if (typeof showToast === "function") showToast(t("cs.toast.added.income"), "success");
       } else {
         // Расход.
@@ -8622,6 +8727,13 @@ initCashflowSettings();
 
     var addBtn = e.target.closest(".cs-add-record-btn");
     if (addBtn) {
+      // MODEL B: кнопка «Отложить» (свой график) — явный commit агрегированного
+      // pending, а не открытие модалки записи.
+      if (addBtn.id === "recordDepositBtn") {
+        if (typeof haptic === "function") haptic("light");
+        _commitCustomPending();
+        return;
+      }
       var side = addBtn.getAttribute("data-side") || "income";
       if (typeof haptic === "function") haptic("light");
       // CUSTOM SCHEDULE v2 - fix main plan display - открывая модалку нужной
@@ -9434,8 +9546,14 @@ function allocBackMeta(item) {
     var targetForMovable = Math.max(0, 100 - fixedPct);
 
     if (!movable.length) {
-      // Only the fixed item exists → it must be 100.
-      if (fixed) fixed.ref.percentage = 100;
+      // Единственный активный слайс.
+      //  • Полная ребалансировка (fixedIndex = -1: после удаления / вывода /
+      //    восстановления) → остаток портфеля обязан быть 100%.
+      //  • Явное добавление/редактирование пользователем (fixed задан) →
+      //    уважаем введённую долю (можно указать <100%, чтобы затем добить
+      //    портфель другими типами). Кнопка «Сохранить» всё равно требует
+      //    суммарно 100%, а прогресс покажет «Осталось: N%».
+      if (!fixed) actives[0].ref.percentage = 100;
       return;
     }
 
@@ -11125,9 +11243,24 @@ document.addEventListener("click", function (e) {
       // Кнопка только для стороны, которая в режиме «Нефиксированный».
       if (incBtn) incBtn.style.display = incomeVar ? "" : "none";
       if (expBtn) expBtn.style.display = expenseVar ? "" : "none";
+      // MODEL B (свой график): кнопка «Отложить» видна только в custom-режиме
+      // и только если есть что откладывать за текущий месяц (pending > 0).
+      var depBtn = document.getElementById("recordDepositBtn");
+      if (depBtn) {
+        var cpInfo = (typeof window.getCustomPlanInfo === "function") ? window.getCustomPlanInfo() : null;
+        var pending = (cpInfo && cpInfo.hasAnyEntry) ? (Number(cpInfo.pendingDeposit) || 0) : 0;
+        if (cpInfo && cpInfo.anyCustomActive && pending > 0) {
+          depBtn.style.display = "";
+          depBtn.textContent = t("graph.recordDeposit") + " " + (cpInfo.pendingFormatted || "");
+        } else {
+          depBtn.style.display = "none";
+        }
+      }
     } else {
       if (factRow) factRow.style.display = "";
       if (recordRow) recordRow.style.display = "none";
+      var depBtnOff = document.getElementById("recordDepositBtn");
+      if (depBtnOff) depBtnOff.style.display = "none";
     }
   }
 
