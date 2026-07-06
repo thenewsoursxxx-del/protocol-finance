@@ -267,6 +267,13 @@ filter: drop-shadow(0 0 6px rgba(255,255,255,0.6));
   min-height: 65vh;
 }
 
+/* Нижний нав-бар плавает поверх листа (z-index 999, bottom 26px + высота 72px).
+   Даём окну добавления расхода запас снизу, чтобы кнопка «Сохранить расход»
+   поднималась над нав-баром, а лист при нехватке места можно было прокрутить. */
+#expenseSheet {
+  padding-bottom: calc(env(safe-area-inset-bottom) + 124px);
+}
+
 .proto-sheet--detail {
   min-height: 75vh;
 }

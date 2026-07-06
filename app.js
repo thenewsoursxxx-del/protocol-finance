@@ -1863,7 +1863,9 @@ function updatePartialExpenseBanner() {
       : (_pf(s.fixedExpenseAmount) || 0);
   }
   var onPrimaryGoal = (typeof activeGoalIndex === "undefined") || activeGoalIndex === 0;
-  var show = isCashflow && onPrimaryGoal && _startedMidCurrentMonth() && expFull > 0 && !answered;
+  // В режиме «Свой график» расходы вводятся вручную по факту за период, поэтому
+  // вопрос про неполный первый месяц не нужен (иначе двойной учёт) — не показываем.
+  var show = isCashflow && onPrimaryGoal && _startedMidCurrentMonth() && expFull > 0 && !answered && !_expIsCustom;
 
   // Плашка занимает место кнопок «Записать доход/расход»: пока вопрос не решён,
   // прячем строку записи и поле факта. После ответа renderProtocolAdviceGraph()
