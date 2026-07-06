@@ -10167,8 +10167,12 @@ function allocBackMeta(item) {
     if (type === "deposit") {
       var r = parseFloat(depositRate ? depositRate.value : "");
       if (!isFinite(r) || r <= 0) { _flashFieldError(depositRate); ok = false; }
-      var tm = parseInt(depositTerm ? depositTerm.value : "", 10);
-      if (!isFinite(tm) || tm <= 0) { _flashFieldError(depositTerm); ok = false; }
+      // NO-TERM DEPOSIT - для накопительного счёта срок не требуется.
+      var _noTerm = !!(depositNoTerm && depositNoTerm.checked);
+      if (!_noTerm) {
+        var tm = parseInt(depositTerm ? depositTerm.value : "", 10);
+        if (!isFinite(tm) || tm <= 0) { _flashFieldError(depositTerm); ok = false; }
+      }
       // Promo rate is only required when promo months > 0.
       var pm = parseInt(depositPromoMonths ? depositPromoMonths.value : "0", 10) || 0;
       if (pm > 0) {
