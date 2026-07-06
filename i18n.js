@@ -804,6 +804,8 @@
       "stats.field.expectedReturn": "Ожидаемая годовая доходность (%)",
       "stats.field.depositRate": "Процентная ставка (% годовых)",
       "stats.field.depositTerm": "Срок вклада (месяцев)",
+      "stats.field.noTerm": "Без срока (накопительный счёт)",
+      "stats.field.noTermValue": "Без срока",
       "stats.field.capitalization": "Капитализация процентов",
       "stats.cap.daily": "Ежедневно",
       "stats.cap.monthly": "Ежемесячно",
@@ -954,6 +956,7 @@
 
       // ── Event toasts ──
       "event.incomeAdded": "Доход добавлен",
+      "event.incomeAddedCustom": "Доход добавлен в «Свой график». Нажмите «Отложить», чтобы направить на цель.",
       "event.expenseAdded": "Расход добавлен",
 
       // ── Advanced goals ──
@@ -1980,6 +1983,8 @@
       "stats.field.expectedReturn": "Expected annual return (%)",
       "stats.field.depositRate": "Interest rate (% annual)",
       "stats.field.depositTerm": "Deposit term (months)",
+      "stats.field.noTerm": "No term (savings account)",
+      "stats.field.noTermValue": "No term",
       "stats.field.capitalization": "Interest capitalization",
       "stats.cap.daily": "Daily",
       "stats.cap.monthly": "Monthly",
@@ -2130,6 +2135,7 @@
 
       // ── Event toasts ──
       "event.incomeAdded": "Income added",
+      "event.incomeAddedCustom": "Income added to “Custom schedule”. Tap “Set aside” to send it to your goal.",
       "event.expenseAdded": "Expense added",
 
       // ── Advanced goals ──

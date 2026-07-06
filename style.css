@@ -4378,6 +4378,11 @@ body.flip-fix-pending .flip-wrapper {
 .stats-segment--2col {
   grid-template-columns: 1fr 1fr;
 }
+
+/* NO-TERM DEPOSIT - отступ у тумблера «без срока», чтобы не прилипал к полю срока. */
+.stats-noterm-check {
+  margin-bottom: 12px;
+}
 .stats-segment-btn {
   padding: 10px 6px;
   background: transparent;

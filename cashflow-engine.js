@@ -305,6 +305,11 @@
     for (var i = 0; i < this.events.length; i++) {
       var e = this.events[i];
       if (e.frequency === FREQUENCY.ONCE && !(e.meta && e.meta.userCreated)) continue;
+      // Разовый непредвиденный доход (премия, подарок и т.п.) НЕ должен завышать
+      // усреднённый месячный прогноз и оценку срока (ETA): он влияет только на свой
+      // календарный месяц (см. _getCurrentMonthForecast) и на баланс. Ручные записи
+      // «Свой график» (meta.source === "customSchedule") в среднем прогнозе остаются.
+      if (e.frequency === FREQUENCY.ONCE && e.meta && e.meta.kind === "unpredictable-income") continue;
 
       var freq = e.frequency || FREQUENCY.MONTHLY;
 

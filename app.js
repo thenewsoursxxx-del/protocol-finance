@@ -7421,6 +7421,24 @@ if (eventSubmitBtn) {
     var H = CashflowEngineHelpers;
     var s = getState();
 
+    // РАЗОВЫЙ ДОХОД × «СВОЙ ГРАФИК»: если доход настроен как нефиксированный +
+    // «Свой график», разовый доход НЕ откладывается сразу и НЕ пишется в
+    // accounts.main. Вместо этого он добавляется в журнал «Свой график» как
+    // обычное поступление (deposited:0) — деньги уйдут на цель по кнопке
+    // «Отложить», как и любой другой доход в этом режиме.
+    var _incomeIsCustom = (s.incomeType === "variable") && ((s.incomeFrequency || "monthly") === "custom");
+    if (_incomeIsCustom && typeof window._csAddManualEntry === "function") {
+      var _isoDate = dateVal || eventDate.toISOString().slice(0, 10);
+      window._csAddManualEntry("income", rawAmount, _isoDate);
+      haptic("success");
+      closeEventEditor();
+      if (typeof recalcPlan === "function") recalcPlan();
+      if (typeof window.renderCustomSchedule === "function") window.renderCustomSchedule();
+      if (typeof window.updateFactInputVisibility === "function") window.updateFactInputVisibility();
+      showToast(t("event.incomeAddedCustom"), "success");
+      return;
+    }
+
     // FINANCIAL EVENTS - INCOME ONLY - пишем разовый INCOME-event.
     //   • frequency: ONCE - один раз, без авто-повторения. Это ключевое отличие
     //     от регулярных доходов (weekly / biweekly / monthly), которые задаются
@@ -8430,6 +8448,13 @@ initCashflowSettings();
   }
   window._commitCustomPending = _commitCustomPending;
 
+  // РАЗОВЫЙ ДОХОД × «СВОЙ ГРАФИК»: даём внешнему коду (карточка «Разовые доходы»)
+  // добавить поступление в журнал «Свой график» тем же путём, что и обычная
+  // ручная запись — с deposited:0, чтобы деньги ушли на цель только по «Отложить».
+  window._csAddManualEntry = function (side, amount, dateIso) {
+    return _addEntry(side, amount, dateIso);
+  };
+
   // BUGFIX: после записи факта/отложения нужно полностью пересобрать график
   // (как это делает applyFact в простой модели) - иначе линия и точка факта не
   // отрисовываются. Делаем это только если активен экран графика, чтобы не
@@ -9345,7 +9370,7 @@ function allocInstrumentLabel(item) {
   }
   if (item.type === "deposit") {
     var er = getStorageExpectedReturn({ type: "deposit", params: p });
-    return (Math.round(er * 10) / 10) + "% · " + (p.termMonths || 0) + " " + t("misc.monthShort");
+    return (Math.round(er * 10) / 10) + "% · " + (p.noTerm ? t("stats.field.noTermValue") : ((p.termMonths || 0) + " " + t("misc.monthShort")));
   }
   if (item.type === "metals") {
     return p.metal ? t("stats.metal." + p.metal) : "-";
@@ -9423,6 +9448,9 @@ function allocBackMeta(item) {
   var depositRate = document.getElementById("statsDepositRate");
   var depositRateLabel = document.getElementById("statsDepositRateLabel"); // FIX: dynamic label
   var depositTerm = document.getElementById("statsDepositTerm");
+  // NO-TERM DEPOSIT - накопительный счёт без фиксированного срока.
+  var depositNoTerm = document.getElementById("statsDepositNoTerm");
+  var depositTermWrap = document.getElementById("statsDepositTermWrap");
   var depositPromoMonths = document.getElementById("statsDepositPromoMonths");
   var depositPromoRate = document.getElementById("statsDepositPromoRate");
   var depositPromoRateWrap = document.getElementById("statsDepositPromoRateWrap");
@@ -9517,8 +9545,9 @@ function allocBackMeta(item) {
   function _updateDepositEffectivePreview() {
     if (!depositEffPreview) return;
     var rate = parseFloat(depositRate ? depositRate.value : "");
+    var noTerm = !!(depositNoTerm && depositNoTerm.checked);
     var term = parseInt(depositTerm ? depositTerm.value : "", 10);
-    if (!isFinite(rate) || rate <= 0 || !isFinite(term) || term <= 0) {
+    if (!isFinite(rate) || rate <= 0 || (!noTerm && (!isFinite(term) || term <= 0))) {
       depositEffPreview.style.display = "none";
       depositEffPreview.textContent = "";
       return;
@@ -9530,7 +9559,7 @@ function allocBackMeta(item) {
     // If promo months > 0 but promo rate missing → preview only base (not blended).
     var params = {
       rate: rate,
-      termMonths: term,
+      termMonths: noTerm ? null : term,
       promoMonths: promoM,
       promoRate: (promoM > 0 && isFinite(promoR) && promoR > 0) ? promoR : null,
       capitalization: _modalDepositCap || "monthly"
@@ -9610,7 +9639,7 @@ function allocBackMeta(item) {
       // PORTFOLIO ALLOCATION v2 - show the blended effective rate so users see
       // the actual yield reflecting promo + base + capitalization.
       var dR = getStorageExpectedReturn({ type: "deposit", params: p });
-      var term = (p.termMonths != null) ? p.termMonths + " " + t("misc.monthShort") : "-";
+      var term = p.noTerm ? t("stats.field.noTermValue") : ((p.termMonths != null) ? p.termMonths + " " + t("misc.monthShort") : "-");
       var promoStr = (p.promoMonths > 0 && p.promoRate != null) ? " · " + p.promoMonths + "m@" + (Math.round(p.promoRate * 10) / 10) + "%" : "";
       return (Math.round(dR * 10) / 10) + "% · " + term + promoStr;
     }
@@ -9983,6 +10012,9 @@ function allocBackMeta(item) {
     // PORTFOLIO ALLOCATION v2 - DEPOSIT: base rate + term + promo period + capitalization.
     if (depositRate) depositRate.value = (defaultType === "deposit" && d.rate != null) ? d.rate : "";
     if (depositTerm) depositTerm.value = (defaultType === "deposit" && d.termMonths != null) ? d.termMonths : "";
+    // NO-TERM DEPOSIT - восстанавливаем состояние тумблера «без срока» и видимость поля срока.
+    if (depositNoTerm) depositNoTerm.checked = !!(defaultType === "deposit" && d.noTerm);
+    if (depositTermWrap) depositTermWrap.style.display = (depositNoTerm && depositNoTerm.checked) ? "none" : "";
     if (depositPromoMonths) depositPromoMonths.value = (defaultType === "deposit" && d.promoMonths != null) ? d.promoMonths : "0";
     if (depositPromoRate) depositPromoRate.value = (defaultType === "deposit" && d.promoRate != null) ? d.promoRate : "";
     if (depositPromoRateWrap) depositPromoRateWrap.style.display = (depositPromoMonths && parseInt(depositPromoMonths.value, 10) > 0) ? "" : "none";
@@ -10235,6 +10267,16 @@ function allocBackMeta(item) {
     if (el) el.addEventListener("input", _updateDepositEffectivePreview);
   });
 
+  // NO-TERM DEPOSIT - тумблер «без срока»: скрываем поле срока и пересчитываем
+  // предпросмотр. Для накопительного счёта срок не нужен (проценты обычно
+  // начисляются ежемесячно на текущий остаток).
+  function _syncDepositNoTerm() {
+    var off = !!(depositNoTerm && depositNoTerm.checked);
+    if (depositTermWrap) depositTermWrap.style.display = off ? "none" : "";
+    _updateDepositEffectivePreview();
+  }
+  if (depositNoTerm) depositNoTerm.addEventListener("change", _syncDepositNoTerm);
+
   // ── Modal: deposit capitalization segment ──────────────────────────────
   if (depositCap) {
     depositCap.addEventListener("click", function (e) {
@@ -10274,9 +10316,11 @@ function allocBackMeta(item) {
     if (type === "deposit") {
       // PORTFOLIO ALLOCATION v2 - base rate, term, promo period, capitalization.
       var rate = parseFloat(depositRate ? depositRate.value : "");
+      // NO-TERM DEPOSIT - накопительный счёт: срок не требуется.
+      var noTerm = !!(depositNoTerm && depositNoTerm.checked);
       var term = parseInt(depositTerm ? depositTerm.value : "", 10);
       if (!isFinite(rate) || rate <= 0) return null;
-      if (!isFinite(term) || term <= 0) return null;
+      if (!noTerm && (!isFinite(term) || term <= 0)) return null;
       // FIX: Promo period for deposits - extended to 0–12 months.
       var promoM = parseInt(depositPromoMonths ? depositPromoMonths.value : "0", 10);
       if (!isFinite(promoM) || promoM < 0) promoM = 0;
@@ -10289,7 +10333,8 @@ function allocBackMeta(item) {
       var depAccepts = !!(depositReplenish && depositReplenish.checked);
       return {
         rate: rate,
-        termMonths: term,
+        termMonths: noTerm ? null : term,
+        noTerm: noTerm,
         promoMonths: promoM,
         promoRate: (promoM > 0) ? promoR : null,
         capitalization: _modalDepositCap || "monthly",
@@ -10834,7 +10879,9 @@ function renderAccountBackCards() {
                 '<div class="stats-info-row"><span>' + t("stats.field.expectedReturn") + '</span><span>' + (Math.round(_rStock * 10) / 10) + '%</span></div>';
       } else if (stats.type === "deposit") {
         var _depRateV = (stats.params && stats.params.rate != null) ? stats.params.rate : 0;
-        var _depTermV = (stats.params && stats.params.termMonths != null) ? stats.params.termMonths : 0;
+        var _depTermV = (stats.params && stats.params.noTerm)
+          ? t("stats.field.noTermValue")
+          : (((stats.params && stats.params.termMonths != null) ? stats.params.termMonths : 0) + " " + t("misc.monthShort"));
         var _depCapV = (stats.params && stats.params.capitalization) || "monthly";
         var _capLabel = t("stats.cap." + _depCapV);
         var _effRate = getStorageExpectedReturn(stats);
@@ -11045,7 +11092,7 @@ function _allocDetailParamsHtml(item) {
     rows.push([t("stats.metalInfo"), p.metal ? t("stats.metal." + p.metal) : "-"]);
   } else if (item.type === "deposit") {
     rows.push([t("stats.field.depositRate"), (p.rate != null) ? (Math.round(p.rate * 10) / 10) + "%" : "-"]);
-    rows.push([t("stats.field.depositTerm"), (p.termMonths != null) ? p.termMonths + " " + t("misc.monthShort") : "-"]);
+    rows.push([t("stats.field.depositTerm"), p.noTerm ? t("stats.field.noTermValue") : ((p.termMonths != null) ? p.termMonths + " " + t("misc.monthShort") : "-")]);
     if (p.promoMonths > 0) {
       rows.push([t("stats.field.promoMonths"), p.promoMonths + " " + t("misc.monthShort")]);
       if (p.promoRate != null) rows.push([t("stats.field.promoRate"), (Math.round(p.promoRate * 10) / 10) + "%"]);

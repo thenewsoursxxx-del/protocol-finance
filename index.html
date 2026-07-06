@@ -16,7 +16,7 @@ viewport-fit=cover" />
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
 
-<link rel="stylesheet" href="style.css?v=20054">
+<link rel="stylesheet" href="style.css?v=20056">
 
 <!-- Базовая инициализация Telegram Mini App (ранний вызов ready - рекомендация Telegram) -->
 <script>
@@ -1473,7 +1473,12 @@ Protocol анализирует цель…
         <label id="statsDepositRateLabel" data-i18n="stats.field.depositRate">Процентная ставка (% годовых)</label>
         <input type="number" id="statsDepositRate" class="stats-input" inputmode="decimal" min="0" max="100" step="0.1" placeholder="8.5" />
       </div>
-      <div class="input-wrap stats-input-wrap">
+      <label class="stats-checkbox-wrap stats-noterm-check">
+        <input type="checkbox" id="statsDepositNoTerm" />
+        <span class="stats-checkbox-box"></span>
+        <span class="stats-checkbox-label" data-i18n="stats.field.noTerm">Без срока (накопительный счёт)</span>
+      </label>
+      <div class="input-wrap stats-input-wrap" id="statsDepositTermWrap">
         <label data-i18n="stats.field.depositTerm">Срок вклада (месяцев)</label>
         <input type="number" id="statsDepositTerm" class="stats-input" inputmode="numeric" min="1" max="600" step="1" placeholder="12" />
       </div>
@@ -2457,9 +2462,9 @@ z-index: 999999;
 
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 <script src="state-manager.js?v=20046"></script>
-<script src="i18n.js?v=20054"></script>
+<script src="i18n.js?v=20056"></script>
 <script src="financial-events.js?v=20034"></script>
-<script src="cashflow-engine.js?v=20034"></script>
+<script src="cashflow-engine.js?v=20055"></script>
 <script src="graph-engine-svg.js?v=20034"></script>
 <!-- Supabase: после CDN в <head>; замените anon-ключ внутри файла -->
 <script src="supabase.js?v=20046"></script>
@@ -2468,6 +2473,6 @@ z-index: 999999;
      (для согласованности с серверным sync), но ДО app.js - чтобы хуки
      CloudSync.scheduleSync() в saveFullState() были доступны на момент init. -->
 <script src="cloud-storage.js?v=20034"></script>
-<script src="app.js?v=20054"></script>
+<script src="app.js?v=20056"></script>
 </body>
 </html>
