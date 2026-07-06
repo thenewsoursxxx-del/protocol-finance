@@ -16,7 +16,7 @@ viewport-fit=cover" />
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
 
-<link rel="stylesheet" href="style.css?v=20053">
+<link rel="stylesheet" href="style.css?v=20054">
 
 <!-- Базовая инициализация Telegram Mini App (ранний вызов ready - рекомендация Telegram) -->
 <script>
@@ -835,9 +835,10 @@ Protocol анализирует цель…
 <!-- ===== FAQ / KNOWLEDGE BASE SCREEN ===== -->
 <div class="screen" id="screen-faq">
 
-<div class="profile-header">
+<div class="profile-header profile-header--with-icon">
 <button id="faqBack">←</button>
 <div class="profile-title" data-i18n="faq.title">База знаний</div>
+<div class="header-right"></div>
 </div>
 
 <div class="faq-intro" data-i18n="faq.intro">Короткие материалы и ответы на частые вопросы о личных финансах и инвестициях. Нажмите на раздел, чтобы раскрыть его.</div>
@@ -1414,6 +1415,20 @@ Protocol анализирует цель…
             <option value="ru_rosneft" data-i18n="stats.asset.ru_rosneft">Роснефть (ROSN)</option>
             <option value="ru_vk"      data-i18n="stats.asset.ru_vk">VK (VKCO)</option>
             <option value="ru_polyus"  data-i18n="stats.asset.ru_polyus">Полюс (PLZL)</option>
+            <option value="ru_novatek"    data-i18n="stats.asset.ru_novatek">Новатэк (NVTK)</option>
+            <option value="ru_tatneft"    data-i18n="stats.asset.ru_tatneft">Татнефть (TATN)</option>
+            <option value="ru_surgut"     data-i18n="stats.asset.ru_surgut">Сургутнефтегаз (SNGS)</option>
+            <option value="ru_severstal"  data-i18n="stats.asset.ru_severstal">Северсталь (CHMF)</option>
+            <option value="ru_nlmk"       data-i18n="stats.asset.ru_nlmk">НЛМК (NLMK)</option>
+            <option value="ru_mmk"        data-i18n="stats.asset.ru_mmk">ММК (MAGN)</option>
+            <option value="ru_mts"        data-i18n="stats.asset.ru_mts">МТС (MTSS)</option>
+            <option value="ru_moex"       data-i18n="stats.asset.ru_moex">Московская биржа (MOEX)</option>
+            <option value="ru_alrosa"     data-i18n="stats.asset.ru_alrosa">АЛРОСА (ALRS)</option>
+            <option value="ru_phosagro"   data-i18n="stats.asset.ru_phosagro">ФосАгро (PHOR)</option>
+            <option value="ru_aeroflot"   data-i18n="stats.asset.ru_aeroflot">Аэрофлот (AFLT)</option>
+            <option value="ru_interrao"   data-i18n="stats.asset.ru_interrao">Интер РАО (IRAO)</option>
+            <option value="ru_rostelecom" data-i18n="stats.asset.ru_rostelecom">Ростелеком (RTKM)</option>
+            <option value="ru_pik"        data-i18n="stats.asset.ru_pik">ПИК (PIKK)</option>
           </optgroup>
           <optgroup label="ETF на МосБирже" data-i18n-label="stats.assetGroup.etfMoex">
             <option value="etf_fxrl" data-i18n="stats.asset.etf_fxrl">FXRL - Российские акции</option>
@@ -1475,7 +1490,8 @@ Protocol анализирует цель…
       <div class="input-wrap stats-input-wrap">
         <!-- FIX: friendlier capitalization label + explanatory hint -->
         <label data-i18n="stats.field.capitalization">Как часто начисляются проценты</label>
-        <div class="stats-segment" id="statsDepositCap" role="tablist">
+        <div class="stats-segment stats-segment--2col" id="statsDepositCap" role="tablist">
+          <button type="button" class="stats-segment-btn" data-cap="daily" data-i18n="stats.cap.daily">Ежедневно</button>
           <button type="button" class="stats-segment-btn active" data-cap="monthly" data-i18n="stats.cap.monthly">Ежемесячно</button>
           <button type="button" class="stats-segment-btn" data-cap="quarterly" data-i18n="stats.cap.quarterly">Ежеквартально</button>
           <button type="button" class="stats-segment-btn" data-cap="end" data-i18n="stats.cap.end">В конце срока</button>
@@ -2441,7 +2457,7 @@ z-index: 999999;
 
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 <script src="state-manager.js?v=20046"></script>
-<script src="i18n.js?v=20052"></script>
+<script src="i18n.js?v=20054"></script>
 <script src="financial-events.js?v=20034"></script>
 <script src="cashflow-engine.js?v=20034"></script>
 <script src="graph-engine-svg.js?v=20034"></script>
@@ -2452,6 +2468,6 @@ z-index: 999999;
      (для согласованности с серверным sync), но ДО app.js - чтобы хуки
      CloudSync.scheduleSync() в saveFullState() были доступны на момент init. -->
 <script src="cloud-storage.js?v=20034"></script>
-<script src="app.js?v=20053"></script>
+<script src="app.js?v=20054"></script>
 </body>
 </html>

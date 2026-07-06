@@ -4373,6 +4373,11 @@ body.flip-fix-pending .flip-wrapper {
   border: 1px solid #1f1f1f;
   border-radius: 14px;
 }
+/* 2×2 раскладка для сегмента с 4 вариантами (частота начисления процентов),
+   чтобы длинные подписи не сжимались в одну тесную строку. */
+.stats-segment--2col {
+  grid-template-columns: 1fr 1fr;
+}
 .stats-segment-btn {
   padding: 10px 6px;
   background: transparent;

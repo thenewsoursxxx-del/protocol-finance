@@ -9162,6 +9162,20 @@ var STOCK_ASSET_PRESETS = {
   ru_rosneft: { return: 10.0, ticker: "ROSN", isin: "RU000A0J2Q06" },
   ru_vk:      { return: 14.0, ticker: "VKCO", isin: "RU000A106YF0" },
   ru_polyus:  { return: 13.0, ticker: "PLZL", isin: "RU000A0JNAA8" },
+  ru_novatek:    { return: 12.0, ticker: "NVTK", isin: "RU000A0DKVS5" },
+  ru_tatneft:    { return: 12.0, ticker: "TATN", isin: "RU0009033591" },
+  ru_surgut:     { return: 8.0,  ticker: "SNGS", isin: "RU0008926258" },
+  ru_severstal:  { return: 11.0, ticker: "CHMF", isin: "RU0009046510" },
+  ru_nlmk:       { return: 11.0, ticker: "NLMK", isin: "RU0009046452" },
+  ru_mmk:        { return: 10.0, ticker: "MAGN", isin: "RU0009084396" },
+  ru_mts:        { return: 10.0, ticker: "MTSS", isin: "RU0007775219" },
+  ru_moex:       { return: 12.0, ticker: "MOEX", isin: "RU000A0JR4A1" },
+  ru_alrosa:     { return: 9.0,  ticker: "ALRS", isin: "RU0007252813" },
+  ru_phosagro:   { return: 11.0, ticker: "PHOR", isin: "RU000A0JRKT8" },
+  ru_aeroflot:   { return: 7.0,  ticker: "AFLT", isin: "RU0009062285" },
+  ru_interrao:   { return: 10.0, ticker: "IRAO", isin: "RU000A0JPNM1" },
+  ru_rostelecom: { return: 9.0,  ticker: "RTKM", isin: "RU0008943394" },
+  ru_pik:        { return: 10.0, ticker: "PIKK", isin: "RU000A0JP7J7" },
   // MOEX ETFs (FinEx + Tinkoff/Sber funds)
   etf_fxrl:   { return: 12.0, ticker: "FXRL", isin: "IE00BQ1Y6480" },
   etf_fxit:   { return: 14.0, ticker: "FXIT", isin: "IE00BD3QHZ91" },
@@ -10561,6 +10575,7 @@ function getStorageExpectedReturn(stats) {
 
     var n;
     switch (p.capitalization) {
+      case "daily":     n = 365; break;
       case "monthly":   n = 12; break;
       case "quarterly": n = 4;  break;
       case "end":       n = 1;  break;
