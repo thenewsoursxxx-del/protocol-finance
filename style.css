@@ -8568,6 +8568,93 @@ body.app-locked .account-block * {
   margin-left: 2px;
 }
 
+/* ── Режим удаления расходов в детальной карточке категории ── */
+
+.exp-detail-edit-btn {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  margin-left: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.6);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s ease, color 0.15s ease, transform 0.12s ease;
+}
+
+.exp-detail-edit-btn:active {
+  transform: scale(0.92);
+}
+
+.exp-detail-edit-ic--check {
+  display: none;
+}
+
+/* В режиме удаления кнопка «3 полоски» превращается в галочку. */
+.exp-detail-sheet.editing .exp-detail-edit-btn {
+  background: rgba(16,185,129,0.16);
+  color: #10b981;
+}
+
+.exp-detail-sheet.editing .exp-detail-edit-ic--menu {
+  display: none;
+}
+
+.exp-detail-sheet.editing .exp-detail-edit-ic--check {
+  display: block;
+}
+
+/* Корзина у записи: скрыта вне режима удаления, появляется вместо шеврона. */
+.exp-detail-entry-trash {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 10px;
+  background: rgba(239,68,68,0.12);
+  color: #ef4444;
+  cursor: pointer;
+  margin-left: 2px;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s ease, transform 0.12s ease;
+}
+
+.exp-detail-entry-trash:active {
+  transform: scale(0.9);
+}
+
+.exp-detail-sheet.editing .exp-detail-entry-chevron {
+  display: none;
+}
+
+.exp-detail-sheet.editing .exp-detail-entry-trash {
+  display: flex;
+}
+
+/* Помеченная к удалению запись. */
+.exp-detail-entry.marked-delete {
+  background: rgba(239,68,68,0.08);
+}
+
+.exp-detail-entry.marked-delete .exp-detail-entry-amount,
+.exp-detail-entry.marked-delete .exp-detail-entry-note {
+  text-decoration: line-through;
+  opacity: 0.5;
+}
+
+.exp-detail-entry.marked-delete .exp-detail-entry-trash {
+  background: rgba(239,68,68,0.28);
+  color: #fff;
+}
+
 /* ── Detail Empty State ── */
 
 .exp-detail-empty {
@@ -9932,6 +10019,167 @@ body.reduce-motion .settings-seg-btn {
 .cs-history-icon-btn--delete:active {
   background: rgba(239, 68, 68, 0.18);
   color: #fecaca;
+}
+
+/* ── «Свой график»: кнопка управления записями и шаг удаления ── */
+
+.cs-manage-btn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s ease, transform 0.12s ease;
+  z-index: 2;
+}
+
+.cs-manage-btn:active {
+  transform: scale(0.92);
+}
+
+.cs-manage-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.cs-manage-title {
+  flex: 1;
+  text-align: center;
+  font-size: 17px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.cs-manage-back,
+.cs-manage-done {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s ease, transform 0.12s ease;
+}
+
+.cs-manage-back {
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.cs-manage-done {
+  background: rgba(16, 185, 129, 0.16);
+  color: #10b981;
+}
+
+.cs-manage-back:active,
+.cs-manage-done:active {
+  transform: scale(0.92);
+}
+
+.cs-manage-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.cs-manage-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  transition: background 0.15s ease;
+}
+
+.cs-manage-item--expense {
+  background: rgba(239, 68, 68, 0.04);
+  border-color: rgba(239, 68, 68, 0.12);
+}
+
+.cs-manage-item-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cs-manage-item-amount {
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+}
+
+.cs-manage-item-amount--expense { color: #fecaca; }
+
+.cs-manage-item-date {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.cs-manage-item-badge {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(16, 185, 129, 0.18);
+  color: #6ee7b7;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.cs-manage-item-trash {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 10px;
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s ease, transform 0.12s ease;
+}
+
+.cs-manage-item-trash:active {
+  transform: scale(0.9);
+}
+
+.cs-manage-item.marked-delete {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.cs-manage-item.marked-delete .cs-manage-item-amount,
+.cs-manage-item.marked-delete .cs-manage-item-date {
+  text-decoration: line-through;
+  opacity: 0.5;
+}
+
+.cs-manage-item.marked-delete .cs-manage-item-trash {
+  background: rgba(239, 68, 68, 0.28);
+  color: #fff;
 }
 
 /* Sticky reminder card after income deposit ─────────────────────────────── */

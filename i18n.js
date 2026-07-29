@@ -1053,6 +1053,7 @@
       "expenses.selectCategory": "Выберите категорию",
       "expenses.enterAmount": "Введите сумму расхода",
       "expenses.added": "Расход добавлен",
+      "expenses.deleted": "Расходы удалены",
       "expenses.pctOfAll": "{pct}% от всех расходов",
       "expenses.ofTotal": "{amount} из {limit} {sym}",
       "expenses.noNote": "Без заметки",
@@ -1200,6 +1201,8 @@
       "cs.history.edit": "Изменить",
       "cs.history.delete": "Удалить",
       "cs.history.deposit": "Отложить",
+      "cs.manage.title.income": "Поступления",
+      "cs.manage.title.expense": "Расходы",
       "cs.history.confirmDelete": "Удалить эту запись из истории?"
     },
 
@@ -2232,6 +2235,7 @@
       "expenses.selectCategory": "Select a category",
       "expenses.enterAmount": "Enter the expense amount",
       "expenses.added": "Expense added",
+      "expenses.deleted": "Expenses deleted",
       "expenses.pctOfAll": "{pct}% of all expenses",
       "expenses.ofTotal": "{amount} of {limit} {sym}",
       "expenses.noNote": "No note",
@@ -2377,6 +2381,8 @@
       "cs.history.edit": "Edit",
       "cs.history.delete": "Delete",
       "cs.history.deposit": "Allocate",
+      "cs.manage.title.income": "Income entries",
+      "cs.manage.title.expense": "Expenses",
       "cs.history.confirmDelete": "Delete this entry from history?"
     }
   };

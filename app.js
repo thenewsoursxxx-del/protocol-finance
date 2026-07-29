@@ -7542,6 +7542,7 @@ initCashflowSettings();
   var overlay = document.getElementById("customScheduleOverlay");
   var stepForm = sheet ? sheet.querySelector('[data-cs-step="form"]') : null;
   var stepAlloc = sheet ? sheet.querySelector('[data-cs-step="alloc"]') : null;
+  var stepManage = sheet ? sheet.querySelector('[data-cs-step="manage"]') : null;
   var titleEl = document.getElementById("csSheetTitle");
   var modeBadgeEl = document.getElementById("csModeBadge");
   var amountLabelEl = document.getElementById("csAmountLabel");
@@ -8044,6 +8045,73 @@ initCashflowSettings();
   function _showStep(step) {
     if (stepForm) stepForm.style.display = step === "form" ? "" : "none";
     if (stepAlloc) stepAlloc.style.display = step === "alloc" ? "" : "none";
+    if (stepManage) stepManage.style.display = step === "manage" ? "" : "none";
+  }
+
+  // ── Управление записями (удаление) ────────────────────────────────────────
+  // Отмеченные к удалению записи текущей стороны (по id). Коммитятся по «галочке».
+  var _csManageMarked = {};
+  var _csManageSide = "income";
+
+  function _renderManageList() {
+    var listEl = document.getElementById("csManageList");
+    if (!listEl) return;
+    var entries = _entriesBySide(_csManageSide).slice().sort(function (a, b) {
+      var dCmp = String(b.date).localeCompare(String(a.date));
+      if (dCmp !== 0) return dCmp;
+      return String(b.createdAt || "").localeCompare(String(a.createdAt || ""));
+    });
+    if (!entries.length) {
+      listEl.innerHTML = '<div class="cs-history-empty">' + t("cs.history.empty") + '</div>';
+      return;
+    }
+    var html = "";
+    for (var i = 0; i < entries.length; i++) {
+      var e = entries[i];
+      var amt = Number(e.amount) || 0;
+      var dep = Number(e.deposited) || 0;
+      var marked = _csManageMarked[e.id] ? " marked-delete" : "";
+      var itemCls = "cs-manage-item" + (_csManageSide === "expense" ? " cs-manage-item--expense" : "") + marked;
+      var amtCls = "cs-manage-item-amount" + (_csManageSide === "expense" ? " cs-manage-item-amount--expense" : "");
+      html += '<div class="' + itemCls + '" data-cs-id="' + e.id + '">';
+      html +=   '<div class="cs-manage-item-main">';
+      html +=     '<div class="' + amtCls + '">' + (_csManageSide === "expense" ? "−" : "") + _amount(amt) + '</div>';
+      html +=     '<div class="cs-manage-item-date">' + _formatHumanDate(e.date) + '</div>';
+      html +=   '</div>';
+      if (_csManageSide === "income" && dep > 0) {
+        html += '<div class="cs-manage-item-badge">' + t("cs.history.deposited.badge", { amount: _amount(dep) }) + '</div>';
+      }
+      html += '<button type="button" class="cs-manage-item-trash" data-cs-del-id="' + e.id + '" aria-label="Delete"><svg width="17" height="17" viewBox="0 0 20 20" fill="none"><path d="M3 5.5h14M8 5V3.5h4V5M6 5.5l.7 11h6.6l.7-11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>';
+      html += '</div>';
+    }
+    listEl.innerHTML = html;
+  }
+
+  function _openManageStep() {
+    _csManageSide = ctx.side === "expense" ? "expense" : "income";
+    _csManageMarked = {};
+    var titleEl2 = document.getElementById("csManageTitle");
+    if (titleEl2) titleEl2.textContent = t("cs.manage.title." + _csManageSide);
+    _renderManageList();
+    _showStep("manage");
+  }
+
+  // Применяет отмеченные удаления: _deleteEntry уже правит state и историю,
+  // после чего пересчитываем план и перерисовываем график/счётчики.
+  function _commitManageDeletions() {
+    var ids = Object.keys(_csManageMarked).filter(function (k) { return _csManageMarked[k]; });
+    if (!ids.length) return 0;
+    for (var i = 0; i < ids.length; i++) {
+      _deleteEntry(ids[i]);
+    }
+    _csManageMarked = {};
+    if (typeof recalcPlan === "function") recalcPlan();
+    if (typeof window.renderCustomSchedule === "function") {
+      window.renderCustomSchedule("income");
+      window.renderCustomSchedule("expense");
+    }
+    _refreshGraphAfterRecord();
+    return ids.length;
   }
 
   // UNIFIED CUSTOM SCHEDULE FLOW - applySheetTextsForSide(side, isEdit, freq).
@@ -8794,6 +8862,58 @@ initCashflowSettings();
 
   if (overlay) {
     overlay.addEventListener("click", function () { closeCustomScheduleSheet(); });
+  }
+
+  // «3 полоски» на форме записи → шаг управления записями текущей стороны.
+  var csManageBtn = document.getElementById("csManageBtn");
+  if (csManageBtn) {
+    csManageBtn.addEventListener("click", function () {
+      if (typeof haptic === "function") haptic("light");
+      _openManageStep();
+    });
+  }
+  // «Назад» — вернуться к форме без изменений.
+  var csManageBackBtn = document.getElementById("csManageBackBtn");
+  if (csManageBackBtn) {
+    csManageBackBtn.addEventListener("click", function () {
+      if (typeof haptic === "function") haptic("light");
+      _csManageMarked = {};
+      _showStep("form");
+    });
+  }
+  // «Галочка» — подтвердить удаление отмеченных записей и вернуться к форме.
+  var csManageDoneBtn = document.getElementById("csManageDoneBtn");
+  if (csManageDoneBtn) {
+    csManageDoneBtn.addEventListener("click", function () {
+      var removed = _commitManageDeletions();
+      if (removed > 0) {
+        if (typeof haptic === "function") haptic("success");
+        if (typeof showToast === "function") showToast(t("cs.toast.deleted"), "info");
+      } else {
+        if (typeof haptic === "function") haptic("light");
+      }
+      _showStep("form");
+    });
+  }
+  // Тап по корзине в списке управления — пометить/снять пометку.
+  var csManageListEl = document.getElementById("csManageList");
+  if (csManageListEl) {
+    csManageListEl.addEventListener("click", function (e) {
+      var trash = e.target.closest(".cs-manage-item-trash");
+      if (!trash) return;
+      e.stopPropagation();
+      var id = trash.getAttribute("data-cs-del-id");
+      if (!id) return;
+      var row = trash.closest(".cs-manage-item");
+      if (_csManageMarked[id]) {
+        delete _csManageMarked[id];
+        if (row) row.classList.remove("marked-delete");
+      } else {
+        _csManageMarked[id] = true;
+        if (row) row.classList.add("marked-delete");
+      }
+      if (typeof haptic === "function") haptic("light");
+    });
   }
 
   if (typeof ProtoSheet !== "undefined" && ProtoSheet.initSwipe) {
@@ -15250,7 +15370,18 @@ function goalSwipeToIndex(idx, goLeft) {
     return base;
   }
 
+  // Режим удаления расходов в детальной карточке категории.
+  var _catEditMode = false;
+  var _catMarked = {};
+  var _catCurrentKey = null;
+
   function openCatDetailSheet(catKey) {
+    // Сброс режима удаления при каждом открытии/перерисовке.
+    _catCurrentKey = catKey;
+    _catEditMode = false;
+    _catMarked = {};
+    if (catDetailSheet) catDetailSheet.classList.remove("editing");
+
     var cat = getCatByKey(catKey);
     var allMonth = getMonthExpenses();
     var entries = allMonth.filter(function (e) {
@@ -15315,7 +15446,8 @@ function goalSwipeToIndex(idx, goLeft) {
           noteHtml = '';
         }
 
-        html += '<div class="exp-detail-entry" style="animation-delay:' + delay + 'ms">' +
+        var _rowMarked = _catMarked[e.id] ? " marked-delete" : "";
+        html += '<div class="exp-detail-entry' + _rowMarked + '" data-exp-id="' + e.id + '" style="animation-delay:' + delay + 'ms">' +
           '<div class="exp-detail-entry-dot" style="background:' + cat.color + '"></div>' +
           '<div class="exp-detail-entry-body">' +
             '<div class="exp-detail-entry-amount">' + fmtConverted(e.amount) + ' ' + getCurrencySymbol() + '</div>' +
@@ -15323,12 +15455,32 @@ function goalSwipeToIndex(idx, goLeft) {
           '</div>' +
           '<div class="exp-detail-entry-date">' + formatExpDate(e.date) + '</div>' +
           '<svg class="exp-detail-entry-chevron" width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M1 1l5 5-5 5" stroke="rgba(255,255,255,0.35)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
+          '<button type="button" class="exp-detail-entry-trash" data-exp-id="' + e.id + '" aria-label="Delete"><svg width="17" height="17" viewBox="0 0 20 20" fill="none"><path d="M3 5.5h14M8 5V3.5h4V5M6 5.5l.7 11h6.6l.7-11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>' +
         '</div>';
       }
       if (listEl) listEl.innerHTML = html;
     }
 
+    // Кнопка режима удаления видна только когда есть что удалять.
+    var editBtnEl = document.getElementById("expDetailEditBtn");
+    if (editBtnEl) editBtnEl.style.display = entries.length ? "" : "none";
+
     ProtoSheet.open(catDetailSheet, catDetailOverlay);
+  }
+
+  // Применяет отмеченные к удалению расходы: чистит expensesLog, пересчитывает
+  // план (расходы «в плане» влияют на текущий месяц) и обновляет экран расходов.
+  function _commitCatDeletions() {
+    var ids = Object.keys(_catMarked).filter(function (k) { return _catMarked[k]; });
+    if (!ids.length) return 0;
+    var s = getState();
+    var log = Array.isArray(s.expensesLog) ? s.expensesLog.slice() : [];
+    log = log.filter(function (e) { return ids.indexOf(e.id) === -1; });
+    updateState({ expensesLog: log });
+    if (typeof recalcPlan === "function") recalcPlan();
+    else if (typeof saveFullState === "function") saveFullState();
+    renderExpensesScreen();
+    return ids.length;
   }
 
   function _pluralizeExpense(n) {
@@ -15351,6 +15503,49 @@ function goalSwipeToIndex(idx, goLeft) {
     catDetailOverlay.addEventListener("click", function () {
       haptic("light");
       closeCatDetailSheet();
+    });
+  }
+
+  // Кнопка «3 полоски / галочка»: вход в режим удаления и подтверждение.
+  var expDetailEditBtn = document.getElementById("expDetailEditBtn");
+  if (expDetailEditBtn) {
+    expDetailEditBtn.addEventListener("click", function () {
+      haptic("light");
+      if (!_catEditMode) {
+        _catEditMode = true;
+        _catMarked = {};
+        if (catDetailSheet) catDetailSheet.classList.add("editing");
+      } else {
+        var removed = _commitCatDeletions();
+        if (removed > 0) {
+          haptic("success");
+          showToast(t("expenses.deleted"), "info");
+        }
+        // Перерисовываем карточку: сброс режима + актуальный список (или пусто).
+        if (_catCurrentKey) openCatDetailSheet(_catCurrentKey);
+      }
+    });
+  }
+
+  // Тап по корзине в режиме удаления — пометить/снять пометку записи.
+  var expDetailListEl = document.getElementById("expDetailList");
+  if (expDetailListEl) {
+    expDetailListEl.addEventListener("click", function (e) {
+      var trash = e.target.closest(".exp-detail-entry-trash");
+      if (!trash) return;
+      e.stopPropagation();
+      if (!_catEditMode) return;
+      var id = trash.getAttribute("data-exp-id");
+      if (!id) return;
+      var row = trash.closest(".exp-detail-entry");
+      if (_catMarked[id]) {
+        delete _catMarked[id];
+        if (row) row.classList.remove("marked-delete");
+      } else {
+        _catMarked[id] = true;
+        if (row) row.classList.add("marked-delete");
+      }
+      haptic("light");
     });
   }
 

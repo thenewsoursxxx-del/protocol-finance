@@ -16,7 +16,7 @@ viewport-fit=cover" />
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
 
-<link rel="stylesheet" href="style.css?v=20056">
+<link rel="stylesheet" href="style.css?v=20058">
 
 <!-- Базовая инициализация Telegram Mini App (ранний вызов ready - рекомендация Telegram) -->
 <script>
@@ -637,6 +637,11 @@ Protocol анализирует цель…
         <div class="exp-detail-cat-name" id="expDetailCatName"></div>
       </div>
       <div class="exp-detail-count" id="expDetailCount"></div>
+      <!-- Режим удаления расходов: 3 полоски → корзины у записей → галочка подтверждения. -->
+      <button type="button" class="exp-detail-edit-btn" id="expDetailEditBtn" aria-label="Edit" style="display:none">
+        <svg class="exp-detail-edit-ic exp-detail-edit-ic--menu" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        <svg class="exp-detail-edit-ic exp-detail-edit-ic--check" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4 10.5l4 4 8-9.5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
     </div>
     <div class="exp-detail-total" id="expDetailTotal">0</div>
     <div class="exp-detail-meta" id="expDetailMeta"></div>
@@ -2111,6 +2116,10 @@ z-index: 999999;
 <div id="customScheduleSheet" class="proto-sheet proto-sheet--form cs-sheet">
   <!-- Step 1: Form (amount + date) -->
   <div class="cs-step cs-step--form" data-cs-step="form">
+    <!-- «3 полоски»: открыть список записей текущей стороны для удаления. -->
+    <button type="button" id="csManageBtn" class="cs-manage-btn" aria-label="Manage records">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+    </button>
     <h2 id="csSheetTitle" data-i18n="cs.modal.title.income">Ручной ввод поступления</h2>
     <div class="cs-mode-badge" id="csModeBadge">-</div>
 
@@ -2168,6 +2177,20 @@ z-index: 999999;
 
     <button type="button" id="csDepositBtn" class="cs-deposit-btn" data-i18n="cs.alloc.depositBtn">Отложить на цель</button>
     <button type="button" id="csSkipDepositBtn" class="cs-skip-btn" data-i18n="cs.alloc.skipBtn">Только записать без отложения</button>
+  </div>
+
+  <!-- Step 3: Управление записями (удаление) -->
+  <div class="cs-step cs-step--manage" data-cs-step="manage" style="display:none">
+    <div class="cs-manage-header">
+      <button type="button" id="csManageBackBtn" class="cs-manage-back" aria-label="Back">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M12 4l-6 6 6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="cs-manage-title" id="csManageTitle" data-i18n="cs.manage.title.income">Поступления</div>
+      <button type="button" id="csManageDoneBtn" class="cs-manage-done" aria-label="Done">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4 10.5l4 4 8-9.5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+    <div class="cs-manage-list" id="csManageList"></div>
   </div>
 </div>
 
@@ -2462,7 +2485,7 @@ z-index: 999999;
 
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 <script src="state-manager.js?v=20046"></script>
-<script src="i18n.js?v=20056"></script>
+<script src="i18n.js?v=20058"></script>
 <script src="financial-events.js?v=20034"></script>
 <script src="cashflow-engine.js?v=20055"></script>
 <script src="graph-engine-svg.js?v=20034"></script>
@@ -2473,6 +2496,6 @@ z-index: 999999;
      (для согласованности с серверным sync), но ДО app.js - чтобы хуки
      CloudSync.scheduleSync() в saveFullState() были доступны на момент init. -->
 <script src="cloud-storage.js?v=20034"></script>
-<script src="app.js?v=20057"></script>
+<script src="app.js?v=20058"></script>
 </body>
 </html>
