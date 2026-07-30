@@ -8568,6 +8568,34 @@ body.app-locked .account-block * {
   margin-left: 2px;
 }
 
+/* ── Иконки-маски (перекрашиваемые SVG из assets/icons) ── */
+/* Цвет берётся из background-color: currentColor, поэтому иконка наследует
+   цвет своей кнопки (серый фильтр, красная/белая корзина и т.д.). */
+.ic-mask {
+  display: inline-block;
+  background-color: currentColor;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+
+.ic-mask--filter {
+  width: 21px;
+  height: 21px;
+  -webkit-mask-image: url("assets/icons/Filter.svg");
+  mask-image: url("assets/icons/Filter.svg");
+}
+
+.ic-mask--trash {
+  width: 19px;
+  height: 19px;
+  -webkit-mask-image: url("assets/icons/Delete.svg");
+  mask-image: url("assets/icons/Delete.svg");
+}
+
 /* ── Режим удаления расходов в детальной карточке категории ── */
 
 .exp-detail-edit-btn {

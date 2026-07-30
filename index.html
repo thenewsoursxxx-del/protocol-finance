@@ -16,7 +16,7 @@ viewport-fit=cover" />
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
 
-<link rel="stylesheet" href="style.css?v=20058">
+<link rel="stylesheet" href="style.css?v=20060">
 
 <!-- Базовая инициализация Telegram Mini App (ранний вызов ready - рекомендация Telegram) -->
 <script>
@@ -639,7 +639,7 @@ Protocol анализирует цель…
       <div class="exp-detail-count" id="expDetailCount"></div>
       <!-- Режим удаления расходов: 3 полоски → корзины у записей → галочка подтверждения. -->
       <button type="button" class="exp-detail-edit-btn" id="expDetailEditBtn" aria-label="Edit" style="display:none">
-        <svg class="exp-detail-edit-ic exp-detail-edit-ic--menu" width="21" height="21" viewBox="0 0 25 25" fill="none"><path d="M9.49512 7.85779H19.1372" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"/><path fill-rule="evenodd" clip-rule="evenodd" d="M9.51039 7.7978C9.51039 6.35572 8.33265 5.1864 6.88019 5.1864C5.42774 5.1864 4.25 6.35572 4.25 7.7978C4.25 9.23987 5.42774 10.4092 6.88019 10.4092C8.33265 10.4092 9.51039 9.23987 9.51039 7.7978Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"/><path d="M15.0049 17.4706H5.36285" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"/><path fill-rule="evenodd" clip-rule="evenodd" d="M14.9896 17.4101C14.9896 15.968 16.1674 14.7987 17.6198 14.7987C19.0723 14.7987 20.25 15.968 20.25 17.4101C20.25 18.8522 19.0723 20.0215 17.6198 20.0215C16.1674 20.0215 14.9896 18.8522 14.9896 17.4101Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"/></svg>
+        <span class="exp-detail-edit-ic exp-detail-edit-ic--menu ic-mask ic-mask--filter"></span>
         <svg class="exp-detail-edit-ic exp-detail-edit-ic--check" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4 10.5l4 4 8-9.5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
     </div>
@@ -2118,7 +2118,7 @@ z-index: 999999;
   <div class="cs-step cs-step--form" data-cs-step="form">
     <!-- «3 полоски»: открыть список записей текущей стороны для удаления. -->
     <button type="button" id="csManageBtn" class="cs-manage-btn" aria-label="Manage records">
-      <svg width="21" height="21" viewBox="0 0 25 25" fill="none"><path d="M9.49512 7.85779H19.1372" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"/><path fill-rule="evenodd" clip-rule="evenodd" d="M9.51039 7.7978C9.51039 6.35572 8.33265 5.1864 6.88019 5.1864C5.42774 5.1864 4.25 6.35572 4.25 7.7978C4.25 9.23987 5.42774 10.4092 6.88019 10.4092C8.33265 10.4092 9.51039 9.23987 9.51039 7.7978Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"/><path d="M15.0049 17.4706H5.36285" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"/><path fill-rule="evenodd" clip-rule="evenodd" d="M14.9896 17.4101C14.9896 15.968 16.1674 14.7987 17.6198 14.7987C19.0723 14.7987 20.25 15.968 20.25 17.4101C20.25 18.8522 19.0723 20.0215 17.6198 20.0215C16.1674 20.0215 14.9896 18.8522 14.9896 17.4101Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"/></svg>
+      <span class="ic-mask ic-mask--filter"></span>
     </button>
     <h2 id="csSheetTitle" data-i18n="cs.modal.title.income">Ручной ввод поступления</h2>
     <div class="cs-mode-badge" id="csModeBadge">-</div>
@@ -2496,6 +2496,6 @@ z-index: 999999;
      (для согласованности с серверным sync), но ДО app.js - чтобы хуки
      CloudSync.scheduleSync() в saveFullState() были доступны на момент init. -->
 <script src="cloud-storage.js?v=20034"></script>
-<script src="app.js?v=20059"></script>
+<script src="app.js?v=20060"></script>
 </body>
 </html>
