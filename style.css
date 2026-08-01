@@ -8568,34 +8568,14 @@ body.app-locked .account-block * {
   margin-left: 2px;
 }
 
-/* ── Иконки-маски (перекрашиваемые SVG из assets/icons) ── */
-/* Иконка берётся из файла в assets/icons, а цвет задаётся через
-   background-color: currentColor — поэтому чёрный цвет исходного файла
-   не важен, иконка наследует цвет своей кнопки.
-   ВАЖНО: папка assets/icons должна быть задеплоена (запушена) на хост. */
-.ic-mask {
-  display: inline-block;
-  background-color: currentColor;
-  -webkit-mask-repeat: no-repeat;
-  mask-repeat: no-repeat;
-  -webkit-mask-position: center;
-  mask-position: center;
-  -webkit-mask-size: contain;
-  mask-size: contain;
-}
-
-.ic-mask--filter {
-  width: 21px;
-  height: 21px;
-  -webkit-mask-image: url("assets/icons/Filter.svg");
-  mask-image: url("assets/icons/Filter.svg");
-}
-
-.ic-mask--trash {
-  width: 19px;
-  height: 19px;
-  -webkit-mask-image: url("assets/icons/Delete.svg");
-  mask-image: url("assets/icons/Delete.svg");
+/* ── Инлайн-иконки (outline) ── */
+/* Telegram iOS игнорирует presentation-атрибут fill="none" и заливает путь
+   currentColor (получаются сплошные квадраты). Поэтому форсируем через CSS —
+   так же, как сделано для .profile-btn-icon. Все иконки рисуются штрихом. */
+.ic-outline,
+.ic-outline * {
+  fill: none !important;
+  stroke: currentColor;
 }
 
 /* ── Режим удаления расходов в детальной карточке категории ── */

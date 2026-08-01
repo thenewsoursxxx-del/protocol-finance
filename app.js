@@ -8081,7 +8081,7 @@ initCashflowSettings();
       if (_csManageSide === "income" && dep > 0) {
         html += '<div class="cs-manage-item-badge">' + t("cs.history.deposited.badge", { amount: _amount(dep) }) + '</div>';
       }
-      html += '<button type="button" class="cs-manage-item-trash" data-cs-del-id="' + e.id + '" aria-label="Delete"><span class="ic-mask ic-mask--trash"></span></button>';
+      html += '<button type="button" class="cs-manage-item-trash" data-cs-del-id="' + e.id + '" aria-label="Delete"><svg class="ic-outline" width="18" height="18" viewBox="0 0 24 24" fill="none"><g stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5h16"/><path d="M9.5 6.5V5.2c0-.7.5-1.2 1.2-1.2h2.6c.7 0 1.2.5 1.2 1.2v1.3"/><path d="M6.7 6.5l.7 12c.05 1 .82 1.6 1.7 1.6h5.8c.88 0 1.65-.6 1.7-1.6l.7-12"/><path d="M10 10v6M14 10v6"/></g></svg></button>';
       html += '</div>';
     }
     listEl.innerHTML = html;
@@ -15455,7 +15455,7 @@ function goalSwipeToIndex(idx, goLeft) {
           '</div>' +
           '<div class="exp-detail-entry-date">' + formatExpDate(e.date) + '</div>' +
           '<svg class="exp-detail-entry-chevron" width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M1 1l5 5-5 5" stroke="rgba(255,255,255,0.35)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
-          '<button type="button" class="exp-detail-entry-trash" data-exp-id="' + e.id + '" aria-label="Delete"><span class="ic-mask ic-mask--trash"></span></button>' +
+          '<button type="button" class="exp-detail-entry-trash" data-exp-id="' + e.id + '" aria-label="Delete"><svg class="ic-outline" width="18" height="18" viewBox="0 0 24 24" fill="none"><g stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5h16"/><path d="M9.5 6.5V5.2c0-.7.5-1.2 1.2-1.2h2.6c.7 0 1.2.5 1.2 1.2v1.3"/><path d="M6.7 6.5l.7 12c.05 1 .82 1.6 1.7 1.6h5.8c.88 0 1.65-.6 1.7-1.6l.7-12"/><path d="M10 10v6M14 10v6"/></g></svg></button>' +
         '</div>';
       }
       if (listEl) listEl.innerHTML = html;

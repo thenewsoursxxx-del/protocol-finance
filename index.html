@@ -16,7 +16,7 @@ viewport-fit=cover" />
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
 
-<link rel="stylesheet" href="style.css?v=20061">
+<link rel="stylesheet" href="style.css?v=20062">
 
 <!-- Базовая инициализация Telegram Mini App (ранний вызов ready - рекомендация Telegram) -->
 <script>
@@ -639,8 +639,8 @@ Protocol анализирует цель…
       <div class="exp-detail-count" id="expDetailCount"></div>
       <!-- Режим удаления расходов: 3 полоски → корзины у записей → галочка подтверждения. -->
       <button type="button" class="exp-detail-edit-btn" id="expDetailEditBtn" aria-label="Edit" style="display:none">
-        <span class="exp-detail-edit-ic exp-detail-edit-ic--menu ic-mask ic-mask--filter"></span>
-        <svg class="exp-detail-edit-ic exp-detail-edit-ic--check" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4 10.5l4 4 8-9.5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <svg class="exp-detail-edit-ic exp-detail-edit-ic--menu ic-outline" width="21" height="21" viewBox="0 0 24 24" fill="none"><g stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M9 7.5h10"/><circle cx="6.4" cy="7.5" r="2.5"/><path d="M15 16.5H5"/><circle cx="17.6" cy="16.5" r="2.5"/></g></svg>
+        <svg class="exp-detail-edit-ic exp-detail-edit-ic--check ic-outline" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4 10.5l4 4 8-9.5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
     </div>
     <div class="exp-detail-total" id="expDetailTotal">0</div>
@@ -2118,7 +2118,7 @@ z-index: 999999;
   <div class="cs-step cs-step--form" data-cs-step="form">
     <!-- «3 полоски»: открыть список записей текущей стороны для удаления. -->
     <button type="button" id="csManageBtn" class="cs-manage-btn" aria-label="Manage records">
-      <span class="ic-mask ic-mask--filter"></span>
+      <svg class="ic-outline" width="21" height="21" viewBox="0 0 24 24" fill="none"><g stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M9 7.5h10"/><circle cx="6.4" cy="7.5" r="2.5"/><path d="M15 16.5H5"/><circle cx="17.6" cy="16.5" r="2.5"/></g></svg>
     </button>
     <h2 id="csSheetTitle" data-i18n="cs.modal.title.income">Ручной ввод поступления</h2>
     <div class="cs-mode-badge" id="csModeBadge">-</div>
@@ -2183,11 +2183,11 @@ z-index: 999999;
   <div class="cs-step cs-step--manage" data-cs-step="manage" style="display:none">
     <div class="cs-manage-header">
       <button type="button" id="csManageBackBtn" class="cs-manage-back" aria-label="Back">
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M12 4l-6 6 6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <svg class="ic-outline" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M12 4l-6 6 6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
       <div class="cs-manage-title" id="csManageTitle" data-i18n="cs.manage.title.income">Поступления</div>
       <button type="button" id="csManageDoneBtn" class="cs-manage-done" aria-label="Done">
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4 10.5l4 4 8-9.5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <svg class="ic-outline" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4 10.5l4 4 8-9.5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
     </div>
     <div class="cs-manage-list" id="csManageList"></div>
@@ -2496,6 +2496,6 @@ z-index: 999999;
      (для согласованности с серверным sync), но ДО app.js - чтобы хуки
      CloudSync.scheduleSync() в saveFullState() были доступны на момент init. -->
 <script src="cloud-storage.js?v=20034"></script>
-<script src="app.js?v=20061"></script>
+<script src="app.js?v=20062"></script>
 </body>
 </html>
