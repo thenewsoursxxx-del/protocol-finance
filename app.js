@@ -7657,6 +7657,23 @@ initCashflowSettings();
     }, 0);
   }
 
+  // RUNNING LEDGER (сквозной баланс): когда ОБЕ стороны в режиме «свой график»
+  // (custom доход И custom расход), период не сбрасывается по месяцам — считаем
+  // накопительно за всё время. Это гарантирует, что: (а) записанный, но не
+  // отложенный доход прошлых месяцев не «сгорает», (б) новый расход всегда
+  // уменьшает «свободно» (в т.ч. «съедает» ранее записанный доход).
+  function _periodTotalCumulative(side) {
+    return _entriesBySide(side).reduce(function (sum, e) {
+      return sum + (Number(e && e.amount) || 0);
+    }, 0);
+  }
+
+  function _alreadyDepositedCumulative() {
+    return _entries().reduce(function (sum, e) {
+      return sum + (Number(e && e.deposited) || 0);
+    }, 0);
+  }
+
   // FIX: custom schedule accumulation + counters update - counterpart другой
   // стороны. Для custom-стороны возвращаем СУММУ всех записей (а не последнюю),
   // что критично для корректного расчёта «Нужно отложить» при нескольких
@@ -7743,9 +7760,15 @@ initCashflowSettings();
 
     var parser = (typeof parseFlexAmount === "function") ? parseFlexAmount : Number;
 
+    // RUNNING LEDGER: обе стороны custom → накопительный расчёт за всё время
+    // (см. _periodTotalCumulative). Иначе — прежнее помесячное скопление
+    // (для варианта «доход custom + фикс. расход» перенос делает _carryPending).
+    var bothCustom = incomeIsCustom && expenseIsCustom;
+    var _sumSide = bothCustom ? _periodTotalCumulative : _periodTotalThisMonth;
+
     var totalIncome, incomeKind;
     if (incomeIsCustom) {
-      totalIncome = _periodTotalThisMonth("income");
+      totalIncome = _sumSide("income");
       incomeKind = totalIncome > 0 ? "customTotal" : "none";
     } else {
       var iType = s.incomeType || "fixed";
@@ -7760,7 +7783,7 @@ initCashflowSettings();
 
     var totalExpense, expenseKind;
     if (expenseIsCustom) {
-      totalExpense = _periodTotalThisMonth("expense");
+      totalExpense = _sumSide("expense");
       expenseKind = totalExpense > 0 ? "customTotal" : "none";
     } else {
       var eType = s.expenseType || "fixed";
@@ -7792,8 +7815,9 @@ initCashflowSettings();
       ? (Number(window.getPlanTrackedExpenseThisMonth()) || 0) : 0;
     var free = Math.max(0, totalIncome - totalExpense - trackedExtra);
     var targetDeposit = Math.round(free * _paceFraction());
-    // Model B: «уже отложено» тоже считаем за текущий календарный месяц.
-    var alreadyDeposited = _alreadyDepositedThisMonth();
+    // «Уже отложено»: при сквозном балансе (обе custom) — за всё время, иначе
+    // за текущий календарный месяц (Model B).
+    var alreadyDeposited = bothCustom ? _alreadyDepositedCumulative() : _alreadyDepositedThisMonth();
     var pendingDeposit = Math.max(0, targetDeposit - alreadyDeposited);
 
     // Для совместимости - какой counterpart актуален для side="income"|"expense".
@@ -8485,6 +8509,10 @@ initCashflowSettings();
     var parser = (typeof parseFlexAmount === "function") ? parseFlexAmount : Number;
     var pace = _paceFraction();
     var expenseIsCustom = (s.expenseType === "variable") && ((s.expenseFrequency || "monthly") === "custom");
+    // Обе стороны custom → используется сквозной баланс (running ledger),
+    // который уже учитывает все прошлые месяцы. Отдельный перенос не нужен —
+    // иначе прошлый доход посчитается дважды.
+    if (incomeIsCustom && expenseIsCustom) return [];
     // Фиксированный расход месяца (когда расходы НЕ custom) — вычитается из дохода
     // каждого прошлого месяца так же, как это делает движок для регулярных частот.
     var fixedExpenseMonthly = 0;
@@ -8565,16 +8593,20 @@ initCashflowSettings();
       if (c && c.entry && c.amount > 0) _commitDeposit(c.entry, c.amount);
     });
 
-    // Затем — pending текущего месяца (на самую свежую income-запись месяца).
+    // Затем — pending текущего месяца / сквозного баланса. Атрибутируем на самую
+    // свежую income-запись текущего месяца, а если её нет (сквозной баланс, новый
+    // месяц без новых поступлений) — на самую свежую income-запись вообще.
     if (depCurrent > 0) {
-      var incomeEntries = _entriesBySide("income")
+      var _sortIncome = function (a, b) {
+        var dCmp = String(b.date).localeCompare(String(a.date));
+        if (dCmp !== 0) return dCmp;
+        return String(b.createdAt || "").localeCompare(String(a.createdAt || ""));
+      };
+      var incomeThisMonth = _entriesBySide("income")
         .filter(function (e) { return _isThisMonth(e && e.date); })
-        .sort(function (a, b) {
-          var dCmp = String(b.date).localeCompare(String(a.date));
-          if (dCmp !== 0) return dCmp;
-          return String(b.createdAt || "").localeCompare(String(a.createdAt || ""));
-        });
-      var target = incomeEntries[0];
+        .sort(_sortIncome);
+      var incomeAll = _entriesBySide("income").slice().sort(_sortIncome);
+      var target = incomeThisMonth[0] || incomeAll[0];
       if (target) _commitDeposit(target, depCurrent);
     }
 
