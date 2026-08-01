@@ -1502,14 +1502,39 @@ window.saveUserChatId = async (chatId) => {
   }
 
   try {
-    const { data, error } = await supabaseClient
+    // ВАЖНО: не используем upsert. При ON CONFLICT DO UPDATE PostgREST кладёт в
+    // SET все переданные колонки, включая telegram_id — а у роли authenticated
+    // нет UPDATE-гранта на telegram_id (security-hardening), из-за чего Postgres
+    // возвращал 42501 "permission denied for table users". Поэтому select →
+    // update(только chat_id, updated_at) или insert(разрешённые колонки).
+    const existing = await supabaseClient
       .from('users')
-      .upsert({
-        telegram_id: telegramId,
-        chat_id: chatId,
-        updated_at: new Date().toISOString()
-      }, { onConflict: 'telegram_id' })
-      .select('telegram_id, chat_id');
+      .select('telegram_id')
+      .eq('telegram_id', telegramId)
+      .maybeSingle();
+
+    if (existing.error) {
+      console.error('[ChatID] Ошибка проверки пользователя:', existing.error);
+      return;
+    }
+
+    let data, error;
+    if (existing.data) {
+      ({ data, error } = await supabaseClient
+        .from('users')
+        .update({ chat_id: chatId, updated_at: new Date().toISOString() })
+        .eq('telegram_id', telegramId)
+        .select('telegram_id, chat_id'));
+    } else {
+      ({ data, error } = await supabaseClient
+        .from('users')
+        .insert({
+          telegram_id: telegramId,
+          chat_id: chatId,
+          updated_at: new Date().toISOString()
+        })
+        .select('telegram_id, chat_id'));
+    }
 
     if (error) {
       console.error('[ChatID] Ошибка сохранения:', error);
