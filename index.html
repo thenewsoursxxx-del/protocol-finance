@@ -16,7 +16,7 @@ viewport-fit=cover" />
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
 
-<link rel="stylesheet" href="style.css?v=20063">
+<link rel="stylesheet" href="style.css?v=20064">
 
 <!-- Базовая инициализация Telegram Mini App (ранний вызов ready - рекомендация Telegram) -->
 <script>
@@ -586,6 +586,7 @@ Protocol анализирует цель…
 <div class="header-left"></div>
 <div class="header-center">
 <div class="header-title" data-i18n="expenses.title">Расходы</div>
+<div class="exp-header-month" id="expMonthLabel"></div>
 </div>
 <div class="header-right"></div>
 </div>
@@ -601,13 +602,21 @@ Protocol анализирует цель…
     </div>
   </div>
 
-  <!-- B) Donut Chart -->
-  <div class="exp-donut-wrap" id="expDonutWrap">
-    <canvas id="expDonutCanvas" width="220" height="220"></canvas>
-    <div class="exp-donut-center">
-      <div class="exp-donut-center-label" data-i18n="expenses.spent">Потрачено</div>
-      <div class="exp-donut-center-value" id="expDonutTotal">0</div>
+  <!-- B) Donut Chart + навигация по месяцам -->
+  <div class="exp-donut-row" id="expDonutRow">
+    <button class="exp-month-arrow exp-month-arrow--prev" id="expMonthPrev" type="button" aria-label="Previous month">
+      <svg class="ic-outline" viewBox="0 0 20 20"><path d="M12.5 4L7 10l5.5 6" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <div class="exp-donut-wrap" id="expDonutWrap">
+      <canvas id="expDonutCanvas" width="220" height="220"></canvas>
+      <div class="exp-donut-center">
+        <div class="exp-donut-center-label" data-i18n="expenses.spent">Потрачено</div>
+        <div class="exp-donut-center-value" id="expDonutTotal">0</div>
+      </div>
     </div>
+    <button class="exp-month-arrow exp-month-arrow--next" id="expMonthNext" type="button" aria-label="Next month">
+      <svg class="ic-outline" viewBox="0 0 20 20"><path d="M7.5 4L13 10l-5.5 6" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
   </div>
 
   <!-- C) Category List -->
@@ -2496,6 +2505,6 @@ z-index: 999999;
      (для согласованности с серверным sync), но ДО app.js - чтобы хуки
      CloudSync.scheduleSync() в saveFullState() были доступны на момент init. -->
 <script src="cloud-storage.js?v=20034"></script>
-<script src="app.js?v=20063"></script>
+<script src="app.js?v=20064"></script>
 </body>
 </html>

@@ -8155,11 +8155,56 @@ body.app-locked .account-block * {
 
 /* ── Donut Chart ── */
 
+/* Подпись месяца в шапке вкладки «Расходы» (заголовок .header-title скрыт CSS-ом
+   для screen-ai, поэтому это отдельный видимый элемент). */
+.exp-header-month {
+  font-size: 15px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.72);
+  line-height: 1.2;
+  text-transform: capitalize;
+}
+
+/* Ряд: [‹] [donut] [›] — навигация по месяцам истории расходов. */
+.exp-donut-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin: 0 auto 24px;
+}
+
+.exp-month-arrow {
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 50%;
+  color: rgba(255, 255, 255, 0.85);
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.exp-month-arrow:active {
+  transform: scale(0.92);
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.exp-month-arrow .ic-outline {
+  width: 20px;
+  height: 20px;
+}
+
 .exp-donut-wrap {
   position: relative;
   width: 220px;
   height: 220px;
-  margin: 0 auto 24px;
+  margin: 0;
 }
 
 .exp-donut-wrap canvas {

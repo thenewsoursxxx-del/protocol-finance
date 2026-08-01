@@ -8472,10 +8472,73 @@ initCashflowSettings();
     }
   }
 
+  // MODEL B (свой график) · ПЕРЕНОС ОСТАТКА. Счётчики «нужно отложить» скидываются
+  // на новый календарный месяц, но реально записанный, но НЕ отложенный доход
+  // прошлых месяцев не должен «сгорать»: пользователь всё ещё может его отложить.
+  // Считаем незакрытый pending по каждому ПРОШЛОМУ месяцу (только для custom-дохода,
+  // где записи привязаны к дате). Возвращаем [{ entry, amount }] — на какую запись
+  // и сколько докинуть, чтобы закрыть остаток месяца.
+  function _carryPendingDetails() {
+    var s = (typeof getState === "function") ? getState() : {};
+    var incomeIsCustom = (s.incomeType === "variable") && ((s.incomeFrequency || "monthly") === "custom");
+    if (!incomeIsCustom) return []; // перенос актуален только для ручных income-записей
+    var parser = (typeof parseFlexAmount === "function") ? parseFlexAmount : Number;
+    var pace = _paceFraction();
+    var expenseIsCustom = (s.expenseType === "variable") && ((s.expenseFrequency || "monthly") === "custom");
+    // Фиксированный расход месяца (когда расходы НЕ custom) — вычитается из дохода
+    // каждого прошлого месяца так же, как это делает движок для регулярных частот.
+    var fixedExpenseMonthly = 0;
+    if (!expenseIsCustom) {
+      var eType = s.expenseType || "fixed";
+      var fe = (eType === "fixed") ? parser(s.expenses) : parser(s.fixedExpenseAmount);
+      fixedExpenseMonthly = (fe > 0) ? fe : 0;
+    }
+    var now = new Date();
+    var curY = now.getFullYear(), curM = now.getMonth();
+    var byMonth = {};
+    _entries().forEach(function (e) {
+      if (!e) return;
+      var d = new Date(e.date);
+      if (isNaN(d.getTime())) return;
+      var y = d.getFullYear(), m = d.getMonth();
+      // Только ПРОШЛЫЕ месяцы (текущий считается штатной current-логикой).
+      if (y > curY || (y === curY && m >= curM)) return;
+      var k = y + "-" + m;
+      if (!byMonth[k]) byMonth[k] = { income: 0, expense: 0, deposited: 0, latestIncome: null };
+      var mo = byMonth[k];
+      if (e.side === "income") mo.income += Number(e.amount) || 0;
+      else if (e.side === "expense") mo.expense += Number(e.amount) || 0;
+      mo.deposited += Number(e.deposited) || 0;
+      if (e.side === "income") {
+        var cur = mo.latestIncome;
+        var newer = !cur
+          || String(e.date).localeCompare(String(cur.date)) > 0
+          || (String(e.date) === String(cur.date) && String(e.createdAt || "").localeCompare(String(cur.createdAt || "")) > 0);
+        if (newer) mo.latestIncome = e;
+      }
+    });
+    var out = [];
+    Object.keys(byMonth).forEach(function (k) {
+      var mo = byMonth[k];
+      if (!mo.latestIncome) return; // без записанного дохода pending не возникает
+      var expense = expenseIsCustom ? mo.expense : fixedExpenseMonthly;
+      var free = Math.max(0, mo.income - expense);
+      var target = Math.round(free * pace);
+      var pending = Math.max(0, target - mo.deposited);
+      if (pending > 0) out.push({ entry: mo.latestIncome, amount: pending });
+    });
+    return out;
+  }
+
+  function _carryPending() {
+    return _carryPendingDetails().reduce(function (sum, c) { return sum + (c.amount || 0); }, 0);
+  }
+  window._carryPending = _carryPending;
+
   // MODEL B (свой график): явное отложение агрегированного pending за текущий
-  // календарный месяц. Вызывается кнопкой «Отложить» на графике. Атрибуцию
-  // deposited вешаем на самую свежую income-запись текущего месяца (как это
-  // делает depositBtn/inline-↑), чтобы бейджи истории работали корректно.
+  // календарный месяц + перенос незакрытых остатков прошлых месяцев. Вызывается
+  // кнопкой «Отложить» на графике. Атрибуцию deposited вешаем на самую свежую
+  // income-запись соответствующего месяца, чтобы бейджи истории работали корректно.
   function _commitCustomPending() {
     var goalVal = 0;
     try {
@@ -8487,27 +8550,36 @@ initCashflowSettings();
       return;
     }
     var calc = _computeDepositForEntry("income");
-    var dep = calc.deposit;
-    if (dep <= 0) {
-      if (typeof showToast === "function") showToast(t("cs.toast.alreadyDeposited"), "info");
-      return;
-    }
-    var incomeEntries = _entriesBySide("income")
-      .filter(function (e) { return _isThisMonth(e && e.date); })
-      .sort(function (a, b) {
-        var dCmp = String(b.date).localeCompare(String(a.date));
-        if (dCmp !== 0) return dCmp;
-        return String(b.createdAt || "").localeCompare(String(a.createdAt || ""));
-      });
-    var target = incomeEntries[0];
-    if (!target) {
+    var depCurrent = calc.deposit;
+    var carry = _carryPendingDetails();
+    var carryTotal = carry.reduce(function (sum, c) { return sum + (c.amount || 0); }, 0);
+    var totalDep = depCurrent + carryTotal;
+    if (totalDep <= 0) {
       if (typeof showToast === "function") showToast(t("cs.toast.alreadyDeposited"), "info");
       return;
     }
     if (typeof haptic === "function") haptic("success");
-    _commitDeposit(target, dep);
+
+    // Сначала закрываем перенесённые остатки прошлых месяцев.
+    carry.forEach(function (c) {
+      if (c && c.entry && c.amount > 0) _commitDeposit(c.entry, c.amount);
+    });
+
+    // Затем — pending текущего месяца (на самую свежую income-запись месяца).
+    if (depCurrent > 0) {
+      var incomeEntries = _entriesBySide("income")
+        .filter(function (e) { return _isThisMonth(e && e.date); })
+        .sort(function (a, b) {
+          var dCmp = String(b.date).localeCompare(String(a.date));
+          if (dCmp !== 0) return dCmp;
+          return String(b.createdAt || "").localeCompare(String(a.createdAt || ""));
+        });
+      var target = incomeEntries[0];
+      if (target) _commitDeposit(target, depCurrent);
+    }
+
     if (typeof showToast === "function") {
-      showToast(t("cs.toast.deposited", { amount: _amount(dep) }), "success");
+      showToast(t("cs.toast.deposited", { amount: _amount(totalDep) }), "success");
     }
     if (typeof recalcPlan === "function") recalcPlan();
     if (typeof window.renderCustomSchedule === "function") window.renderCustomSchedule();
@@ -9137,6 +9209,12 @@ initCashflowSettings();
 
     var goalSaved = (typeof accounts !== "undefined" && accounts && accounts.main) ? accounts.main : 0;
 
+    // Перенос незакрытого дохода прошлых месяцев (см. _carryPendingDetails).
+    // Реально pending = pending текущего месяца + сумма остатков прошлых месяцев,
+    // чтобы кнопка «Отложить» и шапка не «теряли» деньги на стыке месяцев.
+    var carry = (typeof _carryPending === "function") ? _carryPending() : 0;
+    var pendingTotal = (calc.deposit || 0) + carry;
+
     return {
       anyCustomActive: true,
       hasAnyEntry: true,
@@ -9148,7 +9226,8 @@ initCashflowSettings();
       free: calc.free,
       targetDeposit: calc.targetDeposit,
       alreadyDeposited: calc.alreadyDeposited,
-      pendingDeposit: calc.deposit,
+      carryPending: carry,
+      pendingDeposit: pendingTotal,
       counterpart: calc.counterpart,
       etaMonths: _computeEta(),
       // fmt-хелперы для рендера в main-plan-header.
@@ -9158,7 +9237,8 @@ initCashflowSettings();
       freeFormatted: _amount(calc.free),
       targetFormatted: _amount(calc.targetDeposit),
       alreadyFormatted: _amount(calc.alreadyDeposited),
-      pendingFormatted: _amount(calc.deposit),
+      carryPendingFormatted: _amount(carry),
+      pendingFormatted: _amount(pendingTotal),
       goalSavedFormatted: _amount(goalSaved)
     };
   }
@@ -14994,10 +15074,37 @@ function goalSwipeToIndex(idx, goLeft) {
     return y + "-" + m;
   }
 
+  // История по месяцам: 0 = текущий календарный месяц, N = N месяцев назад.
+  // ВАЖНО: влияет только на просмотр вкладки «Расходы». План всегда считает
+  // текущий месяц (getPlanTrackedExpenseThisMonth использует свой new Date()).
+  var _expViewOffset = 0;
+
+  function getViewedMonthDate() {
+    var now = new Date();
+    return new Date(now.getFullYear(), now.getMonth() - _expViewOffset, 1);
+  }
+
+  // Максимальный сдвиг назад — до самого раннего месяца с расходами.
+  function getMaxExpViewOffset() {
+    var s = getState();
+    var log = (s && Array.isArray(s.expensesLog)) ? s.expensesLog : [];
+    if (!log.length) return 0;
+    var now = new Date();
+    var maxOff = 0;
+    for (var i = 0; i < log.length; i++) {
+      var d = new Date(log[i].date);
+      if (isNaN(d.getTime())) continue;
+      var off = (now.getFullYear() - d.getFullYear()) * 12 + (now.getMonth() - d.getMonth());
+      if (off > maxOff) maxOff = off;
+    }
+    return Math.max(0, maxOff);
+  }
+
   function getMonthExpenses() {
     var s = getState();
     var log = s.expensesLog || [];
-    var mk = getCurrentMonthKey();
+    var vd = getViewedMonthDate();
+    var mk = vd.getFullYear() + "-" + vd.getMonth();
     var result = [];
     for (var i = 0; i < log.length; i++) {
       var e = log[i];
@@ -15007,6 +15114,23 @@ function goalSwipeToIndex(idx, goLeft) {
       }
     }
     return result;
+  }
+
+  // Подпись месяца в шапке + видимость стрелок навигации.
+  function updateExpMonthNav() {
+    var labelEl = document.getElementById("expMonthLabel");
+    var prevBtn = document.getElementById("expMonthPrev");
+    var nextBtn = document.getElementById("expMonthNext");
+    var vd = getViewedMonthDate();
+    var maxOff = getMaxExpViewOffset();
+    if (labelEl) {
+      var mn = (typeof getMonthName === "function") ? getMonthName(vd.getMonth()) : String(vd.getMonth() + 1);
+      labelEl.textContent = mn + " " + vd.getFullYear();
+    }
+    // «Назад» (в прошлое) — пока не достигли самого раннего месяца.
+    if (prevBtn) prevBtn.style.visibility = (_expViewOffset < maxOff) ? "visible" : "hidden";
+    // «Вперёд» (к текущему) — скрыто, когда открыт текущий месяц.
+    if (nextBtn) nextBtn.style.visibility = (_expViewOffset > 0) ? "visible" : "hidden";
   }
 
   function calcCategoryTotals(entries) {
@@ -15115,6 +15239,16 @@ function goalSwipeToIndex(idx, goLeft) {
   /* ── Render Full Screen ── */
 
   window.renderExpensesScreen = function () {
+    var s = getState();
+    var allLog = Array.isArray(s.expensesLog) ? s.expensesLog : [];
+    var hasAny = allLog.length > 0;
+
+    // Клампим сдвиг: после удаления записей / смены месяца он может «уехать».
+    var maxOff = getMaxExpViewOffset();
+    if (!hasAny) _expViewOffset = 0;
+    if (_expViewOffset > maxOff) _expViewOffset = maxOff;
+    if (_expViewOffset < 0) _expViewOffset = 0;
+
     var entries = getMonthExpenses();
     var data = calcCategoryTotals(entries);
     var spent = data.totalSpent;
@@ -15123,27 +15257,32 @@ function goalSwipeToIndex(idx, goLeft) {
     var elDonutTotal = document.getElementById("expDonutTotal");
     var elEmpty = document.getElementById("expEmpty");
     var elSummary = document.getElementById("expSummaryCard");
-    var elDonut = document.getElementById("expDonutWrap");
+    var elDonutRow = document.getElementById("expDonutRow");
     var elCats = document.getElementById("expCategories");
     var elAddBtn = document.getElementById("expAddBtn");
 
-    if (entries.length === 0) {
+    updateExpMonthNav();
+
+    if (!hasAny) {
+      // Ни одного расхода за всё время → большой empty state, навигация не нужна.
       if (elEmpty) elEmpty.style.display = "flex";
       if (elSummary) elSummary.style.display = "none";
-      if (elDonut) elDonut.style.display = "none";
+      if (elDonutRow) elDonutRow.style.display = "none";
       if (elCats) elCats.style.display = "none";
       if (elAddBtn) elAddBtn.style.display = "none";
       drawDonut([], 0);
       return;
     }
 
+    // Есть история → навигацию показываем всегда, контент — по просматриваемому месяцу.
     if (elEmpty) elEmpty.style.display = "none";
     if (elSummary) elSummary.style.display = "";
-    if (elDonut) elDonut.style.display = "";
+    if (elDonutRow) elDonutRow.style.display = "";
     if (elCats) elCats.style.display = "";
-    if (elAddBtn) elAddBtn.style.display = "";
+    // Кнопку «добавить расход» показываем только на текущем месяце.
+    if (elAddBtn) elAddBtn.style.display = (_expViewOffset === 0) ? "" : "none";
 
-    // Только «Потрачено» — сумма всех записей текущего календарного месяца
+    // Только «Потрачено» — сумма всех записей просматриваемого календарного месяца
     // (лимит/прогресс/остаток убраны).
     if (elSpent) elSpent.textContent = fmtConverted(spent);
     if (elDonutTotal) elDonutTotal.textContent = fmtConverted(spent) + " " + getCurrencySymbol();
@@ -15323,6 +15462,17 @@ function goalSwipeToIndex(idx, goLeft) {
 
   if (addBtn) addBtn.addEventListener("click", function () { haptic("light"); openExpenseSheet(); });
   if (addBtnEmpty) addBtnEmpty.addEventListener("click", function () { haptic("light"); openExpenseSheet(); });
+
+  /* ── Навигация по месяцам (история расходов) ── */
+  var expMonthPrevBtn = document.getElementById("expMonthPrev");
+  var expMonthNextBtn = document.getElementById("expMonthNext");
+  if (expMonthPrevBtn) expMonthPrevBtn.addEventListener("click", function () {
+    var maxOff = getMaxExpViewOffset();
+    if (_expViewOffset < maxOff) { _expViewOffset++; haptic("light"); renderExpensesScreen(); }
+  });
+  if (expMonthNextBtn) expMonthNextBtn.addEventListener("click", function () {
+    if (_expViewOffset > 0) { _expViewOffset--; haptic("light"); renderExpensesScreen(); }
+  });
 
   /* ── Donut chart click → open category detail ── */
 
