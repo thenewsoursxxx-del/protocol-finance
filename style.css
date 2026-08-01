@@ -8568,14 +8568,33 @@ body.app-locked .account-block * {
   margin-left: 2px;
 }
 
-/* ── Инлайн-иконки (outline) ── */
-/* Telegram iOS игнорирует presentation-атрибут fill="none" и заливает путь
-   currentColor (получаются сплошные квадраты). Поэтому форсируем через CSS —
-   так же, как сделано для .profile-btn-icon. Все иконки рисуются штрихом. */
+/* ── Инлайн-иконки ── */
+/* Telegram iOS игнорирует presentation-атрибуты SVG (fill, width/height),
+   поэтому — как у рабочих .profile-btn-icon — задаём размер и цвет ЧЕРЕЗ CSS.
+   .ic-outline — штриховые иконки (Filter, галочка, стрелка).
+   .ic-solid   — заливные иконки (Delete/корзина). */
+.ic-outline {
+  display: block;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
 .ic-outline,
 .ic-outline * {
   fill: none !important;
   stroke: currentColor;
+}
+
+.ic-solid {
+  display: block;
+  width: 19px;
+  height: 19px;
+  flex-shrink: 0;
+}
+.ic-solid,
+.ic-solid * {
+  fill: currentColor !important;
+  stroke: none !important;
 }
 
 /* ── Режим удаления расходов в детальной карточке категории ── */
