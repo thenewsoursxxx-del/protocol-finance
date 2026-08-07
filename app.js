@@ -2813,6 +2813,13 @@ if (navScreens.includes(name) && isInitialized) {
   saveFullState();
 }
 
+// PREMIUM GATE — на вкладках «Расчёт» (calc) и «Protocol» (advice) живут гибкая
+// модель и «Свой график». Проверяем подписку ДО syncFlexibleUI/updateFactInputVisibility,
+// чтобы при истёкшем премиуме модель свернулась и кнопки записи/«Отложить» скрылись.
+if ((name === "advice" || name === "calc") && typeof checkPremiumGate === "function") {
+  try { checkPremiumGate(); } catch (e) { /* noop */ }
+}
+
 if (name === "advice") syncFlexibleUI();
 
 // BUGFIX: при переходе на график граф НЕ всегда перерисовывается (только если
@@ -6571,14 +6578,64 @@ function applyFinancialEvent(source, amount) {
 
 /* ===== CASHFLOW SETTINGS ===== */
 
-function checkPremiumGate() {
-  var s = getState();
-  if (s.financialModel === "cashflow" && !s.isPremium) {
-    updateState({ financialModel: "simple", incomeType: "fixed", expenseType: "fixed" });
-    recalcPlan();
-    return true;
+// PREMIUM GATE — единый источник правды о том, активна ли подписка ПРЯМО СЕЙЧАС.
+// Важно: проверяем именно effective-premium (флаг is_premium И premium_until > now),
+// а НЕ сырой appState.isPremium. Иначе после истечения срока (когда локальный флаг
+// ещё true, а срок уже прошёл, и синк с БД ещё не отработал) гибкая модель осталась
+// бы рабочей. Функция дублирует window.isPremiumActive() на случай, если та IIFE
+// ещё не успела экспортироваться (checkPremiumGate может вызваться раньше).
+function _premiumActiveNow() {
+  if (typeof window !== "undefined" && typeof window.isPremiumActive === "function") {
+    return window.isPremiumActive();
   }
-  return false;
+  var s = (typeof getState === "function") ? getState() : (window.appState || {});
+  if (s.isPremium !== true) return false;
+  if (!s.premiumUntil) return false;
+  var until = new Date(s.premiumUntil).getTime();
+  if (isNaN(until)) return false;
+  return until > Date.now();
+}
+
+// PREMIUM GATE — гибкая финансовая модель и «Свой график» доступны только при
+// активной подписке. Вызывается при старте, при смене экрана (calc/advice) и после
+// синхронизации premium-флагов с БД. Возвращает true, если что-то изменили.
+function checkPremiumGate() {
+  var active = _premiumActiveNow();
+
+  if (active) {
+    // Подписка активна — снимаем блокировки с внутренних элементов гибкой модели.
+    if (typeof applyPremiumUI === "function") applyPremiumUI(true);
+    return false;
+  }
+
+  // ── Подписки нет: гибкая модель работать не должна. ──
+  var s = getState();
+  var changed = false;
+
+  // 1. Функциональный гейт: переводим план в простую модель. Пользовательские
+  //    настройки (incomeType/expenseType/customScheduleEntries/суммы) НЕ трогаем —
+  //    при повторной оплате достаточно снова включить модель, данные вернутся.
+  if (s.financialModel === "cashflow") {
+    updateState({ financialModel: "simple" });
+    changed = true;
+  }
+
+  // 2. Сворачиваем раскрытую карточку «Гибкая финансовая модель» и блокируем
+  //    её внутренние переключатели (Нефиксированный / периодичность / +событие).
+  var flexContent = document.getElementById("flexibleContent");
+  var flexToggle  = document.getElementById("flexibleToggle");
+  if (flexContent) flexContent.classList.remove("open");
+  if (flexToggle)  flexToggle.classList.remove("open");
+  if (typeof applyPremiumUI === "function") applyPremiumUI(false);
+
+  // 3. Пересчитываем план по простой модели и прячем кнопки «Записать доход/расход»
+  //    и «Отложить» (updateFactInputVisibility скрывает их, т.к. модель уже simple).
+  if (changed && typeof recalcPlan === "function") recalcPlan();
+  if (typeof window.updateFactInputVisibility === "function") {
+    try { window.updateFactInputVisibility(); } catch (e) { /* noop */ }
+  }
+
+  return changed;
 }
 
 function isFlexibleUnconfigured() {
@@ -6962,9 +7019,14 @@ function initCashflowSettings() {
   var incomeFrequency = currentState.incomeFrequency || "";
   var expenseFrequency = currentState.expenseFrequency || "";
 
-  applyPremiumUI(true);
+  // PREMIUM GATE — состояние кнопок зависит от активной подписки, а не хардкода.
+  var _premiumActiveInit = (typeof _premiumActiveNow === "function") ? _premiumActiveNow() : true;
+  applyPremiumUI(_premiumActiveInit);
 
-  if (currentState.financialModel === "cashflow") {
+  // Авто-раскрытие карточки гибкой модели только когда подписка активна — иначе
+  // у пользователя с истёкшим премиумом карточка открывалась бы и оставалась
+  // интерактивной (баг: замок висит, но кнопки внутри работают).
+  if (currentState.financialModel === "cashflow" && _premiumActiveInit) {
     flexContent.classList.add("open");
     flexToggle.classList.add("open");
   }
@@ -13813,6 +13875,11 @@ function goalSwipeToIndex(idx, goLeft) {
   window._syncPremiumUI = function () {
     syncPremiumGateUI();
     syncLockBadgesVisibility();
+    // PREMIUM GATE — когда синк с БД снял премиум (подписка истекла), нужно
+    // немедленно свернуть/заблокировать гибкую модель и перевести план в simple.
+    if (typeof checkPremiumGate === "function") {
+      try { checkPremiumGate(); } catch (e) { /* noop */ }
+    }
     if (!isPremium()) initAllLockLotties();
     // PREMIUM PROFILE BADGE - изумрудная плашка «Premium» рядом с именем
     // в профиле. Обновляется вместе с остальным premium-UI.
