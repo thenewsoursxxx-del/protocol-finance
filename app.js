@@ -3614,12 +3614,6 @@ function performFullReset() {
   // не перечитает флаги из БД. Поэтому снимаем account-level премиум-поля заранее
   // и восстанавливаем их сразу после clearState().
   var _preservedPremium = null;
-  // ONBOARDING - флаги «уже проходил тур» НЕ относятся к плану/цели, а к самому
-  // пользователю/устройству. «Начать сначала» обнуляет план, но пользователь
-  // НЕ становится новым — поэтому сохраняем эти флаги перед clearState() и
-  // восстанавливаем после, чтобы основной тур и per-feature премиум-туры не
-  // показывались по кругу после каждого сброса.
-  var _preservedOnboarding = null;
   try {
     var _sPrev = (typeof getState === "function") ? getState() : null;
     if (_sPrev) {
@@ -3629,15 +3623,8 @@ function performFullReset() {
         autoRenew:          _sPrev.autoRenew === true,
         showCommunityStats: _sPrev.showCommunityStats === true
       };
-      _preservedOnboarding = {
-        onboardingCompleted: _sPrev.onboardingCompleted === true,
-        premiumOnboardingCompleted:
-          (_sPrev.premiumOnboardingCompleted && typeof _sPrev.premiumOnboardingCompleted === "object")
-            ? Object.assign({}, _sPrev.premiumOnboardingCompleted)
-            : {}
-      };
     }
-  } catch (e) { _preservedPremium = null; _preservedOnboarding = null; }
+  } catch (e) { _preservedPremium = null; }
 
   chosenPlan = null;
   isInitialized = false;
@@ -3670,13 +3657,6 @@ function performFullReset() {
   // эти значения с ней совпадают; следующий синк лишь подтвердит их).
   if (_preservedPremium && typeof updateState === "function") {
     try { updateState(_preservedPremium); } catch (e) { /* graceful */ }
-  }
-
-  // ONBOARDING - восстанавливаем флаги пройденных туров (см. _preservedOnboarding
-  // выше). Без этого clearState() сбросил бы их в false/{} и тур первого запуска
-  // + премиум-туры показались бы заново после «Начать сначала».
-  if (_preservedOnboarding && typeof updateState === "function") {
-    try { updateState(_preservedOnboarding); } catch (e) { /* graceful */ }
   }
 
   // Полный сброс гибкой модели (переменные замыкания + state + DOM). clearState()
@@ -5051,14 +5031,6 @@ function maybeShowEarlyBirdCard(attempt) {
       : !!(window.appState && window.appState.isPremium);
     if (_hasActivePremium) { _earlyBirdShownThisSession = true; return; }
 
-    // Не показываем поверх активного онбординг-тура (основного или премиум) —
-    // иначе акция и подсказки наложатся друг на друга. Ждём завершения тура и
-    // пробуем снова. #onboardingRoot живёт в DOM только пока тур идёт.
-    if (document.getElementById("onboardingRoot")) {
-      if (attempt < 20) setTimeout(function () { maybeShowEarlyBirdCard(attempt + 1); }, 800);
-      return;
-    }
-
     // Не показываем поверх фейк-загрузки — ждём её завершения.
     if (_isProtocolLoading()) {
       if (attempt < 14) setTimeout(function () { maybeShowEarlyBirdCard(attempt + 1); }, 800);
@@ -5075,11 +5047,7 @@ function maybeShowEarlyBirdCard(attempt) {
         return;
       }
       if (st.activated) return;
-      // Тур или загрузка могли начаться, пока шёл запрос — перепроверяем оба.
-      if (document.getElementById("onboardingRoot")) {
-        if (attempt < 20) setTimeout(function () { maybeShowEarlyBirdCard(attempt + 1); }, 800);
-        return;
-      }
+      // Загрузка могла начаться, пока шёл запрос — перепроверяем.
       if (_isProtocolLoading()) {
         if (attempt < 14) setTimeout(function () { maybeShowEarlyBirdCard(attempt + 1); }, 800);
         return;
@@ -5093,10 +5061,6 @@ function maybeShowEarlyBirdCard(attempt) {
       Promise.resolve(_gate).then(function (rem) {
         if (_earlyBirdShownThisSession) return;
         if (typeof rem === "number" && rem <= 0) return; // мест нет
-        if (document.getElementById("onboardingRoot")) {
-          if (attempt < 20) setTimeout(function () { maybeShowEarlyBirdCard(attempt + 1); }, 800);
-          return;
-        }
         if (_isProtocolLoading()) {
           if (attempt < 14) setTimeout(function () { maybeShowEarlyBirdCard(attempt + 1); }, 800);
           return;
@@ -6215,11 +6179,6 @@ document.querySelectorAll(".screen")
 
     // скрываем кнопку
     advancedBtn.style.display = "none";
-
-    // PREMIUM TOUR - мини-онбординг при первом открытии Advanced Settings.
-    if (typeof startPremiumFeatureTour === "function") {
-      setTimeout(function () { startPremiumFeatureTour("advanced"); }, 400);
-    }
   };
 }
 
@@ -6330,13 +6289,6 @@ function setupFlipSwipe(wrapper) {
       syncAccountFlipHeight(wrapper, true);
       wrapper._flipJustSwiped = true;
       setTimeout(function () { wrapper._flipJustSwiped = false; }, 300);
-      // PREMIUM TOUR - обратная сторона карточки счёта = «Статистика счёта».
-      // Запускаем мини-онбординг при первом флипе для премиум-юзеров.
-      // Только для основного счёта (main) - резерв не имеет stats-функции.
-      if (wrapper.dataset && wrapper.dataset.account === "main" &&
-          typeof startPremiumFeatureTour === "function") {
-        setTimeout(function () { startPremiumFeatureTour("stats"); }, 700);
-      }
     } else if (dx > THRESHOLD) {
       inner.classList.remove("flipped");
       syncAccountFlipHeight(wrapper, false);
@@ -7052,7 +7004,6 @@ function initCashflowSettings() {
     if (window._premiumGate && window._premiumGate("flexible")) return;
     haptic("light");
 
-    var willOpen = !flexContent.classList.contains("open");
     if (flexContent.classList.contains("open")) {
       flexContent.classList.remove("open");
       flexToggle.classList.remove("open");
@@ -7061,13 +7012,6 @@ function initCashflowSettings() {
         flexContent.classList.add("open");
         flexToggle.classList.add("open");
       });
-    }
-
-    // PREMIUM TOUR - после первого открытия раздела показываем мини-онбординг
-    // для премиум-пользователей. Задержка 350ms - даём content раскрыться,
-    // чтобы scrollIntoView отработал по новому layout'у.
-    if (willOpen && typeof startPremiumFeatureTour === "function") {
-      setTimeout(function () { startPremiumFeatureTour("flexible"); }, 350);
     }
   });
 
@@ -14031,10 +13975,6 @@ function goalSwipeToIndex(idx, goLeft) {
       if (window._premiumGate && window._premiumGate("pace")) return;
       if (typeof haptic === "function") haptic("light");
       openPaceScreen();
-      // PREMIUM TOUR - мини-онбординг при первом открытии Pace.
-      if (typeof startPremiumFeatureTour === "function") {
-        setTimeout(function () { startPremiumFeatureTour("pace"); }, 400);
-      }
     });
   }
 
@@ -14592,10 +14532,6 @@ function goalSwipeToIndex(idx, goLeft) {
       if (window._premiumGate && window._premiumGate("debts")) return;
       if (typeof haptic === "function") haptic("light");
       openDebtsScreen();
-      // PREMIUM TOUR - мини-онбординг при первом открытии Debts.
-      if (typeof startPremiumFeatureTour === "function") {
-        setTimeout(function () { startPremiumFeatureTour("debts"); }, 400);
-      }
     });
   }
 
@@ -15426,9 +15362,15 @@ function goalSwipeToIndex(idx, goLeft) {
     var dateInput = document.getElementById("expenseDate");
     var planToggle = document.getElementById("expenseCountInPlan");
     if (amtInput) amtInput.value = "";
-    // Тумблер «Учитывать в плане» по умолчанию ВЫКЛючен: вкладка «Расходы» — это
-    // прежде всего трекер. Влияние на план пользователь включает осознанно.
-    if (planToggle) planToggle.checked = false;
+    // Тумблер «Учитывать в плане» восстанавливает последний выбор пользователя
+    // (settings.expenseCountInPlanDefault, по умолчанию выключен: вкладка
+    // «Расходы» — прежде всего трекер). Присваивание .checked из JS не вызывает
+    // событие change, поэтому предупреждение про «свой график» здесь не всплывает —
+    // только когда пользователь сам переключает тумблер.
+    if (planToggle) {
+      var expSettings = (typeof getState === "function") ? (getState().settings || {}) : {};
+      planToggle.checked = expSettings.expenseCountInPlanDefault === true;
+    }
     if (dateInput) {
       var now = new Date();
       dateInput.value = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0") + "-" + String(now.getDate()).padStart(2, "0");
@@ -15462,6 +15404,14 @@ function goalSwipeToIndex(idx, goLeft) {
     }
     if (toggleEl) {
       toggleEl.addEventListener("change", function () {
+        // Запоминаем положение тумблера, чтобы следующий расход открывался с ним же.
+        try {
+          if (typeof updateState === "function") {
+            updateState({ settings: { expenseCountInPlanDefault: !!toggleEl.checked } });
+          }
+          if (typeof saveFullState === "function") saveFullState();
+        } catch (_e) { /* graceful */ }
+
         if (!toggleEl.checked) return;
         var cp = (typeof window.getCustomPlanInfo === "function") ? window.getCustomPlanInfo() : null;
         if (cp && cp.anyCustomActive && hintSheet && typeof ProtoSheet !== "undefined") {
@@ -17339,771 +17289,6 @@ function renderFlexModelSummary() {
  *      ratio <= 0.50 → calm; 0.50 < ratio <= 0.80 → normal; иначе aggressive.
  * ============================================================================ */
 
-/* ────────────────────────────────────────────────────────────────────────────
- * ONBOARDING - пошаговый тур при первом запуске.
- * ────────────────────────────────────────────────────────────────────────────
- * Mechanic:
- *   1. Box-shadow trick для cutout: highlight-box получает огромный
- *      shadow (0 0 0 9999px rgba(0,0,0,0.74)), который накрывает экран
- *      ВОКРУГ box'а - в нём же остаётся «дырка» с emerald-обводкой.
- *      Совместимо везде, без clip-path.
- *   2. Tooltip позиционируется над/под target'ом по координатам
- *      getBoundingClientRect; стрелка указывает на центр target'а через
- *      CSS-переменную --onb-arrow-x.
- *   3. При смене шага меняем координаты - transition в CSS делает
- *      плавное «перетекание» подсветки с одного элемента на другой.
- *
- * Запуск: проверка appState.onboardingCompleted в _initialSync с задержкой
- *         1500ms (даём Supabase-sync догнать remote state).
- * Завершение: appState.onboardingCompleted=true → saveFullState() →
- *             fade-out + DOM cleanup.
- * ──────────────────────────────────────────────────────────────────────────── */
-
-var _onboardingActive = false;
-var _onboardingStepIdx = 0;
-var _onboardingViewportHandler = null;
-var _activeTour = null; // ссылка на текущий tour-объект из _TOURS
-var _ONBOARDING_PADDING = 10; // px ореол вокруг target
-
-// Predicate: возвращает true когда у пользователя есть ЛЮБЫЕ реальные
-// данные в аккаунте - доходы, расходы, цели, события, накопления и т.д.
-// Используется как defensive-фильтр: даже если onboardingCompleted в state
-// ещё false (из-за миграционного пропуска или race-condition с cloud sync),
-// мы НЕ показываем тур существующим пользователям и тихо отмечаем флаг.
-function _userHasMeaningfulData() {
-  try {
-    var s = (typeof getState === "function") ? getState() : (window.appState || {});
-    if (!s) return false;
-    if (s.isInitialized === true) return true;
-    if (Number(s.income)   > 0) return true;
-    if (Number(s.expenses) > 0) return true;
-    if (Number(s.goal)     > 0) return true;
-    if (Number(s.saved)    > 0) return true;
-    if (s.accounts) {
-      if (Number(s.accounts.main)    > 0) return true;
-      if (Number(s.accounts.reserve) > 0) return true;
-    }
-    if (Array.isArray(s.goals)           && s.goals.length           > 0) return true;
-    if (Array.isArray(s.financialEvents) && s.financialEvents.length > 0) return true;
-    if (Array.isArray(s.factHistory)     && s.factHistory.length     > 0) return true;
-    if (Array.isArray(s.debts)           && s.debts.length           > 0) return true;
-    return false;
-  } catch (_e) { return false; }
-}
-
-// Predicate: возвращает true когда у пользователя нет резерва - тогда
-// шаг "Резерв" в onboarding'е беззвучно пропускается. Используется
-// через step.skipIf в _TOURS.firstLaunch.steps.
-function _onbHasNoReserve() {
-  try {
-    var s = (typeof getState === "function") ? getState() : (window.appState || {});
-    if (!s) return true;
-    if (s.uiState && s.uiState.hasReserve === true) return false;
-    if (s.accounts && Number(s.accounts.reserve) > 0) return false;
-    return true;
-  } catch (_e) { return true; }
-}
-
-// ─── Tour Registry ──────────────────────────────────────────────────────────
-// Все туры приложения - один источник правды.
-//
-//   id              - ключ для startTour(id).
-//   completionType  - "primary" (тур первого запуска: пишет в onboardingCompleted)
-//                     или "premium" (per-feature: пишет в
-//                     premiumOnboardingCompleted[featureKey]).
-//   featureKey      - для premium-туров: ключ в premiumOnboardingCompleted.
-//   requirePremium  - для premium-туров: true → пропустить если нет активной
-//                     подписки (isPremiumActive()).
-//   steps           - массив step-объектов:
-//     { id, target?, screen?, expand?, titleKey, textKey }
-//     • screen - если задан, перед показом шага вызовется openScreen(screen).
-//     • target - CSS-селектор; null → centered modal без подсветки.
-//     • expand - селектор-«расширитель» (берём closest(expand) для target'а).
-//
-// Premium-туры используют "Понял" вместо "Далее" если шаг один.
-var _TOURS = {
-  firstLaunch: {
-    id: "firstLaunch",
-    completionType: "primary",
-    requirePremium: false,
-    steps: [
-      { id: "welcome",     screen: "calc",     target: null,                       titleKey: "onb.welcome.title",     textKey: "onb.welcome.text" },
-      // Без expand: ".input-wrap" - wrapper включает margin-bottom инпута,
-      // поэтому ореол получался ассиметричным снизу. Таргетим сам <input>.
-      { id: "income",      screen: "calc",     target: "#income",                  titleKey: "onb.income.title",      textKey: "onb.income.text" },
-      { id: "expenses",    screen: "calc",     target: "#expenses",                titleKey: "onb.expenses.title",    textKey: "onb.expenses.text" },
-      { id: "goal",        screen: "calc",     target: "#goal",                    titleKey: "onb.goal.title",        textKey: "onb.goal.text" },
-      // noHighlight: dim вырезает "окно" вокруг кнопки (она остаётся
-      // подсвеченной сквозь затемнение), но emerald-обводка не рисуется -
-      // достаточно tooltip'а со стрелкой указывающего на кнопку.
-      { id: "continue",    screen: "calc",     target: "#calculate",               titleKey: "onb.continue.title",    textKey: "onb.continue.text",    noHighlight: true },
-      { id: "mainAccount", screen: "accounts", target: '[data-account="main"]',    titleKey: "onb.mainAccount.title", textKey: "onb.mainAccount.text" },
-      // Reserve-шаг показывается ВСЕГДА - сразу после mainAccount.
-      // Если у юзера выбран сценарий «С резервом» → блок [data-account="reserve"]
-      // видим, tooltip подсвечивает его как обычно. Если резерв не выбран →
-      // блок скрыт (display:none), _resolveStepTarget вернёт null и
-      // _positionOnboardingStep автоматически отрендерит centered modal с тем же
-      // текстом про резерв - юзер всё равно узнает, что такое резерв.
-      { id: "reserve",     screen: "accounts", target: '[data-account="reserve"]', titleKey: "onb.reserve.title",     textKey: "onb.reserve.text" },
-      { id: "profile",     /* fixed-pos, любой экран */ target: "#profileBtn",     titleKey: "onb.profile.title",     textKey: "onb.profile.text" },
-      { id: "final",       screen: "calc",     target: null,                       titleKey: "onb.final.title",       textKey: "onb.final.text" }
-    ]
-  },
-  // ── Premium feature tours ───────────────────────────────────────────────
-  // Один шаг на фичу: коротко и ёмко. Срабатывают при первом открытии каждой
-  // премиум-функции пользователем С АКТИВНОЙ ПОДПИСКОЙ. Не двигают экран -
-  // фича уже открыта пользовательским действием, мы только объясняем её.
-  premiumFlexible: {
-    id: "premiumFlexible",
-    completionType: "premium",
-    featureKey: "flexible",
-    requirePremium: true,
-    steps: [
-      { id: "info", target: "#flexibleContent", titleKey: "onb.prem.flexible.title", textKey: "onb.prem.flexible.text" }
-    ]
-  },
-  premiumPace: {
-    id: "premiumPace",
-    completionType: "premium",
-    featureKey: "pace",
-    requirePremium: true,
-    steps: [
-      { id: "info", target: "#screen-pace", titleKey: "onb.prem.pace.title", textKey: "onb.prem.pace.text" }
-    ]
-  },
-  premiumDebts: {
-    id: "premiumDebts",
-    completionType: "premium",
-    featureKey: "debts",
-    requirePremium: true,
-    steps: [
-      { id: "info", target: "#screen-debts", titleKey: "onb.prem.debts.title", textKey: "onb.prem.debts.text" }
-    ]
-  },
-  premiumAdvanced: {
-    id: "premiumAdvanced",
-    completionType: "premium",
-    featureKey: "advanced",
-    requirePremium: true,
-    steps: [
-      { id: "info", target: "#screen-advanced", titleKey: "onb.prem.advanced.title", textKey: "onb.prem.advanced.text" }
-    ]
-  },
-  premiumStats: {
-    id: "premiumStats",
-    completionType: "premium",
-    featureKey: "stats",
-    requirePremium: true,
-    steps: [
-      { id: "info", target: '[data-account="main"]', titleKey: "onb.prem.stats.title", textKey: "onb.prem.stats.text" }
-    ]
-  }
-};
-
-// ─── Premium tour state helpers ─────────────────────────────────────────────
-function _isPremiumTourDone(featureKey) {
-  var s = (typeof getState === "function") ? getState() : (window.appState || {});
-  return !!(s.premiumOnboardingCompleted && s.premiumOnboardingCompleted[featureKey] === true);
-}
-function _markPremiumTourDone(featureKey) {
-  var s = (typeof getState === "function") ? getState() : (window.appState || {});
-  var existing = (s.premiumOnboardingCompleted && typeof s.premiumOnboardingCompleted === "object")
-    ? s.premiumOnboardingCompleted : {};
-  var updated = Object.assign({}, existing);
-  updated[featureKey] = true;
-  try {
-    if (typeof updateState === "function") {
-      updateState({ premiumOnboardingCompleted: updated });
-    } else if (window.appState) {
-      window.appState.premiumOnboardingCompleted = updated;
-    }
-    if (typeof saveFullState === "function") saveFullState();
-  } catch (_e) { /* noop */ }
-}
-
-// Проверка активной подписки для гейта премиум-туров. Дублирует логику
-// isPremiumActive() из премиум-системы (см. app.js premium section), но
-// безопасно работает даже до её инициализации.
-function _isPremiumActiveForOnboarding() {
-  if (typeof isPremiumActive === "function") {
-    try { return !!isPremiumActive(); } catch (_e) { /* fall through */ }
-  }
-  var s = (typeof getState === "function") ? getState() : (window.appState || {});
-  if (!s || s.isPremium !== true) return false;
-  if (!s.premiumUntil) return false;
-  var until = new Date(s.premiumUntil).getTime();
-  return isFinite(until) && until > Date.now();
-}
-
-// ─── Public API ─────────────────────────────────────────────────────────────
-// Главный entry-point. Использовать для всех туров.
-function startTour(tourId, opts) {
-  if (_onboardingActive) return; // не перебиваем активный тур
-  var tour = _TOURS[tourId];
-  if (!tour) {
-    console.warn("[Onboarding] Unknown tour:", tourId);
-    return;
-  }
-  var isForce = !!(opts && opts.force);
-
-  // Не запускаем тур поверх открытой модалки акции «15 дней премиума» —
-  // иначе подсказки и акция наложатся. Исключение: force (ручной перезапуск
-  // подсказок из настроек). Для премиум-туров это естественно: премиум
-  // активируется именно через эту модалку, так что тур дождётся её закрытия.
-  if (!isForce) {
-    var _ebModal = document.getElementById("earlyBirdModal");
-    var _ebOverlay = document.getElementById("earlyBirdOverlay");
-    if ((_ebModal && _ebModal.classList.contains("open")) ||
-        (_ebOverlay && _ebOverlay.classList.contains("open"))) {
-      return;
-    }
-  }
-
-  // Premium-туры: гейт по активной подписке.
-  if (tour.requirePremium && !_isPremiumActiveForOnboarding()) return;
-
-  // Проверка флага «уже проходили» (если не force).
-  var s = (typeof getState === "function") ? getState() : (window.appState || {});
-  var alreadyDone = false;
-  if (tour.completionType === "primary") {
-    alreadyDone = (s.onboardingCompleted === true);
-  } else if (tour.completionType === "premium" && tour.featureKey) {
-    alreadyDone = _isPremiumTourDone(tour.featureKey);
-  }
-  if (alreadyDone && !isForce) return;
-
-  // DEFENSIVE: для основного тура (firstLaunch) - если у пользователя
-  // уже есть РЕАЛЬНЫЕ данные (доход/расход/цели/события/...), значит
-  // он не новенький, даже если флаг onboardingCompleted в state ещё false
-  // (миграция могла пропустить, либо cloud sync ещё не успел перетереть).
-  // Тихо отмечаем тур как пройденный, персистим и не показываем тур.
-  // Force-режим (из настроек «Перезапустить подсказки») обходит этот гейт.
-  if (!isForce && tour.completionType === "primary" && _userHasMeaningfulData()) {
-    try {
-      if (typeof updateState === "function") {
-        updateState({ onboardingCompleted: true });
-      } else if (window.appState) {
-        window.appState.onboardingCompleted = true;
-      }
-      if (typeof saveFullState === "function") saveFullState();
-    } catch (_e) { /* noop */ }
-    return;
-  }
-
-  _activeTour = tour;
-  _onboardingStepIdx = 0;
-  _onboardingActive = true;
-
-  _renderOnboardingShell();
-
-  _onboardingViewportHandler = function () {
-    if (_onboardingActive && _activeTour) {
-      _positionOnboardingStep(_activeTour.steps[_onboardingStepIdx]);
-    }
-  };
-  window.addEventListener("resize", _onboardingViewportHandler);
-  window.addEventListener("scroll", _onboardingViewportHandler, true);
-
-  setTimeout(function () { _renderOnboardingStep(0); }, 80);
-}
-
-// Алиас для обратной совместимости - startOnboarding() → firstLaunch tour.
-function startOnboarding() {
-  startTour("firstLaunch");
-}
-
-// Удобный хелпер для запуска premium-тура по короткому id.
-// featureKey: "flexible" | "pace" | "debts" | "advanced" | "stats"
-function startPremiumFeatureTour(featureKey) {
-  var map = {
-    flexible: "premiumFlexible",
-    pace:     "premiumPace",
-    debts:    "premiumDebts",
-    advanced: "premiumAdvanced",
-    stats:    "premiumStats"
-  };
-  var tourId = map[featureKey];
-  if (!tourId) return;
-  startTour(tourId);
-}
-
-function _renderOnboardingShell() {
-  var existing = document.getElementById("onboardingRoot");
-  if (existing && existing.parentNode) existing.parentNode.removeChild(existing);
-
-  // PERF архитектура: dimmer состоит из 4 независимых прямоугольников
-  // (top/right/bottom/left), окружающих "дырку" вокруг target'а. У каждого
-  // плоская solid-color заливка - анимация transform/scale GPU-cheap.
-  // Highlight-border - отдельный пустой элемент с emerald-обводкой и
-  // pulse-glow в ::after. Никакого 9999px box-shadow на движущемся
-  // элементе → нет full-viewport repaint при transition.
-  //
-  // .is-priming - на момент ПЕРВОГО рендера выключает все transitions и
-  // прячет элементы (visibility: hidden), чтобы избежать flash в углу.
-  // Снимается через double-rAF после установки финальной позиции.
-  var root = document.createElement("div");
-  root.id = "onboardingRoot";
-  root.className = "onboarding-root is-priming";
-  root.innerHTML = [
-    '<div class="onb-dim onb-dim--top"    id="onbDimTop"></div>',
-    '<div class="onb-dim onb-dim--right"  id="onbDimRight"></div>',
-    '<div class="onb-dim onb-dim--bottom" id="onbDimBottom"></div>',
-    '<div class="onb-dim onb-dim--left"   id="onbDimLeft"></div>',
-    '<div class="onboarding-highlight" id="onboardingHighlight"></div>',
-    '<div class="onboarding-tooltip" id="onboardingTooltip" role="dialog" aria-live="polite">',
-    '  <div class="onboarding-step-counter" id="onboardingStepCounter"></div>',
-    '  <div class="onboarding-title" id="onboardingTitle"></div>',
-    '  <div class="onboarding-text" id="onboardingText"></div>',
-    '  <div class="onboarding-progress" id="onboardingProgress"></div>',
-    '  <div class="onboarding-buttons">',
-    '    <button type="button" class="onboarding-btn onboarding-btn--next" id="onboardingNextBtn"></button>',
-    '    <button type="button" class="onboarding-btn onboarding-btn--skip" id="onboardingSkipBtn"></button>',
-    '  </div>',
-    '</div>'
-  ].join("");
-  document.body.appendChild(root);
-
-  var skipBtn = document.getElementById("onboardingSkipBtn");
-  var nextBtn = document.getElementById("onboardingNextBtn");
-  if (skipBtn) skipBtn.addEventListener("click", _onOnboardingSkip);
-  if (nextBtn) nextBtn.addEventListener("click", _onOnboardingNext);
-}
-
-// PERF helper: позиционирует 4 dim-прямоугольника вокруг "дырки" (x,y,w,h).
-// При null - рисует полноэкранный dim (centered mode для welcome/final/huge-target).
-// Каждый rect получает translate3d + width/height. Solid-color без shadow →
-// repaint area минимальна, GPU compositing работает идеально.
-function _setDimmerHole(x, y, w, h) {
-  var vw = window.innerWidth  || document.documentElement.clientWidth;
-  var vh = window.innerHeight || document.documentElement.clientHeight;
-  var tEl = document.getElementById("onbDimTop");
-  var rEl = document.getElementById("onbDimRight");
-  var bEl = document.getElementById("onbDimBottom");
-  var lEl = document.getElementById("onbDimLeft");
-  if (!tEl || !rEl || !bEl || !lEl) return;
-
-  function setRect(el, ex, ey, ew, eh) {
-    ew = Math.max(0, ew);
-    eh = Math.max(0, eh);
-    // Element - base 1×1px, scale(w,h) растягивает до требуемого размера.
-    // translate3d позиционирует. Чисто composite - GPU без layout reflow.
-    el.style.transform = "translate3d(" + ex + "px, " + ey + "px, 0) scale(" + ew + ", " + eh + ")";
-  }
-
-  if (x === null) {
-    // Centered mode - top покрывает весь viewport, остальные нулевые.
-    setRect(tEl, 0, 0, vw, vh);
-    setRect(rEl, 0, 0, 0, 0);
-    setRect(bEl, 0, 0, 0, 0);
-    setRect(lEl, 0, 0, 0, 0);
-    return;
-  }
-
-  // Clamp значений к viewport-bounds - отрицательные размеры обнуляются.
-  var x2 = x + w;
-  var y2 = y + h;
-  setRect(tEl, 0,    0,    vw,         y);            // над дыркой
-  setRect(rEl, x2,   y,    vw - x2,    h);            // справа
-  setRect(bEl, 0,    y2,   vw,         vh - y2);      // под дыркой
-  setRect(lEl, 0,    y,    x,          h);            // слева
-}
-
-function _renderOnboardingStep(idx) {
-  if (!_onboardingActive || !_activeTour) return;
-  var step = _activeTour.steps[idx];
-  if (!step) return;
-
-  // Условный skip: если у шага есть predicate skipIf() который вернул true -
-  // прыгаем к следующему шагу беззвучно (без UI-перехода). Поддерживает
-  // несколько skip'ов подряд через рекурсивный вызов.
-  if (typeof step.skipIf === "function") {
-    var shouldSkip = false;
-    try { shouldSkip = !!step.skipIf(); } catch (_e) { shouldSkip = false; }
-    if (shouldSkip) {
-      var nextIdx = idx + 1;
-      if (nextIdx >= _activeTour.steps.length) {
-        return _completeOnboarding();
-      }
-      _onboardingStepIdx = nextIdx;
-      return _renderOnboardingStep(nextIdx);
-    }
-  }
-
-  // Screen-switch: если шаг привязан к конкретному экрану и активный экран
-  // не тот же - программно вызываем openScreen(). Затем небольшая задержка
-  // под layout transition, и только потом рендерим контент шага.
-  if (step.screen) {
-    var currentActive = document.querySelector(".screen.active");
-    var currentId = currentActive ? currentActive.id : null;
-    var targetId = "screen-" + step.screen;
-    if (currentId !== targetId) {
-      try {
-        if (typeof openScreen === "function") {
-          var navBtn = document.querySelector('.bottom-nav .nav-btn[data-screen="' + step.screen + '"]');
-          openScreen(step.screen, navBtn || null);
-        }
-      } catch (_e) { /* noop */ }
-      setTimeout(function () { _renderOnboardingContent(idx); }, 320);
-      return;
-    }
-  }
-  _renderOnboardingContent(idx);
-}
-
-// Вынесено из _renderOnboardingStep, чтобы можно было вызвать ПОСЛЕ
-// screen-switch'а (когда нужный экран уже активен).
-function _renderOnboardingContent(idx) {
-  if (!_onboardingActive || !_activeTour) return;
-  var step = _activeTour.steps[idx];
-  if (!step) return;
-
-  var counter = document.getElementById("onboardingStepCounter");
-  var titleEl = document.getElementById("onboardingTitle");
-  var textEl  = document.getElementById("onboardingText");
-  var prog    = document.getElementById("onboardingProgress");
-  var skipBtn = document.getElementById("onboardingSkipBtn");
-  var nextBtn = document.getElementById("onboardingNextBtn");
-  if (!titleEl || !textEl) return;
-
-  var total = _activeTour.steps.length;
-  if (counter) {
-    // Premium-туры из 1 шага: счётчик «1 / 1» выглядит лишним - скрываем.
-    if (_activeTour.completionType === "premium" && total === 1) {
-      counter.style.display = "none";
-    } else {
-      counter.style.display = "";
-      counter.textContent = (idx + 1) + " / " + total;
-    }
-  }
-
-  var _t = (typeof t === "function") ? t : function (k) { return k; };
-  titleEl.textContent = _t(step.titleKey);
-  textEl.textContent  = _t(step.textKey);
-
-  // Прогресс-полосы: один шаг = скрыть прогресс полностью.
-  if (prog) {
-    if (total <= 1) {
-      prog.style.display = "none";
-    } else {
-      prog.style.display = "";
-      prog.innerHTML = "";
-      for (var i = 0; i < total; i++) {
-        var dot = document.createElement("span");
-        var cls = "onboarding-progress-dot";
-        if (i === idx) cls += " is-active";
-        else if (i < idx) cls += " is-done";
-        dot.className = cls;
-        prog.appendChild(dot);
-      }
-    }
-  }
-
-  // Кнопки: текст зависит от типа тура и позиции шага.
-  //   • Premium-тур из 1 шага → «Понял».
-  //   • Последний шаг любого тура → «Готово» (без «Пропустить»).
-  //   • Иначе → «Далее» + «Пропустить».
-  if (nextBtn) {
-    var isLast = (idx === total - 1);
-    var nextKey;
-    if (_activeTour.completionType === "premium" && total === 1) {
-      nextKey = "onb.prem.btn.gotIt";
-    } else if (isLast) {
-      nextKey = "onb.btn.done";
-    } else {
-      nextKey = "onb.btn.next";
-    }
-    nextBtn.textContent = _t(nextKey);
-  }
-  if (skipBtn) {
-    var isLastSkip = (idx === total - 1);
-    if (isLastSkip || (_activeTour.completionType === "premium" && total === 1)) {
-      skipBtn.style.display = "none";
-    } else {
-      skipBtn.style.display = "";
-      skipBtn.textContent = _t("onb.btn.skip");
-    }
-  }
-  // NOTE: вертикальный стек кнопок (см. CSS .onboarding-buttons) сам обрабатывает
-  // случай «только Next» - никаких дополнительных классов не нужно.
-
-  _positionOnboardingStep(step);
-}
-
-// Снимает .is-priming с root через double-rAF - гарантирует что инлайн-стили
-// уже применены без анимации (initial snap), и только после этого включаются
-// transitions для последующих шагов. Идемпотентна - если класса нет, выходит.
-function _finalizeOnboardingFirstRender() {
-  var root = document.getElementById("onboardingRoot");
-  if (!root || !root.classList.contains("is-priming")) return;
-  requestAnimationFrame(function () {
-    requestAnimationFrame(function () {
-      var r = document.getElementById("onboardingRoot");
-      if (r) r.classList.remove("is-priming");
-    });
-  });
-}
-
-// Возвращает true если элемент круглый/почти круглый по computed border-radius.
-// Используется для подбора radius'а у highlight'а - чтобы обводка совпадала
-// с формой круглых элементов (аватар profileBtn, badges).
-function _isCircularLike(el) {
-  if (!el) return false;
-  try {
-    var cs = window.getComputedStyle(el);
-    var first = parseFloat(cs.borderRadius) || 0;
-    var rect = el.getBoundingClientRect();
-    var minDim = Math.min(rect.width, rect.height);
-    return minDim > 0 && first >= minDim * 0.4;
-  } catch (_e) { return false; }
-}
-
-// Подбирает оптимальный border-radius для highlight'а. Если target круглый -
-// возвращает 50%; иначе computed border-radius target'а; иначе 14px.
-// Также проверяет первого визуального ребёнка - если у кнопки нет своего
-// радиуса, но внутри круглый аватар, highlight тоже становится круглым.
-function _computeHighlightRadius(target) {
-  if (!target) return "14px";
-  if (_isCircularLike(target)) return "50%";
-  var firstChild = target.firstElementChild;
-  if (firstChild && _isCircularLike(firstChild)) return "50%";
-  try {
-    var cs = window.getComputedStyle(target);
-    var br = cs.borderRadius;
-    if (br && br !== "0px" && br !== "0px 0px 0px 0px") return br;
-  } catch (_e) { /* noop */ }
-  return "14px";
-}
-
-// Резолвит реальный DOM-target шага с учётом expand-селектора (закрывающего
-// родителя для inputs). Возвращает null если шаг без target'а ИЛИ если target
-// не найден / невидим - тогда tooltip покажется по центру (graceful fallback).
-function _resolveStepTarget(step) {
-  if (!step || !step.target) return null;
-  var el = document.querySelector(step.target);
-  if (!el) return null;
-  // Невидимый элемент (display:none или вне layout) - пропускаем как «нет target».
-  if (el.offsetParent === null && el !== document.body) {
-    // ПРИМЕЧАНИЕ: position:fixed не имеет offsetParent, но виден. Проверим rect.
-    var rect = el.getBoundingClientRect();
-    if (rect.width === 0 && rect.height === 0) return null;
-  }
-  if (step.expand) {
-    var parent = el.closest(step.expand);
-    if (parent) return parent;
-  }
-  return el;
-}
-
-function _positionOnboardingStep(step) {
-  var hl = document.getElementById("onboardingHighlight");
-  var tt = document.getElementById("onboardingTooltip");
-  if (!hl || !tt) return;
-
-  var target = _resolveStepTarget(step);
-
-  // Helper: устанавливает tooltip в позицию через translate3d (GPU smooth).
-  // Внутри также управляет --onb-arrow-x для стрелки.
-  function setTooltipTransform(x, y) {
-    tt.style.transform = "translate3d(" + Math.round(x) + "px, " + Math.round(y) + "px, 0)";
-  }
-
-  // Helper: переключает в centered-mode (welcome/final/huge-target).
-  function applyCentered() {
-    hl.classList.remove("has-target");
-    var vwC = window.innerWidth  || document.documentElement.clientWidth;
-    var vhC = window.innerHeight || document.documentElement.clientHeight;
-    hl.style.transform = "translate3d(" + (vwC / 2) + "px, " + (vhC / 2) + "px, 0)";
-    hl.style.width  = "0px";
-    hl.style.height = "0px";
-    if (typeof _setDimmerHole === "function") _setDimmerHole(null, null, null, null);
-
-    tt.classList.add("is-centered");
-    tt.classList.remove("above", "below", "arrow-up", "arrow-down");
-    // Центрируем по фактическим размерам tooltip'а.
-    var ttW = tt.offsetWidth  || 280;
-    var ttH = tt.offsetHeight || 200;
-    setTooltipTransform((vwC - ttW) / 2, (vhC - ttH) / 2);
-
-    _finalizeOnboardingFirstRender();
-  }
-
-  if (!target) {
-    applyCentered();
-    return;
-  }
-
-  // Прокручиваем target в видимую область. INSTANT - smooth в WebView часто
-  // лагает и удлиняет TTFP. С instant хватает 60ms wait для layout settle.
-  try {
-    target.scrollIntoView({ block: "center", behavior: "instant" });
-  } catch (_e) {
-    try { target.scrollIntoView(); } catch (_e2) { /* noop */ }
-  }
-
-  // Минимальная задержка под layout-settle. С instant scroll этого хватает.
-  setTimeout(function () {
-    if (!_onboardingActive) return;
-    var rect = target.getBoundingClientRect();
-    var pad = _ONBOARDING_PADDING;
-    var vw = window.innerWidth  || document.documentElement.clientWidth;
-    var vh = window.innerHeight || document.documentElement.clientHeight;
-
-    // FIX (bug 3): tooBig по AREA RATIO. Раньше width>85% триггерилось
-    // на обычных full-width inputs (Доход/Расход/Цель) - обводка пропадала
-    // и tooltip падал в centered mode. Теперь target считается "огромным"
-    // только если он покрывает >55% площади viewport'а.
-    var areaRatio = (rect.width * rect.height) / (vw * vh);
-    var tooBig = areaRatio > 0.55 || rect.height > vh * 0.85;
-    if (tooBig) {
-      applyCentered();
-      return;
-    }
-
-    // step.noHighlight: dim-cutout всё равно делается (чтобы пользователь
-    // видел кнопку сквозь затемнение), но emerald-обводка и pulse-glow
-    // не отображаются - управляется через класс has-target на highlight'е.
-    if (step && step.noHighlight) {
-      hl.classList.remove("has-target");
-    } else {
-      hl.classList.add("has-target");
-    }
-    tt.classList.remove("is-centered");
-
-    // FIX (bug 2 - profile): для круглых элементов (и кнопок с круглыми
-    // детьми типа #profileBtn>.avatar) применяем 50% radius - обводка
-    // становится кругом, выровненным по центру target'а.
-    hl.style.borderRadius = _computeHighlightRadius(target);
-
-    var hlX = rect.left - pad;
-    var hlY = rect.top  - pad;
-    var hlW = rect.width  + pad * 2;
-    var hlH = rect.height + pad * 2;
-
-    hl.classList.add("is-moving");
-    hl.style.transform = "translate3d(" + hlX + "px, " + hlY + "px, 0)";
-    hl.style.width  = hlW + "px";
-    hl.style.height = hlH + "px";
-
-    if (typeof _setDimmerHole === "function") _setDimmerHole(hlX, hlY, hlW, hlH);
-
-    if (window._onbMoveTimer) clearTimeout(window._onbMoveTimer);
-    window._onbMoveTimer = setTimeout(function () {
-      if (hl) hl.classList.remove("is-moving");
-    }, 440);
-
-    // Tooltip: ABOVE или BELOW target'а. Если центр target в верхней
-    // половине → tooltip снизу (больше места), иначе сверху.
-    var targetCenterY = rect.top + rect.height / 2;
-    var placeBelow = targetCenterY < vh / 2;
-
-    if (placeBelow) {
-      tt.classList.add("below", "arrow-up");
-      tt.classList.remove("above", "arrow-down");
-    } else {
-      tt.classList.add("above", "arrow-down");
-      tt.classList.remove("below", "arrow-up");
-    }
-
-    // 2-й проход - после layout'а имеем реальную ширину/высоту tooltip'а.
-    // Вычисляем итоговое translate3d, обновляем стрелку, ставим финальный
-    // transform. Это даёт стабильный transition: tooltip двигается из
-    // прошлой позиции в новую за 0.42s GPU-smooth.
-    requestAnimationFrame(function () {
-      if (!_onboardingActive) return;
-      var ttRect = tt.getBoundingClientRect();
-      // ttRect возвращает реальные размеры элемента (учитывает текущий transform).
-      // Для размеров нам нужен offsetWidth/Height - они не зависят от transform.
-      var ttWidth  = tt.offsetWidth  || ttRect.width;
-      var ttHeight = tt.offsetHeight || ttRect.height;
-
-      var targetCenterX = rect.left + rect.width / 2;
-      var leftPos = targetCenterX - ttWidth / 2;
-      var minLeft = 12;
-      var maxLeft = vw - ttWidth - 12;
-      if (leftPos < minLeft) leftPos = minLeft;
-      if (leftPos > maxLeft) leftPos = maxLeft;
-
-      var topPos;
-      if (placeBelow) {
-        topPos = rect.bottom + pad + 14;
-      } else {
-        topPos = rect.top - pad - 14 - ttHeight;
-      }
-      // Clamp по вертикали - на всякий случай (если высокий tooltip).
-      if (topPos < 12) topPos = 12;
-      if (topPos > vh - ttHeight - 12) topPos = vh - ttHeight - 12;
-
-      setTooltipTransform(leftPos, topPos);
-
-      // Стрелка указывает на центр target'а, даже если tooltip clamped.
-      var arrowX = targetCenterX - leftPos;
-      if (arrowX < 20) arrowX = 20;
-      if (arrowX > ttWidth - 20) arrowX = ttWidth - 20;
-      tt.style.setProperty("--onb-arrow-x", arrowX + "px");
-
-      _finalizeOnboardingFirstRender();
-    });
-  }, 80);
-}
-
-function _onOnboardingNext() {
-  if (!_onboardingActive || !_activeTour) return;
-  if (typeof haptic === "function") { try { haptic("light"); } catch (_e) {} }
-  if (_onboardingStepIdx >= _activeTour.steps.length - 1) {
-    _completeOnboarding();
-    return;
-  }
-  _onboardingStepIdx++;
-  _renderOnboardingStep(_onboardingStepIdx);
-}
-
-function _onOnboardingSkip() {
-  if (!_onboardingActive) return;
-  if (typeof haptic === "function") { try { haptic("light"); } catch (_e) {} }
-  _completeOnboarding();
-}
-
-function _completeOnboarding() {
-  if (!_activeTour) return;
-  var finishedTour = _activeTour;
-  _onboardingActive = false;
-  _activeTour = null;
-
-  // Persist - пишем в правильный флаг в зависимости от типа тура.
-  try {
-    if (finishedTour.completionType === "primary") {
-      if (typeof updateState === "function") {
-        updateState({ onboardingCompleted: true });
-      } else if (window.appState) {
-        window.appState.onboardingCompleted = true;
-      }
-      if (typeof saveFullState === "function") saveFullState();
-    } else if (finishedTour.completionType === "premium" && finishedTour.featureKey) {
-      _markPremiumTourDone(finishedTour.featureKey);
-    }
-  } catch (_e) { /* noop */ }
-
-  // Снимаем listeners.
-  if (_onboardingViewportHandler) {
-    window.removeEventListener("resize", _onboardingViewportHandler);
-    window.removeEventListener("scroll", _onboardingViewportHandler, true);
-    _onboardingViewportHandler = null;
-  }
-
-  // Fade-out + DOM cleanup.
-  var root = document.getElementById("onboardingRoot");
-  if (root) {
-    root.classList.add("is-closing");
-    setTimeout(function () {
-      if (root.parentNode) root.parentNode.removeChild(root);
-    }, 320);
-  }
-}
-
-window.startOnboarding = startOnboarding;
-window.startTour = startTour;
-window.startPremiumFeatureTour = startPremiumFeatureTour;
-
 (function initNewGoalFlow() {
   function _q(id) { return (typeof getEl === "function") ? getEl(id) : document.getElementById(id); }
 
@@ -18367,21 +17552,6 @@ window.startPremiumFeatureTour = startPremiumFeatureTour;
     catch (e) { /* noop */ }
     try { window._updateAppLock && window._updateAppLock(); }
     catch (e) { /* noop */ }
-
-    // ONBOARDING - запускаем пошаговый тур (если ещё не проходили).
-    // Задержка 1500ms даёт время:
-    //   • Supabase loadAppState() догнать remote state - если юзер уже
-    //     проходил тур на другом устройстве, флаг onboardingCompleted=true
-    //     в remote'е перекроет локальный false и тур НЕ запустится повторно.
-    //   • splash-video fade-out'у завершиться (он ~450ms).
-    //   • DOM-у calc-экрана точно завершить layout.
-    // Сама startOnboarding ещё раз проверяет флаг внутри - двойная защита
-    // от ложного срабатывания.
-    setTimeout(function () {
-      try {
-        if (typeof startOnboarding === "function") startOnboarding();
-      } catch (_e) { /* noop */ }
-    }, 1500);
   }
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", _initialSync);

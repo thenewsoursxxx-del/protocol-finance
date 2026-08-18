@@ -106,28 +106,6 @@ function getDefaultState() {
     // (по умолчанию false у всех). Не связан с isPremium.
     showCommunityStats: false,
 
-    // ── First-launch onboarding (v15) ──
-    // Пошаговый тур по основным элементам приложения. Показывается ровно
-    // один раз — при первом запуске. После прохождения / пропуска ставится
-    // в true. Существующие пользователи (мигрирующие с v14) получают true
-    // автоматически если у них уже есть какие-либо данные (см. миграцию).
-    onboardingCompleted: false,
-
-    // ── Premium-feature onboardings (v16) ──
-    // Per-feature мини-туры, которые срабатывают при первом открытии
-    // премиум-функции пользователем С АКТИВНОЙ ПОДПИСКОЙ. Ключи:
-    //   flexible — Гибкая финансовая модель
-    //   pace     — Изменить темп накоплений
-    //   debts    — Добавить кредиты и долги
-    //   advanced — Расширенные настройки
-    //   stats    — Статистика счёта (обратная сторона карточки)
-    // Каждый флаг ставится в true после прохождения / пропуска тура для
-    // этой фичи. Объект изначально пустой — отсутствующий ключ трактуется
-    // как false (тур ещё не показывали).
-    premiumOnboardingCompleted: {},
-
-    // ── Flexible onboarding (v5) — legacy, always true after redesign ──
-    hasSeenFlexibleOnboarding: true,
     incomeMonthDays: [],
     expenseMonthDays: [],
 
@@ -192,7 +170,13 @@ function getDefaultState() {
       // (Настройки → Интерфейс). По умолчанию false — видео показывается.
       // true означает «отключено» (только чёрный фон). Читается в
       // showSplashVideo() из app.js.
-      disableLoadingVideo: false
+      disableLoadingVideo: false,
+
+      // Последнее положение тумблера «Учитывать расходы в плане» в шите
+      // добавления расхода. Хранится, чтобы при частом вводе расходов не
+      // включать его заново каждый раз. По умолчанию false — вкладка
+      // «Расходы» прежде всего трекер, влияние на план включается осознанно.
+      expenseCountInPlanDefault: false
     },
 
     uiState: {
@@ -320,10 +304,9 @@ function migrateState(saved) {
     if (typeof saved.isPremium !== "boolean") saved.isPremium = false;
   }
 
-  // v4 → v5: flexible onboarding + monthDays
+  // v4 → v5: monthDays
   if (version < 5) {
     saved.stateVersion = 5;
-    if (typeof saved.hasSeenFlexibleOnboarding !== "boolean") saved.hasSeenFlexibleOnboarding = true;
     if (!Array.isArray(saved.incomeMonthDays)) saved.incomeMonthDays = [];
     if (!Array.isArray(saved.expenseMonthDays)) saved.expenseMonthDays = [];
   }
@@ -478,46 +461,17 @@ function migrateState(saved) {
     if (typeof saved.autoRenew !== "boolean") saved.autoRenew = false;
   }
 
-  // v15 → v16: PREMIUM ONBOARDINGS — per-feature мини-туры. Существующим
-  // премиум-пользователям туры показывать НЕ нужно (они уже знают функции),
-  // поэтому если у юзера активная подписка (isPremium=true) — помечаем все
-  // туры как пройденные. Новые премиум-юзеры пройдут их по мере открытия
-  // соответствующих функций.
+  // v14 → v16: версии 15 и 16 добавляли флаги онбординг-туров. Туры удалены
+  // из приложения, так что миграция только двигает версию вперёд.
   if (version < 16) {
     saved.stateVersion = 16;
-    if (!saved.premiumOnboardingCompleted || typeof saved.premiumOnboardingCompleted !== "object") {
-      saved.premiumOnboardingCompleted = {};
-    }
-    if (saved.isPremium === true) {
-      saved.premiumOnboardingCompleted = {
-        flexible: true,
-        pace: true,
-        debts: true,
-        advanced: true,
-        stats: true
-      };
-    }
   }
 
-  // v14 → v15: ONBOARDING — пошаговый тур при первом запуске.
-  // Эвристика для существующих пользователей: если в state уже есть
-  // какие-либо данные (income/expenses/goal/accounts/goals/events) —
-  // юзер НЕ новый, онбординг ему не нужен (completed=true).
-  // Брэнд-нью юзеры с пустым state получат completed=false → тур запустится.
-  if (version < 15) {
-    saved.stateVersion = 15;
-    if (typeof saved.onboardingCompleted !== "boolean") {
-      var hasAnyData = !!(
-        saved.isInitialized ||
-        saved.income || saved.expenses || saved.goal || saved.saved ||
-        (saved.accounts && (saved.accounts.main || saved.accounts.reserve)) ||
-        (Array.isArray(saved.goals) && saved.goals.length > 0) ||
-        (Array.isArray(saved.financialEvents) && saved.financialEvents.length > 0) ||
-        (Array.isArray(saved.factHistory) && saved.factHistory.length > 0)
-      );
-      saved.onboardingCompleted = hasAnyData;
-    }
-  }
+  // Онбординг удалён — чистим его флаги из уже сохранённых состояний, чтобы
+  // они не тянулись в localStorage и в облачный снапшот бесконечно.
+  delete saved.onboardingCompleted;
+  delete saved.premiumOnboardingCompleted;
+  delete saved.hasSeenFlexibleOnboarding;
 
   // Ensure settings has all expected keys
   if (saved.settings && typeof saved.settings === "object") {
@@ -766,9 +720,6 @@ function applyState(saved) {
     ? saved.showCommunityStats
     : defaults.showCommunityStats;
 
-  // ── Flexible onboarding (v5) ──
-  appState.hasSeenFlexibleOnboarding = typeof saved.hasSeenFlexibleOnboarding === "boolean"
-    ? saved.hasSeenFlexibleOnboarding : defaults.hasSeenFlexibleOnboarding;
   appState.incomeMonthDays = Array.isArray(saved.incomeMonthDays) ? saved.incomeMonthDays : [];
   appState.expenseMonthDays = Array.isArray(saved.expenseMonthDays) ? saved.expenseMonthDays : [];
 
@@ -867,23 +818,6 @@ function applyState(saved) {
   } else {
     appState.uiState = { ...defaults.uiState };
   }
-
-  // ── ONBOARDING FLAGS (v15 + v16) — критично восстановить из persistence! ──
-  // Без этого блока флаги онбординга сбрасывались на дефолты при каждом
-  // applyState (на старте приложения и после cloud-sync). Для основного тура
-  // (firstLaunch) это маскируется защитой _userHasMeaningfulData() — флаг
-  // тихо проставляется обратно в true. А для премиум-туров такой защиты нет,
-  // и подсказки «Гибкая модель / Pace / Долги / ...» показывались КАЖДЫЙ раз
-  // при открытии фичи, вместо одного раза при первом открытии.
-  appState.onboardingCompleted = typeof saved.onboardingCompleted === "boolean"
-    ? saved.onboardingCompleted
-    : defaults.onboardingCompleted;
-
-  appState.premiumOnboardingCompleted = (saved.premiumOnboardingCompleted &&
-                                         typeof saved.premiumOnboardingCompleted === "object" &&
-                                         !Array.isArray(saved.premiumOnboardingCompleted))
-    ? { ...saved.premiumOnboardingCompleted }
-    : { ...defaults.premiumOnboardingCompleted };
 
   if (appState.planStartValue === 0 && appState.initialBalance > 0) {
     appState.planStartValue = appState.initialBalance;
