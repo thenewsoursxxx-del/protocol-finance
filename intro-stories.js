@@ -1,8 +1,12 @@
 /* ============================================================
    INTRO STORIES - вступительные сторис при входе в приложение
 
-   Пять слайдов о ключевых возможностях: знакомство, план с графиком,
-   подушка безопасности, расходы по категориям и Premium «Свой график».
+   Две фазы в одном оверлее:
+   1) пять слайдов о ключевых возможностях - знакомство, план с графиком,
+      подушка безопасности, расходы по категориям и Premium «Свой график»;
+   2) карточка по центру с персонажем над ней: предложение пройти короткое
+      знакомство с функциями. Согласие вызывает window.IntroTour.start(),
+      если тур подключён, иначе просто открывает приложение.
 
    Модуль полностью самодостаточен: сам строит разметку в body, сам
    вешает обработчики и сам за собой убирает. Никакой разметки в
@@ -31,6 +35,7 @@
   var elapsed = 0;
   var paused = false;
   var finished = false;
+  var offering = false;
   var rafId = 0;
   var lastFrame = 0;
 
@@ -275,7 +280,26 @@
     '</section>' +
 
     '<div class="ist-zone ist-zone--prev"></div>' +
-    '<div class="ist-zone ist-zone--next"></div>';
+    '<div class="ist-zone ist-zone--next"></div>' +
+
+    /* Финальная карточка. Лежит после зон тапа, чтобы кнопки были доступны,
+       а сами зоны на этой фазе скрываются. */
+    '<div class="ist-offer">' +
+      '<div class="ist-offer-figure">' +
+        '<div class="ist-offer-shade"><div></div></div>' +
+        '<div class="ist-offer-glow">' +
+          '<div class="ist-offer-halo"></div>' +
+          '<div class="ist-offer-ring"></div>' +
+        '</div>' +
+        '<div class="ist-offer-head"><img src="' + HERO_SRC + '" alt=""></div>' +
+      '</div>' +
+      '<div class="ist-card">' +
+        '<h3>' + tr("stories.offer.title", "Показать, как всё устроено?") + '</h3>' +
+        '<p>' + tr("stories.offer.body", "Покажу главное: план, резерв и расходы. Разберётесь за минуту.") + '</p>' +
+        '<button type="button" class="ist-yes">' + tr("stories.offer.yes", "Да, покажите") + '</button>' +
+        '<button type="button" class="ist-no">' + tr("stories.offer.no", "Пропустить обучение") + '</button>' +
+      '</div>' +
+    '</div>';
   }
 
   /* ---------- анимации содержимого ---------- */
@@ -355,11 +379,10 @@
       enter(idx + 1);
       return;
     }
-    /* Дозаполняем последнюю полоску: без этого она замирает на 99.9% и это
-       видно все 340 мс, пока оверлей растворяется. */
+    /* Дозаполняем последнюю полоску: без этого она замирает на 99.9%. */
     elapsed = DURATIONS[idx];
     paintBars();
-    closeStories("finish");
+    showOffer();
   }
 
   function prev() {
@@ -367,7 +390,7 @@
   }
 
   function setPaused(v) {
-    if (paused === v) return;
+    if (paused === v || !root) return;
     paused = v;
     root.classList.toggle("is-paused", v);
     /* Останавливаем CSS-анимации вместе с таймером, иначе эффекты уедут вперёд. */
@@ -377,6 +400,35 @@
     }
   }
 
+  /* ---------- финальная карточка ---------- */
+
+  function showOffer() {
+    if (offering || !root) return;
+    setPaused(false);
+    offering = true;
+    root.classList.add("is-offer");
+    burst();
+  }
+
+  function acceptTour() {
+    buzz("medium");
+    closeStories("tour");
+    /* Точка подключения обучения. Пока тура нет - просто открываем приложение;
+       когда появится, достаточно объявить window.IntroTour.start(). */
+    setTimeout(function () {
+      try {
+        if (window.IntroTour && typeof window.IntroTour.start === "function") {
+          window.IntroTour.start();
+        }
+      } catch (e) { /* noop */ }
+    }, 380);
+  }
+
+  function declineTour() {
+    buzz("light");
+    closeStories("declineTour");
+  }
+
   function tick(now) {
     /* Ограничиваем кадр: пока приложение свёрнуто, requestAnimationFrame молчит,
        и первый кадр после возврата пришёл бы с dt в несколько секунд - слайд
@@ -384,14 +436,14 @@
     var dt = Math.min(50, now - lastFrame);
     lastFrame = now;
 
-    var frozen = paused || finished;
-    if (!frozen) {
+    if (!paused && !finished && !offering) {
       elapsed += dt;
       if (elapsed >= DURATIONS[idx]) next();
       else paintBars();
     }
-    /* dt = 0 значит пауза: фон не перерисовываем, последний кадр остаётся. */
-    drawFx(frozen ? 0 : dt);
+    /* dt = 0 значит пауза: фон не перерисовываем, последний кадр остаётся.
+       На финальной карточке созвездия продолжают жить - замирает только таймер. */
+    drawFx(paused || finished ? 0 : dt);
 
     if (!finished) rafId = requestAnimationFrame(tick);
   }
@@ -491,10 +543,11 @@
   var touchRecently = false;
 
   function isControl(target) {
-    return !!(target && target.closest && target.closest(".ist-cta, .ist-skip"));
+    return !!(target && target.closest && target.closest(".ist-cta, .ist-skip, .ist-card"));
   }
 
   function press(x, y) {
+    if (offering) return;
     pressed = true;
     downX = x;
     downY = y;
@@ -510,6 +563,9 @@
     if (!pressed) return;
     pressed = false;
     clearTimeout(holdTimer);
+
+    /* На финальной карточке жесты выключены: решение принимают кнопками. */
+    if (offering) return;
 
     if (held) {
       setPaused(false);
@@ -568,16 +624,28 @@
       cancelPress();
     });
 
+    /* «Пропустить» и «Начать» не закрывают интро, а ведут на финальную карточку
+       с предложением обучения - выход из неё уже даёт сам пользователь. */
     root.querySelector(".ist-skip").addEventListener("click", function (e) {
       e.stopPropagation();
       buzz("light");
-      closeStories("skip");
+      showOffer();
     });
 
     root.querySelector(".ist-cta").addEventListener("click", function (e) {
       e.stopPropagation();
       buzz("medium");
-      closeStories("cta");
+      showOffer();
+    });
+
+    root.querySelector(".ist-yes").addEventListener("click", function (e) {
+      e.stopPropagation();
+      acceptTour();
+    });
+
+    root.querySelector(".ist-no").addEventListener("click", function (e) {
+      e.stopPropagation();
+      declineTour();
     });
   }
 
@@ -620,6 +688,7 @@
     elapsed = 0;
     paused = false;
     finished = false;
+    offering = false;
 
     bindInput();
     window.addEventListener("resize", onResize, { passive: true });

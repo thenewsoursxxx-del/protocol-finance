@@ -1203,7 +1203,11 @@
       "stories.s5.recIn": "Аванс",
       "stories.s5.recOut": "Ремонт",
       "stories.s5.free": "Свободно",
-      "stories.s5.stash": "Отложить"
+      "stories.s5.stash": "Отложить",
+      "stories.offer.title": "Показать, как всё устроено?",
+      "stories.offer.body": "Покажу главное: план, резерв и расходы. Разберётесь за минуту.",
+      "stories.offer.yes": "Да, покажите",
+      "stories.offer.no": "Пропустить обучение"
     },
 
     en: {
@@ -2383,7 +2387,11 @@
       "stories.s5.recIn": "Advance",
       "stories.s5.recOut": "Repairs",
       "stories.s5.free": "Available",
-      "stories.s5.stash": "Allocate"
+      "stories.s5.stash": "Allocate",
+      "stories.offer.title": "Want a quick walkthrough?",
+      "stories.offer.body": "I'll show you the essentials: plan, reserve and expenses. One minute and you're set.",
+      "stories.offer.yes": "Yes, show me",
+      "stories.offer.no": "Skip the walkthrough"
     }
   };
 

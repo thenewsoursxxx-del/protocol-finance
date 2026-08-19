@@ -12412,6 +12412,134 @@ body.reduce-motion .settings-seg-btn {
   cursor: pointer;
 }
 
+/* ---- финальная карточка: предложение обучения ----
+   Вторая фаза оверлея. Слайды и зоны тапа скрываются, фон с созвездиями
+   продолжает жить, персонаж встаёт над карточкой. */
+
+.intro-stories.is-offer .ist-bars,
+.intro-stories.is-offer .ist-skip,
+.intro-stories.is-offer .ist-slide,
+.intro-stories.is-offer .ist-zone { display: none; }
+
+.intro-stories .ist-offer {
+  position: absolute;
+  inset: 0;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding:
+    calc(env(safe-area-inset-top, 0px) + 32px) 24px
+    calc(env(safe-area-inset-bottom, 0px) + 32px);
+}
+.intro-stories.is-offer .ist-offer { display: flex; }
+
+.intro-stories .ist-offer-figure {
+  display: grid;
+  place-items: center;
+  /* Отрицательный отступ сажает голову на верхний край карточки: у картинки
+     по краям большие чёрные поля, поэтому визуально «подбородок» касается
+     карточки, а не наезжает на неё. */
+  margin-bottom: -22px;
+}
+.intro-stories .ist-offer-figure > * { grid-area: 1 / 1; }
+/* mix-blend-mode стоит на тех же элементах, что и transform в анимации:
+   если положить его на потомка анимируемого слоя, группа изолирует наложение
+   и вокруг головы появится чёрный квадрат. */
+.intro-stories .ist-offer-head,
+.intro-stories .ist-offer-glow {
+  display: grid;
+  place-items: center;
+  mix-blend-mode: screen;
+}
+.intro-stories .ist-offer-glow > * { grid-area: 1 / 1; }
+.intro-stories .ist-offer-head img {
+  width: min(58vw, 226px);
+  aspect-ratio: 1 / 1;
+  height: auto;
+  object-fit: contain;
+}
+.intro-stories .ist-offer-shade > div {
+  width: min(52vw, 202px);
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(0, 0, 0, 0.92) 55%, rgba(0, 0, 0, 0) 100%);
+}
+.intro-stories .ist-offer-halo {
+  width: min(58vw, 226px);
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(16, 185, 129, 0.32), rgba(16, 185, 129, 0));
+}
+.intro-stories .ist-offer-ring {
+  width: min(44vw, 172px);
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+  border: 1px solid rgba(16, 185, 129, 0.34);
+}
+.intro-stories.is-offer .ist-offer-head {
+  animation: istHeroIn 0.9s cubic-bezier(0.16, 0.9, 0.28, 1) both;
+}
+.intro-stories.is-offer .ist-offer-halo { animation: istHalo 3.4s ease-in-out infinite; }
+.intro-stories.is-offer .ist-offer-ring { animation: istRing 2.9s ease-out 0.4s infinite; }
+
+.intro-stories .ist-card {
+  position: relative;
+  width: 100%;
+  max-width: 344px;
+  padding: 26px 22px 20px;
+  border-radius: 26px;
+  border: 1px solid rgba(16, 185, 129, 0.26);
+  background:
+    radial-gradient(130% 100% at 50% 0%, rgba(16, 185, 129, 0.18) 0%, rgba(16, 185, 129, 0) 62%),
+    rgba(8, 12, 10, 0.88);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
+  text-align: center;
+}
+.intro-stories.is-offer .ist-card {
+  animation: istRise 0.66s cubic-bezier(0.16, 0.9, 0.28, 1) 0.12s both;
+}
+.intro-stories .ist-card h3 {
+  margin: 0 0 10px;
+  font-size: clamp(19px, 5.4vw, 22px);
+  line-height: 1.22;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+.intro-stories .ist-card p {
+  margin: 0 0 20px;
+  font-size: clamp(13px, 3.8vw, 14px);
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.68);
+}
+.intro-stories .ist-yes,
+.intro-stories .ist-no {
+  display: block;
+  width: 100%;
+  appearance: none;
+  -webkit-appearance: none;
+  font: inherit;
+  cursor: pointer;
+}
+.intro-stories .ist-yes {
+  padding: 15px;
+  border: 0;
+  border-radius: 15px;
+  font-size: 15.5px;
+  font-weight: 600;
+  color: #04120c;
+  background: linear-gradient(180deg, #34d399, #059669);
+}
+.intro-stories .ist-no {
+  margin-top: 8px;
+  padding: 13px;
+  border: 0;
+  border-radius: 15px;
+  background: transparent;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.55);
+}
+
 /* Низкие экраны: визуал в гибкой колонке сжимается, и на пятом слайде схема
    доходов начинает наезжать на текст. Поджимаем вертикальный ритм. */
 @media (max-height: 700px) {
@@ -12427,6 +12555,12 @@ body.reduce-motion .settings-seg-btn {
   .intro-stories .ist-rec { padding: 10px 13px; margin-bottom: 8px; }
   .intro-stories .ist-flow-link { height: 20px; margin-bottom: 8px; }
   .intro-stories .ist-cta { margin-top: 14px; padding: 13px; }
+  .intro-stories .ist-offer-head img { width: min(48vw, 182px); }
+  .intro-stories .ist-offer-halo { width: min(48vw, 182px); }
+  .intro-stories .ist-offer-ring { width: min(36vw, 138px); }
+  .intro-stories .ist-offer-shade > div { width: min(43vw, 164px); }
+  .intro-stories .ist-card { padding: 22px 20px 18px; }
+  .intro-stories .ist-card p { margin-bottom: 16px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -12441,7 +12575,11 @@ body.reduce-motion .settings-seg-btn {
   .intro-stories .ist-slide.is-on .ist-cat,
   .intro-stories .ist-slide.is-on .ist-rec,
   .intro-stories .ist-slide.is-on .ist-free,
-  .intro-stories .ist-slide.is-on .ist-flow-link > i {
+  .intro-stories .ist-slide.is-on .ist-flow-link > i,
+  .intro-stories.is-offer .ist-offer-head,
+  .intro-stories.is-offer .ist-offer-halo,
+  .intro-stories.is-offer .ist-offer-ring,
+  .intro-stories.is-offer .ist-card {
     animation-duration: 0.01s !important;
     animation-iteration-count: 1 !important;
   }
