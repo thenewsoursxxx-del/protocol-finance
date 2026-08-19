@@ -11807,3 +11807,644 @@ body.reduce-motion .settings-seg-btn {
 }
 
 
+/* ============================================================
+   INTRO STORIES - вступительные сторис при входе в приложение
+
+   Разметку целиком строит intro-stories.js, здесь только оформление.
+   Два принципиальных момента:
+   1) На корне стоит isolation: isolate - это делает оверлей границей
+      наложения, чтобы слои персонажа с mix-blend-mode: screen блендились
+      с фоновым canvas внутри оверлея.
+   2) Слайды переключаются через display, без z-index и без opacity:
+      и то и другое создало бы отдельный контекст наложения и сломало
+      screen у персонажа - вокруг головы появился бы чёрный прямоугольник.
+   Все keyframes с префиксом ist, чтобы не пересечься с анимациями
+   приложения (например, уже существующим emeraldFlow).
+   ============================================================ */
+
+.intro-stories {
+  position: fixed;
+  inset: 0 0 auto 0;
+  height: var(--tg-vh, 100%);
+  z-index: 100002;
+  isolation: isolate;
+  overflow: hidden;
+  background: #000;
+  color: #fff;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  opacity: 0;
+  transition: opacity 0.32s ease;
+}
+.intro-stories.is-visible { opacity: 1; }
+.intro-stories,
+.intro-stories * { box-sizing: border-box; }
+
+.intro-stories .ist-fx {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.intro-stories .ist-vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(115% 62% at 50% 0%, rgba(16, 185, 129, 0.14) 0%, rgba(0, 0, 0, 0) 58%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0) 22%, rgba(0, 0, 0, 0) 60%, rgba(0, 0, 0, 0.72) 100%);
+}
+
+/* ---- прогресс, пропуск, пауза ---- */
+
+.intro-stories .ist-bars {
+  position: absolute;
+  top: calc(env(safe-area-inset-top, 0px) + 12px);
+  left: 12px;
+  right: 12px;
+  z-index: 8;
+  display: flex;
+  gap: 5px;
+}
+.intro-stories .ist-bar {
+  flex: 1;
+  height: 2.5px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.22);
+  overflow: hidden;
+}
+.intro-stories .ist-bar > i {
+  display: block;
+  width: 0;
+  height: 100%;
+  border-radius: 2px;
+  background: #fff;
+}
+
+/* width и border-radius задаём явно: глобальное правило button в начале файла
+   растягивает кнопки на всю ширину и делает их пилюлями. */
+.intro-stories .ist-skip {
+  position: absolute;
+  top: calc(env(safe-area-inset-top, 0px) + 24px);
+  right: 10px;
+  z-index: 9;
+  width: auto;
+  appearance: none;
+  -webkit-appearance: none;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.62);
+  font: inherit;
+  font-size: 12.5px;
+  padding: 8px 10px;
+  cursor: pointer;
+}
+
+.intro-stories .ist-pause {
+  position: absolute;
+  top: calc(env(safe-area-inset-top, 0px) + 28px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.62);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  font-size: 12px;
+  letter-spacing: 0.4px;
+  opacity: 0;
+  transition: opacity 0.18s;
+  pointer-events: none;
+}
+.intro-stories.is-paused .ist-pause { opacity: 1; }
+
+.intro-stories .ist-zone {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 4;
+}
+.intro-stories .ist-zone--prev { left: 0; width: 34%; }
+.intro-stories .ist-zone--next { left: 34%; width: 66%; }
+
+/* ---- слайд: гибкая колонка «визуал сверху, текст снизу» ---- */
+
+.intro-stories .ist-slide {
+  position: absolute;
+  inset: 0;
+  display: none;
+  flex-direction: column;
+  padding:
+    calc(env(safe-area-inset-top, 0px) + 46px) 24px
+    calc(env(safe-area-inset-bottom, 0px) + 30px);
+}
+.intro-stories .ist-slide.is-on { display: flex; }
+
+.intro-stories .ist-visual {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+}
+.intro-stories .ist-visual > * { grid-area: 1 / 1; }
+.intro-stories .ist-copy { flex: 0 0 auto; }
+
+.intro-stories .ist-tag {
+  display: inline-block;
+  margin-bottom: 14px;
+  padding: 5px 11px;
+  border-radius: 999px;
+  border: 1px solid rgba(16, 185, 129, 0.32);
+  background: rgba(16, 185, 129, 0.08);
+  color: #6ee7b7;
+  font-size: 11px;
+  letter-spacing: 1.3px;
+  text-transform: uppercase;
+}
+.intro-stories .ist-title {
+  margin: 0 0 10px;
+  font-size: clamp(21px, 6.6vw, 27px);
+  line-height: 1.16;
+  font-weight: 700;
+  letter-spacing: -0.7px;
+}
+.intro-stories .ist-body {
+  margin: 0;
+  font-size: clamp(13px, 3.9vw, 14.5px);
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.7);
+}
+.intro-stories .ist-body--sm { font-size: 13px; }
+
+.intro-stories .ist-panel {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 16px;
+}
+
+/* Появление содержимого, перезапускается при каждом входе на слайд. */
+.intro-stories .ist-slide.is-on .ist-anim {
+  animation: istRise 0.72s cubic-bezier(0.16, 0.9, 0.28, 1) both;
+}
+.intro-stories .ist-slide.is-on .ist-d1 { animation-delay: 0.10s; }
+.intro-stories .ist-slide.is-on .ist-d2 { animation-delay: 0.20s; }
+.intro-stories .ist-slide.is-on .ist-d3 { animation-delay: 0.32s; }
+@keyframes istRise {
+  from { opacity: 0; transform: translateY(20px); filter: blur(7px); }
+  to   { opacity: 1; transform: none; filter: blur(0); }
+}
+
+/* ---- 1. персонаж ---- */
+
+.intro-stories .ist-hero,
+.intro-stories .ist-hero-fx,
+.intro-stories .ist-hero-shade {
+  display: grid;
+  place-items: center;
+}
+.intro-stories .ist-hero { mix-blend-mode: screen; }
+.intro-stories .ist-hero-fx { mix-blend-mode: screen; }
+.intro-stories .ist-hero-fx > * { grid-area: 1 / 1; }
+.intro-stories .ist-hero img {
+  width: min(74vw, 300px);
+  aspect-ratio: 1 / 1;
+  height: auto;
+  object-fit: contain;
+}
+/* Гасит звёзды под головой: иначе линии созвездий просвечивают сквозь
+   тёмные грани корпуса и персонаж теряет плотность. */
+.intro-stories .ist-hero-shade > div {
+  width: min(66vw, 270px);
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(0, 0, 0, 0.92) 55%, rgba(0, 0, 0, 0) 100%);
+}
+.intro-stories .ist-halo {
+  width: min(74vw, 300px);
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(16, 185, 129, 0.3), rgba(16, 185, 129, 0));
+}
+.intro-stories .ist-ring {
+  width: min(58vw, 236px);
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+  border: 1px solid rgba(16, 185, 129, 0.34);
+}
+.intro-stories .ist-slide.is-on .ist-hero {
+  animation: istHeroIn 1.5s cubic-bezier(0.16, 0.9, 0.28, 1) both;
+}
+.intro-stories .ist-slide.is-on .ist-halo { animation: istHalo 3.4s ease-in-out infinite; }
+.intro-stories .ist-slide.is-on .ist-ring { animation: istRing 2.9s ease-out infinite; }
+.intro-stories .ist-slide.is-on .ist-ring--2 { animation-delay: 1.45s; }
+@keyframes istHeroIn {
+  from { opacity: 0; transform: scale(0.82) translateY(16px); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes istHalo {
+  0%, 100% { opacity: 0.5; transform: scale(0.94); }
+  50%      { opacity: 1;   transform: scale(1.08); }
+}
+@keyframes istRing {
+  from { opacity: 0.75; transform: scale(0.86); }
+  to   { opacity: 0;    transform: scale(1.5); }
+}
+
+/* ---- 2. график плана ---- */
+
+.intro-stories .ist-graph-wrap { width: 100%; }
+.intro-stories .ist-graph { display: block; width: 100%; height: auto; }
+.intro-stories .ist-gline {
+  fill: none;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+}
+.intro-stories .ist-slide.is-on .ist-gline {
+  animation: istDraw 1.5s cubic-bezier(0.4, 0, 0.2, 1) 0.25s both;
+}
+.intro-stories .ist-slide.is-on .ist-gline--fact {
+  animation-delay: 0.7s;
+  animation-duration: 1.3s;
+}
+@keyframes istDraw { to { stroke-dashoffset: 0; } }
+
+.intro-stories .ist-garea { opacity: 0; }
+.intro-stories .ist-slide.is-on .ist-garea { animation: istFade 1s ease 0.9s both; }
+@keyframes istFade { to { opacity: 1; } }
+
+.intro-stories .ist-gdot { opacity: 0; }
+.intro-stories .ist-slide.is-on .ist-gdot {
+  animation: istPop 0.5s cubic-bezier(0.2, 1.5, 0.4, 1) 1.7s both;
+}
+@keyframes istPop {
+  from { opacity: 0; transform: scale(0); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.intro-stories .ist-legend {
+  display: flex;
+  gap: 16px;
+  margin-top: 8px;
+  font-size: 11.5px;
+  color: rgba(255, 255, 255, 0.5);
+}
+.intro-stories .ist-legend span { display: flex; align-items: center; gap: 6px; }
+.intro-stories .ist-legend i { width: 14px; height: 2px; border-radius: 2px; }
+.intro-stories .ist-lg-plan { background: #10b981; }
+.intro-stories .ist-lg-fact { background: rgba(255, 255, 255, 0.62); }
+
+.intro-stories .ist-metrics { display: flex; gap: 10px; margin-bottom: 14px; }
+.intro-stories .ist-metric { flex: 1; }
+.intro-stories .ist-metric small {
+  display: block;
+  margin-bottom: 3px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.5);
+}
+.intro-stories .ist-metric b {
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.4px;
+  font-variant-numeric: tabular-nums;
+  color: #6ee7b7;
+}
+.intro-stories .ist-chips { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 14px; }
+.intro-stories .ist-chip {
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 12px;
+}
+.intro-stories .ist-chip.is-sel {
+  border-color: rgba(16, 185, 129, 0.55);
+  background: rgba(16, 185, 129, 0.14);
+  color: #6ee7b7;
+}
+
+/* ---- 3. подушка безопасности ---- */
+
+.intro-stories .ist-reserve { width: 100%; }
+.intro-stories .ist-split { display: flex; gap: 12px; margin-bottom: 22px; }
+.intro-stories .ist-sc { flex: 1; padding: 15px 14px 16px; }
+.intro-stories .ist-sc small {
+  display: block;
+  margin-bottom: 9px;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+}
+.intro-stories .ist-sc b {
+  font-size: clamp(21px, 6.4vw, 25px);
+  font-weight: 700;
+  letter-spacing: -0.8px;
+  font-variant-numeric: tabular-nums;
+  color: rgba(255, 255, 255, 0.9);
+}
+.intro-stories .ist-sc span {
+  display: block;
+  margin-top: 6px;
+  font-size: 11.5px;
+  color: rgba(255, 255, 255, 0.5);
+}
+.intro-stories .ist-sc--buffer {
+  border-color: rgba(16, 185, 129, 0.4);
+  background:
+    radial-gradient(120% 80% at 50% 120%, rgba(16, 185, 129, 0.22) 0%, rgba(16, 185, 129, 0) 62%),
+    rgba(16, 185, 129, 0.05);
+}
+.intro-stories .ist-sc--buffer b { color: #6ee7b7; }
+
+.intro-stories .ist-tube {
+  position: relative;
+  height: 152px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  overflow: hidden;
+}
+.intro-stories .ist-fill {
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 0;
+  border-top: 1px solid rgba(110, 231, 183, 0.75);
+  background: linear-gradient(180deg, rgba(52, 211, 153, 0.5), rgba(16, 185, 129, 0.18));
+}
+.intro-stories .ist-slide.is-on .ist-fill {
+  animation: istFillUp 1.7s cubic-bezier(0.3, 0, 0.2, 1) 0.5s both;
+}
+@keyframes istFillUp { from { height: 0; } to { height: 52%; } }
+/* Подпись держим над уровнем наполнения, сумму - внутри него, иначе граница
+   заливки перерезает текст. */
+.intro-stories .ist-tube-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 0 16px;
+}
+.intro-stories .ist-tube-label small {
+  font-size: 11px;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+}
+.intro-stories .ist-tube-label b {
+  font-size: clamp(20px, 6.2vw, 24px);
+  font-weight: 700;
+  letter-spacing: -0.6px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- 4. расходы ---- */
+
+.intro-stories .ist-expenses {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 22px;
+}
+.intro-stories .ist-donut-wrap { position: relative; display: grid; place-items: center; }
+.intro-stories .ist-donut {
+  width: min(58vw, 218px);
+  aspect-ratio: 1 / 1;
+  height: auto;
+  transform: rotate(-90deg);
+}
+.intro-stories .ist-donut circle { fill: none; stroke-width: 15; stroke-linecap: butt; }
+.intro-stories .ist-donut .ist-track { stroke: rgba(255, 255, 255, 0.07); }
+.intro-stories .ist-donut-center { position: absolute; text-align: center; }
+.intro-stories .ist-donut-center small {
+  display: block;
+  font-size: 11px;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+}
+.intro-stories .ist-donut-center b {
+  font-size: clamp(19px, 5.8vw, 23px);
+  font-weight: 700;
+  letter-spacing: -0.6px;
+  font-variant-numeric: tabular-nums;
+}
+
+.intro-stories .ist-cats {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 7px;
+}
+.intro-stories .ist-cat {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px 5px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 12px;
+}
+.intro-stories .ist-cat i { width: 7px; height: 7px; border-radius: 50%; }
+.intro-stories .ist-cat em {
+  font-style: normal;
+  color: rgba(255, 255, 255, 0.45);
+  font-variant-numeric: tabular-nums;
+}
+.intro-stories .ist-slide.is-on .ist-cat {
+  animation: istRise 0.6s cubic-bezier(0.16, 0.9, 0.28, 1) both;
+}
+.intro-stories .ist-slide.is-on .ist-cat:nth-child(1) { animation-delay: 0.70s; }
+.intro-stories .ist-slide.is-on .ist-cat:nth-child(2) { animation-delay: 0.78s; }
+.intro-stories .ist-slide.is-on .ist-cat:nth-child(3) { animation-delay: 0.86s; }
+.intro-stories .ist-slide.is-on .ist-cat:nth-child(4) { animation-delay: 0.94s; }
+.intro-stories .ist-slide.is-on .ist-cat:nth-child(5) { animation-delay: 1.02s; }
+
+/* ---- 5. Premium: свой график ---- */
+
+.intro-stories .ist-tag--premium {
+  border-color: transparent;
+  color: #04120c;
+  font-weight: 700;
+  background: linear-gradient(120deg, #10b981 0%, #6ee7b7 45%, #10b981 100%);
+  background-size: 220% 100%;
+}
+.intro-stories .ist-slide.is-on .ist-tag--premium {
+  animation:
+    istRise 0.72s cubic-bezier(0.16, 0.9, 0.28, 1) both,
+    istPremiumFlow 3.4s linear infinite;
+}
+@keyframes istPremiumFlow { to { background-position: 220% 0; } }
+
+.intro-stories .ist-flow { width: 100%; }
+.intro-stories .ist-rec {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-bottom: 9px;
+  padding: 12px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.04);
+}
+.intro-stories .ist-rec > i { flex: none; width: 8px; height: 8px; border-radius: 50%; }
+.intro-stories .ist-rec > div { flex: 1; min-width: 0; }
+.intro-stories .ist-rec > div b { display: block; font-size: 13.5px; font-weight: 600; }
+.intro-stories .ist-rec > div small { font-size: 11px; color: rgba(255, 255, 255, 0.5); }
+.intro-stories .ist-rec em {
+  font-style: normal;
+  font-size: 15px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.intro-stories .ist-rec--in > i { background: #10b981; box-shadow: 0 0 10px rgba(16, 185, 129, 0.7); }
+.intro-stories .ist-rec--in em { color: #6ee7b7; }
+.intro-stories .ist-rec--out > i { background: #f47259; box-shadow: 0 0 10px rgba(244, 114, 89, 0.6); }
+.intro-stories .ist-rec--out em { color: #f47259; }
+.intro-stories .ist-slide.is-on .ist-rec {
+  animation: istSlideInX 0.6s cubic-bezier(0.16, 0.9, 0.28, 1) both;
+}
+.intro-stories .ist-slide.is-on .ist-rec:nth-child(1) { animation-delay: 0.14s; }
+.intro-stories .ist-slide.is-on .ist-rec:nth-child(2) { animation-delay: 0.34s; }
+@keyframes istSlideInX {
+  from { opacity: 0; transform: translateX(24px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.intro-stories .ist-flow-link { height: 30px; margin: 2px 0 11px 19px; }
+.intro-stories .ist-flow-link > i {
+  display: block;
+  width: 2px;
+  height: 100%;
+  border-radius: 2px;
+  transform-origin: top;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
+  background: linear-gradient(180deg, rgba(110, 231, 183, 0.95), rgba(16, 185, 129, 0.25));
+}
+.intro-stories .ist-slide.is-on .ist-flow-link > i { animation: istGrowY 0.5s ease-out 0.6s both; }
+@keyframes istGrowY {
+  from { transform: scaleY(0); }
+  to   { transform: scaleY(1); }
+}
+
+.intro-stories .ist-free {
+  display: grid;
+  padding: 14px 15px 15px;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  border-radius: 18px;
+  background:
+    radial-gradient(120% 90% at 50% 130%, rgba(16, 185, 129, 0.2) 0%, rgba(16, 185, 129, 0) 65%),
+    rgba(16, 185, 129, 0.05);
+}
+.intro-stories .ist-slide.is-on .ist-free {
+  animation: istRise 0.66s cubic-bezier(0.16, 0.9, 0.28, 1) 0.82s both;
+}
+.intro-stories .ist-free-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+.intro-stories .ist-free-row small {
+  font-size: 11px;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+}
+.intro-stories .ist-free-row b {
+  font-size: clamp(20px, 6.2vw, 24px);
+  font-weight: 700;
+  letter-spacing: -0.6px;
+  font-variant-numeric: tabular-nums;
+  color: #6ee7b7;
+}
+/* Кнопка внутри макета намеренно не такая, как реальная «Начать» снизу,
+   иначе на слайде две одинаковые изумрудные кнопки спорят между собой. */
+.intro-stories .ist-stash {
+  justify-self: center;
+  margin-top: 13px;
+  padding: 10px 22px;
+  border-radius: 999px;
+  border: 1px solid rgba(16, 185, 129, 0.6);
+  background: rgba(16, 185, 129, 0.16);
+  color: #6ee7b7;
+  font-size: 13.5px;
+  font-weight: 600;
+}
+.intro-stories .ist-slide.is-on .ist-stash {
+  animation: istStashPulse 2.1s ease-in-out 1.5s infinite;
+}
+@keyframes istStashPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+  50%      { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0.16); }
+}
+
+/* ---- кнопка входа в приложение ---- */
+
+.intro-stories .ist-cta {
+  position: relative;
+  z-index: 6;
+  width: 100%;
+  margin-top: 18px;
+  padding: 15px;
+  appearance: none;
+  -webkit-appearance: none;
+  border: 0;
+  border-radius: 15px;
+  font: inherit;
+  font-size: 15.5px;
+  font-weight: 600;
+  color: #04120c;
+  background: linear-gradient(180deg, #34d399, #059669);
+  cursor: pointer;
+}
+
+/* Низкие экраны: визуал в гибкой колонке сжимается, и на пятом слайде схема
+   доходов начинает наезжать на текст. Поджимаем вертикальный ритм. */
+@media (max-height: 700px) {
+  .intro-stories .ist-slide {
+    padding-top: calc(env(safe-area-inset-top, 0px) + 40px);
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 20px);
+  }
+  .intro-stories .ist-tag { margin-bottom: 10px; }
+  .intro-stories .ist-title { margin-bottom: 8px; }
+  .intro-stories .ist-split { margin-bottom: 16px; }
+  .intro-stories .ist-tube { height: 128px; }
+  .intro-stories .ist-expenses { gap: 16px; }
+  .intro-stories .ist-rec { padding: 10px 13px; margin-bottom: 8px; }
+  .intro-stories .ist-flow-link { height: 20px; margin-bottom: 8px; }
+  .intro-stories .ist-cta { margin-top: 14px; padding: 13px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .intro-stories .ist-slide.is-on .ist-anim,
+  .intro-stories .ist-slide.is-on .ist-hero,
+  .intro-stories .ist-slide.is-on .ist-halo,
+  .intro-stories .ist-slide.is-on .ist-ring,
+  .intro-stories .ist-slide.is-on .ist-gline,
+  .intro-stories .ist-slide.is-on .ist-garea,
+  .intro-stories .ist-slide.is-on .ist-gdot,
+  .intro-stories .ist-slide.is-on .ist-fill,
+  .intro-stories .ist-slide.is-on .ist-cat,
+  .intro-stories .ist-slide.is-on .ist-rec,
+  .intro-stories .ist-slide.is-on .ist-free,
+  .intro-stories .ist-slide.is-on .ist-flow-link > i {
+    animation-duration: 0.01s !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+

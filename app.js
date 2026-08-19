@@ -17552,6 +17552,15 @@ function renderFlexModelSummary() {
     catch (e) { /* noop */ }
     try { window._updateAppLock && window._updateAppLock(); }
     catch (e) { /* noop */ }
+
+    // INTRO STORIES - вступительные сторис поверх интерфейса.
+    // Задержка 1500ms даёт Supabase loadAppState() догнать remote state и
+    // DOM-у стартового экрана завершить layout, а сам оверлей ничего в
+    // приложении не трогает: рисуется поверх и после себя убирается.
+    setTimeout(function () {
+      try { window.IntroStories && window.IntroStories.maybeShow(); }
+      catch (e) { /* noop */ }
+    }, 1500);
   }
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", _initialSync);

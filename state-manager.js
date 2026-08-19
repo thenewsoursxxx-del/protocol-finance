@@ -115,6 +115,12 @@ function getDefaultState() {
       reserve: null
     },
 
+    // ── Intro stories ──
+    // Вступительные сторис при входе. Флаг готов к режиму «показать один раз
+    // первому заходу»; сейчас intro-stories.js его игнорирует и показывает
+    // сторис каждый запуск (константа SHOW_ON_EVERY_LAUNCH).
+    introStoriesSeen: false,
+
     // ── Debts (v7) ──
     debts: [],
     debtPlanningMode: false,
@@ -722,6 +728,8 @@ function applyState(saved) {
 
   appState.incomeMonthDays = Array.isArray(saved.incomeMonthDays) ? saved.incomeMonthDays : [];
   appState.expenseMonthDays = Array.isArray(saved.expenseMonthDays) ? saved.expenseMonthDays : [];
+
+  appState.introStoriesSeen = saved.introStoriesSeen === true;
 
   // ── Debts (v7) ──
   appState.debts = Array.isArray(saved.debts) ? saved.debts.map(function (d) { return { ...d }; }) : [];
